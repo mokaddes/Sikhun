@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/*
+ * Redesign v2 — warm, editorial palette (cream/amber/forest-green) replacing
+ * the earlier indigo-tech palette. Because every component in this app reads
+ * these custom properties rather than hardcoded colors, changing the values
+ * here re-skins the entire site — admin panel excepted, which stays a fixed
+ * dark theme by design (see AdminLayout.vue).
+ */
+:root {
+    --primary: #e8935c;        /* warm amber-orange — primary CTA */
+    --primary-hover: #dc8148;
+    --secondary: #1f6f54;      /* deep forest green — success/secondary accent */
+    --accent: #c1443a;         /* muted brick red — errors/destructive only */
+    --bg: #f8f4ea;             /* warm cream */
+    --surface: #ffffff;
+    --surface2: #f0ead9;
+    --border: #e6dfc9;
+    --text: #1b1b18;
+    --text-muted: #6b6355;
+}
+
+.dark {
+    --primary: #e8935c;
+    --primary-hover: #f0a473;
+    --secondary: #2f8f6e;
+    --accent: #e0685c;
+    --bg: #14140f;             /* editorial charcoal, not navy */
+    --surface: #1c1c16;
+    --surface2: #24241b;
+    --border: #34342a;
+    --text: #f3f1e8;
+    --text-muted: #9a9584;
+}
+
+html { background-color: var(--bg); }
+
+body {
+    font-family: 'DM Sans', 'Hind Siliguri', sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+h1, h2, h3, h4, .font-heading {
+    font-family: 'Syne', 'Hind Siliguri', sans-serif;
+}
+
+::selection { background-color: var(--primary); color: white; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Reusable dotted/grain texture for hero sections — pure CSS, no image asset */
+.bg-grain {
+    background-image: radial-gradient(var(--border) 1px, transparent 1px);
+    background-size: 18px 18px;
+}

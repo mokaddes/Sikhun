@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /bookshelf/
+Disallow: /wallet/
+Disallow: /plans/
+Disallow: /ai/
+Disallow: /exams/
+Disallow: /flashcards/
+Disallow: /essays/
+Disallow: /schedules/
+Disallow: /leaderboard/
+Disallow: /referrals/
+Disallow: /profile/
+Disallow: /notifications/
+Disallow: /reader/
+Disallow: /api/
+Disallow: /support/
+
+Sitemap: /sitemap.xml

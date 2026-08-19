@@ -4,6 +4,7 @@ namespace App\Services\Ai;
 
 use App\Models\AiProvider;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -128,7 +129,15 @@ class AiConnectionTester
             $headers['Authorization'] = 'Bearer '.$provider->api_key;
         }
 
-        $response = Http::withHeaders($headers)->timeout(6)->get($url);
+        $response = Http::withHeaders($headers)->timeout(10)->get($url);
+
+        Log::info('Custom provider check response:',[
+            'url' => $url,
+            'headers' => $headers,
+            'response' => $response->json(),
+            'status' => $response->status(),
+            'body' => $response->body(),
+        ]);
 
         return $response->successful()
             ? ['success' => true, 'message' => 'Endpoint reachable.']

@@ -10,7 +10,7 @@ class ReadingSession extends Model
 
     protected function casts(): array
     {
-        return ['last_activity_at' => 'datetime'];
+        return ['student_id' => 'integer', 'last_activity_at' => 'datetime'];
     }
 
     public function student() { return $this->belongsTo(Student::class); }

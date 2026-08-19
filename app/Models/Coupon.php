@@ -16,6 +16,7 @@ class Coupon extends Model
     protected function casts(): array
     {
         return [
+            'student_id' => 'integer',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'is_active' => 'boolean',

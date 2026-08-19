@@ -12,7 +12,7 @@ class Notification extends Model
 
     protected function casts(): array
     {
-        return ['data' => 'array', 'read_at' => 'datetime'];
+        return ['student_id' => 'integer', 'data' => 'array', 'read_at' => 'datetime'];
     }
 
     public function student() { return $this->belongsTo(Student::class); }

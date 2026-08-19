@@ -14,6 +14,8 @@ class Referral extends Model
     protected function casts(): array
     {
         return [
+            'referrer_student_id' => 'integer',
+            'referee_student_id' => 'integer',
             'referrer_reward' => 'decimal:2',
             'referee_reward' => 'decimal:2',
             'rewarded_at' => 'datetime',

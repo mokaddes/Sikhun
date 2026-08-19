@@ -14,6 +14,7 @@ class CouponRedemption extends Model
     protected function casts(): array
     {
         return [
+            'student_id' => 'integer',
             'granted_until' => 'datetime',
             'redeemed_at' => 'datetime',
         ];

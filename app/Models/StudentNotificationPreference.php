@@ -10,7 +10,7 @@ class StudentNotificationPreference extends Model
 
     protected function casts(): array
     {
-        return ['is_enabled' => 'boolean'];
+        return ['student_id' => 'integer', 'is_enabled' => 'boolean'];
     }
 
     public function student() { return $this->belongsTo(Student::class); }

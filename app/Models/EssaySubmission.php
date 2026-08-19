@@ -10,7 +10,7 @@ class EssaySubmission extends Model
 
     protected function casts(): array
     {
-        return ['result' => 'array'];
+        return ['student_id' => 'integer', 'result' => 'array'];
     }
 
     public function student() { return $this->belongsTo(Student::class); }

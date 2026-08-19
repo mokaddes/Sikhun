@@ -10,7 +10,7 @@ class FlashcardSet extends Model
 
     protected function casts(): array
     {
-        return ['is_public' => 'boolean'];
+        return ['student_id' => 'integer', 'is_public' => 'boolean'];
     }
 
     public function student() { return $this->belongsTo(Student::class); }

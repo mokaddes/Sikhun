@@ -10,7 +10,7 @@ class LessonProgress extends Model
 
     protected function casts(): array
     {
-        return ['is_completed' => 'boolean', 'completed_at' => 'datetime'];
+        return ['student_id' => 'integer', 'is_completed' => 'boolean', 'completed_at' => 'datetime'];
     }
 
     public function student() { return $this->belongsTo(Student::class); }

@@ -15,6 +15,7 @@ class ExamSession extends Model
     protected function casts(): array
     {
         return [
+            'student_id' => 'integer',
             'config' => 'array',
             'questions' => 'array',
             'answers' => 'array',

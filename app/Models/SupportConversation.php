@@ -10,7 +10,7 @@ class SupportConversation extends Model
 
     protected function casts(): array
     {
-        return ['bot_enabled' => 'boolean'];
+        return ['student_id' => 'integer', 'bot_enabled' => 'boolean'];
     }
 
     public function student() { return $this->belongsTo(Student::class); }

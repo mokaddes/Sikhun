@@ -27,6 +27,7 @@ class Student extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'wallet_balance' => 'decimal:2',
+            'referred_by_student_id' => 'integer',
             'leaderboard_opt_out' => 'boolean',
         ];
     }

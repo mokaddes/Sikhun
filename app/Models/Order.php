@@ -13,7 +13,7 @@ class Order extends Model
 
     protected function casts(): array
     {
-        return ['amount' => 'decimal:2', 'meta' => 'array'];
+        return ['student_id' => 'integer', 'amount' => 'decimal:2', 'meta' => 'array'];
     }
 
     public function student() { return $this->belongsTo(Student::class); }

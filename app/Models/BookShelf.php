@@ -10,7 +10,7 @@ class BookShelf extends Model
 
     protected function casts(): array
     {
-        return ['added_at' => 'datetime'];
+        return ['student_id' => 'integer', 'added_at' => 'datetime'];
     }
 
     public function student() { return $this->belongsTo(Student::class); }

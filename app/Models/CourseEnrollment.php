@@ -10,7 +10,7 @@ class CourseEnrollment extends Model
 
     protected function casts(): array
     {
-        return ['progress_percentage' => 'decimal:2', 'completed_at' => 'datetime'];
+        return ['student_id' => 'integer', 'progress_percentage' => 'decimal:2', 'completed_at' => 'datetime'];
     }
 
     public function student() { return $this->belongsTo(Student::class); }

@@ -12,7 +12,7 @@ class AiSession extends Model
 
     protected function casts(): array
     {
-        return ['messages' => 'array'];
+        return ['student_id' => 'integer', 'messages' => 'array'];
     }
 
     public function student() { return $this->belongsTo(Student::class); }

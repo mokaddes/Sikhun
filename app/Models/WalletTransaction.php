@@ -13,7 +13,7 @@ class WalletTransaction extends Model
 
     protected function casts(): array
     {
-        return ['amount' => 'decimal:2', 'balance_before' => 'decimal:2', 'balance_after' => 'decimal:2'];
+        return ['student_id' => 'integer', 'amount' => 'decimal:2', 'balance_before' => 'decimal:2', 'balance_after' => 'decimal:2'];
     }
 
     public function student() { return $this->belongsTo(Student::class); }

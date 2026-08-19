@@ -13,7 +13,7 @@ class LeaderboardEntry extends Model
 
     protected function casts(): array
     {
-        return ['percentage' => 'decimal:2'];
+        return ['student_id' => 'integer', 'percentage' => 'decimal:2'];
     }
 
     public function student() { return $this->belongsTo(Student::class); }

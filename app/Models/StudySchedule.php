@@ -10,7 +10,7 @@ class StudySchedule extends Model
 
     protected function casts(): array
     {
-        return ['exam_date' => 'date', 'config' => 'array', 'schedule_data' => 'array'];
+        return ['student_id' => 'integer', 'exam_date' => 'date', 'config' => 'array', 'schedule_data' => 'array'];
     }
 
     public function student() { return $this->belongsTo(Student::class); }

@@ -129,9 +129,23 @@ class AiConnectionTester
             $headers['Authorization'] = 'Bearer '.$provider->api_key;
         }
 
-        $response = Http::withHeaders($headers)->timeout(10)->get($url);
-        dd($response->body(), $url, $headers);
-        Log::info('Custom provider check response:',[
+        // Default payload matching your curl example
+        $payload = [
+            'model' => $provider->model_name ?? 'deepseek-v4-flash-free',
+            'messages' => [
+                [
+                    'role' => 'user',
+                    'content' => 'hey',
+                ],
+            ],
+        ];
+
+        // Change .get() to .post()
+        $response = Http::withHeaders($headers)
+            ->timeout(10)
+            ->post($url, $payload);
+
+        Log::info('Custom provider check response:', [
             'url' => $url,
             'headers' => $headers,
             'response' => $response->json(),

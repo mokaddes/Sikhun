@@ -130,7 +130,7 @@ class AiConnectionTester
         }
 
         $response = Http::withHeaders($headers)->timeout(10)->get($url);
-
+        dd($response->body(), $url, $headers);
         Log::info('Custom provider check response:',[
             'url' => $url,
             'headers' => $headers,

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\Student\RechargeRequest;
-use App\Services\Payment\SslcommerzService;
+use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\JsonResponse;
 
@@ -21,7 +21,7 @@ class WalletController extends BaseApiController
         return $this->success(auth('sanctum')->user()->walletTransactions()->latest()->paginate(20));
     }
 
-    public function recharge(RechargeRequest $request, PurchaseService $purchases, SslcommerzService $sslcommerz): JsonResponse
+    public function recharge(RechargeRequest $request, PurchaseService $purchases, ZinipayService $zinipay): JsonResponse
     {
         $student = auth('sanctum')->user();
 
@@ -29,7 +29,7 @@ class WalletController extends BaseApiController
             $student,
             (float) $request->amount,
             $request->method,
-            $request->method === 'sslcommerz' ? $sslcommerz : null
+            $request->method === 'zinipay' ? $zinipay : null
         );
 
         if ($request->method === 'manual') {

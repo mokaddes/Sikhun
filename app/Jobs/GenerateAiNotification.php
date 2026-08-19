@@ -15,11 +15,14 @@ class GenerateAiNotification implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $queue = 'notifications';
-
     public $tries = 2;
 
     public $timeout = 30;
+
+    public function __construct()
+    {
+        $this->onQueue('notifications');
+    }
 
     public function handle(): void
     {

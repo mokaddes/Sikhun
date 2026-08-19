@@ -8,7 +8,7 @@ class Order extends Model
 {
     protected $fillable = [
         'student_id', 'order_number', 'orderable_type', 'orderable_id', 'amount',
-        'payment_method', 'gateway_transaction_id', 'meta', 'status',
+        'payment_method', 'gateway_transaction_id', 'gateway_invoice_id', 'meta', 'status',
     ];
 
     protected function casts(): array

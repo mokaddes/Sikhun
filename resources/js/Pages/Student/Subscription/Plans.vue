@@ -45,7 +45,7 @@ function subscribe(plan, method) {
                     <button @click="subscribe(plan, 'wallet')" class="w-full py-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold text-sm">
                         {{ t('plans_page.subscribe') }} — {{ t('book_show.pay_with_wallet') }}
                     </button>
-                    <button @click="subscribe(plan, 'sslcommerz')" class="w-full py-2.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface2)] font-semibold text-sm">
+                    <button @click="subscribe(plan, 'zinipay')" class="w-full py-2.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface2)] font-semibold text-sm">
                         {{ t('book_show.pay_with_gateway') }}
                     </button>
                 </div>

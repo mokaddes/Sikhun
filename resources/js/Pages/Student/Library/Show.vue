@@ -65,7 +65,7 @@ function purchase(method) {
                     <button @click="purchase('wallet')" class="px-6 py-3 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold">
                         {{ t('book_show.pay_with_wallet') }}
                     </button>
-                    <button @click="purchase('sslcommerz')" class="px-6 py-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface2)] font-semibold">
+                    <button @click="purchase('zinipay')" class="px-6 py-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface2)] font-semibold">
                         {{ t('book_show.pay_with_gateway') }}
                     </button>
                 </div>
@@ -76,7 +76,7 @@ function purchase(method) {
                         <Link href="/wallet" class="px-6 py-3 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold">
                             {{ t('book_show.recharge_wallet') }}
                         </Link>
-                        <button @click="purchase('sslcommerz')" class="px-6 py-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface2)] font-semibold">
+                        <button @click="purchase('zinipay')" class="px-6 py-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface2)] font-semibold">
                             {{ t('book_show.pay_with_gateway') }}
                         </button>
                     </div>

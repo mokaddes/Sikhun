@@ -169,15 +169,16 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| SSLCommerz gateway callbacks — SSLCommerz POSTs here directly, so these
-| sit outside the web-guard group (the student's session may have expired
-| by the time they're redirected back from the hosted checkout page).
-| Order ownership is re-verified by tran_id inside the controller.
+| ZiniPay gateway callbacks — ZiniPay redirects the browser here (GET) after
+| the hosted checkout, so these sit outside the web-guard group (the
+| student's session may have expired). Order ownership is re-verified by
+| order_number/invoice_id inside the controller, then the invoice is checked
+| again server-side against ZiniPay before anything is fulfilled.
 |--------------------------------------------------------------------------
 */
-Route::post('/wallet/gateway/success', [WalletController::class, 'gatewaySuccess'])->name('wallet.gateway.success');
-Route::post('/wallet/gateway/fail', [WalletController::class, 'gatewayFail'])->name('wallet.gateway.fail');
-Route::post('/wallet/gateway/cancel', [WalletController::class, 'gatewayCancel'])->name('wallet.gateway.cancel');
+Route::match(['get', 'post'], '/wallet/gateway/success', [WalletController::class, 'gatewaySuccess'])->name('wallet.gateway.success');
+Route::match(['get', 'post'], '/wallet/gateway/fail', [WalletController::class, 'gatewayFail'])->name('wallet.gateway.fail');
+Route::match(['get', 'post'], '/wallet/gateway/cancel', [WalletController::class, 'gatewayCancel'])->name('wallet.gateway.cancel');
 
 /*
 |--------------------------------------------------------------------------

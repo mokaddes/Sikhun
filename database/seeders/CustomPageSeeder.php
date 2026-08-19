@@ -123,7 +123,7 @@ class CustomPageSeeder extends Seeder
         </details>
         <details>
             <summary>ওয়ালেট রিচার্জ কিভাবে করব?</summary>
-            <p>আপনার ওয়ালেট পেজ থেকে কার্ড/মোবাইল ব্যাংকিং (SSLCommerz) অথবা ম্যানুয়াল ব্যাংক ট্রান্সফারের মাধ্যমে রিচার্জ করতে পারবেন। ম্যানুয়াল ট্রান্সফার নিশ্চিত হতে কিছুটা সময় লাগতে পারে।</p>
+            <p>আপনার ওয়ালেট পেজ থেকে কার্ড/মোবাইল ব্যাংকিং (ZiniPay) অথবা ম্যানুয়াল ব্যাংক ট্রান্সফারের মাধ্যমে রিচার্জ করতে পারবেন। ম্যানুয়াল ট্রান্সফার নিশ্চিত হতে কিছুটা সময় লাগতে পারে।</p>
         </details>
         <details>
             <summary>AI কি সবসময় সঠিক উত্তর দেয়?</summary>
@@ -158,7 +158,7 @@ class CustomPageSeeder extends Seeder
         </details>
         <details>
             <summary>How do I recharge my wallet?</summary>
-            <p>From your Wallet page, via card/mobile banking (SSLCommerz) or manual bank transfer. Manual transfers may take a little time to confirm.</p>
+            <p>From your Wallet page, via card/mobile banking (ZiniPay) or manual bank transfer. Manual transfers may take a little time to confirm.</p>
         </details>
         <details>
             <summary>Is the AI always accurate?</summary>
@@ -261,7 +261,7 @@ class CustomPageSeeder extends Seeder
         <h3>২. তথ্যের ব্যবহার</h3>
         <p>সেবা প্রদান, ব্যক্তিগতকৃত সুপারিশ, লেনদেন প্রক্রিয়াকরণ এবং প্ল্যাটফর্ম উন্নয়নে আমরা এই তথ্য ব্যবহার করি।</p>
         <h3>৩. তথ্য শেয়ারিং</h3>
-        <p>আমরা আপনার তথ্য বিক্রি করি না। পেমেন্ট প্রসেসর (SSLCommerz) এবং AI প্রোভাইডারদের (যেমন OpenAI) সাথে শুধুমাত্র সেবা প্রদানের জন্য প্রয়োজনীয় তথ্য শেয়ার করা হয়।</p>
+        <p>আমরা আপনার তথ্য বিক্রি করি না। পেমেন্ট প্রসেসর (ZiniPay) এবং AI প্রোভাইডারদের (যেমন OpenAI) সাথে শুধুমাত্র সেবা প্রদানের জন্য প্রয়োজনীয় তথ্য শেয়ার করা হয়।</p>
         <h3>৪. কুকিজ</h3>
         <p>সেশন ও ভাষা পছন্দ মনে রাখতে আমরা প্রয়োজনীয় কুকিজ ব্যবহার করি — কোনো তৃতীয় পক্ষের বিজ্ঞাপন ট্র্যাকিং কুকিজ নেই।</p>
         <h3>৫. তথ্য সংরক্ষণ</h3>
@@ -284,7 +284,7 @@ class CustomPageSeeder extends Seeder
         <h3>2. How We Use Information</h3>
         <p>We use this data to provide the service, personalize recommendations, process transactions, and improve the platform.</p>
         <h3>3. Data Sharing</h3>
-        <p>We do not sell your data. Information is shared with payment processors (SSLCommerz) and AI providers (e.g. OpenAI) only as needed to deliver the service.</p>
+        <p>We do not sell your data. Information is shared with payment processors (ZiniPay) and AI providers (e.g. OpenAI) only as needed to deliver the service.</p>
         <h3>4. Cookies</h3>
         <p>We use essential cookies to remember your session and language preference — no third-party advertising trackers.</p>
         <h3>5. Data Retention</h3>

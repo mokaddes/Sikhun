@@ -7,7 +7,7 @@ import { useI18n } from '@/i18n';
 const props = defineProps({ balance: [String, Number], transactions: Object });
 const { t } = useI18n();
 
-const form = useForm({ amount: 500, method: 'sslcommerz', transaction_reference: '' });
+const form = useForm({ amount: 500, method: 'zinipay', transaction_reference: '' });
 
 function submit() {
     form.post('/wallet/recharge', { onSuccess: () => form.reset('transaction_reference') });
@@ -31,7 +31,7 @@ function submit() {
                     <div>
                         <label class="block text-sm font-medium mb-1.5">{{ t('wallet.choose_method') }}</label>
                         <select v-model="form.method" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]">
-                            <option value="sslcommerz">{{ t('wallet.sslcommerz') }}</option>
+                            <option value="zinipay">{{ t('wallet.zinipay') }}</option>
                             <option value="manual">{{ t('wallet.manual_transfer') }}</option>
                         </select>
                     </div>

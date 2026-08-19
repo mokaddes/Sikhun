@@ -17,13 +17,14 @@ class ProcessBookChunking implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $queue = 'default';
-
     public $timeout = 300;
 
     private const CHUNK_SIZE_CHARS = 1200;
 
-    public function __construct(private int $bookId) {}
+    public function __construct(private int $bookId)
+    {
+        $this->onQueue('default');
+    }
 
     public function handle(): void
     {

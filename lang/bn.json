@@ -301,12 +301,12 @@
         "recharge": "রিচার্জ করুন",
         "amount": "পরিমাণ (৳)",
         "choose_method": "পদ্ধতি নির্বাচন করুন",
-        "sslcommerz": "কার্ড / মোবাইল ব্যাংকিং (SSLCommerz)",
         "manual_transfer": "ম্যানুয়াল ব্যাংক ট্রান্সফার",
         "transaction_ref": "ট্রানজেকশন রেফারেন্স",
         "submit": "জমা দিন",
         "transactions": "লেনদেনের ইতিহাস",
-        "no_transactions": "এখনো কোনো লেনদেন নেই।"
+        "no_transactions": "এখনো কোনো লেনদেন নেই।",
+        "zinipay": "কার্ড / মোবাইল ব্যাংকিং (ZiniPay)"
     },
     "reader": {
         "loading": "পেজ লোড হচ্ছে...",

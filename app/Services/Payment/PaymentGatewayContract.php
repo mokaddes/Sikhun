@@ -5,7 +5,7 @@ namespace App\Services\Payment;
 use App\Models\Order;
 
 /**
- * Every gateway (SSLCommerz now; bKash/Nagad later) implements this so
+ * Every gateway (ZiniPay now; bKash/Nagad later) implements this so
  * PurchaseService never has to know which one it's talking to.
  */
 interface PaymentGatewayContract

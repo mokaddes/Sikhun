@@ -7,7 +7,7 @@ use App\Http\Requests\Student\PurchaseRequest;
 use App\Models\Book;
 use App\Models\Category;
 use App\Services\BookAccessService;
-use App\Services\Payment\SslcommerzService;
+use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -62,7 +62,7 @@ class LibraryController extends Controller
         ]);
     }
 
-    public function purchase(PurchaseRequest $request, Book $book, PurchaseService $purchases, SslcommerzService $sslcommerz): RedirectResponse
+    public function purchase(PurchaseRequest $request, Book $book, PurchaseService $purchases, ZinipayService $zinipay): RedirectResponse
     {
         $student = auth('web')->user();
 
@@ -71,7 +71,7 @@ class LibraryController extends Controller
                 $student,
                 $book,
                 $request->payment_method,
-                $request->payment_method === 'sslcommerz' ? $sslcommerz : null
+                $request->payment_method === 'zinipay' ? $zinipay : null
             );
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Requests\Student\PurchaseRequest;
 use App\Models\Book;
 use App\Services\BookAccessService;
-use App\Services\Payment\SslcommerzService;
+use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,14 +38,14 @@ class LibraryController extends BaseApiController
         return $this->success($data);
     }
 
-    public function purchase(PurchaseRequest $request, Book $book, PurchaseService $purchases, SslcommerzService $sslcommerz): JsonResponse
+    public function purchase(PurchaseRequest $request, Book $book, PurchaseService $purchases, ZinipayService $zinipay): JsonResponse
     {
         try {
             $result = $purchases->purchaseBook(
                 auth('sanctum')->user(),
                 $book,
                 $request->payment_method,
-                $request->payment_method === 'sslcommerz' ? $sslcommerz : null
+                $request->payment_method === 'zinipay' ? $zinipay : null
             );
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), [], 422);

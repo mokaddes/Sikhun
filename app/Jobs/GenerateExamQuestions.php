@@ -14,13 +14,14 @@ class GenerateExamQuestions implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $queue = 'ai';
-
     public $tries = 3;
 
     public $timeout = 120;
 
-    public function __construct(private int $examSessionId) {}
+    public function __construct(private int $examSessionId)
+    {
+        $this->onQueue('ai');
+    }
 
     public function handle(): void
     {

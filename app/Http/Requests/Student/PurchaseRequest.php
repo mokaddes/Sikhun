@@ -11,7 +11,7 @@ class PurchaseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'payment_method' => ['required', 'in:wallet,sslcommerz'],
+            'payment_method' => ['required', 'in:wallet,zinipay'],
         ];
     }
 }

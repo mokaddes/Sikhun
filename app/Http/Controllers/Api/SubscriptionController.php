@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\Student\SubscriptionPurchaseRequest;
 use App\Models\Plan;
-use App\Services\Payment\SslcommerzService;
+use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\JsonResponse;
 
@@ -20,14 +20,14 @@ class SubscriptionController extends BaseApiController
         return $this->success(auth('sanctum')->user()->activeSubscription()->with('plan')->first());
     }
 
-    public function purchase(SubscriptionPurchaseRequest $request, PurchaseService $purchases, SslcommerzService $sslcommerz): JsonResponse
+    public function purchase(SubscriptionPurchaseRequest $request, PurchaseService $purchases, ZinipayService $zinipay): JsonResponse
     {
         $student = auth('sanctum')->user();
         $plan = Plan::findOrFail($request->plan_id);
 
         $result = $purchases->purchaseSubscription(
             $student, $plan, (int) $request->months, $request->payment_method,
-            $request->payment_method === 'sslcommerz' ? $sslcommerz : null
+            $request->payment_method === 'zinipay' ? $zinipay : null
         );
 
         return $this->success($result);

@@ -14,13 +14,14 @@ class GradeEssay implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $queue = 'ai';
-
     public $tries = 3;
 
     public $timeout = 90;
 
-    public function __construct(private int $submissionId) {}
+    public function __construct(private int $submissionId)
+    {
+        $this->onQueue('ai');
+    }
 
     public function handle(): void
     {

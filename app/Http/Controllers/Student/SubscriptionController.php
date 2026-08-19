@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\SubscriptionPurchaseRequest;
 use App\Models\Plan;
-use App\Services\Payment\SslcommerzService;
+use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -23,7 +23,7 @@ class SubscriptionController extends Controller
         ]);
     }
 
-    public function purchase(SubscriptionPurchaseRequest $request, PurchaseService $purchases, SslcommerzService $sslcommerz): RedirectResponse
+    public function purchase(SubscriptionPurchaseRequest $request, PurchaseService $purchases, ZinipayService $zinipay): RedirectResponse
     {
         $student = auth('web')->user();
         $plan = Plan::findOrFail($request->plan_id);
@@ -33,7 +33,7 @@ class SubscriptionController extends Controller
             $plan,
             (int) $request->months,
             $request->payment_method,
-            $request->payment_method === 'sslcommerz' ? $sslcommerz : null
+            $request->payment_method === 'zinipay' ? $zinipay : null
         );
 
         if ($result['redirect_url']) {

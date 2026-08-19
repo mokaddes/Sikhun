@@ -13,7 +13,7 @@ class SubscriptionPurchaseRequest extends FormRequest
         return [
             'plan_id' => ['required', 'exists:plans,id'],
             'months' => ['required', 'integer', 'min:1', 'max:12'],
-            'payment_method' => ['required', 'in:wallet,sslcommerz'],
+            'payment_method' => ['required', 'in:wallet,zinipay'],
         ];
     }
 }

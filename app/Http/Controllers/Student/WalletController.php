@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\RechargeRequest;
 use App\Models\Order;
-use App\Services\Payment\SslcommerzService;
+use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +24,7 @@ class WalletController extends Controller
         ]);
     }
 
-    public function recharge(RechargeRequest $request, PurchaseService $purchases, SslcommerzService $sslcommerz): RedirectResponse
+    public function recharge(RechargeRequest $request, PurchaseService $purchases, ZinipayService $zinipay): RedirectResponse
     {
         $student = auth('web')->user();
 
@@ -32,7 +32,7 @@ class WalletController extends Controller
             $student,
             (float) $request->amount,
             $request->method,
-            $request->method === 'sslcommerz' ? $sslcommerz : null
+            $request->method === 'zinipay' ? $zinipay : null
         );
 
         if ($request->method === 'manual') {
@@ -45,19 +45,27 @@ class WalletController extends Controller
     }
 
     /**
-     * SSLCommerz redirects the browser here after payment. We never trust
+     * ZiniPay redirects the browser here after payment. We never trust
      * this alone — verify() re-checks the transaction server-side before
      * any order is marked completed.
      */
-    public function gatewaySuccess(Request $request, PurchaseService $purchases, SslcommerzService $sslcommerz): RedirectResponse
+    public function gatewaySuccess(Request $request, PurchaseService $purchases, ZinipayService $zinipay): RedirectResponse
     {
-        $order = Order::where('order_number', $request->input('tran_id'))->first();
+        $order = Order::where('order_number', $request->input('order_number'))
+            ->orWhere('gateway_invoice_id', $request->input('invoice_id'))
+            ->first();
 
-        if (! $order || ! $sslcommerz->verify($request->all())) {
+        if (! $order || ! $order->gateway_invoice_id) {
             return redirect()->route('wallet.index')->with('error', 'Payment could not be verified.');
         }
 
-        $purchases->completeGatewayOrder($order, $request->input('val_id', ''));
+        $verified = $zinipay->verifiedData($order->gateway_invoice_id);
+
+        if (! $verified) {
+            return redirect()->route('wallet.index')->with('error', 'Payment could not be verified.');
+        }
+
+        $purchases->completeGatewayOrder($order, $verified['transaction_id'] ?? $order->gateway_invoice_id);
 
         return redirect()->route('wallet.index')->with('success', 'Payment successful!');
     }

@@ -51,7 +51,7 @@ function enroll(method) {
                         <button @click="enroll('wallet')" class="px-6 py-3 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold">
                             {{ t('book_show.pay_with_wallet') }}
                         </button>
-                        <button @click="enroll('sslcommerz')" class="px-6 py-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface2)] font-semibold">
+                        <button @click="enroll('zinipay')" class="px-6 py-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface2)] font-semibold">
                             {{ t('book_show.pay_with_gateway') }}
                         </button>
                     </template>

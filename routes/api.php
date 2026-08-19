@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\WalletController;
+use App\Http\Controllers\Api\ZinipayWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -34,6 +35,11 @@ Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
 });
+
+// ZiniPay server-to-server webhook — unauthenticated and CSRF-free by virtue
+// of living in routes/api.php; the handler always re-verifies the invoice
+// against ZiniPay before fulfilling, so a forged callback is harmless.
+Route::match(['get', 'post'], 'zinipay/webhook', [ZinipayWebhookController::class, 'handle'])->name('zinipay.webhook');
 
 Route::get('pages/{slug}', [PageController::class, 'show']);
 

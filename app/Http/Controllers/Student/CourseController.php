@@ -7,7 +7,7 @@ use App\Http\Requests\Student\PurchaseRequest;
 use App\Models\Category;
 use App\Models\Course;
 use App\Services\CertificateService;
-use App\Services\Payment\SslcommerzService;
+use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -58,7 +58,7 @@ class CourseController extends Controller
         ]);
     }
 
-    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, SslcommerzService $sslcommerz, \App\Services\AccessGrantService $grants): RedirectResponse
+    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, ZinipayService $zinipay, \App\Services\AccessGrantService $grants): RedirectResponse
     {
         $student = auth('web')->user();
 
@@ -77,7 +77,7 @@ class CourseController extends Controller
         try {
             $result = $purchases->purchaseCourse(
                 $student, $course, $request->payment_method,
-                $request->payment_method === 'sslcommerz' ? $sslcommerz : null
+                $request->payment_method === 'zinipay' ? $zinipay : null
             );
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());

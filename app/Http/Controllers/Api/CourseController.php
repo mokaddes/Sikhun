@@ -9,7 +9,7 @@ use App\Models\CourseSection;
 use App\Models\LessonProgress;
 use App\Services\AccessGrantService;
 use App\Services\CertificateService;
-use App\Services\Payment\SslcommerzService;
+use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,7 +39,7 @@ class CourseController extends BaseApiController
         ]);
     }
 
-    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, SslcommerzService $sslcommerz, AccessGrantService $grants): JsonResponse
+    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, ZinipayService $zinipay, AccessGrantService $grants): JsonResponse
     {
         $student = auth('sanctum')->user();
 
@@ -54,7 +54,7 @@ class CourseController extends BaseApiController
         }
 
         try {
-            $result = $purchases->purchaseCourse($student, $course, $request->payment_method, $request->payment_method === 'sslcommerz' ? $sslcommerz : null);
+            $result = $purchases->purchaseCourse($student, $course, $request->payment_method, $request->payment_method === 'zinipay' ? $zinipay : null);
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage());
         }

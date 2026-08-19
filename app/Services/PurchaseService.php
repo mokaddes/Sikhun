@@ -46,7 +46,7 @@ class PurchaseService
             return ['redirect_url' => null, 'order' => $order];
         }
 
-        // Gateway (SSLCommerz) — order stays 'pending' until the callback verifies it.
+        // Gateway (ZiniPay) — order stays 'pending' until the callback verifies it.
         $redirectUrl = $gateway->initiate($order);
 
         return ['redirect_url' => $redirectUrl, 'order' => $order];
@@ -103,7 +103,7 @@ class PurchaseService
     }
 
     /**
-     * Called from the SSLCommerz success callback after verify() has
+     * Called from the ZiniPay success callback / webhook after verify() has
      * confirmed the transaction server-side. Idempotent — completing an
      * already-completed order is a safe no-op.
      */

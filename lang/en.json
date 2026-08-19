@@ -301,12 +301,12 @@
         "recharge": "Recharge",
         "amount": "Amount (৳)",
         "choose_method": "Choose method",
-        "sslcommerz": "Card / Mobile Banking (SSLCommerz)",
         "manual_transfer": "Manual Bank Transfer",
         "transaction_ref": "Transaction Reference",
         "submit": "Submit",
         "transactions": "Transaction History",
-        "no_transactions": "No transactions yet."
+        "no_transactions": "No transactions yet.",
+        "zinipay": "Card / Mobile Banking (ZiniPay)"
     },
     "reader": {
         "loading": "Loading page...",

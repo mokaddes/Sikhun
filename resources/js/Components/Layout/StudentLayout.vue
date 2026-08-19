@@ -30,6 +30,7 @@ const nav = computed(() => [
     { label: t('nav.referrals'), href: '/referrals' },
     { label: t('nav.plans'), href: '/plans' },
     { label: t('nav.wallet'), href: '/wallet' },
+    { label: 'Access', href: '/access' },
 ]);
 
 function logout() {

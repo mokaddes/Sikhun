@@ -117,6 +117,8 @@
             "courses": "Courses",
             "students": "Students",
             "plans": "Plans",
+            "coupons": "Coupons",
+            "free_campaigns": "Free Campaigns",
             "ai_providers": "AI Providers",
             "orders": "Orders",
             "settings": "Site Settings",
@@ -270,7 +272,8 @@
         "already_owned": "আপনার সংগ্রহে আছে",
         "free_badge": "ফ্রি বই",
         "read_now": "পড়া শুরু করুন",
-        "subscription_gift_badge": "সাবস্ক্রিপশনের অংশ"
+        "subscription_gift_badge": "সাবস্ক্রিপশনের অংশ",
+        "coupon_access_badge": "ফ্রি অ্যাক্সেস আনলক হয়েছে"
     },
     "bookshelf": {
         "title": "আমার বইঘর",

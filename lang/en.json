@@ -117,6 +117,8 @@
             "courses": "Courses",
             "students": "Students",
             "plans": "Plans",
+            "coupons": "Coupons",
+            "free_campaigns": "Free Campaigns",
             "ai_providers": "AI Providers",
             "orders": "Orders",
             "settings": "Site Settings",
@@ -270,7 +272,8 @@
         "already_owned": "Already in your collection",
         "free_badge": "Free Book",
         "read_now": "Start Reading",
-        "subscription_gift_badge": "Included in your subscription"
+        "subscription_gift_badge": "Included in your subscription",
+        "coupon_access_badge": "Free access unlocked"
     },
     "bookshelf": {
         "title": "My Bookshelf",

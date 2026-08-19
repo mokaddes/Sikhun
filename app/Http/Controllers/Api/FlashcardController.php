@@ -7,6 +7,7 @@ use App\Jobs\GenerateFlashcards;
 use App\Models\Book;
 use App\Models\Flashcard;
 use App\Models\FlashcardSet;
+use App\Services\AccessGrantService;
 use App\Services\BookAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,7 +36,10 @@ class FlashcardController extends BaseApiController
 
         $set = $student->flashcardSets()->create(['title' => $request->title, 'source_label' => $sourceLabel]);
         GenerateFlashcards::dispatch($set->id, $sourceText, (int) $request->count);
-        $student->increment('ai_trial_minutes_used');
+
+        if (! app(AccessGrantService::class)->hasActiveAccess($student)) {
+            $student->increment('ai_trial_minutes_used');
+        }
 
         return $this->success($set, 'Flashcard generation started', 201);
     }

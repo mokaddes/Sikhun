@@ -8,6 +8,7 @@ use App\Jobs\GenerateExamQuestions;
 use App\Models\Book;
 use App\Models\ExamSession;
 use App\Models\LeaderboardEntry;
+use App\Services\AccessGrantService;
 use App\Services\BookAccessService;
 use Illuminate\Http\JsonResponse;
 
@@ -72,7 +73,15 @@ class ExamController extends BaseApiController
         ]);
 
         $student = auth('sanctum')->user();
-        $student->increment('ai_trial_minutes_used');
+
+        // Free campaign/coupon access is unlimited — never consume paid
+        // quota while a grant is active.
+        if (! app(AccessGrantService::class)->hasActiveAccess($student)) {
+            $student->increment('ai_trial_minutes_used');
+            if ($sub = $student->activeSubscription) {
+                $sub->decrement('ai_exam_count_remaining');
+            }
+        }
 
         if ($exam->mode === 'exam' && $exam->total >= 10) {
             $now = now();

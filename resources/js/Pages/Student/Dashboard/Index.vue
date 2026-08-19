@@ -11,6 +11,7 @@ defineProps({
     leaderboardTop: Array,
     myRank: Object,
     activeSubscription: Object,
+    access: Object,
 });
 const { t, locale } = useI18n();
 const student = usePage().props.auth?.student;
@@ -38,6 +39,18 @@ function badge(rank) {
             <Link v-else href="/plans" class="px-4 py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-semibold">
                 {{ locale === 'en' ? 'Upgrade to Premium →' : 'প্রিমিয়ামে আপগ্রেড করুন →' }}
             </Link>
+        </div>
+
+        <!-- Free access banner -->
+        <div v-if="access?.has_access" class="mb-8 rounded-xl border bg-gradient-to-r from-[var(--primary)]/10 to-[var(--secondary)]/10 border-[var(--primary)]/30 p-5 flex flex-col md:flex-row md:items-center gap-4">
+            <div class="flex-1">
+                <div class="font-heading font-bold mb-0.5">🎉 {{ locale === 'en' ? 'Full Access Unlocked' : 'সম্পূর্ণ অ্যাক্সেস আনলক হয়েছে' }}</div>
+                <div class="text-sm text-[var(--text-muted)]">
+                    <span v-if="access.campaign">{{ access.campaign.title }} — {{ locale === 'en' ? 'free campaign until' : 'ফ্রি ক্যাম্পেইন' }} {{ new Date(access.campaign.ends_at).toLocaleDateString() }}</span>
+                    <span v-else-if="access.coupon">Coupon "{{ access.coupon.name }}" — {{ locale === 'en' ? 'until' : 'পর্যন্ত' }} {{ access.coupon.ends_at ? new Date(access.coupon.ends_at).toLocaleDateString() : locale === 'en' ? 'indefinitely' : 'আনলিমিটেড' }}</span>
+                </div>
+            </div>
+            <Link href="/access" class="text-sm font-semibold text-[var(--primary)]">{{ locale === 'en' ? 'View access →' : 'অ্যাক্সেস দেখুন →' }}</Link>
         </div>
 
         <!-- Stat cards -->

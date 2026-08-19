@@ -8,6 +8,7 @@ use App\Models\AiSession;
 use App\Models\Book;
 use App\Services\Ai\AiProviderFactory;
 use App\Services\Ai\BookChunkRetrievalService;
+use App\Services\AccessGrantService;
 use App\Services\BookAccessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -128,9 +129,13 @@ class AiChatController extends Controller
                 'tokens_used' => $session->tokens_used + (int) (strlen($userMessage.$fullReply) / 4),
             ]);
 
-            $student->increment('ai_trial_minutes_used');
-            if ($sub = $student->activeSubscription) {
-                $sub->decrement('ai_chat_minutes_remaining');
+            // Free campaign/coupon access is unlimited — never consume paid
+            // quota while a grant is active.
+            if (! app(AccessGrantService::class)->hasActiveAccess($student)) {
+                $student->increment('ai_trial_minutes_used');
+                if ($sub = $student->activeSubscription) {
+                    $sub->decrement('ai_chat_minutes_remaining');
+                }
             }
 
             echo 'data: '.json_encode(['content' => '', 'done' => true])."\n\n";

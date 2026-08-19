@@ -19,6 +19,8 @@ const nav = computed(() => [
     { label: t('admin.nav.mentors'), href: '/admin/mentors' },
     { label: t('admin.nav.students'), href: '/admin/students' },
     { label: t('admin.nav.plans'), href: '/admin/plans' },
+    { label: t('admin.nav.coupons'), href: '/admin/coupons' },
+    { label: t('admin.nav.free_campaigns'), href: '/admin/free-campaigns' },
     { label: t('admin.nav.ai_providers'), href: '/admin/ai-providers' },
     { label: t('admin.nav.orders'), href: '/admin/orders' },
     { label: 'Referrals', href: '/admin/referrals' },

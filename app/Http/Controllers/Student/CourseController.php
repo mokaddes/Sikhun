@@ -41,22 +41,24 @@ class CourseController extends Controller
         ]);
     }
 
-    public function show(Course $course, \App\Services\SeoService $seo): Response
+    public function show(Course $course, \App\Services\SeoService $seo, \App\Services\AccessGrantService $grants): Response
     {
         abort_unless($course->is_active, 404);
         $student = auth('web')->user();
 
         $enrollment = $student ? $student->courseEnrollments()->where('course_id', $course->id)->first() : null;
+        $hasAccess = $student && $grants->hasActiveAccess($student);
 
         return Inertia::render('Student/Courses/Show', [
             'course' => $course->load(['mentor', 'category', 'sections.lessons']),
             'enrollment' => $enrollment,
             'isEnrolled' => (bool) $enrollment,
+            'hasAccess' => $hasAccess,
             'seo' => $seo->forCourse($course),
         ]);
     }
 
-    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, SslcommerzService $sslcommerz): RedirectResponse
+    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, SslcommerzService $sslcommerz, \App\Services\AccessGrantService $grants): RedirectResponse
     {
         $student = auth('web')->user();
 
@@ -64,7 +66,9 @@ class CourseController extends Controller
             return back()->with('error', 'You are already enrolled in this course.');
         }
 
-        if ((float) $course->price === 0.0) {
+        // Free campaign/coupon access → enroll for free so progress and
+        // certificates work exactly like a paid enrollment.
+        if ($grants->hasActiveAccess($student) || (float) $course->price === 0.0) {
             $student->courseEnrollments()->create(['course_id' => $course->id, 'progress_percentage' => 0]);
 
             return redirect()->route('courses.show', $course)->with('success', 'Enrolled!');
@@ -86,12 +90,16 @@ class CourseController extends Controller
         return redirect()->route('courses.show', $course)->with('success', 'Enrolled!');
     }
 
-    public function lesson(Course $course, \App\Models\CourseSection $section, \App\Models\CourseLesson $lesson): Response
+    public function lesson(Course $course, \App\Models\CourseSection $section, \App\Models\CourseLesson $lesson, \App\Services\AccessGrantService $grants): Response
     {
         $student = auth('web')->user();
         $enrollment = $student ? $student->courseEnrollments()->where('course_id', $course->id)->first() : null;
 
-        abort_unless($enrollment || $lesson->is_free_preview, 403, 'Enroll in this course to view this lesson.');
+        abort_unless(
+            $enrollment || $lesson->is_free_preview || ($student && $grants->hasActiveAccess($student)),
+            403,
+            'Enroll in this course to view this lesson.'
+        );
 
         $progress = $enrollment
             ? \App\Models\LessonProgress::where('student_id', $student->id)->where('course_lesson_id', $lesson->id)->first()

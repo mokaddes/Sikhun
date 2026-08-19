@@ -46,7 +46,10 @@ class ScheduleController extends Controller
         ]);
 
         \App\Jobs\GenerateStudySchedule::dispatch($schedule->id);
-        $student->increment('ai_trial_minutes_used');
+
+        if (! app(\App\Services\AccessGrantService::class)->hasActiveAccess($student)) {
+            $student->increment('ai_trial_minutes_used');
+        }
 
         return redirect()->route('schedules.show', $schedule);
     }

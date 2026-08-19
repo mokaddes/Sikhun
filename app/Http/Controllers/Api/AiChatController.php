@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Requests\Student\CreateChatSessionRequest;
 use App\Models\AiSession;
 use App\Models\Book;
+use App\Services\AccessGrantService;
 use App\Services\Ai\AiProviderFactory;
 use App\Services\Ai\BookChunkRetrievalService;
 use App\Services\BookAccessService;
@@ -93,7 +94,10 @@ class AiChatController extends BaseApiController
 
             $messages[] = ['role' => 'assistant', 'content' => $fullReply];
             $session->update(['messages' => $messages]);
-            $student->increment('ai_trial_minutes_used');
+
+            if (! app(AccessGrantService::class)->hasActiveAccess($student)) {
+                $student->increment('ai_trial_minutes_used');
+            }
 
             echo 'data: '.json_encode(['content' => '', 'done' => true])."\n\n";
             ob_flush();

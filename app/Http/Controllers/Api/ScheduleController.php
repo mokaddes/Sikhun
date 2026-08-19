@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Requests\Student\GenerateScheduleRequest;
 use App\Jobs\GenerateStudySchedule;
 use App\Models\StudySchedule;
+use App\Services\AccessGrantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -33,7 +34,10 @@ class ScheduleController extends BaseApiController
         ]);
 
         GenerateStudySchedule::dispatch($schedule->id);
-        $student->increment('ai_trial_minutes_used');
+
+        if (! app(AccessGrantService::class)->hasActiveAccess($student)) {
+            $student->increment('ai_trial_minutes_used');
+        }
 
         return $this->success($schedule, 'Schedule generation started', 201);
     }

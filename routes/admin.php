@@ -5,11 +5,13 @@ use App\Http\Controllers\Admin\Auth\AdminAuthController;
 use App\Http\Controllers\Admin\AuthorController;
 use App\Http\Controllers\Admin\BookController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\CourseLessonController;
 use App\Http\Controllers\Admin\CourseSectionController;
 use App\Http\Controllers\Admin\CustomPageController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\FreeCampaignController;
 use App\Http\Controllers\Admin\LeaderboardController;
 use App\Http\Controllers\Admin\MentorController;
 use App\Http\Controllers\Admin\NotificationBroadcastController;
@@ -55,6 +57,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::resource('plans', PlanController::class)->except(['show']);
 
+        Route::resource('coupons', CouponController::class)->except(['show']);
+        Route::resource('free-campaigns', FreeCampaignController::class)->except(['show']);
+
         Route::resource('ai-providers', AiProviderController::class)->except(['show']);
         Route::post('ai-providers/{aiProvider}/test', [AiProviderController::class, 'test'])->name('ai-providers.test');
 
@@ -63,6 +68,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('students/{student}/toggle-status', [StudentController::class, 'toggleStatus'])->name('students.toggle-status');
         Route::post('students/{student}/wallet-adjust', [StudentController::class, 'adjustWallet'])->name('students.wallet-adjust');
         Route::post('students/{student}/assign-subscription', [StudentController::class, 'assignSubscription'])->name('students.assign-subscription');
+        Route::post('students/{student}/grant-access', [StudentController::class, 'grantAccess'])->name('students.grant-access');
 
         Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
         Route::post('orders/{order}/approve', [OrderController::class, 'approve'])->name('orders.approve');

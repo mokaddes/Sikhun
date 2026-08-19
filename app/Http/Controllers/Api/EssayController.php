@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Requests\Student\SubmitEssayRequest;
 use App\Jobs\GradeEssay;
 use App\Models\EssaySubmission;
+use App\Services\AccessGrantService;
 use Illuminate\Http\JsonResponse;
 
 class EssayController extends BaseApiController
@@ -26,7 +27,10 @@ class EssayController extends BaseApiController
         ]);
 
         GradeEssay::dispatch($submission->id);
-        $student->increment('ai_trial_minutes_used');
+
+        if (! app(AccessGrantService::class)->hasActiveAccess($student)) {
+            $student->increment('ai_trial_minutes_used');
+        }
 
         return $this->success($submission, 'Grading started', 201);
     }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Public\PageController;
+use App\Http\Controllers\Student\AccessController;
 use App\Http\Controllers\Student\AiChatController;
 use App\Http\Controllers\Student\Auth\StudentAuthController;
 use App\Http\Controllers\Student\BookshelfController;
@@ -160,6 +161,10 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::put('/profile/theme', [ProfileController::class, 'updateTheme'])->name('profile.theme');
     Route::put('/profile/leaderboard-opt-out', [ProfileController::class, 'updateLeaderboardOptOut'])->name('profile.leaderboard-opt-out');
     Route::put('/profile/notification-preferences', [ProfileController::class, 'updateNotificationPreferences'])->name('profile.notification-preferences');
+
+    // Coupons / free-access status
+    Route::get('/access', [AccessController::class, 'index'])->name('access.index');
+    Route::post('/access/redeem', [AccessController::class, 'redeem'])->name('access.redeem');
 });
 
 /*

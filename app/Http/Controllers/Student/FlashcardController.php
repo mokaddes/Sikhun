@@ -53,7 +53,9 @@ class FlashcardController extends Controller
 
         \App\Jobs\GenerateFlashcards::dispatch($set->id, $sourceText, (int) $request->count);
 
-        $student->increment('ai_trial_minutes_used');
+        if (! app(\App\Services\AccessGrantService::class)->hasActiveAccess($student)) {
+            $student->increment('ai_trial_minutes_used');
+        }
 
         return redirect()->route('flashcards.show', $set);
     }

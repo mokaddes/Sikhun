@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AccessGrantService;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -53,6 +54,10 @@ class Student extends Authenticatable
 
     public function hasActiveAiAccess(): bool
     {
+        if (app(AccessGrantService::class)->hasActiveAccess($this)) {
+            return true;
+        }
+
         $sub = $this->activeSubscription;
         if ($sub && $sub->expires_at->isFuture()) {
             return true;

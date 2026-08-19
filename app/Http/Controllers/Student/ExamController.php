@@ -105,9 +105,14 @@ class ExamController extends Controller
         ]);
 
         $student = auth('web')->user();
-        $student->increment('ai_trial_minutes_used');
-        if ($sub = $student->activeSubscription) {
-            $sub->decrement('ai_exam_count_remaining');
+
+        // Free campaign/coupon access is unlimited — never consume paid
+        // quota while a grant is active.
+        if (! app(\App\Services\AccessGrantService::class)->hasActiveAccess($student)) {
+            $student->increment('ai_trial_minutes_used');
+            if ($sub = $student->activeSubscription) {
+                $sub->decrement('ai_exam_count_remaining');
+            }
         }
 
         if ($exam->mode === 'exam' && $exam->total >= 10) {

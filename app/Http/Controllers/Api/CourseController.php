@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\CourseLesson;
 use App\Models\CourseSection;
 use App\Models\LessonProgress;
+use App\Services\AccessGrantService;
 use App\Services\CertificateService;
 use App\Services\Payment\SslcommerzService;
 use App\Services\PurchaseService;
@@ -24,7 +25,7 @@ class CourseController extends BaseApiController
         return $this->success($courses);
     }
 
-    public function show(Course $course): JsonResponse
+    public function show(Course $course, AccessGrantService $grants): JsonResponse
     {
         abort_unless($course->is_active, 404);
         $student = auth('sanctum')->user();
@@ -34,10 +35,11 @@ class CourseController extends BaseApiController
             'course' => $course->load(['mentor', 'category', 'sections.lessons']),
             'enrollment' => $enrollment,
             'is_enrolled' => (bool) $enrollment,
+            'has_access' => $grants->hasActiveAccess($student),
         ]);
     }
 
-    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, SslcommerzService $sslcommerz): JsonResponse
+    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, SslcommerzService $sslcommerz, AccessGrantService $grants): JsonResponse
     {
         $student = auth('sanctum')->user();
 
@@ -45,7 +47,7 @@ class CourseController extends BaseApiController
             return $this->error('Already enrolled.', [], 422);
         }
 
-        if ((float) $course->price === 0.0) {
+        if ($grants->hasActiveAccess($student) || (float) $course->price === 0.0) {
             $enrollment = $student->courseEnrollments()->create(['course_id' => $course->id, 'progress_percentage' => 0]);
 
             return $this->success($enrollment, 'Enrolled', 201);
@@ -60,11 +62,11 @@ class CourseController extends BaseApiController
         return $this->success($result);
     }
 
-    public function lesson(Course $course, CourseSection $section, CourseLesson $lesson): JsonResponse
+    public function lesson(Course $course, CourseSection $section, CourseLesson $lesson, AccessGrantService $grants): JsonResponse
     {
         $student = auth('sanctum')->user();
         $enrollment = $student->courseEnrollments()->where('course_id', $course->id)->first();
-        abort_unless($enrollment || $lesson->is_free_preview, 403);
+        abort_unless($enrollment || $lesson->is_free_preview || $grants->hasActiveAccess($student), 403);
 
         $progress = $enrollment ? LessonProgress::where('student_id', $student->id)->where('course_lesson_id', $lesson->id)->first() : null;
 

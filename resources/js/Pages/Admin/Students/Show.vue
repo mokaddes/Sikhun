@@ -3,7 +3,7 @@ import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import { useI18n } from '@/i18n';
 
-const props = defineProps({ student: Object, plans: Array });
+const props = defineProps({ student: Object, plans: Array, access: Object });
 const { t } = useI18n();
 
 const walletForm = useForm({ type: 'credit', amount: '', notes: '' });
@@ -17,6 +17,14 @@ function submitWallet() {
 const subForm = useForm({ plan_id: props.plans[0]?.id ?? null, months: 1 });
 function submitSubscription() {
     subForm.post(`/admin/students/${props.student.id}/assign-subscription`, { preserveScroll: true });
+}
+
+const accessForm = useForm({ name: '', notes: '', duration_days: 30 });
+function submitAccess() {
+    accessForm.post(`/admin/students/${props.student.id}/grant-access`, {
+        preserveScroll: true,
+        onSuccess: () => accessForm.reset(),
+    });
 }
 </script>
 
@@ -79,6 +87,39 @@ function submitSubscription() {
                         {{ t('admin.students.assign_subscription') }}
                     </button>
                 </form>
+            </div>
+
+            <!-- Free Access Grant -->
+            <div class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 md:col-span-2">
+                <h2 class="font-heading text-lg font-bold mb-4">Free Access (Coupon / Campaign)</h2>
+
+                <div v-if="access?.has_access" class="mb-4 text-sm space-y-1">
+                    <div v-if="access.campaign" class="flex items-center gap-2 text-[var(--secondary)]">
+                        <span class="px-2 py-0.5 rounded text-xs font-medium bg-[var(--secondary)]/15">Campaign</span>
+                        {{ access.campaign.title }} — until {{ new Date(access.campaign.ends_at).toLocaleDateString() }}
+                    </div>
+                    <div v-if="access.coupon" class="flex items-center gap-2 text-[var(--primary)]">
+                        <span class="px-2 py-0.5 rounded text-xs font-medium bg-[var(--primary)]/15">Coupon</span>
+                        {{ access.coupon.name }} — until {{ access.coupon.ends_at ? new Date(access.coupon.ends_at).toLocaleDateString() : 'indefinitely' }}
+                    </div>
+                    <p class="text-[var(--text-muted)]">Full access to books, courses and AI is unlocked.</p>
+                </div>
+                <p v-else class="mb-4 text-sm text-[var(--text-muted)]">No active coupon or free campaign access.</p>
+
+                <form @submit.prevent="submitAccess" class="grid md:grid-cols-3 gap-3 items-end">
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">Label (optional)</label>
+                        <input v-model="accessForm.name" type="text" placeholder="e.g. Support grant" class="w-full px-3 py-2 rounded-lg bg-[var(--surface2)] border border-[var(--border)] text-sm" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">Duration (days)</label>
+                        <input v-model="accessForm.duration_days" type="number" min="1" max="3650" class="w-full px-3 py-2 rounded-lg bg-[var(--surface2)] border border-[var(--border)] text-sm" />
+                    </div>
+                    <button type="submit" :disabled="accessForm.processing" class="px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-semibold disabled:opacity-60">
+                        {{ accessForm.processing ? t('common.saving') : 'Grant Full Access' }}
+                    </button>
+                </form>
+                <input v-model="accessForm.notes" type="text" placeholder="Notes (optional)" class="mt-3 w-full px-3 py-2 rounded-lg bg-[var(--surface2)] border border-[var(--border)] text-sm" />
             </div>
         </div>
     </AdminLayout>

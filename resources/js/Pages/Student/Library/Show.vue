@@ -40,8 +40,11 @@ function purchase(method) {
                 </div>
 
                 <!-- Access-type-driven CTA (REQ-LIB-06) -->
-                <div v-if="['free', 'owned', 'subscription_gift'].includes(accessType)" class="flex items-center gap-3">
-                    <span v-if="accessType !== 'free'" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--secondary)]/15 text-[var(--secondary)]">
+                <div v-if="['free', 'granted', 'owned', 'subscription_gift'].includes(accessType)" class="flex items-center gap-3">
+                    <span v-if="accessType === 'granted'" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--primary)]/15 text-[var(--primary)]">
+                        {{ t('book_show.coupon_access_badge') }}
+                    </span>
+                    <span v-else-if="accessType !== 'free'" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--secondary)]/15 text-[var(--secondary)]">
                         {{ accessType === 'owned' ? t('book_show.already_owned') : t('book_show.subscription_gift_badge') }}
                     </span>
                     <Link :href="`/library/${book.id}/read`" class="px-6 py-3 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold">

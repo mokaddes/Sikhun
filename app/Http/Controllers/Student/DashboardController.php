@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\ExamSession;
 use App\Models\ReadingSession;
+use App\Services\AccessGrantService;
 use App\Services\LeaderboardService;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index(LeaderboardService $leaderboard): Response
+    public function index(LeaderboardService $leaderboard, AccessGrantService $grants): Response
     {
         $student = auth('web')->user();
 
@@ -45,6 +46,7 @@ class DashboardController extends Controller
             'leaderboardTop' => array_slice($leaderboard->getTopStudents('weekly', ['type' => $student->type]), 0, 3),
             'myRank' => $leaderboard->getStudentRank($student, 'weekly', ['type' => $student->type]),
             'activeSubscription' => $student->activeSubscription()->with('plan')->first(),
+            'access' => $grants->accessSummary($student),
         ]);
     }
 }

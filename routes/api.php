@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AiChatController;
+use App\Http\Controllers\Api\AccessController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\EssayController;
@@ -65,6 +66,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     Route::get('referrals', [ReferralController::class, 'index']);
     Route::get('referrals/stats', [ReferralController::class, 'stats']);
+
+    Route::get('access/status', [AccessController::class, 'status']);
+    Route::post('access/redeem', [AccessController::class, 'redeem']);
 
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);

@@ -208,7 +208,14 @@
             "test_connection": "Test Connection",
             "testing": "Testing...",
             "test_success": "Connection successful",
-            "test_failed": "Connection failed"
+            "test_failed": "Connection failed",
+            "custom_endpoint": "Custom Endpoint URL (full chat/completions)",
+            "custom_endpoint_hint": "Paste the complete URL the request will be sent to — nothing is appended to it.",
+            "custom_headers": "Custom Request Headers",
+            "custom_headers_hint": "Optional. Add any headers your endpoint needs (custom API key name, authorization scheme, etc). If no Authorization header is set, the API Key above is sent as Bearer automatically.",
+            "add_header": "Add header",
+            "no_headers": "No custom headers — only the standard Bearer token is sent.",
+            "header_count": "custom header(s)"
         },
         "students": {
             "title": "Students",
@@ -242,7 +249,14 @@
             "site_name": "Site Name",
             "site_tagline": "Tagline",
             "site_email": "Contact Email",
-            "site_phone": "Contact Phone"
+            "site_phone": "Contact Phone",
+            "branding_section": "Branding",
+            "site_logo": "Site Logo",
+            "site_favicon": "Favicon",
+            "seo_image": "Social Share Image (OG Image)",
+            "seo_image_hint": "Used when a page has no image of its own (recommended 1200x630px).",
+            "no_image": "No image",
+            "remove": "Remove"
         },
         "pages": {
             "title": "Custom Pages",

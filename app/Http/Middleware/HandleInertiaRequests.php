@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
+use App\Services\SiteSettingService;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -25,6 +26,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'locale' => $locale,
             'translations' => $this->loadTranslations($locale),
+            'site' => $this->siteSettings(),
             'auth' => [
                 'student' => $student ? [
                     'id' => $student->id,
@@ -47,6 +49,30 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
         ];
+    }
+
+    /**
+     * Dynamic branding + SEO assets from Site Settings, shared on every page
+     * so all three layouts can render the admin-uploaded logo/favicon and
+     * SeoHead can fall back to the configured social image.
+     */
+    private function siteSettings(): array
+    {
+        $settings = app(SiteSettingService::class);
+        $all = $settings->all();
+
+        return [
+            'name' => $all['site_name'] ?? 'Sikhun.com',
+            'tagline' => $all['site_tagline'] ?? null,
+            'logo_url' => $this->publicAsset($all['site_logo'] ?? null),
+            'favicon_url' => $this->publicAsset($all['site_favicon'] ?? null),
+            'seo_image_url' => $this->publicAsset($all['seo_image'] ?? null),
+        ];
+    }
+
+    private function publicAsset(?string $path): ?string
+    {
+        return $path ? asset('storage/'.$path) : null;
     }
 
     /**

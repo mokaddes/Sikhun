@@ -12,10 +12,13 @@ class AiProviderRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'in:openai,gemini,claude,groq,deepseek,ollama,vllm,huggingface'],
+            'type' => ['required', 'in:openai,gemini,claude,groq,deepseek,ollama,vllm,huggingface,custom'],
             'api_key' => ['nullable', 'string'],
             'model_name' => ['required', 'string', 'max:200'],
             'api_endpoint' => ['nullable', 'string', 'max:500'],
+            'custom_headers' => ['nullable', 'array'],
+            'custom_headers.*.name' => ['nullable', 'string', 'max:100'],
+            'custom_headers.*.value' => ['nullable', 'string', 'max:500'],
             'is_active' => ['boolean'],
             'max_tokens' => ['required', 'integer', 'min:1'],
             'temperature' => ['required', 'numeric', 'min:0', 'max:2'],

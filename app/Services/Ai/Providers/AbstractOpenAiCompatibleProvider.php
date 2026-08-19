@@ -17,6 +17,16 @@ abstract class AbstractOpenAiCompatibleProvider implements AiProviderContract
 
     abstract protected function baseUrl(): string;
 
+    /**
+     * The full chat/completions URL. Defaults to the standard OpenAI-style
+     * base + '/chat/completions'; a custom provider may override this to
+     * return its complete endpoint when the admin pastes a full URL.
+     */
+    protected function chatEndpoint(): string
+    {
+        return $this->baseUrl().'/chat/completions';
+    }
+
     protected function headers(): array
     {
         return ['Authorization' => 'Bearer '.$this->provider->api_key];
@@ -26,7 +36,7 @@ abstract class AbstractOpenAiCompatibleProvider implements AiProviderContract
     {
         $response = Http::withHeaders($this->headers())
             ->timeout(60)
-            ->post($this->baseUrl().'/chat/completions', [
+            ->post($this->chatEndpoint(), [
                 'model' => $this->provider->model_name,
                 'messages' => $messages,
                 'max_tokens' => $options['max_tokens'] ?? $this->provider->max_tokens,
@@ -45,7 +55,7 @@ abstract class AbstractOpenAiCompatibleProvider implements AiProviderContract
         $response = Http::withHeaders($this->headers())
             ->withOptions(['stream' => true])
             ->timeout(90)
-            ->post($this->baseUrl().'/chat/completions', [
+            ->post($this->chatEndpoint(), [
                 'model' => $this->provider->model_name,
                 'messages' => $messages,
                 'max_tokens' => $options['max_tokens'] ?? $this->provider->max_tokens,

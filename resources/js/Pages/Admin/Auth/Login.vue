@@ -1,5 +1,6 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
+import BrandLogo from '@/Components/BrandLogo.vue';
 
 const form = useForm({ email: '', password: '' });
 
@@ -12,9 +13,8 @@ function submit() {
     <Head title="Admin Login" />
     <div class="dark min-h-screen flex items-center justify-center bg-[#09090f] text-[#e8e8f0] px-5">
         <div class="w-full max-w-sm">
-            <div class="flex items-center gap-2 justify-center mb-8 font-heading font-extrabold text-xl">
-                <span class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#6c63ff] to-[#00d4aa] flex items-center justify-center text-white text-sm">শি</span>
-                Sikhun <span class="text-sm font-normal text-[#7a7a9a]">Admin</span>
+            <div class="flex items-center gap-2 justify-center mb-8">
+                <BrandLogo href="/admin" size="text-xl" suffix="Admin" suffix-class="text-sm font-normal text-[#7a7a9a]" img-class="h-9 w-auto max-w-[180px]" />
             </div>
 
             <form @submit.prevent="submit" class="space-y-5 bg-[#111118] border border-[#2a2a38] rounded-2xl p-8">

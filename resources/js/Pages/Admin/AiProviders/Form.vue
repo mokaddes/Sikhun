@@ -23,6 +23,7 @@ const form = useForm({
     api_key: '',
     model_name: props.provider?.model_name ?? '',
     api_endpoint: props.provider?.api_endpoint ?? '',
+    custom_headers: props.provider?.custom_headers ?? [],
     is_active: props.provider?.is_active ?? true,
     max_tokens: props.provider?.max_tokens ?? 2000,
     temperature: props.provider?.temperature ?? 0.7,
@@ -30,7 +31,17 @@ const form = useForm({
     default_use_cases: props.provider?.default_use_case_list ?? [],
 });
 
-const types = ['openai', 'gemini', 'claude', 'groq', 'deepseek', 'ollama', 'vllm', 'huggingface'];
+const types = ['openai', 'gemini', 'claude', 'groq', 'deepseek', 'ollama', 'vllm', 'huggingface', 'custom'];
+
+const isCustom = () => form.type === 'custom';
+
+function addHeader() {
+    form.custom_headers.push({ name: '', value: '' });
+}
+
+function removeHeader(index) {
+    form.custom_headers.splice(index, 1);
+}
 
 function toggleAll() {
     form.use_cases = form.use_cases.length === useCaseOptions.length ? [] : useCaseOptions.map((u) => u.value);
@@ -78,6 +89,33 @@ function submit() {
             <div v-if="form.type === 'ollama' || form.type === 'vllm'">
                 <label class="block text-sm font-medium mb-1.5">Local Endpoint URL</label>
                 <input v-model="form.api_endpoint" type="text" placeholder="http://localhost:11434" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+            </div>
+
+            <!-- Custom provider: full chat/completions URL + custom request headers -->
+            <div v-if="isCustom()" class="space-y-5 rounded-lg border border-[var(--primary)]/30 bg-[var(--primary)]/5 p-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">{{ t('admin.ai_providers.custom_endpoint') }}</label>
+                    <input v-model="form.api_endpoint" type="text" required placeholder="https://your-api.example.com/v1/chat/completions"
+                        class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+                    <p class="text-xs text-[var(--text-muted)] mt-1">{{ t('admin.ai_providers.custom_endpoint_hint') }}</p>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium">{{ t('admin.ai_providers.custom_headers') }}</label>
+                        <button type="button" @click="addHeader" class="text-xs text-[var(--primary)] hover:underline">+ {{ t('admin.ai_providers.add_header') }}</button>
+                    </div>
+                    <p class="text-xs text-[var(--text-muted)] mb-3">{{ t('admin.ai_providers.custom_headers_hint') }}</p>
+
+                    <div class="space-y-2">
+                        <div v-for="(h, i) in form.custom_headers" :key="i" class="flex items-center gap-2">
+                            <input v-model="h.name" type="text" placeholder="Header name (e.g. x-api-key)" class="flex-1 px-3 py-2 rounded-lg bg-[var(--surface2)] border border-[var(--border)] text-sm" />
+                            <input v-model="h.value" type="text" placeholder="Value" class="flex-1 px-3 py-2 rounded-lg bg-[var(--surface2)] border border-[var(--border)] text-sm" />
+                            <button type="button" @click="removeHeader(i)" class="px-2 text-[var(--accent)] hover:underline text-sm">✕</button>
+                        </div>
+                        <p v-if="!form.custom_headers.length" class="text-xs text-[var(--text-muted)] italic">{{ t('admin.ai_providers.no_headers') }}</p>
+                    </div>
+                </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>

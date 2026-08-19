@@ -23,8 +23,19 @@ class SiteSettingService
         });
     }
 
+    /**
+     * All settings in a single cached array — used where several keys are
+     * read on the same request (shared frontend props, SEO). A single
+     * `SiteSetting::all()` avoids N per-key cache hits + DB lookups.
+     */
+    public function all(): array
+    {
+        return Cache::remember('site_settings:all', 3600, fn () => SiteSetting::pluck('value', 'key')->all());
+    }
+
     public function forget(string $key): void
     {
         Cache::forget("site_setting:{$key}");
+        Cache::forget('site_settings:all');
     }
 }

@@ -4,6 +4,7 @@ import { Link, usePage, router } from '@inertiajs/vue3';
 import { useI18n } from '@/i18n';
 import LanguageSwitcher from '@/Components/UI/LanguageSwitcher.vue';
 import FlashBanner from '@/Components/UI/FlashBanner.vue';
+import BrandLogo from '@/Components/BrandLogo.vue';
 
 const { t } = useI18n();
 const admin = usePage().props.auth?.admin;
@@ -46,9 +47,8 @@ function logout() {
                    transform transition-transform duration-200 md:translate-x-0"
             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
         >
-            <div class="h-16 flex items-center gap-2 px-5 border-b border-[#2a2a38] font-heading font-extrabold text-lg sticky top-0 bg-[#111118] z-10">
-                <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6c63ff] to-[#00d4aa] flex items-center justify-center text-white text-sm">শি</span>
-                Sikhun <span class="text-xs font-normal text-[#7a7a9a]">Admin</span>
+            <div class="h-16 flex items-center gap-2 px-5 border-b border-[#2a2a38] sticky top-0 bg-[#111118] z-10">
+                <BrandLogo href="/admin" size="text-lg" suffix="Admin" suffix-class="text-xs font-normal text-[#7a7a9a]" img-class="h-8 w-auto max-w-[150px]" />
             </div>
 
             <nav class="p-3 space-y-1 pb-24">

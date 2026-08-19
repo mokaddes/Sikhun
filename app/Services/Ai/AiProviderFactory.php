@@ -5,6 +5,7 @@ namespace App\Services\Ai;
 use App\Contracts\AiProviderContract;
 use App\Models\AiProvider;
 use App\Services\Ai\Providers\ClaudeProvider;
+use App\Services\Ai\Providers\CustomProvider;
 use App\Services\Ai\Providers\DeepSeekProvider;
 use App\Services\Ai\Providers\GeminiProvider;
 use App\Services\Ai\Providers\GroqProvider;
@@ -56,6 +57,7 @@ class AiProviderFactory
             'ollama' => new OllamaProvider($provider),
             'vllm' => new VllmProvider($provider),
             'huggingface' => new HuggingFaceProvider($provider),
+            'custom' => new CustomProvider($provider),
             default => throw new \InvalidArgumentException("Unknown AI provider type: {$provider->type}"),
         };
     }

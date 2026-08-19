@@ -31,6 +31,7 @@ class AiProviderController extends Controller
     {
         $data = $request->safe()->except(['use_cases', 'default_use_cases']);
         $data['is_active'] = $request->boolean('is_active');
+        $data['custom_headers'] = $this->cleanHeaders($request->custom_headers ?? []);
 
         DB::transaction(function () use ($data, $request) {
             $provider = AiProvider::create($data);
@@ -51,6 +52,7 @@ class AiProviderController extends Controller
     {
         $data = $request->safe()->except(['use_cases', 'default_use_cases']);
         $data['is_active'] = $request->boolean('is_active');
+        $data['custom_headers'] = $this->cleanHeaders($request->custom_headers ?? []);
 
         // Don't overwrite an existing key with a blank field (form left empty on purpose)
         if (empty($data['api_key'])) {
@@ -75,6 +77,15 @@ class AiProviderController extends Controller
     public function test(AiProvider $aiProvider, AiConnectionTester $tester): JsonResponse
     {
         return response()->json($tester->test($aiProvider));
+    }
+
+    /**
+     * Drops empty header rows from the form (admin-added-but-not-filled)
+     * and re-indexes so the stored JSON stays a clean list of {name, value}.
+     */
+    private function cleanHeaders(array $headers): array
+    {
+        return array_values(array_filter($headers, fn ($h) => trim((string) ($h['name'] ?? '')) !== ''));
     }
 
     /**

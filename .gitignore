@@ -18,6 +18,7 @@
 .env.backup
 .env.production
 .phpunit.result.cache
+/ssh/
 Homestead.json
 Homestead.yaml
 npm-debug.log

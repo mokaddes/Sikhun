@@ -38,6 +38,10 @@ async function testConnection(provider) {
                     <div>
                         <div class="font-semibold">{{ p.name }}</div>
                         <div class="text-xs text-[var(--text-muted)]">{{ p.type }} · {{ p.model_name }}</div>
+                        <div v-if="p.type === 'custom' && p.api_endpoint" class="text-xs text-[var(--text-muted)] mt-0.5 break-all">{{ p.api_endpoint }}</div>
+                        <div v-if="p.type === 'custom' && p.custom_headers?.length" class="text-xs text-[var(--text-muted)] mt-0.5">
+                            {{ p.custom_headers.length }} {{ t('admin.ai_providers.header_count') }}
+                        </div>
                     </div>
                     <div class="flex items-center gap-3">
                         <span class="px-2 py-0.5 rounded text-xs font-medium" :class="p.is_active ? 'bg-[var(--secondary)]/15 text-[var(--secondary)]' : 'bg-[var(--text-muted)]/15 text-[var(--text-muted)]'">

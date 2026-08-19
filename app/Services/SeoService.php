@@ -14,21 +14,33 @@ use Illuminate\Support\Str;
  */
 class SeoService
 {
-    private string $siteName = 'Sikhun.com';
+    private string $siteName;
 
     private string $siteUrl;
 
-    public function __construct()
+    public function __construct(private readonly SiteSettingService $settings)
     {
+        $this->siteName = $settings->get('site_name', 'Sikhun.com') ?: 'Sikhun.com';
         $this->siteUrl = rtrim(config('app.url'), '/');
+    }
+
+    /**
+     * The admin-configured social share image, falling back to the bundled
+     * default until one is uploaded in Admin → Settings.
+     */
+    public function socialImage(string $fallback = 'images/og-default.png'): string
+    {
+        $seoImage = $this->settings->get('seo_image');
+
+        return $seoImage ? asset('storage/'.$seoImage) : asset($fallback);
     }
 
     public function forHome(): array
     {
         return [
-            'title' => 'Sikhun.com — বাংলাদেশের প্রথম AI-চালিত শিক্ষা প্ল্যাটফর্ম',
+            'title' => "{$this->siteName} — বাংলাদেশের প্রথম AI-চালিত শিক্ষা প্ল্যাটফর্ম",
             'description' => 'ডিজিটালি বই পড়ুন, AI-এর সাথে চ্যাট করুন, পরীক্ষা দিন এবং ফ্ল্যাশকার্ড তৈরি করুন। HSC, SSC, বিশ্ববিদ্যালয় ও চাকরির প্রস্তুতির জন্য।',
-            'og_image' => asset('images/og-default.png'),
+            'og_image' => $this->socialImage(),
             'canonical' => $this->siteUrl.'/',
             'keywords' => 'sikhun, শিখুন, HSC, SSC, Bangladesh education, AI learning, digital books',
             'json_ld' => [
@@ -48,7 +60,7 @@ class SeoService
         return [
             'title' => "{$book->title} — {$this->levelLabel($book->level)} | {$this->siteName}",
             'description' => Str::limit(strip_tags($book->description ?? ''), 155),
-            'og_image' => $book->cover_image_url ?? asset('images/og-default.png'),
+            'og_image' => $book->cover_image_url ?? $this->socialImage(),
             'canonical' => $this->siteUrl.'/library/'.$book->slug,
             'keywords' => implode(', ', array_filter([$book->title, $book->subject, $book->level, 'বই', 'Sikhun'])),
             'json_ld' => array_filter([
@@ -75,7 +87,7 @@ class SeoService
         return [
             'title' => "{$course->title} | {$this->siteName}",
             'description' => Str::limit(strip_tags($course->description ?? ''), 155),
-            'og_image' => $course->cover_image_url ?? asset('images/og-default.png'),
+            'og_image' => $course->cover_image_url ?? $this->socialImage(),
             'canonical' => $this->siteUrl.'/courses/'.$course->slug,
             'keywords' => implode(', ', [$course->title, 'কোর্স', 'শিখুন', 'Sikhun']),
             'json_ld' => [

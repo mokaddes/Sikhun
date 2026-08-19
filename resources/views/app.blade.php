@@ -19,7 +19,15 @@
         })();
     </script>
 
-    <title inertia>{{ config('app.name', 'Sikhun.com') }}</title>
+    <title inertia>{{ app(\App\Services\SiteSettingService::class)->get('site_name', config('app.name', 'Sikhun.com')) }}</title>
+
+    @php
+        $favicon = app(\App\Services\SiteSettingService::class)->get('site_favicon');
+    @endphp
+    @if($favicon)
+        <link rel="icon" href="{{ asset('storage/'.$favicon) }}">
+        <link rel="apple-touch-icon" href="{{ asset('storage/'.$favicon) }}">
+    @endif
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
 

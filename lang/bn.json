@@ -208,7 +208,14 @@
             "test_connection": "Test Connection",
             "testing": "Testing...",
             "test_success": "Connection successful",
-            "test_failed": "Connection failed"
+            "test_failed": "Connection failed",
+            "custom_endpoint": "কাস্টম এন্ডপয়েন্ট URL (সম্পূর্ণ chat/completions)",
+            "custom_endpoint_hint": "রিকোয়েস্ট যে সম্পূর্ণ URL-এ পাঠানো হবে সেটি পেস্ট করুন — এর সাথে আর কিছু যুক্ত হবে না।",
+            "custom_headers": "কাস্টম রিকোয়েস্ট হেডার",
+            "custom_headers_hint": "ঐচ্ছিক। আপনার এন্ডপয়েন্টের জন্য প্রয়োজনীয় যেকোনো হেডার যোগ করুন (কাস্টম API কী নাম, অথরাইজেশন স্কিম ইত্যাদি)। Authorization হেডার না দিলে উপরের API Key স্বয়ংক্রিয়ভাবে Bearer হিসেবে পাঠানো হয়।",
+            "add_header": "হেডার যোগ করুন",
+            "no_headers": "কোনো কাস্টম হেডার নেই — শুধু স্ট্যান্ডার্ড Bearer টোকেন পাঠানো হয়।",
+            "header_count": "কাস্টম হেডার"
         },
         "students": {
             "title": "Students",
@@ -242,7 +249,14 @@
             "site_name": "Site Name",
             "site_tagline": "Tagline",
             "site_email": "Contact Email",
-            "site_phone": "Contact Phone"
+            "site_phone": "Contact Phone",
+            "branding_section": "ব্র্যান্ডিং",
+            "site_logo": "সাইট লোগো",
+            "site_favicon": "ফেভিকন",
+            "seo_image": "সোশ্যাল শেয়ার ইমেজ (OG Image)",
+            "seo_image_hint": "যখন পেজের নিজস্ব ছবি থাকে না তখন ব্যবহৃত হয় (সুপারিশকৃত ১২০০x৬৩০ পিক্সেল)।",
+            "no_image": "কোনো ছবি নেই",
+            "remove": "মুছে ফেলুন"
         },
         "pages": {
             "title": "Custom Pages",

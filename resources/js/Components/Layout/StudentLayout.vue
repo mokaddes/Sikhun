@@ -8,6 +8,7 @@ import LanguageSwitcher from '@/Components/UI/LanguageSwitcher.vue';
 import NotificationBell from '@/Components/UI/NotificationBell.vue';
 import FlashBanner from '@/Components/UI/FlashBanner.vue';
 import SupportWidget from '@/Components/Support/SupportWidget.vue';
+import BrandLogo from '@/Components/BrandLogo.vue';
 
 const theme = useThemeStore();
 const { t } = useI18n();
@@ -45,9 +46,8 @@ function logout() {
                    transform transition-transform duration-200 md:translate-x-0"
             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
         >
-            <div class="h-16 flex items-center gap-2 px-5 border-b border-[var(--border)] font-heading font-extrabold text-lg">
-                <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] flex items-center justify-center text-white text-sm">শি</span>
-                Sikhun<span class="text-[var(--primary)]">.com</span>
+            <div class="h-16 flex items-center gap-2 px-5 border-b border-[var(--border)]">
+                <BrandLogo href="/dashboard" size="text-lg" />
             </div>
 
             <nav class="p-3 space-y-1">

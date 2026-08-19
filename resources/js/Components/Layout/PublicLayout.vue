@@ -5,20 +5,19 @@ import { useI18n } from '@/i18n';
 import ThemeToggle from '@/Components/UI/ThemeToggle.vue';
 import LanguageSwitcher from '@/Components/UI/LanguageSwitcher.vue';
 import SupportWidget from '@/Components/Support/SupportWidget.vue';
+import BrandLogo from '@/Components/BrandLogo.vue';
 
 const { t } = useI18n();
 const mobileOpen = ref(false);
 const student = usePage().props.auth?.student;
+const site = usePage().props.site;
 </script>
 
 <template>
     <div class="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text)]">
         <header class="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur">
             <div class="max-w-7xl mx-auto px-5 h-16 flex items-center justify-between">
-                <Link href="/" class="flex items-center gap-2 font-heading text-xl font-extrabold tracking-tight">
-                    <span class="w-8 h-8 rounded-lg bg-[var(--primary)] flex items-center justify-center text-white text-sm">শি</span>
-                    Sikhun<span class="text-[var(--primary)]">.com</span>
-                </Link>
+                <BrandLogo href="/" />
 
                 <nav class="hidden md:flex items-center gap-7 text-sm font-medium text-[var(--text-muted)]">
                     <Link href="/courses" class="hover:text-[var(--text)] transition-colors">{{ t('courses_page.title') }}</Link>
@@ -66,10 +65,7 @@ const student = usePage().props.auth?.student;
         <footer class="border-t border-[var(--border)] bg-[var(--surface2)] mt-8">
             <div class="max-w-7xl mx-auto px-5 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
                 <div class="col-span-2 md:col-span-1">
-                    <div class="flex items-center gap-2 font-heading text-lg font-extrabold mb-2">
-                        <span class="w-7 h-7 rounded-lg bg-[var(--primary)] flex items-center justify-center text-white text-xs">শি</span>
-                        Sikhun.com
-                    </div>
+                    <BrandLogo href="/" compact size="text-lg" />
                     <p class="text-[var(--text-muted)]">{{ t('footer.tagline') }}</p>
                 </div>
                 <div>
@@ -98,7 +94,7 @@ const student = usePage().props.auth?.student;
                 </div>
             </div>
             <div class="border-t border-[var(--border)] py-5 text-center text-xs text-[var(--text-muted)]">
-                © {{ new Date().getFullYear() }} Sikhun.com — {{ t('footer.rights') }}
+                © {{ new Date().getFullYear() }} {{ site?.name || 'Sikhun.com' }} — {{ t('footer.rights') }}
             </div>
         </footer>
     </div>

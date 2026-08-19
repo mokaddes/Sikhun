@@ -28,6 +28,7 @@ class AiConnectionTester
                 'huggingface' => $this->checkBearerEndpoint($provider, 'https://huggingface.co/api/whoami-v2'),
                 'ollama' => $this->checkLocalEndpoint($provider, '/api/tags'),
                 'vllm' => $this->checkLocalEndpoint($provider, '/v1/models'),
+                'custom' => $this->checkCustom($provider),
                 default => ['success' => false, 'message' => 'Unknown provider type.'],
             };
         } catch (Throwable $e) {
@@ -97,6 +98,40 @@ class AiConnectionTester
 
         return $response->successful()
             ? ['success' => true, 'message' => 'Local endpoint reachable.']
+            : ['success' => false, 'message' => "Endpoint responded with status {$response->status()}."];
+    }
+
+    /**
+     * Custom providers expose a full chat/completions URL and any number of
+     * admin-defined request headers. A cheap GET to that URL is enough to
+     * confirm the endpoint is alive and the headers are accepted (an
+     * unauthenticated GET usually returns 401, which still proves the host
+     * is reachable — a real "works" answer needs an actual completion).
+     */
+    private function checkCustom(AiProvider $provider): array
+    {
+        $url = $provider->api_endpoint ?: '';
+
+        if (! $url) {
+            return ['success' => false, 'message' => 'No endpoint URL configured.'];
+        }
+
+        $headers = [];
+        foreach ((array) $provider->custom_headers as $header) {
+            $name = trim((string) ($header['name'] ?? ''));
+            if ($name !== '') {
+                $headers[$name] = (string) ($header['value'] ?? '');
+            }
+        }
+
+        if (! isset($headers['Authorization']) && $provider->api_key) {
+            $headers['Authorization'] = 'Bearer '.$provider->api_key;
+        }
+
+        $response = Http::withHeaders($headers)->timeout(6)->get($url);
+
+        return $response->successful()
+            ? ['success' => true, 'message' => 'Endpoint reachable.']
             : ['success' => false, 'message' => "Endpoint responded with status {$response->status()}."];
     }
 }

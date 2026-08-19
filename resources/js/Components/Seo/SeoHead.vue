@@ -1,5 +1,6 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Head, usePage } from '@inertiajs/vue3';
 import JsonLd from './JsonLd.vue';
 import { useI18n } from '@/i18n';
 
@@ -8,6 +9,12 @@ const props = defineProps({
 });
 
 const { locale } = useI18n();
+const site = usePage().props.site;
+
+// Per-page og:image wins; otherwise fall back to the admin-configured
+// social share image so every page still emits a shareable image.
+const ogImage = computed(() => props.seo.og_image || site?.seo_image_url || null);
+const siteName = computed(() => site?.name || 'Sikhun.com');
 </script>
 
 <template>
@@ -20,17 +27,17 @@ const { locale } = useI18n();
         <!-- Open Graph -->
         <meta property="og:title" :content="seo.title" />
         <meta property="og:description" :content="seo.description" />
-        <meta v-if="seo.og_image" property="og:image" :content="seo.og_image" />
+        <meta v-if="ogImage" property="og:image" :content="ogImage" />
         <meta property="og:url" :content="seo.canonical" />
         <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="Sikhun.com" />
+        <meta property="og:site_name" :content="siteName" />
         <meta property="og:locale" :content="locale === 'bn' ? 'bn_BD' : 'en_US'" />
 
         <!-- Twitter -->
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" :content="seo.title" />
         <meta name="twitter:description" :content="seo.description" />
-        <meta v-if="seo.og_image" name="twitter:image" :content="seo.og_image" />
+        <meta v-if="ogImage" name="twitter:image" :content="ogImage" />
 
         <!-- Bilingual site: point crawlers at both language versions -->
         <link rel="alternate" hreflang="bn" :href="seo.canonical" />

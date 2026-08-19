@@ -75,6 +75,7 @@ class PageController extends Controller
             'seo' => [
                 'title' => $page->localizedMetaTitle() ?: "{$page->localizedTitle()} | Sikhun.com",
                 'description' => $page->localizedMetaDescription(),
+                'og_image' => $seo->socialImage(),
                 'canonical' => url('/p/'.$page->slug),
             ],
         ];

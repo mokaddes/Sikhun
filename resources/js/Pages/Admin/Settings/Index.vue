@@ -46,7 +46,18 @@ function removeImage(field, preview) {
 }
 
 function submit() {
-    form.put('/admin/settings');
+    form.transform((data) => {
+        const clean = { ...data };
+        // Inertia serializes untouched (null) file fields as empty strings,
+        // which the server's mimes/image rules reject. Strip any field that
+        // isn't a real File so unchanged images are simply left alone.
+        ['site_logo', 'site_favicon', 'seo_image'].forEach((key) => {
+            if (!(clean[key] instanceof File)) {
+                delete clean[key];
+            }
+        });
+        return clean;
+    }).put('/admin/settings');
 }
 </script>
 

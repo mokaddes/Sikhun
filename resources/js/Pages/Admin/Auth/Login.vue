@@ -11,26 +11,25 @@ function submit() {
 
 <template>
     <Head title="Admin Login" />
-    <div class="dark min-h-screen flex items-center justify-center bg-[#09090f] text-[#e8e8f0] px-5">
-        <div class="w-full max-w-sm">
-            <div class="flex items-center gap-2 justify-center mb-8">
-                <BrandLogo href="/admin" size="text-xl" suffix="Admin" suffix-class="text-sm font-normal text-[#7a7a9a]" img-class="h-9 w-auto max-w-[180px]" />
+    <div class="dark min-h-screen flex items-center justify-center bg-[var(--bg)] text-[var(--text)] px-5 relative overflow-hidden">
+        <div class="absolute -top-40 -left-40 w-[480px] h-[480px] hero-glow"></div>
+        <div class="absolute -bottom-40 -right-40 w-[480px] h-[480px] hero-glow"></div>
+        <div class="w-full max-w-sm relative">
+            <div class="flex items-center justify-center mb-8">
+                <BrandLogo href="/admin" size="text-xl" suffix="Admin" suffix-class="text-sm font-normal text-[var(--text-muted)]" />
             </div>
 
-            <form @submit.prevent="submit" class="space-y-5 bg-[#111118] border border-[#2a2a38] rounded-2xl p-8">
+            <form @submit.prevent="submit" class="space-y-5 bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-8 shadow-[var(--shadow-lg)]">
                 <div>
-                    <label class="block text-sm font-medium mb-1.5 text-[#9a9ab8]">Email</label>
-                    <input v-model="form.email" type="email" required autofocus
-                        class="w-full px-4 py-2.5 rounded-lg bg-[#18181f] border border-[#2a2a38] text-white focus:outline-none focus:ring-2 focus:ring-[#6c63ff]" />
+                    <label class="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">Email</label>
+                    <input v-model="form.email" type="email" required autofocus class="input" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-1.5 text-[#9a9ab8]">Password</label>
-                    <input v-model="form.password" type="password" required
-                        class="w-full px-4 py-2.5 rounded-lg bg-[#18181f] border border-[#2a2a38] text-white focus:outline-none focus:ring-2 focus:ring-[#6c63ff]" />
+                    <label class="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">Password</label>
+                    <input v-model="form.password" type="password" required class="input" />
                 </div>
-                <p v-if="form.errors.email" class="text-[#ff6b6b] text-sm">{{ form.errors.email }}</p>
-                <button type="submit" :disabled="form.processing"
-                    class="w-full py-3 rounded-lg bg-[#6c63ff] hover:bg-[#5b53ee] text-white font-semibold transition-colors disabled:opacity-60">
+                <p v-if="form.errors.email" class="text-[var(--accent)] text-sm">{{ form.errors.email }}</p>
+                <button type="submit" :disabled="form.processing" class="btn btn-primary w-full py-3">
                     {{ form.processing ? 'Signing in...' : 'Sign In' }}
                 </button>
             </form>

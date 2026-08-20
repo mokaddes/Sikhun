@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SiteSetting;
+use App\Services\SiteSettingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -14,6 +14,14 @@ use Inertia\Response;
 class SiteSettingController extends Controller
 {
     private const IMAGE_KEYS = ['site_logo', 'site_favicon', 'seo_image'];
+
+    private const REQUIRED_FIELDS = [
+        'site_name',
+        'site_email',
+        'referrer_reward_amount',
+        'referee_reward_amount',
+        'max_referral_per_month',
+    ];
 
     public function edit(): Response
     {
@@ -34,14 +42,16 @@ class SiteSettingController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
+        $this->backfillRequiredFields($request);
+
         $validated = $request->validate([
             'site_name' => ['required', 'string', 'max:255'],
             'site_tagline' => ['nullable', 'string', 'max:255'],
             'site_email' => ['required', 'email'],
             'site_phone' => ['nullable', 'string', 'max:50'],
-            'site_logo' => ['nullable', 'mimes:png,jpg,jpeg,webp,svg', 'max:2048'],
-            'site_favicon' => ['nullable', 'mimes:png,jpg,jpeg,webp,svg,ico', 'max:1024'],
-            'seo_image' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:5120'],
+            'site_logo' => $request->hasFile('site_logo') ? ['nullable', 'mimes:png,jpg,jpeg,webp,svg', 'max:5120'] : ['nullable'],
+            'site_favicon' => $request->hasFile('site_favicon') ? ['nullable', 'mimes:png,jpg,jpeg,webp,svg,ico', 'max:5120'] : ['nullable'],
+            'seo_image' => $request->hasFile('seo_image') ? ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:5120'] : ['nullable'],
             'remove_site_logo' => ['nullable', 'boolean'],
             'remove_site_favicon' => ['nullable', 'boolean'],
             'remove_seo_image' => ['nullable', 'boolean'],
@@ -54,22 +64,28 @@ class SiteSettingController extends Controller
         ]);
 
         foreach ($validated as $key => $value) {
+            // An untouched image field arrives as an empty string; never let
+            // that clobber an already-stored image path.
+            if (in_array($key, self::IMAGE_KEYS) && $value === '') {
+                continue;
+            }
+
             SiteSetting::updateOrCreate(['key' => $key], ['value' => $value]);
-            Cache::forget("site_setting:{$key}");
+            app(SiteSettingService::class)->forget($key);
         }
 
         foreach (self::IMAGE_KEYS as $key) {
             if ($request->boolean('remove_'.$key)) {
                 $this->deleteStoredImage($key);
                 SiteSetting::updateOrCreate(['key' => $key], ['value' => null]);
-                Cache::forget("site_setting:{$key}");
+                app(SiteSettingService::class)->forget($key);
             }
 
             if ($request->hasFile($key)) {
                 $this->deleteStoredImage($key);
                 $path = $request->file($key)->store('site', 'public');
                 SiteSetting::updateOrCreate(['key' => $key], ['value' => $path]);
-                Cache::forget("site_setting:{$key}");
+                app(SiteSettingService::class)->forget($key);
             }
         }
 
@@ -82,6 +98,24 @@ class SiteSettingController extends Controller
 
         if ($path) {
             Storage::disk('public')->delete($path);
+        }
+    }
+
+    /**
+     * A stale frontend may submit required fields as empty strings/nulls even
+     * though a value is already stored. Backfill those from the DB so the
+     * save never fails with "required" errors for values that already exist.
+     */
+    private function backfillRequiredFields(Request $request): void
+    {
+        $current = SiteSetting::pluck('value', 'key');
+
+        foreach (self::REQUIRED_FIELDS as $key) {
+            $submitted = $request->input($key);
+
+            if (($submitted === null || $submitted === '') && !empty($current[$key])) {
+                $request->merge([$key => $current[$key]]);
+            }
         }
     }
 }

@@ -17,7 +17,7 @@ const site = usePage().props.site;
 </script>
 
 <template>
-    <Link :href="href" class="flex items-center gap-2 font-heading font-extrabold tracking-tight" :class="size">
+    <Link :href="href" class="flex items-center gap-2.5 font-heading font-extrabold tracking-tight" :class="size">
         <img
             v-if="site?.logo_url"
             :src="site.logo_url"
@@ -27,9 +27,8 @@ const site = usePage().props.site;
         />
         <template v-else>
             <span
-                :class="compact
-                    ? 'w-7 h-7 rounded-lg bg-[var(--primary)] flex items-center justify-center text-white text-xs'
-                    : 'w-8 h-8 rounded-lg bg-[var(--primary)] flex items-center justify-center text-white text-sm'"
+                class="sun-disc flex items-center justify-center text-white font-heading font-extrabold"
+                :class="compact ? 'w-7 h-7 text-[11px]' : 'w-9 h-9 text-sm'"
             >শি</span>
             <span>{{ site?.name || 'Sikhun.com' }}</span>
         </template>

@@ -57,7 +57,12 @@
         "schedules": "Study Schedule",
         "referrals": "Referrals",
         "profile": "Profile Settings",
-        "courses": "Courses"
+        "courses": "Courses",
+        "learn": "Learn",
+        "practice": "Practice",
+        "ai_studio": "AI Studio",
+        "grow": "Grow",
+        "account": "Account"
     },
     "footer": {
         "tagline": "Bangladesh's first AI-powered education platform.",

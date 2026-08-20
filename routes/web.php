@@ -97,7 +97,8 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/ai/chat', [AiChatController::class, 'index'])->name('ai-chat.index');
     Route::get('/ai/chat/{session}', [AiChatController::class, 'show'])->name('ai-chat.show');
     Route::delete('/ai/chat/{session}', [AiChatController::class, 'destroy'])->name('ai-chat.destroy');
-    Route::get('/ai/chat/{session}/stream', [AiChatController::class, 'stream'])->name('ai-chat.stream');
+    Route::patch('/ai/chat/{session}/book', [AiChatController::class, 'attachBook'])->name('ai-chat.attach-book');
+    Route::post('/ai/chat/{session}/stream', [AiChatController::class, 'stream'])->name('ai-chat.stream');
     Route::middleware('ai.access')->group(function () {
         Route::post('/ai/chat', [AiChatController::class, 'create'])->name('ai-chat.create');
     });

@@ -27,6 +27,7 @@ class HandleInertiaRequests extends Middleware
             'locale' => $locale,
             'translations' => $this->loadTranslations($locale),
             'site' => $this->siteSettings(),
+            'csrf_token' => csrf_token(),
             'auth' => [
                 'student' => $student ? [
                     'id' => $student->id,

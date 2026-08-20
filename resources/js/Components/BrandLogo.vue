@@ -17,14 +17,15 @@ const site = usePage().props.site;
 </script>
 
 <template>
-    <Link :href="href" class="flex items-center gap-2.5 font-heading font-extrabold tracking-tight" :class="size">
+    <Link :href="href" class="flex items-center gap-0.5 font-heading font-extrabold tracking-tight" :class="size">
         <img
             v-if="site?.logo_url"
             :src="site.logo_url"
             :alt="site?.name || 'logo'"
             class="object-contain"
-            :class="imgClass || (compact ? 'h-7 w-auto' : 'h-8 w-auto max-w-[180px]')"
+            :class="imgClass || (compact ? 'h-12 w-auto' : 'h-14 w-auto max-w-[180px]')"
         />
+      <span v-if="site?.logo_url">{{ site?.name || 'Sikhun.com' }}</span>
         <template v-else>
             <span
                 class="sun-disc flex items-center justify-center text-white font-heading font-extrabold"

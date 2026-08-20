@@ -2,17 +2,20 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Contracts\AiProviderContract;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\CreateChatSessionRequest;
 use App\Models\AiSession;
 use App\Models\Book;
 use App\Services\Ai\AiProviderFactory;
 use App\Services\Ai\BookChunkRetrievalService;
+use App\Services\Ai\Providers\AbstractOpenAiCompatibleProvider;
 use App\Services\AccessGrantService;
 use App\Services\BookAccessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -51,9 +54,12 @@ class AiChatController extends Controller
     public function show(AiSession $session): Response
     {
         $this->authorizeSession($session);
+        $student = auth('web')->user();
 
         return Inertia::render('Student/AiChat/Show', [
-            'session' => $session,
+            'session' => $session->load('book'),
+            'sessions' => $student->aiSessions()->latest()->get(['id', 'title', 'source_type', 'created_at']),
+            'books' => $student->books()->get(['books.id', 'books.title', 'books.cover_image']),
         ]);
     }
 
@@ -65,18 +71,46 @@ class AiChatController extends Controller
         return redirect()->route('ai-chat.index')->with('success', 'Chat deleted.');
     }
 
+    public function attachBook(Request $request, AiSession $session, BookAccessService $access): RedirectResponse
+    {
+        $this->authorizeSession($session);
+
+        $validated = $request->validate([
+            'book_id' => ['required', 'integer', 'exists:books,id'],
+        ]);
+
+        $book = Book::find($validated['book_id']);
+
+        abort_unless($access->hasAccess(auth('web')->user(), $book), 403, 'You need access to this book to attach it.');
+
+        $session->update([
+            'source_type' => 'book',
+            'source_book_id' => $book->id,
+        ]);
+
+        return back();
+    }
+
     /**
-     * SSE endpoint. EventSource only supports GET, so the not-yet-answered
-     * user message is passed as a query param — this request both records
-     * the user's turn AND streams the assistant's reply in one round trip.
+     * Streaming endpoint. POSTs the user's message (and optionally an image)
+     * as multipart form data and streams the assistant's reply back as SSE —
+     * one round trip both records the user turn AND streams the reply.
      */
     public function stream(Request $request, AiSession $session, BookChunkRetrievalService $retrieval): StreamedResponse
     {
         $this->authorizeSession($session);
         $student = auth('web')->user();
-        $userMessage = trim((string) $request->query('message', ''));
 
-        abort_if($userMessage === '', 400, 'Message cannot be empty.');
+        $userMessage = trim((string) $request->input('message', ''));
+        $image = $request->file('image');
+
+        abort_if($userMessage === '' && ! $image, 400, 'Message cannot be empty.');
+
+        $imagePath = null;
+        if ($image) {
+            $request->validate(['image' => ['nullable', 'mimes:png,jpg,jpeg,gif,webp', 'max:10240']]);
+            $imagePath = $image->store('ai-chat-images', 'public');
+        }
 
         if (! $student->hasActiveAiAccess()) {
             return response()->stream(function () {
@@ -86,13 +120,21 @@ class AiChatController extends Controller
             }, 200, ['Content-Type' => 'text/event-stream', 'X-Accel-Buffering' => 'no', 'Cache-Control' => 'no-cache']);
         }
 
-        return response()->stream(function () use ($session, $student, $userMessage, $retrieval) {
+        return response()->stream(function () use ($session, $student, $userMessage, $imagePath, $retrieval) {
             $messages = $session->messages ?? [];
-            $messages[] = ['role' => 'user', 'content' => $userMessage];
+
+            $userMsg = ['role' => 'user', 'content' => $userMessage];
+            if ($imagePath) {
+                $userMsg['content'] = [
+                    ['type' => 'text', 'text' => $userMessage],
+                    ['type' => 'image', 'path' => $imagePath],
+                ];
+            }
+            $messages[] = $userMsg;
 
             $systemPrompt = 'You are a helpful, encouraging study assistant for a Bangladeshi student. Answer clearly and concisely. Respond in the same language the student writes in (Bengali or English).';
 
-            if ($session->source_type === 'book' && $session->book) {
+            if ($session->source_type === 'book' && $session->book && $userMessage !== '') {
                 $context = implode("\n---\n", $retrieval->relevantChunks($session->book, $userMessage));
                 if ($context) {
                     $systemPrompt .= "\n\nUse the following excerpts from the book \"{$session->book->title}\" to ground your answer where relevant:\n\n{$context}";
@@ -108,6 +150,7 @@ class AiChatController extends Controller
 
             try {
                 $provider = AiProviderFactory::default('book_chat');
+                $payload = $this->normalizePayloadForProvider($payload, $provider);
 
                 foreach ($provider->stream($payload) as $chunk) {
                     $fullReply .= $chunk;
@@ -147,6 +190,57 @@ class AiChatController extends Controller
             'Cache-Control' => 'no-cache',
             'Connection' => 'keep-alive',
         ]);
+    }
+
+    /**
+     * Convert stored message content into whatever the active provider
+     * understands. OpenAI-compatible providers get the native multimodal
+     * content array (image_url parts); everything else just receives the
+     * plain text so array-shaped content never breaks their serializers.
+     */
+    private function normalizePayloadForProvider(array $payload, AiProviderContract $provider): array
+    {
+        if ($provider instanceof AbstractOpenAiCompatibleProvider) {
+            return array_map(function (array $message) {
+                if (is_string($message['content'])) {
+                    return $message;
+                }
+
+                $parts = [];
+                foreach ($message['content'] as $part) {
+                    if (($part['type'] ?? null) === 'text') {
+                        $parts[] = ['type' => 'text', 'text' => (string) ($part['text'] ?? '')];
+                    } elseif (($part['type'] ?? null) === 'image' && ! empty($part['path'])) {
+                        $parts[] = ['type' => 'image_url', 'image_url' => ['url' => $this->imageDataUrl($part['path'])]];
+                    }
+                }
+
+                $message['content'] = $parts;
+
+                return $message;
+            }, $payload);
+        }
+
+        return array_map(function (array $message) {
+            if (is_string($message['content'])) {
+                return $message;
+            }
+
+            $message['content'] = collect($message['content'])
+                ->where('type', 'text')
+                ->pluck('text')
+                ->implode("\n");
+
+            return $message;
+        }, $payload);
+    }
+
+    private function imageDataUrl(string $path): string
+    {
+        $mime = Storage::disk('public')->mimeType($path);
+        $data = Storage::disk('public')->get($path);
+
+        return 'data:'.$mime.';base64,'.base64_encode((string) $data);
     }
 
     private function authorizeSession(AiSession $session): void

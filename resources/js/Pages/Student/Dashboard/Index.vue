@@ -25,7 +25,7 @@ function badge(rank) {
 }
 
 const quickActions = [
-    { label: 'ai_chat', href: '/ai/chat', icon: ChatBubbleOvalLeftEllipsisIcon },
+    { label: 'ai_chat.title', href: '/ai/chat', icon: ChatBubbleOvalLeftEllipsisIcon },
     { label: 'exams.new_exam', href: '/exams/create', icon: ClipboardDocumentCheckIcon },
     { label: 'flashcards.new_set', href: '/flashcards/create', icon: RectangleStackIcon },
     { label: 'schedules.new_schedule', href: '/schedules/create', icon: CalendarDaysIcon },

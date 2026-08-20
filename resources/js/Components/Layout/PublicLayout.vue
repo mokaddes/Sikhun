@@ -86,9 +86,7 @@ const nav = [
                 <div class="col-span-2 md:col-span-1">
                     <BrandLogo href="/" compact size="text-lg" />
                     <p class="text-[var(--text-muted)] mt-3 max-w-[220px]">{{ t('footer.tagline') }}</p>
-                    <div class="flex items-center gap-2 mt-4">
-                        <span class="sun-disc w-8 h-8" title="Sikhun"></span>
-                    </div>
+
                 </div>
                 <div>
                     <div class="eyebrow mb-4">{{ t('footer.platform') }}</div>
@@ -122,8 +120,9 @@ const nav = [
     </div>
     <SupportWidget />
 
-    <style scoped>
-    .fade-enter-active, .fade-leave-active { transition: opacity 0.18s ease; }
-    .fade-enter-from, .fade-leave-to { opacity: 0; }
-    </style>
+
 </template>
+<style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.18s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>

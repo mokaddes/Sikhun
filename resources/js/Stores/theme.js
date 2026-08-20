@@ -35,15 +35,14 @@ export const useThemeStore = defineStore('theme', {
         },
 
         cycle() {
-            const order = ['light', 'dark', 'system'];
+            const order = ['light', 'dark'];
             const next = order[(order.indexOf(this.mode) + 1) % order.length];
             this.setMode(next);
         },
 
         applyTheme() {
             const root = document.documentElement;
-            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const dark = this.mode === 'dark' || (this.mode === 'system' && prefersDark);
+            const dark = this.mode === 'dark';
 
             dark ? root.classList.add('dark') : root.classList.remove('dark');
         },

@@ -26,9 +26,9 @@ const form = useForm({
     support_bot_system_prompt: props.settings.support_bot_system_prompt ?? '',
 });
 
-const logoPreview = ref(props.settings.site_logo_url ?? null);
-const faviconPreview = ref(props.settings.site_favicon_url ?? null);
-const seoPreview = ref(props.settings.seo_image_url ?? null);
+const logoPreview = ref(props.settings.site_logo ?? null);
+const faviconPreview = ref(props.settings.site_favicon ?? null);
+const seoPreview = ref(props.settings.seo_image ?? null);
 
 function onFile(field, preview, event) {
     const file = event.target.files[0];
@@ -39,25 +39,31 @@ function onFile(field, preview, event) {
     }
 }
 
-function removeImage(field, preview) {
-    form[field] = null;
-    form['remove_' + field] = true;
-    preview.value = null;
+function removeImage(field) {
+  form[field] = null;
+  form['remove_' + field] = true;
+
+  // Reset the correct ref dynamically
+  if (field === 'site_logo') logoPreview.value = null;
+  if (field === 'site_favicon') faviconPreview.value = null;
+  if (field === 'seo_image') seoPreview.value = null;
 }
 
 function submit() {
-    form.transform((data) => {
-        const clean = { ...data };
-        // Inertia serializes untouched (null) file fields as empty strings,
-        // which the server's mimes/image rules reject. Strip any field that
-        // isn't a real File so unchanged images are simply left alone.
-        ['site_logo', 'site_favicon', 'seo_image'].forEach((key) => {
-            if (!(clean[key] instanceof File)) {
-                delete clean[key];
-            }
-        });
-        return clean;
-    }).put('/admin/settings');
+  form.transform((data) => {
+    const clean = { ...data };
+
+    // Add method spoofing for Laravel
+    clean._method = 'put';
+
+    // Strip non-File objects so untreated existing images aren't corrupted
+    ['site_logo', 'site_favicon', 'seo_image'].forEach((key) => {
+      if (!(clean[key] instanceof File)) {
+        delete clean[key];
+      }
+    });
+    return clean;
+  }).post('/admin/settings'); // Changed from .put() to .post()
 }
 </script>
 

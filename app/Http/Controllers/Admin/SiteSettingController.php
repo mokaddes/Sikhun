@@ -7,6 +7,7 @@ use App\Models\SiteSetting;
 use App\Services\SiteSettingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -42,6 +43,7 @@ class SiteSettingController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
+
         $this->backfillRequiredFields($request);
 
         $validated = $request->validate([
@@ -64,9 +66,9 @@ class SiteSettingController extends Controller
         ]);
 
         foreach ($validated as $key => $value) {
-            // An untouched image field arrives as an empty string; never let
-            // that clobber an already-stored image path.
-            if (in_array($key, self::IMAGE_KEYS) && $value === '') {
+            // An untouched image field arrives as an empty string or null;
+            // never let that clobber an already-stored image path.
+            if (in_array($key, self::IMAGE_KEYS) && in_array($value, ['', null], true)) {
                 continue;
             }
 
@@ -74,12 +76,20 @@ class SiteSettingController extends Controller
             app(SiteSettingService::class)->forget($key);
         }
 
+        Log::info('request', [
+            'request' => $request->all(),
+        ]);
         foreach (self::IMAGE_KEYS as $key) {
             if ($request->boolean('remove_'.$key)) {
                 $this->deleteStoredImage($key);
                 SiteSetting::updateOrCreate(['key' => $key], ['value' => null]);
                 app(SiteSettingService::class)->forget($key);
             }
+            Log::info('image key', [
+                'key' => $key,
+                'is_file' => $request->hasFile($key),
+                'is_requeseted' => $request->get($key),
+                ]);
 
             if ($request->hasFile($key)) {
                 $this->deleteStoredImage($key);

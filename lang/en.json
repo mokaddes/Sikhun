@@ -338,7 +338,17 @@
         "delete_confirm": "Delete this chat?",
         "select_book": "Select a book (optional)",
         "no_book": "No book",
-        "start": "Start"
+        "start": "Start",
+        "greeting": "How can I help you study today?",
+        "greeting_sub": "Ask questions, upload a photo of a problem, or attach one of your books for grounded answers.",
+        "attach_book": "Attach a book",
+        "attach_book_hint": "Give the AI your book as study context.",
+        "attached_book": "Attached book",
+        "no_books_to_attach": "You have no books to attach.",
+        "image": "Attach image",
+        "remove_image": "Remove image",
+        "image_hint": "The AI can read text, diagrams and math in images.",
+        "book_attached_flash": "Book attached to this chat."
     },
     "exams": {
         "title": "Exams",

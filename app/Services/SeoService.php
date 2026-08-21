@@ -112,6 +112,52 @@ class SeoService
         ];
     }
 
+    public function forLibrary(): array
+    {
+        return [
+            'title' => "ডিজিটাল লাইব্রেরি — {$this->siteName}",
+            'description' => 'HSC, SSC ও বিশ্ববিদ্যালয়ের ডিজিটাল বই — সরাসরি ব্রাউজারে পড়ুন, AI-এর সাথে বই নিয়ে আলোচনা করুন, ফ্ল্যাশকার্ড বানান।',
+            'og_image' => $this->socialImage(),
+            'canonical' => $this->siteUrl.'/library',
+            'keywords' => 'ডিজিটাল লাইব্রেরি, অনলাইন বই, HSC বই, SSC বই, পড়ার বই, sikhun library',
+            'json_ld' => [
+                '@context' => 'https://schema.org',
+                '@type' => 'CollectionPage',
+                'name' => "ডিজিটাল লাইব্রেরি | {$this->siteName}",
+                'url' => $this->siteUrl.'/library',
+                'inLanguage' => ['bn', 'en'],
+                'isPartOf' => ['@type' => 'WebSite', 'name' => $this->siteName, 'url' => $this->siteUrl],
+            ],
+            'breadcrumb' => $this->breadcrumb([
+                ['name' => 'Home', 'url' => $this->siteUrl],
+                ['name' => 'Library', 'url' => $this->siteUrl.'/library'],
+            ]),
+        ];
+    }
+
+    public function forCourses(): array
+    {
+        return [
+            'title' => "লাইভ কোর্সসমূহ — {$this->siteName}",
+            'description' => 'অভিজ্ঞ মেন্টরদের সাথে লাইভ কোর্স: HSC, SSC, বিশ্ববিদ্যালয় ভর্তি ও চাকরির প্রস্তুতি। ঘরে বসেই সম্পূর্ণ কোর্স শেষ করুন।',
+            'og_image' => $this->socialImage(),
+            'canonical' => $this->siteUrl.'/courses',
+            'keywords' => 'অনলাইন কোর্স, লাইভ ক্লাস, HSC কোর্স, SSC কোর্স, ভর্তি প্রস্তুতি, sikhun courses',
+            'json_ld' => [
+                '@context' => 'https://schema.org',
+                '@type' => 'CollectionPage',
+                'name' => "লাইভ কোর্সসমূহ | {$this->siteName}",
+                'url' => $this->siteUrl.'/courses',
+                'inLanguage' => ['bn', 'en'],
+                'isPartOf' => ['@type' => 'WebSite', 'name' => $this->siteName, 'url' => $this->siteUrl],
+            ],
+            'breadcrumb' => $this->breadcrumb([
+                ['name' => 'Home', 'url' => $this->siteUrl],
+                ['name' => 'Courses', 'url' => $this->siteUrl.'/courses'],
+            ]),
+        ];
+    }
+
     public function forFaq(array $qaPairs): array
     {
         return [

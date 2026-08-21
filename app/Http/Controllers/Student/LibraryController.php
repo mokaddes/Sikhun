@@ -15,7 +15,7 @@ use Inertia\Response;
 
 class LibraryController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, \App\Services\SeoService $seo): Response
     {
         $sort = $request->input('sort', 'newest');
 
@@ -41,6 +41,7 @@ class LibraryController extends Controller
         $subjects = Book::published()->whereNotNull('subject')->distinct()->orderBy('subject')->pluck('subject');
 
         return Inertia::render('Student/Library/Index', [
+            'seo' => $seo->forLibrary(),
             'books' => $books,
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'subjects' => $subjects,

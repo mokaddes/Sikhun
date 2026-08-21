@@ -16,7 +16,7 @@ use Inertia\Response;
 
 class CourseController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, \App\Services\SeoService $seo): Response
     {
         $sort = $request->input('sort', 'newest');
 
@@ -35,6 +35,7 @@ class CourseController extends Controller
             ->withQueryString();
 
         return Inertia::render('Student/Courses/Index', [
+            'seo' => $seo->forCourses(),
             'courses' => $courses,
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'filters' => $request->only('level', 'category_id', 'free', 'search', 'sort'),

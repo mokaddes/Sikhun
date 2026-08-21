@@ -17,6 +17,10 @@ class GenerateSitemap extends Command
 
     public function handle(): int
     {
+        // Always emit the public production URL even when generated on a
+        // dev machine whose APP_URL points at localhost.
+        config(['app.url' => rtrim(env('SEO_SITEMAP_BASE_URL', 'https://sikhun.com'), '/')]);
+
         $sitemap = Sitemap::create()
             ->add(Url::create('/')->setPriority(1.0))
             ->add(Url::create('/library')->setPriority(0.9))

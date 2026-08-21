@@ -3,9 +3,10 @@ import { ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import Pagination from '@/Components/UI/Pagination.vue';
+import SeoHead from '@/Components/Seo/SeoHead.vue';
 import { useI18n } from '@/i18n';
 
-const props = defineProps({ books: Object, categories: Array, subjects: Array, filters: Object });
+const props = defineProps({ seo: Object, books: Object, categories: Array, subjects: Array, filters: Object });
 const { t, locale } = useI18n();
 
 const search = ref(props.filters.search ?? '');
@@ -38,6 +39,7 @@ const activeFilterCount = () => [level.value, subject.value, categoryId.value, f
 
 <template>
     <Head :title="t('library.title')" />
+    <SeoHead v-if="seo" :seo="seo" />
     <StudentLayout>
         <div class="flex items-center justify-between mb-6">
             <h1 class="font-heading text-2xl font-extrabold">{{ t('library.title') }}</h1>

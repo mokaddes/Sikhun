@@ -18,4 +18,4 @@ Disallow: /reader/
 Disallow: /api/
 Disallow: /support/
 
-Sitemap: /sitemap.xml
+Sitemap: https://sikhun.com/sitemap.xml

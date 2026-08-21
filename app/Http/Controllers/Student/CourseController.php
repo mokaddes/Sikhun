@@ -58,7 +58,7 @@ class CourseController extends Controller
         ]);
     }
 
-    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, ZinipayService $zinipay, \App\Services\AccessGrantService $grants): RedirectResponse
+    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, ZinipayService $zinipay, \App\Services\AccessGrantService $grants): \Symfony\Component\HttpFoundation\Response
     {
         $student = auth('web')->user();
 
@@ -84,7 +84,10 @@ class CourseController extends Controller
         }
 
         if ($result['redirect_url']) {
-            return redirect()->away($result['redirect_url']);
+            // Inertia XHR visits cannot follow cross-origin redirects (CORS) —
+            // location() answers with 409 + X-Inertia-Location so the client
+            // performs a full-page browser redirect to the gateway.
+            return Inertia::location($result['redirect_url']);
         }
 
         return redirect()->route('courses.show', $course)->with('success', 'Enrolled!');

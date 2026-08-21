@@ -24,7 +24,7 @@ class WalletController extends Controller
         ]);
     }
 
-    public function recharge(RechargeRequest $request, PurchaseService $purchases, ZinipayService $zinipay): RedirectResponse
+    public function recharge(RechargeRequest $request, PurchaseService $purchases, ZinipayService $zinipay): \Symfony\Component\HttpFoundation\Response
     {
         $student = auth('web')->user();
 
@@ -41,7 +41,7 @@ class WalletController extends Controller
             return back()->with('success', 'Recharge request submitted — an admin will approve it once the transfer is confirmed.');
         }
 
-        return redirect()->away($result['redirect_url']);
+        return Inertia::location($result['redirect_url']);
     }
 
     /**

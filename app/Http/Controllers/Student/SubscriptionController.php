@@ -7,7 +7,6 @@ use App\Http\Requests\Student\SubscriptionPurchaseRequest;
 use App\Models\Plan;
 use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
-use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,7 +22,7 @@ class SubscriptionController extends Controller
         ]);
     }
 
-    public function purchase(SubscriptionPurchaseRequest $request, PurchaseService $purchases, ZinipayService $zinipay): RedirectResponse
+    public function purchase(SubscriptionPurchaseRequest $request, PurchaseService $purchases, ZinipayService $zinipay): \Symfony\Component\HttpFoundation\Response
     {
         $student = auth('web')->user();
         $plan = Plan::findOrFail($request->plan_id);
@@ -37,7 +36,7 @@ class SubscriptionController extends Controller
         );
 
         if ($result['redirect_url']) {
-            return redirect()->away($result['redirect_url']);
+            return Inertia::location($result['redirect_url']);
         }
 
         return redirect()->route('subscription.plans')->with('success', 'Subscription activated!');

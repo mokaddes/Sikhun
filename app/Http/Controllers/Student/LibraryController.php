@@ -9,7 +9,6 @@ use App\Models\Category;
 use App\Services\BookAccessService;
 use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -62,7 +61,7 @@ class LibraryController extends Controller
         ]);
     }
 
-    public function purchase(PurchaseRequest $request, Book $book, PurchaseService $purchases, ZinipayService $zinipay): RedirectResponse
+    public function purchase(PurchaseRequest $request, Book $book, PurchaseService $purchases, ZinipayService $zinipay): \Symfony\Component\HttpFoundation\Response
     {
         $student = auth('web')->user();
 
@@ -78,7 +77,7 @@ class LibraryController extends Controller
         }
 
         if ($result['redirect_url']) {
-            return redirect()->away($result['redirect_url']);
+            return Inertia::location($result['redirect_url']);
         }
 
         return redirect()->route('bookshelf.index')->with('success', 'Book added to your bookshelf!');

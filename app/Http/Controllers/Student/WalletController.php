@@ -51,6 +51,7 @@ class WalletController extends Controller
      */
     public function gatewaySuccess(Request $request, PurchaseService $purchases, ZinipayService $zinipay): RedirectResponse
     {
+
         $order = Order::where('order_number', $request->input('order_number'))
             ->orWhere('gateway_invoice_id', $request->input('invoice_id'))
             ->first();

@@ -19,9 +19,24 @@ use Illuminate\Support\Facades\Log;
  */
 class ZinipayService implements PaymentGatewayContract
 {
+    /**
+     * The official examples authenticate different endpoints with different
+     * header spellings (dash for checkout, underscore for verify). Send both
+     * on every call so either handler finds what it expects.
+     */
+    private function headers(): array
+    {
+        return [
+            'ZINIPAY-API-KEY' => config('zinipay.api_key'),
+            'ZINIPAY_API_KEY' => config('zinipay.api_key'),
+            'accept' => 'application/json',
+            'content-type' => 'application/json',
+        ];
+    }
+
     public function initiate(Order $order): string
     {
-        $response = Http::withHeaders(['zini-api-key' => config('zinipay.api_key')])
+        $response = Http::withHeaders($this->headers())
             ->post(config('zinipay.api_url').'/v1/payment/create', [
                 'cus_name' => $order->student->name,
                 'cus_email' => $order->student->email,
@@ -64,14 +79,16 @@ class ZinipayService implements PaymentGatewayContract
             return null;
         }
 
-        $response = Http::withHeaders(['zini-api-key' => config('zinipay.api_key')])
-            ->post(config('zinipay.api_url').'/v1/payment/verify', [
+        // Documented verification endpoint (see zinipay-example/app/Library/ZiniPay.php).
+        $response = Http::withHeaders($this->headers())
+            ->post(config('zinipay.api_url').'/api/verify-payment', [
                 'invoice_id' => $invoiceId,
             ]);
 
         $data = $response->json();
 
         if (($data['status'] ?? null) !== 'COMPLETED') {
+            Log::info('ZiniPay verify not completed', ['invoice_id' => $invoiceId, 'response' => $data]);
             return null;
         }
 

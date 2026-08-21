@@ -13,6 +13,16 @@
     })(window,document,'script','dataLayer','GTM-W8R245XB');</script>
     <!-- End Google Tag Manager -->
 
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-102CKE347K"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-102CKE347K');
+    </script>
+
     <!--
         Inline theme script — runs before Vue mounts to prevent a flash
         of the wrong theme (light) when the student has dark mode saved.

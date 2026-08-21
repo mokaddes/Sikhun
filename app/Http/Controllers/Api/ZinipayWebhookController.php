@@ -24,12 +24,18 @@ class ZinipayWebhookController extends BaseApiController
 {
     public function handle(Request $request, PurchaseService $purchases, ZinipayService $zinipay): JsonResponse
     {
-        Log::info('ZiniPay webhook received', ['body' => $request->all()]);
-        dd($request->all());
+        // First line of the method so EVERY hit is visible in logs. Never log
+        // the key value itself — only whether it was present.
+        Log::info('ZiniPay webhook received', [
+            'method' => $request->method(),
+            'has_key_header' => (bool) $request->header('Zinipay-Api-Key'),
+            'body' => $request->all() ?: json_decode(trim($request->getContent()), true),
+        ]);
+
         $headerKey = $request->header('Zinipay-Api-Key');
-        Log::info('ZiniPay webhook received', ['key' => $headerKey]);
 
         if (! $headerKey) {
+            Log::warning('ZiniPay webhook rejected: Zinipay-Api-Key header missing');
             return $this->error('Api key not found', [], 403);
         }
 
@@ -41,9 +47,9 @@ class ZinipayWebhookController extends BaseApiController
         $invoiceId = $request->input('invoice_id')
             ?? json_decode(trim($request->getContent()), true)['invoice_id']
             ?? null;
-        Log::info('ZiniPay webhook received', ['invoice_id' => $invoiceId]);
 
         if (! $invoiceId) {
+            Log::warning('ZiniPay webhook rejected: invoice_id missing');
             return $this->error('invoice_id missing.', [], 422);
         }
 
@@ -65,10 +71,12 @@ class ZinipayWebhookController extends BaseApiController
         if (! $verified) {
             // 200 keeps ZiniPay from retry-storming; the student's success
             // redirect re-verifies and completes the order when it's paid.
+            Log::info('ZiniPay webhook: invoice not completed yet', ['invoice_id' => $invoiceId]);
             return $this->success(['status' => 'pending'], 'Invoice not yet completed.');
         }
 
         $purchases->completeGatewayOrder($order, $verified['transaction_id'] ?? $invoiceId);
+        Log::info('ZiniPay webhook: order completed', ['order_number' => $order->order_number, 'invoice_id' => $invoiceId]);
 
         return $this->success(['status' => 'completed']);
     }

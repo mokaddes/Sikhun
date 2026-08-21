@@ -2,7 +2,7 @@ import '../css/app.css';
 import './bootstrap';
 
 import { createApp, h } from 'vue';
-import { createInertiaApp } from '@inertiajs/vue3';
+import { createInertiaApp, router } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createPinia } from 'pinia';
 import VueApexCharts from 'vue3-apexcharts';
@@ -10,6 +10,16 @@ import { useThemeStore } from './Stores/theme';
 import { useNotificationStore } from './Stores/notifications';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Sikhun.com';
+
+// SPA page-view tracking — Inertia navigations don't reload the page, so
+// report each visit to Google Analytics manually.
+router.on('navigate', (event) => {
+    if (typeof window.gtag === 'function') {
+        window.gtag('config', 'G-102CKE347K', {
+            page_path: event.detail.page.url,
+        });
+    }
+});
 
 createInertiaApp({
     title: (title) => (title ? `${title} | ${appName}` : appName),

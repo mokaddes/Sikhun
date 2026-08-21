@@ -25,6 +25,7 @@ class ZinipayWebhookController extends BaseApiController
     public function handle(Request $request, PurchaseService $purchases, ZinipayService $zinipay): JsonResponse
     {
         $headerKey = $request->header('Zinipay-Api-Key');
+        Log::info('ZiniPay webhook received', ['key' => $headerKey]);
 
         if (! $headerKey) {
             return $this->error('Api key not found', [], 403);
@@ -38,6 +39,7 @@ class ZinipayWebhookController extends BaseApiController
         $invoiceId = $request->input('invoice_id')
             ?? json_decode(trim($request->getContent()), true)['invoice_id']
             ?? null;
+        Log::info('ZiniPay webhook received', ['invoice_id' => $invoiceId]);
 
         if (! $invoiceId) {
             return $this->error('invoice_id missing.', [], 422);

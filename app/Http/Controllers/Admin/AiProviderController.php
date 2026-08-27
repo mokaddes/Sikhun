@@ -10,6 +10,7 @@ use App\Services\Ai\AiConnectionTester;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -76,6 +77,14 @@ class AiProviderController extends Controller
 
     public function test(AiProvider $aiProvider, AiConnectionTester $tester): JsonResponse
     {
+        Log::info('Testing AI provider connection:', [
+            'id' => $aiProvider->id,
+            'name' => $aiProvider->name,
+            'type' => $aiProvider->type,
+            'url' => $aiProvider->api_endpoint,
+            'headers' => $aiProvider->custom_headers,
+            'model' => $aiProvider->model_name ?? 'deepseek-v4-flash-free',
+        ]);
         return response()->json($tester->test($aiProvider));
     }
 

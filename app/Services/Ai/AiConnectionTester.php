@@ -151,7 +151,7 @@ class AiConnectionTester
             'response' => $response->json(),
             'status' => $response->status(),
             'body' => $response->body(),
-            '$payload' => $payload,
+            'model' => $provider->model_name ?? 'deepseek-v4-flash-free',
         ]);
 
         return $response->successful()

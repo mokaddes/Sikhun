@@ -140,6 +140,11 @@ class AiConnectionTester
             ],
         ];
 
+         Log::info('Custom provider ready to check response:', [
+            'url' => $url,
+            'headers' => $headers,
+            'model' => $provider->model_name ?? 'deepseek-v4-flash-free',
+        ]);
         // Change .get() to .post()
         $response = Http::withHeaders($headers)
             ->timeout(10)

@@ -19,6 +19,12 @@ class AiConnectionTester
 {
     public function test(AiProvider $provider): array
     {
+        Log::info('Custom provider ready to check response:', [
+            'type' => $provider->type,
+            'url' => $provider->api_endpoint,
+            'headers' => $provider->custom_headers,
+            'model' => $provider->model_name ?? 'deepseek-v4-flash-free',
+        ]);
         try {
             return match ($provider->type) {
                 'openai' => $this->checkBearerEndpoint($provider, 'https://api.openai.com/v1/models'),

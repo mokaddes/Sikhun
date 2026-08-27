@@ -167,6 +167,13 @@ class AiConnectionTester
 
         return $response->successful()
             ? ['success' => true, 'message' => 'Endpoint reachable.']
-            : ['success' => false, 'message' => "Endpoint responded with status {$response->status()}."];
+            : ['success' => false, 'message' => "Endpoint responded with status {$response->status()}.",
+            'url' => $url,
+            'headers' => $headers,
+            'response' => $response->json(),
+            'status' => $response->status(),
+            'body' => $response->body(),
+            'model' => $provider->model_name ?? 'deepseek-v4-flash-free',
+            ];
     }
 }

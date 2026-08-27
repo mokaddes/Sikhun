@@ -151,6 +151,7 @@ class AiConnectionTester
             'response' => $response->json(),
             'status' => $response->status(),
             'body' => $response->body(),
+            '$payload' => $payload,
         ]);
 
         return $response->successful()

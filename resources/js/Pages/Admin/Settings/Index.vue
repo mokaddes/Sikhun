@@ -157,10 +157,14 @@ function submit() {
                 <input v-model="form.max_referral_per_month" type="number" min="0" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
             </div>
             <div>
-                <label class="block text-sm font-medium mb-1.5">Support Bot System Prompt</label>
-                <textarea v-model="form.support_bot_system_prompt" rows="4" placeholder="You are a friendly support assistant for Sikhun.com..."
+                <label class="block text-sm font-medium mb-1.5">Support Bot Tone / Persona</label>
+                <textarea v-model="form.support_bot_system_prompt" rows="4" placeholder="e.g. Be warm and encouraging, use simple Bangla, keep replies under 3 sentences."
                     class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]"></textarea>
-                <p class="text-xs text-[var(--text-muted)] mt-1">Controls how the floating support chat bot responds. Leave blank to use the default prompt.</p>
+                <p class="text-xs text-[var(--text-muted)] mt-1">
+                    Controls <em>how</em> the floating support bot writes. The bot is permanently restricted to
+                    Sikhun.com topics (library, courses, plans, payments, account, AI tools) and declines anything
+                    else — this field cannot widen that scope. Leave blank for the default tone.
+                </p>
             </div>
             <button type="submit" :disabled="form.processing" class="px-5 py-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-semibold disabled:opacity-60">
                 {{ form.processing ? t('common.saving') : t('common.save') }}

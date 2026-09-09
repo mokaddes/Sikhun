@@ -37,5 +37,8 @@ class SiteSettingService
     {
         Cache::forget("site_setting:{$key}");
         Cache::forget('site_settings:all');
+        // The support bot's fact sheet embeds site name/email/phone, so it
+        // has to be rebuilt whenever any setting is saved (see SupportBotService).
+        Cache::forget('support_bot:facts');
     }
 }

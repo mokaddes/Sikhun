@@ -4,8 +4,7 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\SupportConversation;
-use App\Services\Ai\AiProviderFactory;
-use App\Services\SiteSettingService;
+use App\Services\SupportBotService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -18,6 +17,8 @@ use Illuminate\Support\Str;
  */
 class SupportController extends Controller
 {
+    public function __construct(private SupportBotService $bot) {}
+
     public function show(Request $request): JsonResponse
     {
         $conversation = $this->findOrCreateConversation($request);
@@ -40,28 +41,7 @@ class SupportController extends Controller
         ]);
 
         if ($conversation->bot_enabled) {
-            try {
-                $provider = AiProviderFactory::default('support_bot');
-                $systemPrompt = app(SiteSettingService::class)->get(
-                    'support_bot_system_prompt',
-                    'You are a friendly support assistant for Sikhun.com, a Bangladeshi AI education platform. Answer briefly and helpfully in the language the user writes in. If you cannot help, say a human will follow up soon.'
-                );
-
-                $history = $conversation->messages()->orderBy('id')->get()
-                    ->map(fn ($m) => ['role' => $m->sender_type === 'student' ? 'user' : 'assistant', 'content' => $m->message]);
-
-                $reply = $provider->chat(array_merge(
-                    [['role' => 'system', 'content' => $systemPrompt]],
-                    $history->all()
-                ), ['max_tokens' => 400]);
-
-                $conversation->messages()->create(['sender_type' => 'bot', 'message' => $reply]);
-            } catch (\Throwable $e) {
-                $conversation->messages()->create([
-                    'sender_type' => 'bot',
-                    'message' => 'Sorry, I\'m having trouble right now — a team member will follow up soon.',
-                ]);
-            }
+            $this->bot->reply($conversation);
         }
 
         return response()->json(['messages' => $conversation->messages()->orderBy('id')->get()]);

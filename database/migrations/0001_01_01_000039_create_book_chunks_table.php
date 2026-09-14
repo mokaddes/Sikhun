@@ -33,7 +33,12 @@ return new class extends Migration
             $table->index('book_id');
         });
 
-        DB::statement('ALTER TABLE book_chunks ADD FULLTEXT fulltext_content (content)');
+        // FULLTEXT exists only on MySQL — guarded so the migration (and
+        // therefore the sqlite test suite) stays portable. Production
+        // behavior on MySQL is unchanged.
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE book_chunks ADD FULLTEXT fulltext_content (content)');
+        }
     }
 
     public function down(): void

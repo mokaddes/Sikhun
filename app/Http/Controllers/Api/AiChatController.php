@@ -68,9 +68,15 @@ class AiChatController extends BaseApiController
 
             $systemPrompt = 'You are a helpful, encouraging study assistant for a Bangladeshi student. Respond in the same language the student writes in.';
             if ($session->source_type === 'book' && $session->book) {
-                $context = implode("\n---\n", $retrieval->relevantChunks($session->book, $userMessage));
-                if ($context) {
-                    $systemPrompt .= "\n\nUse these excerpts from \"{$session->book->title}\":\n\n{$context}";
+                // Access-aware structured context: chunks are restricted to
+                // chapters this student can read (see BookChunkRetrievalService),
+                // and each source carries chapter/page info for citations.
+                $contextBlocks = $retrieval->buildContext($session->book, $userMessage, $student);
+
+                if ($contextBlocks) {
+                    $systemPrompt .= "\n\nUse these excerpts from \"{$session->book->title}\" to ground your answer where relevant. "
+                        ."When you use an excerpt, mention its chapter and page (e.g. \"Chapter 3, Page 42\"):\n\n"
+                        .$this->renderContext($contextBlocks);
                 }
             }
 
@@ -108,5 +114,40 @@ class AiChatController extends BaseApiController
     private function authorizeSession(AiSession $session): void
     {
         abort_unless($session->student_id === auth('sanctum')->id(), 403);
+    }
+
+    /**
+     * Render structured RAG context blocks into a compact text prompt the
+     * LLM can cite from — book/chapter/section/page header plus content,
+     * with related tables/formulas inline.
+     */
+    private function renderContext(array $contextBlocks): string
+    {
+        return collect($contextBlocks)
+            ->map(function (array $block) {
+                $source = $block['book'];
+                $source .= $block['chapter'] ? " — {$block['chapter']}" : '';
+                $source .= $block['section'] ? " — {$block['section']}" : '';
+                $source .= $block['page'] ? " (Page {$block['page']})" : '';
+
+                $parts = ["[Source: {$source}]"];
+                $parts[] = $block['content'];
+
+                foreach ($block['tables'] as $table) {
+                    $parts[] = '[Related table'.($table['title'] ? ": {$table['title']}" : '')."]\n"
+                        .($table['markdown'] ?: json_encode($table['structured'] ?? []));
+                }
+
+                foreach ($block['formulas'] as $formula) {
+                    $parts[] = '[Formula] '.($formula['latex'] ?: $formula['content'] ?? '');
+                }
+
+                foreach ($block['images'] as $image) {
+                    $parts[] = '[Image description] '.($image['description'] ?: $image['alt_text'] ?? '');
+                }
+
+                return implode("\n", $parts);
+            })
+            ->implode("\n---\n");
     }
 }

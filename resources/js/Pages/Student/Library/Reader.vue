@@ -4,7 +4,7 @@ import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import FlipReader from '@/Components/Reader/FlipReader.vue';
 import { useI18n } from '@/i18n';
 
-const props = defineProps({ book: Object });
+const props = defineProps({ book: Object, accessiblePages: { type: Array, default: null }, chapters: { type: Array, default: () => [] } });
 const { t } = useI18n();
 </script>
 
@@ -16,6 +16,10 @@ const { t } = useI18n();
         </Link>
         <h1 class="font-heading text-xl font-bold mb-6">{{ book.title }}</h1>
 
-        <FlipReader :book-id="book.id" :total-pages="book.total_pages || 1" />
+        <FlipReader
+            :book-id="book.id"
+            :total-pages="book.total_pages || 1"
+            :accessible-pages="accessiblePages"
+        />
     </StudentLayout>
 </template>

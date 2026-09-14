@@ -37,6 +37,7 @@ class Student extends Authenticatable
     public function referredStudents() { return $this->hasMany(Student::class, 'referred_by_student_id'); }
     public function bookShelf() { return $this->hasMany(BookShelf::class); }
     public function books() { return $this->belongsToMany(Book::class, 'book_shelves')->withPivot('source', 'added_at'); }
+    public function ownedChapters() { return $this->hasMany(StudentBookChapter::class); }
     public function subscriptions() { return $this->hasMany(StudentSubscription::class); }
     public function activeSubscription() { return $this->hasOne(StudentSubscription::class)->where('status', 'active')->latest(); }
     public function walletTransactions() { return $this->hasMany(WalletTransaction::class); }

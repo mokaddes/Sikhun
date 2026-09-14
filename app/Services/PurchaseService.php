@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Mail\OrderConfirmationMail;
 use App\Models\Book;
+use App\Models\BookChapter;
 use App\Models\Course;
 use App\Models\Order;
 use App\Models\Plan;
@@ -25,6 +26,7 @@ class PurchaseService
         private WalletService $wallet,
         private SubscriptionService $subscriptions,
         private ReferralService $referrals,
+        private BookAccessService $access,
     ) {}
 
     /**
@@ -52,8 +54,43 @@ class PurchaseService
         return ['redirect_url' => $redirectUrl, 'order' => $order];
     }
 
-    public function purchaseCourse(Student $student, Course $course, string $method, ?PaymentGatewayContract $gateway = null): array
-    {
+    public function purchaseChapter(
+        Student $student,
+        BookChapter $chapter,
+        string $method,
+        ?PaymentGatewayContract $gateway = null
+    ): array {
+        if (! $chapter->book->chapter_purchase_enabled) {
+            throw new \RuntimeException('Chapter purchase is not enabled for this book.');
+        }
+
+        if ($chapter->price === null) {
+            throw new \RuntimeException('This chapter is not for sale individually.');
+        }
+
+        if ($this->access->canAccessChapter($student, $chapter)) {
+            throw new \RuntimeException('You already have access to this chapter.');
+        }
+
+        $order = $this->createOrder($student, 'book_chapter', $chapter->id, (float) $chapter->price, $method, [
+            'book_id' => $chapter->book_id,
+            'chapter_title' => $chapter->title,
+        ]);
+
+        if ($method === 'wallet') {
+            $this->wallet->debit($student, (float) $chapter->price, 'chapter_purchase', $order->order_number, "Chapter: {$chapter->title}");
+            $order->update(['status' => 'completed']);
+            $this->fulfill($order);
+
+            return ['redirect_url' => null, 'order' => $order];
+        }
+
+        $redirectUrl = $gateway->initiate($order);
+
+        return ['redirect_url' => $redirectUrl, 'order' => $order];
+    }
+
+    public function purchaseCourse(Student $student, Course $course, string $method, ?PaymentGatewayContract $gateway = null): array    {
         $order = $this->createOrder($student, 'course', $course->id, $course->price, $method);
 
         if ($method === 'wallet') {
@@ -130,6 +167,10 @@ class PurchaseService
             'book' => $order->student->bookShelf()->firstOrCreate(
                 ['book_id' => $order->orderable_id],
                 ['source' => 'purchased', 'added_at' => now()]
+            ),
+            'book_chapter' => $order->student->ownedChapters()->firstOrCreate(
+                ['book_id' => $order->meta['book_id'], 'chapter_id' => $order->orderable_id],
+                ['source' => 'purchased', 'price' => $order->amount, 'purchased_at' => now()]
             ),
             'course' => $order->student->courseEnrollments()->firstOrCreate(
                 ['course_id' => $order->orderable_id],

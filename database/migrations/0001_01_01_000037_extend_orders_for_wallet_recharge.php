@@ -13,12 +13,20 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return; // sqlite (tests) stores enums as strings — nothing to do
+        }
+
         DB::statement("ALTER TABLE orders MODIFY orderable_type ENUM('book','course','subscription','wallet_recharge') NOT NULL");
         DB::statement('ALTER TABLE orders MODIFY orderable_id BIGINT UNSIGNED NULL');
     }
 
     public function down(): void
     {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement("ALTER TABLE orders MODIFY orderable_type ENUM('book','course','subscription') NOT NULL");
         DB::statement('ALTER TABLE orders MODIFY orderable_id BIGINT UNSIGNED NOT NULL');
     }

@@ -27,6 +27,7 @@ class BookRequest extends FormRequest
             'total_pages' => ['nullable', 'integer', 'min:0'],
             'is_published' => ['boolean'],
             'is_premium_gift' => ['boolean'],
+            'chapter_purchase_enabled' => ['boolean'],
             'cover_image' => ['nullable', 'image', 'max:2048'],
             'pdf_file' => ['nullable', 'mimes:pdf', 'max:51200'], // 50MB
         ];

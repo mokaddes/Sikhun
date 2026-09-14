@@ -45,7 +45,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('authors', AuthorController::class)->except(['show']);
         Route::resource('publications', PublicationController::class)->except(['show']);
         Route::resource('mentors', MentorController::class)->except(['show']);
-        Route::resource('books', BookController::class)->except(['show']);
+        Route::resource('books', BookController::class);
+        Route::post('books/{book}/retry-processing', [BookController::class, 'retryProcessing'])->name('books.retry-processing');
 
         Route::resource('courses', CourseController::class)->except(['show']);
         Route::post('courses/{course}/sections', [CourseSectionController::class, 'store'])->name('courses.sections.store');

@@ -6,6 +6,10 @@ import { useI18n } from '@/i18n';
 const props = defineProps({
     bookId: { type: Number, required: true },
     totalPages: { type: Number, required: true },
+    // null = unrestricted (full access); array = the only pages the
+    // student's chapter purchases cover. Server re-validates every page
+    // request anyway — this list only drives navigation affordances.
+    accessiblePages: { type: Array, default: null },
 });
 
 const { t } = useI18n();
@@ -17,27 +21,50 @@ const direction = ref('next'); // drives the CSS transition direction
 const canPrev = computed(() => currentPage.value > 1);
 const canNext = computed(() => currentPage.value < props.totalPages);
 
+// When chapter-gated, jump to the first accessible page on load.
+onMounted(() => {
+    if (props.accessiblePages?.length) {
+        currentPage.value = props.accessiblePages[0];
+    }
+    loadPage(currentPage.value);
+    window.addEventListener('keydown', onKeydown);
+});
+
 async function loadPage(page) {
     loading.value = true;
     try {
         const { data } = await axios.get(`/library/${props.bookId}/read/page/${page}/url`);
         imageUrl.value = data.url;
+    } catch (e) {
+        // 403 on a gated page — the server is the authority, not this list.
+        imageUrl.value = null;
     } finally {
         loading.value = false;
     }
 }
 
+function pageAccessible(page) {
+    return props.accessiblePages === null || props.accessiblePages.includes(page);
+}
+
 function next() {
     if (!canNext.value) return;
+    // Skip over pages outside the student's owned chapters.
+    let page = currentPage.value;
+    do { page++; } while (page < props.totalPages && !pageAccessible(page));
+    if (!pageAccessible(page)) return;
     direction.value = 'next';
-    currentPage.value++;
+    currentPage.value = page;
     loadPage(currentPage.value);
 }
 
 function prev() {
     if (!canPrev.value) return;
+    let page = currentPage.value;
+    do { page--; } while (page > 1 && !pageAccessible(page));
+    if (!pageAccessible(page)) return;
     direction.value = 'prev';
-    currentPage.value--;
+    currentPage.value = page;
     loadPage(currentPage.value);
 }
 
@@ -46,10 +73,6 @@ function onKeydown(e) {
     if (e.key === 'ArrowLeft') prev();
 }
 
-onMounted(() => {
-    loadPage(currentPage.value);
-    window.addEventListener('keydown', onKeydown);
-});
 onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
 </script>
 

@@ -156,7 +156,27 @@
             "author": "Author",
             "publication": "Publication",
             "category": "Category",
-            "description": "Description"
+            "description": "Description",
+            "chapter_purchase": "Sell chapters individually",
+            "pdf_processing": "PDF Processing",
+            "status_completed": "Completed",
+            "status_failed": "Failed",
+            "status_processing": "Processing…",
+            "status_pending": "Pending",
+            "retry_processing": "Retry Processing",
+            "reprocess": "Reprocess",
+            "processing_failed": "Processing failed",
+            "parser": "Parser",
+            "parsed_at": "Parsed",
+            "pages": "Pages",
+            "chapters": "Chapters",
+            "tables": "Tables",
+            "images": "Images",
+            "formulas": "Formulas",
+            "chunks": "Chunks",
+            "elements": "Elements",
+            "indexed": "Indexed",
+            "embeddings": "Embeddings"
         },
         "categories": {
             "title": "Categories",
@@ -292,7 +312,11 @@
         "free_badge": "Free Book",
         "read_now": "Start Reading",
         "subscription_gift_badge": "Included in your subscription",
-        "coupon_access_badge": "Free access unlocked"
+        "coupon_access_badge": "Free access unlocked",
+        "buy_chapters": "Buy individual chapters",
+        "buy_chapter": "Buy Chapter",
+        "chapter_owned": "Purchased",
+        "to_buy_chapter": "to buy this chapter"
     },
     "bookshelf": {
         "title": "My Bookshelf",

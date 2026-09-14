@@ -55,11 +55,67 @@ class LibraryController extends Controller
 
         $student = auth('web')->user();
 
+        // Chapter list with per-chapter access state (for chapter purchase UI).
+        // Transitive set (chapter + descendants) — sections of an owned
+        // chapter are readable and must not display as locked.
+        $hasFullAccess = $access->hasAccess($student, $book);
+        $ownedChapterIds = $hasFullAccess ? null : ($access->accessibleChapterIds($student, $book) ?? []);
+
+        $chapters = collect();
+        if ($book->chapter_purchase_enabled && $book->chapters()->exists()) {
+            $chapters = $book->chapters()
+                ->orderBy('sort_order')
+                ->get(['id', 'parent_id', 'chapter_number', 'title', 'level', 'start_page', 'end_page', 'price'])
+                ->map(function ($chapter) use ($ownedChapterIds, $hasFullAccess) {
+                    return [
+                        'id' => $chapter->id,
+                        'parent_id' => $chapter->parent_id,
+                        'chapter_number' => $chapter->chapter_number,
+                        'title' => $chapter->title,
+                        'level' => $chapter->level,
+                        'start_page' => $chapter->start_page,
+                        'end_page' => $chapter->end_page,
+                        'price' => $chapter->price,
+                        'owned' => $hasFullAccess || in_array($chapter->id, $ownedChapterIds),
+                        'purchasable' => $chapter->level === 1 && $chapter->price !== null,
+                    ];
+                });
+        }
+
         return Inertia::render('Student/Library/Show', [
             'book' => $book->load(['author', 'publication', 'category']),
             'accessType' => $access->accessType($student, $book),
+            'chapters' => $chapters,
             'seo' => $seo->forBook($book),
         ]);
+    }
+
+    public function purchaseChapter(Request $request, Book $book, \App\Models\BookChapter $chapter, PurchaseService $purchases, ZinipayService $zinipay): \Symfony\Component\HttpFoundation\Response
+    {
+        abort_unless($chapter->book_id === $book->id, 404);
+
+        $validated = $request->validate([
+            'payment_method' => ['required', 'in:wallet,zinipay'],
+        ]);
+
+        $student = auth('web')->user();
+
+        try {
+            $result = $purchases->purchaseChapter(
+                $student,
+                $chapter,
+                $validated['payment_method'],
+                $validated['payment_method'] === 'zinipay' ? $zinipay : null
+            );
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        if ($result['redirect_url']) {
+            return Inertia::location($result['redirect_url']);
+        }
+
+        return back()->with('success', 'Chapter purchased!');
     }
 
     public function purchase(PurchaseRequest $request, Book $book, PurchaseService $purchases, ZinipayService $zinipay): \Symfony\Component\HttpFoundation\Response

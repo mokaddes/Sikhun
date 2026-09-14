@@ -27,13 +27,14 @@ const { t } = useI18n();
                         <th class="px-5 py-3 font-medium">{{ t('common.level') }}</th>
                         <th class="px-5 py-3 font-medium">{{ t('common.price') }}</th>
                         <th class="px-5 py-3 font-medium">{{ t('common.status') }}</th>
+                        <th class="px-5 py-3 font-medium">PDF</th>
                         <th class="px-5 py-3 font-medium text-right">{{ t('common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="book in books.data" :key="book.id" class="border-b border-[var(--border)] last:border-0">
                         <td class="px-5 py-3">
-                            <div class="font-medium">{{ book.title }}</div>
+                            <Link :href="`/admin/books/${book.id}`" class="font-medium hover:text-[var(--primary)] hover:underline">{{ book.title }}</Link>
                             <div class="text-xs text-[var(--text-muted)]">{{ book.author?.name }}</div>
                         </td>
                         <td class="px-5 py-3 text-[var(--text-muted)] uppercase text-xs">{{ book.level }}</td>
@@ -43,12 +44,28 @@ const { t } = useI18n();
                                 {{ book.is_published ? t('common.published') : t('common.unpublished') }}
                             </span>
                         </td>
+                        <td class="px-5 py-3">
+                            <span v-if="book.pdf_path" class="px-2 py-0.5 rounded text-xs font-medium"
+                                :class="{
+                                    'bg-[var(--secondary)]/15 text-[var(--secondary)]': book.processing_status === 'completed',
+                                    'bg-[var(--accent)]/15 text-[var(--accent)]': book.processing_status === 'failed',
+                                    'bg-[var(--primary)]/15 text-[var(--primary)]': book.processing_status === 'processing',
+                                    'bg-[var(--text-muted)]/15 text-[var(--text-muted)]': !book.processing_status || book.processing_status === 'pending',
+                                }">
+                                {{ book.processing_status === 'completed' ? '✓ ' + t('admin.books.status_completed')
+                                    : book.processing_status === 'failed' ? '❌ ' + t('admin.books.status_failed')
+                                    : book.processing_status === 'processing' ? '⏳ ' + t('admin.books.status_processing')
+                                    : t('admin.books.status_pending') }}
+                            </span>
+                            <span v-else class="text-xs text-[var(--text-muted)]">—</span>
+                        </td>
                         <td class="px-5 py-3 text-right space-x-3">
+                            <Link :href="`/admin/books/${book.id}`" class="text-sm font-medium text-[var(--primary)] hover:underline">View</Link>
                             <Link :href="`/admin/books/${book.id}/edit`" class="text-sm font-medium text-[var(--primary)] hover:underline">{{ t('common.edit') }}</Link>
                             <ConfirmButton :href="`/admin/books/${book.id}`" method="delete" />
                         </td>
                     </tr>
-                    <tr v-if="!books.data.length"><td colspan="5" class="px-5 py-10 text-center text-[var(--text-muted)]">{{ t('common.no_results') }}</td></tr>
+                    <tr v-if="!books.data.length"><td colspan="6" class="px-5 py-10 text-center text-[var(--text-muted)]">{{ t('common.no_results') }}</td></tr>
                 </tbody>
             </table>
         </div>

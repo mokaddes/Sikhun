@@ -16,7 +16,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE orders MODIFY payment_method ENUM('wallet','sslcommerz','bkash','nagad','manual','zinipay') NOT NULL");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE orders MODIFY payment_method ENUM('wallet','sslcommerz','bkash','nagad','manual','zinipay') NOT NULL");
+        }
 
         Schema::table('orders', function (Blueprint $table) {
             $table->string('gateway_invoice_id')->nullable()->after('gateway_transaction_id');
@@ -29,6 +31,8 @@ return new class extends Migration
             $table->dropColumn('gateway_invoice_id');
         });
 
-        DB::statement("ALTER TABLE orders MODIFY payment_method ENUM('wallet','sslcommerz','bkash','nagad','manual') NOT NULL");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE orders MODIFY payment_method ENUM('wallet','sslcommerz','bkash','nagad','manual') NOT NULL");
+        }
     }
 };

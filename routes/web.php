@@ -73,6 +73,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
 
     // Library (browse/detail are public — see below; purchase requires login)
     Route::post('/library/{book}/purchase', [LibraryController::class, 'purchase'])->name('library.purchase');
+    Route::post('/library/{book}/chapters/{chapter}/purchase', [LibraryController::class, 'purchaseChapter'])->name('library.chapters.purchase');
 
     // Bookshelf
     Route::get('/bookshelf', [BookshelfController::class, 'index'])->name('bookshelf.index');

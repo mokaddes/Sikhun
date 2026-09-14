@@ -50,6 +50,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('library', [LibraryController::class, 'index']);
     Route::get('library/{book:slug}', [LibraryController::class, 'show']);
     Route::post('library/{book}/purchase', [LibraryController::class, 'purchase']);
+    Route::get('library/{book}/chapters', [LibraryController::class, 'chapters']);
+    Route::get('library/{book}/access', [LibraryController::class, 'access']);
+    Route::post('library/{book}/chapters/{chapter}/purchase', [LibraryController::class, 'purchaseChapter']);
 
     Route::get('reader/{book}/page/{page}/url', [ReaderController::class, 'pageUrl']);
 

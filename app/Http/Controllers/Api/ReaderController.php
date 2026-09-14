@@ -16,7 +16,8 @@ class ReaderController extends BaseApiController
     public function pageUrl(Request $request, Book $book, int $page, BookAccessService $access): JsonResponse
     {
         $student = auth('sanctum')->user();
-        abort_unless($access->hasAccess($student, $book), 403);
+        // Chapter-aware gate: full book access OR the page's chapter is owned.
+        abort_unless($access->canAccessPage($student, $book, $page), 403);
 
         $session = ReadingSession::where('student_id', $student->id)->where('book_id', $book->id)
             ->whereDate('created_at', today())->first();

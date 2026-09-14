@@ -156,7 +156,27 @@
             "author": "Author",
             "publication": "Publication",
             "category": "Category",
-            "description": "Description"
+            "description": "Description",
+            "chapter_purchase": "অধ্যায় আলাদাভাবে বিক্রি করুন",
+            "pdf_processing": "PDF প্রসেসিং",
+            "status_completed": "সম্পন্ন",
+            "status_failed": "ব্যর্থ",
+            "status_processing": "প্রসেসিং চলছে…",
+            "status_pending": "অপেক্ষমাণ",
+            "retry_processing": "আবার প্রসেস করুন",
+            "reprocess": "পুনরায় প্রসেস",
+            "processing_failed": "প্রসেসিং ব্যর্থ হয়েছে",
+            "parser": "পার্সার",
+            "parsed_at": "পার্স করা হয়েছে",
+            "pages": "পৃষ্ঠা",
+            "chapters": "অধ্যায়",
+            "tables": "টেবিল",
+            "images": "ছবি",
+            "formulas": "সূত্র",
+            "chunks": "চাঙ্ক",
+            "elements": "এলিমেন্ট",
+            "indexed": "ইনডেক্সড",
+            "embeddings": "এমবেডিং"
         },
         "categories": {
             "title": "Categories",
@@ -292,7 +312,11 @@
         "free_badge": "ফ্রি বই",
         "read_now": "পড়া শুরু করুন",
         "subscription_gift_badge": "সাবস্ক্রিপশনের অংশ",
-        "coupon_access_badge": "ফ্রি অ্যাক্সেস আনলক হয়েছে"
+        "coupon_access_badge": "ফ্রি অ্যাক্সেস আনলক হয়েছে",
+        "buy_chapters": "পৃথক অধ্যায় কিনুন",
+        "buy_chapter": "অধ্যায় কিনুন",
+        "chapter_owned": "কেনা হয়েছে",
+        "to_buy_chapter": "এই অধ্যায়টি কিনতে"
     },
     "bookshelf": {
         "title": "আমার বইঘর",

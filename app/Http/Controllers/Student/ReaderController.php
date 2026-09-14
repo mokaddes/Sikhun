@@ -23,7 +23,22 @@ class ReaderController extends Controller
     public function show(Request $request, Book $book, BookAccessService $access): Response
     {
         $student = auth('web')->user();
-        abort_unless($access->hasAccess($student, $book), 403, 'You do not have access to this book.');
+        // Reader shell access: full book access OR ownership of ANY chapter.
+        $canOpenReader = $access->hasAccess($student, $book)
+            || ($student && $student->ownedChapters()->where('book_id', $book->id)->exists());
+        abort_unless($canOpenReader, 403, 'You do not have access to this book.');
+
+        // Which pages may this student turn to? (null = no restriction)
+        $accessibleChapterIds = $access->accessibleChapterIds($student, $book);
+
+        $accessiblePages = null;
+        if ($accessibleChapterIds !== null && ! $access->hasAccess($student, $book)) {
+            $accessiblePages = $book->pages()
+                ->whereIn('chapter_id', $accessibleChapterIds)
+                ->orderBy('page_number')
+                ->pluck('page_number')
+                ->all();
+        }
 
         $session = ReadingSession::where('student_id', $student->id)
             ->where('book_id', $book->id)
@@ -42,6 +57,8 @@ class ReaderController extends Controller
 
         return Inertia::render('Student/Library/Reader', [
             'book' => $book->only(['id', 'title', 'slug', 'total_pages']),
+            'accessiblePages' => $accessiblePages,
+            'chapters' => $book->topChapters()->get(['id', 'title', 'chapter_number', 'start_page']),
         ]);
     }
 
@@ -54,7 +71,8 @@ class ReaderController extends Controller
     public function pageUrl(Request $request, Book $book, int $page, BookAccessService $access): JsonResponse
     {
         $student = auth('web')->user();
-        abort_unless($access->hasAccess($student, $book), 403);
+        // Chapter-aware gate: full book access OR the page's chapter is owned.
+        abort_unless($access->canAccessPage($student, $book, $page), 403);
 
         $this->trackProgress($student->id, $book->id, $page);
 

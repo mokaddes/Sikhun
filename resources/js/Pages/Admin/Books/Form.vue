@@ -22,6 +22,7 @@ const form = useForm({
     total_pages: props.book?.total_pages ?? 0,
     is_published: props.book?.is_published ?? false,
     is_premium_gift: props.book?.is_premium_gift ?? false,
+    chapter_purchase_enabled: props.book?.chapter_purchase_enabled ?? false,
     cover_image: null,
     pdf_file: null,
 });
@@ -114,6 +115,7 @@ function submit() {
                 <label class="flex items-center gap-2"><input v-model="form.is_free" type="checkbox" class="rounded" /> {{ t('admin.books.is_free') }}</label>
                 <label class="flex items-center gap-2"><input v-model="form.is_published" type="checkbox" class="rounded" /> {{ t('admin.books.is_published') }}</label>
                 <label class="flex items-center gap-2"><input v-model="form.is_premium_gift" type="checkbox" class="rounded" /> Premium gift book</label>
+                <label class="flex items-center gap-2"><input v-model="form.chapter_purchase_enabled" type="checkbox" class="rounded" /> {{ t('admin.books.chapter_purchase') }}</label>
             </div>
 
             <div class="grid grid-cols-2 gap-4">

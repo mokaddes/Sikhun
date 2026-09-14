@@ -32,20 +32,34 @@ class ChunkedUploadService
     /**
      * Persist one chunk of an in-flight upload along with the metadata merge()
      * needs to reassemble it.
+     *
+     * @return bool  false when the chunk could not be written to disk
      */
-    public function storeChunk(string $prefix, string $uploadId, int $index, UploadedFile $file, int $totalChunks, string $filename): void
+    public function storeChunk(string $prefix, string $uploadId, int $index, UploadedFile $file, int $totalChunks, string $filename): bool
     {
         $storage = Storage::disk($this->disk);
         $dir = $this->tempDirectory($prefix, $uploadId);
+        $chunkPath = "{$dir}/chunks/chunk_{$index}";
+        $metaPath = "{$dir}/meta.json";
 
         $file->storeAs("{$dir}/chunks", "chunk_{$index}", $this->disk);
 
-        $storage->put("{$dir}/meta.json", json_encode([
+        // The disk is configured with throw=false, so a rejected write returns
+        // false instead of raising. Without this check a full or unwritable
+        // disk still answers "chunk received", and the failure only surfaces
+        // much later at merge() as a vague missing-chunk error.
+        if (! $storage->exists($chunkPath)) {
+            return false;
+        }
+
+        $storage->put($metaPath, json_encode([
             'filename' => $filename,
             'total_chunks' => $totalChunks,
             'chunk_size' => $file->getSize(),
             'updated_at' => now()->toIso8601String(),
         ]));
+
+        return $storage->exists($metaPath);
     }
 
     /**
@@ -132,6 +146,23 @@ class ChunkedUploadService
             return ['ok' => false, 'message' => 'Unsupported file type.'];
         }
 
+        $mergedPath = "{$dir}/{$filename}";
+
+        // A previous merge() can finish after the browser gave up waiting —
+        // concatenating a few hundred MB can outlive the client's request
+        // timeout. merge() deletes the chunk directory as its final step, so
+        // "merged file present, chunks gone" means that earlier run completed
+        // and this is a retry: hand back the finished file instead of reporting
+        // the chunks it already consumed as missing, which would force the
+        // admin to re-upload the whole file.
+        if ($storage->exists($mergedPath) && ! $storage->exists($chunksDir)) {
+            $size = (int) $storage->size($mergedPath);
+
+            if ($size >= 1024 && $size <= $maxBytes && $this->looksLike($mergedPath, $extension)) {
+                return ['ok' => true, 'temp_path' => $mergedPath, 'filename' => $filename, 'size' => $size];
+            }
+        }
+
         // Verify every chunk arrived before merging.
         $missing = [];
         for ($i = 0; $i < $totalChunks; $i++) {
@@ -149,7 +180,6 @@ class ChunkedUploadService
         }
 
         // Concatenate chunks in order, streaming to avoid loading into memory.
-        $mergedPath = "{$dir}/{$filename}";
         $out = fopen($storage->path($mergedPath), 'wb');
 
         if ($out === false) {

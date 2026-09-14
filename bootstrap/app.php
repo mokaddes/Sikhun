@@ -59,6 +59,19 @@ return Application::configure(basePath: dirname(__DIR__))
                 return $response;
             }
 
+            // Anything that asked for JSON keeps Laravel's JSON error payload.
+            // The admin panel's axios endpoints (chunked uploads, AI provider
+            // tests) read `message` off the error body and show it to the admin.
+            // Swapping that body for an Inertia page — or plain HTML, for a
+            // request that never sent the X-Inertia header — leaves the caller
+            // with no message at all, so every failure surfaces as a generic
+            // "something went wrong" and the real cause is unrecoverable.
+            // Inertia page visits do not match expectsJson(), so they still get
+            // the branded error screen below.
+            if ($request->expectsJson()) {
+                return $response;
+            }
+
             $status = $response->getStatusCode();
 
             if (in_array($status, [403, 404, 419, 429, 500, 503], true)

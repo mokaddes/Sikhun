@@ -43,7 +43,7 @@ class CourseVideoUploadController extends Controller
             return response()->json(['ok' => false, 'message' => 'Invalid chunk index.'], 422);
         }
 
-        $this->uploads->storeChunk(
+        $stored = $this->uploads->storeChunk(
             self::PREFIX,
             $validated['upload_id'],
             (int) $validated['chunk_index'],
@@ -51,6 +51,16 @@ class CourseVideoUploadController extends Controller
             (int) $validated['total_chunks'],
             $validated['filename'],
         );
+
+        // Answer honestly: claiming the chunk landed when the write was
+        // rejected sends the browser on to merge() with pieces missing, where
+        // the only symptom is an unexplained "upload incomplete".
+        if (! $stored) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'The server could not write this chunk to storage. Check that storage/app/private exists and is writable by the web server.',
+            ], 500);
+        }
 
         return response()->json(['ok' => true, 'received' => (int) $validated['chunk_index']]);
     }

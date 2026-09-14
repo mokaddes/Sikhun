@@ -79,18 +79,24 @@ class HandleInertiaRequests extends Middleware
     /**
      * Loads the frontend translation dictionary for the given locale from
      * lang/{locale}.json and caches it (translations rarely change at
-     * runtime, so a long TTL is safe — clear with `php artisan cache:clear`
-     * after editing a translation file).
+     * runtime, so a long TTL is safe).
+     *
+     * The file's mtime is part of the cache key, so editing a translation file
+     * takes effect on the next request. Without it, a newly added key renders
+     * as its own raw name until the TTL lapses — which looks exactly like a
+     * broken translation.
      */
     private function loadTranslations(string $locale): array
     {
-        return Cache::remember("translations:{$locale}", 3600, function () use ($locale) {
-            $path = base_path("lang/{$locale}.json");
+        $path = base_path("lang/{$locale}.json");
 
-            if (! file_exists($path)) {
-                return [];
-            }
+        if (! file_exists($path)) {
+            return [];
+        }
 
+        $version = filemtime($path) ?: 0;
+
+        return Cache::remember("translations:{$locale}:{$version}", 3600, function () use ($path) {
             return json_decode(file_get_contents($path), true) ?? [];
         });
     }

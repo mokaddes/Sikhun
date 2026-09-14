@@ -51,6 +51,30 @@ function formatBytes(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
+/**
+ * Turn a failed upload request into something worth showing an admin.
+ *
+ * Two cases used to collapse into one meaningless message: a request that
+ * never reached Laravel (dropped connection, browser timeout) has no response
+ * at all, and a deployment with APP_DEBUG=false may answer a failure with an
+ * HTML error page instead of JSON, so there is no `message` field to read.
+ * Falling back to the HTTP status — or to a plain-English cause — keeps the
+ * real reason visible instead of blaming the merge step for everything.
+ */
+function describeUploadError(err, fallback) {
+    const data = err?.response?.data;
+    const message = typeof data === 'string'
+        ? data.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200)
+        : data?.message;
+
+    if (message) return message;
+    if (err?.response) return `The server returned HTTP ${err.response.status}.`;
+    if (err?.code === 'ECONNABORTED' || err?.code === 'ETIMEDOUT') {
+        return 'Timed out waiting for the server. Please try again.';
+    }
+    return fallback;
+}
+
 async function handlePdfSelect(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -85,12 +109,22 @@ async function startChunkedUpload(file) {
         formData.append('filename', file.name);
 
         try {
-            await axios.post('/admin/books/upload-chunk', formData, {
+            const res = await axios.post('/admin/books/upload-chunk', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 timeout: 120000,
             });
+
+            // axios only rejects on transport errors, so a chunk the server
+            // refused (422/419/500) resolved here and looked like success —
+            // the upload then marched on to merge() with pieces missing and
+            // the admin only ever saw the merge step's generic complaint.
+            if (!res.data?.ok) {
+                pdfError.value = res.data?.message || `Chunk ${i + 1} was rejected by the server.`;
+                pdfUploading.value = false;
+                return;
+            }
         } catch (err) {
-            pdfError.value = err.response?.data?.message || 'Upload failed. Please try again.';
+            pdfError.value = describeUploadError(err, 'Upload failed. Please try again.');
             pdfUploading.value = false;
             return;
         }
@@ -99,16 +133,22 @@ async function startChunkedUpload(file) {
     }
 
     try {
-        const res = await axios.post('/admin/books/merge-chunks', { upload_id: uploadId }, { timeout: 60000 });
-        if (res.data.ok) {
+        // Merging reads and rewrites the whole file, so a few hundred MB can
+        // legitimately take minutes on a slow disk — well past the old 60s
+        // ceiling, which aborted the request in the browser while the server
+        // was still working. The merge is retryable now: if the earlier run
+        // finished, this returns the completed file instead of re-uploading.
+        const res = await axios.post('/admin/books/merge-chunks', { upload_id: uploadId }, { timeout: 600000 });
+
+        if (res.data?.ok) {
             form.temp_pdf_path = res.data.temp_path;
             pdfUploadProgress.value = 100;
             pdfUploaded.value = true;
         } else {
-            pdfError.value = res.data.message || 'Failed to finalize upload.';
+            pdfError.value = res.data?.message || 'Failed to finalize upload.';
         }
     } catch (err) {
-        pdfError.value = err.response?.data?.message || 'Failed to finalize upload.';
+        pdfError.value = describeUploadError(err, 'Failed to finalize upload.');
     }
 
     pdfUploading.value = false;

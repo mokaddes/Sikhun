@@ -34,8 +34,8 @@ class ProcessBookPdf implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $timeout = 900;
-    public $tries = 1; // retries happen through the admin Retry button, not auto-retry
+    public $timeout = 3600;
+    public $tries = 2;
 
     public function __construct(
         private int $bookId,

@@ -29,7 +29,8 @@ class BookRequest extends FormRequest
             'is_premium_gift' => ['boolean'],
             'chapter_purchase_enabled' => ['boolean'],
             'cover_image' => ['nullable', 'image', 'max:5120'],
-            'pdf_file' => ['nullable', 'mimes:pdf', 'max:512000'], // 50MB
+            'pdf_file' => ['nullable', 'mimes:pdf', 'max:512000'], // 500 MB — chunked upload for larger files
+            'temp_pdf_path' => ['nullable', 'string', 'max:500', 'regex:/^books\/temp\/[a-zA-Z0-9\-]+\/[^\/]+$/'],
         ];
     }
 }

@@ -3,6 +3,7 @@ import { watch, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import { useI18n } from '@/i18n';
+import axios from 'axios';
 
 const props = defineProps({ book: Object, authors: Array, publications: Array, categories: Array });
 const { t } = useI18n();
@@ -25,6 +26,7 @@ const form = useForm({
     chapter_purchase_enabled: props.book?.chapter_purchase_enabled ?? false,
     cover_image: null,
     pdf_file: null,
+    temp_pdf_path: null,
 });
 
 let slugTouched = isEdit;
@@ -35,7 +37,88 @@ watch(() => form.title, (val) => {
 const coverInput = ref(null);
 const pdfInput = ref(null);
 
+const pdfUploadProgress = ref(0);
+const pdfUploading = ref(false);
+const pdfUploaded = ref(false);
+const pdfError = ref('');
+const pdfFileName = ref('');
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+async function handlePdfSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    pdfError.value = '';
+    pdfUploaded.value = false;
+    form.temp_pdf_path = null;
+    form.pdf_file = null;
+    pdfFileName.value = file.name;
+
+    await startChunkedUpload(file);
+}
+
+async function startChunkedUpload(file) {
+    pdfUploading.value = true;
+    pdfUploadProgress.value = 0;
+
+    const CHUNK_SIZE = 5 * 1024 * 1024;
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const uploadId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
+
+    for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, end);
+
+        const formData = new FormData();
+        formData.append('file', chunk, file.name);
+        formData.append('upload_id', uploadId);
+        formData.append('chunk_index', i);
+        formData.append('total_chunks', totalChunks);
+        formData.append('filename', file.name);
+
+        try {
+            await axios.post('/admin/books/upload-chunk', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                timeout: 120000,
+            });
+        } catch (err) {
+            pdfError.value = err.response?.data?.message || 'Upload failed. Please try again.';
+            pdfUploading.value = false;
+            return;
+        }
+
+        pdfUploadProgress.value = Math.round(((i + 1) / totalChunks) * 90);
+    }
+
+    try {
+        const res = await axios.post('/admin/books/merge-chunks', { upload_id: uploadId }, { timeout: 60000 });
+        if (res.data.ok) {
+            form.temp_pdf_path = res.data.temp_path;
+            pdfUploadProgress.value = 100;
+            pdfUploaded.value = true;
+        } else {
+            pdfError.value = res.data.message || 'Failed to finalize upload.';
+        }
+    } catch (err) {
+        pdfError.value = err.response?.data?.message || 'Failed to finalize upload.';
+    }
+
+    pdfUploading.value = false;
+}
+
 function submit() {
+    if (!pdfUploading.value && !pdfUploaded.value && !form.pdf_file && !isEdit) {
+        // no pdf selected is fine — book will be created without a pdf
+    }
+
     if (isEdit) {
         form.transform((data) => ({ ...data, _method: 'put' }))
             .post(`/admin/books/${props.book.id}`, { forceFormData: true });
@@ -126,13 +209,46 @@ function submit() {
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1.5">{{ t('admin.books.pdf') }}</label>
-                    <input ref="pdfInput" @input="form.pdf_file = pdfInput.files[0]" type="file" accept="application/pdf" class="w-full text-sm" />
+                    <input
+                        ref="pdfInput"
+                        @change="handlePdfSelect"
+                        type="file"
+                        accept="application/pdf"
+                        class="w-full text-sm"
+                        :disabled="pdfUploading"
+                    />
                     <p class="text-xs text-[var(--text-muted)] mt-1">{{ t('admin.books.pdf_note') }}</p>
-                    <p v-if="book?.pdf_path" class="text-xs text-[var(--secondary)] mt-1">✓ File already uploaded</p>
+                    <p v-if="book?.pdf_path && !pdfUploaded" class="text-xs text-[var(--secondary)] mt-1">&#10003; File already uploaded</p>
+
+                    <div v-if="pdfUploading || pdfUploaded" class="mt-3">
+                        <div class="flex items-center justify-between text-xs mb-1">
+                            <span class="font-medium text-[var(--text-muted)]">
+                                {{ pdfFileName }}
+                            </span>
+                            <span :class="pdfUploaded ? 'text-[var(--secondary)]' : 'text-[var(--text-muted)]'">
+                                {{ pdfUploadProgress }}%
+                            </span>
+                        </div>
+                        <div class="w-full h-2 rounded-full bg-[var(--surface2)] overflow-hidden">
+                            <div
+                                class="h-full rounded-full transition-all duration-300 ease-out"
+                                :class="pdfUploaded ? 'bg-[var(--secondary)]' : 'bg-[var(--primary)]'"
+                                :style="{ width: pdfUploadProgress + '%' }"
+                            ></div>
+                        </div>
+                        <p v-if="pdfUploading" class="text-[10px] text-[var(--text-muted)] mt-1">Uploading in background &mdash; you can fill other fields</p>
+                        <p v-if="pdfUploaded" class="text-[10px] text-[var(--secondary)] mt-1">&#10003; PDF ready</p>
+                    </div>
+
+                    <p v-if="pdfError" class="text-xs text-[var(--accent)] mt-1">{{ pdfError }}</p>
                 </div>
             </div>
 
-            <button type="submit" :disabled="form.processing" class="px-5 py-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-semibold disabled:opacity-60">
+            <button
+                type="submit"
+                :disabled="form.processing || pdfUploading"
+                class="px-5 py-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-semibold disabled:opacity-60"
+            >
                 {{ form.processing ? t('common.saving') : t('common.save') }}
             </button>
         </form>

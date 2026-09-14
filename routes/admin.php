@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AiProviderController;
 use App\Http\Controllers\Admin\Auth\AdminAuthController;
 use App\Http\Controllers\Admin\AuthorController;
 use App\Http\Controllers\Admin\BookController;
+use App\Http\Controllers\Admin\BookUploadController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CourseController;
@@ -46,6 +47,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('publications', PublicationController::class)->except(['show']);
         Route::resource('mentors', MentorController::class)->except(['show']);
         Route::resource('books', BookController::class);
+        Route::post('books/upload-chunk', [BookUploadController::class, 'uploadChunk'])->name('books.upload-chunk');
+        Route::post('books/merge-chunks', [BookUploadController::class, 'mergeChunks'])->name('books.merge-chunks');
         Route::post('books/{book}/retry-processing', [BookController::class, 'retryProcessing'])->name('books.retry-processing');
 
         Route::resource('courses', CourseController::class)->except(['show']);

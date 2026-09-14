@@ -10,7 +10,9 @@ use App\Models\Book;
 use App\Models\Category;
 use App\Models\Publication;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,7 +35,7 @@ class BookController extends Controller
 
     public function store(BookRequest $request): RedirectResponse
     {
-        $data = $request->safe()->except(['cover_image', 'pdf_file']);
+        $data = $request->safe()->except(['cover_image', 'pdf_file', 'temp_pdf_path']);
         $data['is_free'] = $request->boolean('is_free');
         $data['is_published'] = $request->boolean('is_published');
         $data['is_premium_gift'] = $request->boolean('is_premium_gift');
@@ -44,15 +46,12 @@ class BookController extends Controller
             $data['cover_image'] = $request->file('cover_image')->store('books/covers', 'public');
         }
 
-        if ($request->hasFile('pdf_file')) {
-            // NEVER store on the 'public' disk. This path is only ever resolved
-            // server-side through the signed, watermarked reader endpoint (Phase 3).
-            $data['pdf_path'] = $request->file('pdf_file')->store('books/pdfs', 'private');
-        }
+        $pdfFromUpload = $this->resolvePdfPath($request);
+        $data = array_merge($data, $pdfFromUpload);
 
         $book = Book::create($data);
 
-        if ($request->hasFile('pdf_file')) {
+        if ($request->hasFile('pdf_file') || $request->filled('temp_pdf_path')) {
             ProcessBookPdf::dispatch($book->id);
         }
 
@@ -69,7 +68,7 @@ class BookController extends Controller
 
     public function update(BookRequest $request, Book $book): RedirectResponse
     {
-        $data = $request->safe()->except(['cover_image', 'pdf_file']);
+        $data = $request->safe()->except(['cover_image', 'pdf_file', 'temp_pdf_path']);
         $data['is_free'] = $request->boolean('is_free');
         $data['is_published'] = $request->boolean('is_published');
         $data['is_premium_gift'] = $request->boolean('is_premium_gift');
@@ -82,20 +81,65 @@ class BookController extends Controller
             $data['cover_image'] = $request->file('cover_image')->store('books/covers', 'public');
         }
 
-        if ($request->hasFile('pdf_file')) {
+        $pdfChanged = $request->hasFile('pdf_file') || $request->filled('temp_pdf_path');
+        if ($pdfChanged) {
+            // Delete the book's old PDF before storing the replacement.
             if ($book->pdf_path) {
                 Storage::disk('private')->delete($book->pdf_path);
             }
-            $data['pdf_path'] = $request->file('pdf_file')->store('books/pdfs', 'private');
+            $data = array_merge($data, $this->resolvePdfPath($request));
         }
 
         $book->update($data);
 
-        if ($request->hasFile('pdf_file')) {
+        if ($pdfChanged) {
             ProcessBookPdf::dispatch($book->id);
         }
 
         return redirect()->route('admin.books.index')->with('success', 'Book updated.');
+    }
+
+    /**
+     * Resolve which PDF source the request carries:
+     *  1. Direct `pdf_file` upload (small files, legacy path)
+     *  2. `temp_pdf_path` from a chunked upload handled by BookUploadController
+     * The temp file is moved into the private books/pdfs directory and its
+     * staging folder is removed in both cases.
+     */
+    private function resolvePdfPath(Request $request): array
+    {
+        if ($request->hasFile('pdf_file')) {
+            // NEVER store on the 'public' disk. This path is only ever resolved
+            // server-side through the signed, watermarked reader endpoint.
+            return ['pdf_path' => $request->file('pdf_file')->store('books/pdfs', 'private')];
+        }
+
+        $tempPath = trim((string) $request->input('temp_pdf_path'));
+
+        if ($tempPath === '' || ! Str::startsWith($tempPath, 'books/temp/')) {
+            return [];
+        }
+
+        $storage = Storage::disk('private');
+
+        if (! $storage->exists($tempPath)) {
+            return [];
+        }
+
+        // books/temp/{uploadId}/{filename}
+        $parts = explode('/', $tempPath);
+        $uploadId = $parts[2] ?? '';
+
+        $newPath = 'books/pdfs/'.Str::uuid()->toString().'.pdf';
+
+        $storage->move($tempPath, $newPath);
+
+        // Remove the entire staging folder (meta.json + any leftovers).
+        if ($uploadId !== '') {
+            $storage->deleteDirectory("books/temp/{$uploadId}");
+        }
+
+        return ['pdf_path' => $newPath];
     }
 
     public function destroy(Book $book): RedirectResponse

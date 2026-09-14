@@ -21,7 +21,7 @@ class AppServiceProvider extends ServiceProvider
         // tight: a real reader flips pages far slower than this, so this
         // mainly exists to make bulk-scraping a book impractical.
         RateLimiter::for('reader-pages', function ($request) {
-            return Limit::perSeconds(10, 5)->by($request->user()?->id ?: $request->ip());
+            return Limit::perSecond(5, 10)->by($request->user()?->id ?: $request->ip());
         });
 
         // REST API — general vs AI-generation endpoints get different budgets

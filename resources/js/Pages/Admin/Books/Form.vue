@@ -88,6 +88,46 @@ async function handlePdfSelect(e) {
     await startChunkedUpload(file);
 }
 
+async function finalizeUpload(uploadId) {
+    // Start the merge. Merging now runs in a queue job, so this request only
+    // returns fast and can't be killed by a PHP/proxy timeout mid-concat.
+    const res = await axios.post('/admin/books/merge-chunks', { upload_id: uploadId }, { timeout: 30000 });
+
+    if (!res.data?.ok) {
+        pdfError.value = res.data?.message || 'Failed to finalize upload.';
+        return null;
+    }
+
+    // Retry of an upload a previous run already finished → file returned now.
+    if (res.data?.temp_path) {
+        return res.data.temp_path;
+    }
+
+    // Background merge — poll until done/error. Transient poll failures are
+    // tolerated; the queued job always completes server-side.
+    for (let attempt = 0; attempt < 300; attempt++) {
+        await new Promise((r) => setTimeout(r, 2000));
+
+        try {
+            const status = await axios.get(`/admin/books/merge-chunks/status/${uploadId}`, { timeout: 15000 });
+
+            if (status.data?.status === 'done' && status.data?.ok) {
+                return status.data.temp_path;
+            }
+
+            if (status.data?.status === 'error') {
+                pdfError.value = status.data?.message || 'Failed to finalize upload.';
+                return null;
+            }
+        } catch (err) {
+            // Transient network blip — keep polling instead of failing the upload.
+        }
+    }
+
+    pdfError.value = 'Timed out waiting for the server to finalize. Please try again.';
+    return null;
+}
+
 async function startChunkedUpload(file) {
     pdfUploading.value = true;
     pdfUploadProgress.value = 0;
@@ -132,23 +172,12 @@ async function startChunkedUpload(file) {
         pdfUploadProgress.value = Math.round(((i + 1) / totalChunks) * 90);
     }
 
-    try {
-        // Merging reads and rewrites the whole file, so a few hundred MB can
-        // legitimately take minutes on a slow disk — well past the old 60s
-        // ceiling, which aborted the request in the browser while the server
-        // was still working. The merge is retryable now: if the earlier run
-        // finished, this returns the completed file instead of re-uploading.
-        const res = await axios.post('/admin/books/merge-chunks', { upload_id: uploadId }, { timeout: 600000 });
+    const tempPath = await finalizeUpload(uploadId);
 
-        if (res.data?.ok) {
-            form.temp_pdf_path = res.data.temp_path;
-            pdfUploadProgress.value = 100;
-            pdfUploaded.value = true;
-        } else {
-            pdfError.value = res.data?.message || 'Failed to finalize upload.';
-        }
-    } catch (err) {
-        pdfError.value = describeUploadError(err, 'Failed to finalize upload.');
+    if (tempPath) {
+        form.temp_pdf_path = tempPath;
+        pdfUploadProgress.value = 100;
+        pdfUploaded.value = true;
     }
 
     pdfUploading.value = false;

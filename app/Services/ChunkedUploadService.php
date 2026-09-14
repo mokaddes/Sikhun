@@ -112,6 +112,54 @@ class ChunkedUploadService
     }
 
     /**
+     * Merge metadata is kept in {prefix}/temp/{upload_id}/meta.json (written
+     * by storeChunk). These helpers overlay merge progress on the same file
+     * so a background merge can report status back to a polling client.
+     */
+    public function markMergeStatus(string $prefix, string $uploadId, array $payload): void
+    {
+        $storage = Storage::disk($this->disk);
+        $dir = $this->tempDirectory($prefix, $uploadId);
+        $metaPath = "{$dir}/meta.json";
+
+        $meta = [];
+
+        if ($storage->exists($metaPath)) {
+            $meta = json_decode((string) $storage->get($metaPath), true) ?: [];
+        } else {
+            // Fatal error paths inside merge() wipe the whole temp dir (chunks
+            // + meta). Re-create the folder so the client can read the real
+            // failure instead of a generic "upload not found".
+            $storage->makeDirectory($dir);
+        }
+
+        $storage->put($metaPath, json_encode(array_merge($meta, $payload)));
+    }
+
+    /**
+     * @return array{status: 'missing'|'pending'|'queued'|'merging'|'done'|'error', message?: ?string, temp_path?: ?string, filename?: ?string, size?: ?int}
+     */
+    public function mergeStatus(string $prefix, string $uploadId): array
+    {
+        $storage = Storage::disk($this->disk);
+        $metaPath = $this->tempDirectory($prefix, $uploadId).'/meta.json';
+
+        if (! $storage->exists($metaPath)) {
+            return ['status' => 'missing', 'message' => 'Upload not found. Try again.'];
+        }
+
+        $meta = json_decode((string) $storage->get($metaPath), true) ?: [];
+
+        return [
+            'status' => (string) ($meta['merge_status'] ?? 'pending'),
+            'message' => $meta['merge_message'] ?? null,
+            'temp_path' => $meta['temp_path'] ?? null,
+            'filename' => $meta['filename'] ?? null,
+            'size' => isset($meta['size']) ? (int) $meta['size'] : null,
+        ];
+    }
+
+    /**
      * Concatenate a complete upload into {prefix}/temp/{upload_id}/{filename}.
      *
      * @param  list<string>  $allowedExtensions  e.g. ['mp4', 'webm']

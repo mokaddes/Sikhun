@@ -50,6 +50,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('books', BookController::class);
         Route::post('books/upload-chunk', [BookUploadController::class, 'uploadChunk'])->name('books.upload-chunk');
         Route::post('books/merge-chunks', [BookUploadController::class, 'mergeChunks'])->name('books.merge-chunks');
+        Route::get('books/merge-chunks/status/{upload_id}', [BookUploadController::class, 'mergeStatus'])
+            ->name('books.merge-status')
+            ->where('upload_id', '[A-Za-z0-9-]+');
         Route::post('books/{book}/retry-processing', [BookController::class, 'retryProcessing'])->name('books.retry-processing');
 
         Route::resource('courses', CourseController::class)->except(['show']);

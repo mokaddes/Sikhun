@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\FinalizeChunkedUpload;
 use App\Services\ChunkedUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Chunked upload endpoint for large book PDFs (200-300MB+), which would blow
@@ -72,22 +74,52 @@ class BookUploadController extends Controller
             'upload_id' => ['required', 'string', 'max:64', 'regex:/^[a-zA-Z0-9\-]+$/'],
         ]);
 
-        $result = $this->uploads->merge(
+        $uploadId = $validated['upload_id'];
+
+        // Retry of an upload an earlier run already finished (the client's
+        // first request timed out but the server kept working): hand back the
+        // completed file instead of queueing a redundant merge.
+        $existing = $this->uploads->mergeStatus(self::PREFIX, $uploadId);
+
+        if ($existing['status'] === 'done'
+            && $existing['temp_path']
+            && Storage::disk('private')->exists($existing['temp_path'])) {
+            return response()->json([
+                'ok' => true,
+                'temp_path' => $existing['temp_path'],
+                'filename' => $existing['filename'],
+                'size' => $existing['size'],
+            ]);
+        }
+
+        // Otherwise merge in the background: a big concatenation can outrun
+        // the PHP/proxy request timeout, which used to abort the request
+        // while chunks sat finalized-but-unclaimed in temp/. The client now
+        // polls books/merge-chunks/status/{upload_id} instead.
+        $this->uploads->markMergeStatus(self::PREFIX, $uploadId, ['merge_status' => 'queued']);
+
+        FinalizeChunkedUpload::dispatch(
             self::PREFIX,
-            $validated['upload_id'],
+            $uploadId,
             self::ALLOWED_EXTENSIONS,
             self::MAX_FILE_SIZE,
         );
 
-        if (! $result['ok']) {
-            return response()->json($result, 422);
+        return response()->json(['ok' => true, 'status' => 'queued']);
+    }
+
+    public function mergeStatus(Request $request, string $uploadId): JsonResponse
+    {
+        if (! preg_match('/^[a-zA-Z0-9\-]+$/', $uploadId)) {
+            return response()->json(['ok' => false, 'status' => 'error', 'message' => 'Invalid upload id.'], 422);
         }
 
-        return response()->json([
-            'ok' => true,
-            'temp_path' => $result['temp_path'],
-            'size' => $result['size'],
-            'filename' => $result['filename'],
-        ]);
+        $status = $this->uploads->mergeStatus(self::PREFIX, $uploadId);
+
+        if ($status['status'] === 'missing') {
+            return response()->json(['ok' => false, 'status' => 'error', 'message' => $status['message']], 404);
+        }
+
+        return response()->json(array_merge(['ok' => $status['status'] === 'done'], $status));
     }
 }

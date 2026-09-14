@@ -101,7 +101,7 @@ class ExamController extends Controller
             'percentage' => $exam->total > 0 ? round(($score / $exam->total) * 100, 2) : 0,
             'status' => 'completed',
             'completed_at' => now(),
-            'time_taken_seconds' => $exam->started_at ? now()->diffInSeconds($exam->started_at) : null,
+            'time_taken_seconds' => $exam->started_at ? max(0, (int) now()->diffInSeconds($exam->started_at)) : null,
         ]);
 
         $student = auth('web')->user();

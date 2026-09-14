@@ -118,7 +118,12 @@ class ReaderController extends Controller
 
         $session->update([
             'pages_read' => max($session->pages_read, $page),
-            'duration_seconds' => now()->diffInSeconds($session->created_at),
+            // MySQL round-trips `timestamp` columns through the connection's
+            // timezone, which can differ from PHP's app timezone (Asia/Dhaka),
+            // making created_at read back "in the future" and the diff negative.
+            // duration_seconds is UNSIGNED, so clamp to a non-negative integer
+            // to prevent a WRITE failure crashing the reader.
+            'duration_seconds' => max(0, (int) now()->diffInSeconds($session->created_at)),
             'last_activity_at' => now(),
         ]);
     }

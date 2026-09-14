@@ -92,6 +92,7 @@ class ProcessBookPdf implements ShouldQueue
                 'parser_version' => $doc->parserVersion,
                 'parsed_at' => now(),
                 'pdf_content_hash' => $contentHash,
+                'total_pages' => $doc->pages ? count($doc->pages) : $book->total_pages,
             ])->save();
 
             Log::info('ProcessBookPdf completed', array_merge(['book_id' => $book->id], $stats, [

@@ -51,7 +51,7 @@ class BookController extends Controller
 
         $book = Book::create($data);
 
-        if ($request->hasFile('pdf_file') || $request->filled('temp_pdf_path')) {
+        if (isset($data['pdf_path'])) {
             ProcessBookPdf::dispatch($book->id);
         }
 
@@ -83,16 +83,23 @@ class BookController extends Controller
 
         $pdfChanged = $request->hasFile('pdf_file') || $request->filled('temp_pdf_path');
         if ($pdfChanged) {
-            // Delete the book's old PDF before storing the replacement.
-            if ($book->pdf_path) {
-                Storage::disk('private')->delete($book->pdf_path);
+            $resolved = $this->resolvePdfPath($request);
+
+            // Only remove the old PDF once the replacement is safely on disk.
+            // If resolution failed (e.g. a broken/missing temp upload), the
+            // book keeps its existing file instead of being left as a dead
+            // pdf_path reference that would silently skip reprocessing.
+            if (isset($resolved['pdf_path'])) {
+                if ($book->pdf_path) {
+                    Storage::disk('private')->delete($book->pdf_path);
+                }
+                $data['pdf_path'] = $resolved['pdf_path'];
             }
-            $data = array_merge($data, $this->resolvePdfPath($request));
         }
 
         $book->update($data);
 
-        if ($pdfChanged) {
+        if ($pdfChanged && ! empty($data['pdf_path'])) {
             ProcessBookPdf::dispatch($book->id);
         }
 

@@ -149,7 +149,11 @@ class ParsedDocumentStorageService
         }
 
         if ($doc->pages) {
-            $book->update(['total_pages' => max($book->total_pages, count($doc->pages))]);
+            // Authoritative: after a successful parse with a real page list,
+            // total_pages always equals this PDF's page count. Using max() here
+            // would leave the count stuck at a larger value from an older file
+            // (e.g. replacing a 100-page PDF with a corrected 4-page one).
+            $book->update(['total_pages' => count($doc->pages)]);
         }
 
         return $ids;

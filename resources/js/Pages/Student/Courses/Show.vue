@@ -26,7 +26,7 @@ function enroll(method) {
                 <p v-if="course.mentor" class="text-[var(--text-muted)] mb-1">{{ t('admin.courses.mentor') }}: {{ course.mentor.name }} — {{ course.mentor.designation }}</p>
                 <p class="mt-4 mb-6 leading-relaxed">{{ course.description }}</p>
 
-                <div v-if="isEnrolled">
+                <div v-if="isEnrolled && course.delivery_type === 'video'">
                     <div class="mb-3 text-sm">
                         {{ t('courses_page.progress') }}: <strong>{{ enrollment.progress_percentage }}%</strong>
                     </div>
@@ -38,7 +38,7 @@ function enroll(method) {
                         {{ t('courses_page.download_certificate') }}
                     </a>
                 </div>
-                <div v-else class="font-heading text-2xl font-extrabold mb-5">
+                <div v-if="!isEnrolled" class="font-heading text-2xl font-extrabold mb-5">
                     <span v-if="(+course.price) === 0" class="text-[var(--secondary)]">{{ t('common.free') }}</span>
                     <span v-else>৳{{ course.price }}</span>
                 </div>
@@ -59,26 +59,44 @@ function enroll(method) {
             </div>
         </div>
 
-        <h2 class="font-heading text-xl font-bold mb-4">{{ t('admin.courses.sections') }}</h2>
-        <div class="space-y-4 max-w-2xl">
-            <div v-for="section in course.sections" :key="section.id" class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-                <div class="font-semibold mb-3">{{ section.title }}</div>
-                <ul class="space-y-1">
-                    <li v-for="lesson in section.lessons" :key="lesson.id">
-                        <Link v-if="isEnrolled || lesson.is_free_preview" :href="`/courses/${course.slug}/sections/${section.id}/lessons/${lesson.id}`"
-                            class="flex items-center justify-between text-sm px-3 py-2 rounded-lg hover:bg-[var(--surface2)]">
-                            <span>{{ lesson.title }}</span>
-                            <span class="text-xs text-[var(--text-muted)]">
-                                {{ lesson.is_free_preview ? t('admin.courses.free_preview') + ' · ' : '' }}{{ lesson.duration_minutes }}min
-                            </span>
-                        </Link>
-                        <div v-else class="flex items-center justify-between text-sm px-3 py-2 rounded-lg text-[var(--text-muted)] opacity-60">
-                            <span>🔒 {{ lesson.title }}</span>
-                            <span class="text-xs">{{ lesson.duration_minutes }}min</span>
-                        </div>
-                    </li>
-                </ul>
+        <!-- Link-delivered courses: the link itself is the product, and it is
+             only present in the payload once the student owns the course. -->
+        <template v-if="course.delivery_type !== 'video'">
+            <div v-if="isEnrolled" class="max-w-2xl rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
+                <h2 class="font-heading text-xl font-bold mb-4">
+                    {{ course.delivery_type === 'file_download' ? t('courses_page.download_files') : t('courses_page.open_link') }}
+                </h2>
+                <a v-if="course.external_link" :href="course.external_link" target="_blank" rel="noopener noreferrer"
+                    class="inline-block px-6 py-3 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold">
+                    {{ course.delivery_type === 'file_download' ? t('courses_page.download_files') : t('courses_page.open_link') }}
+                </a>
+                <p v-if="course.link_note" class="mt-4 text-sm whitespace-pre-line text-[var(--text-muted)]">{{ course.link_note }}</p>
+                <p class="mt-4 text-xs text-[var(--text-muted)]">{{ t('courses_page.link_emailed') }}</p>
             </div>
-        </div>
+        </template>
+
+        <template v-else>
+            <h2 class="font-heading text-xl font-bold mb-4">{{ t('admin.courses.sections') }}</h2>
+            <div class="space-y-4 max-w-2xl">
+                <div v-for="section in course.sections" :key="section.id" class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+                    <div class="font-semibold mb-3">{{ section.title }}</div>
+                    <ul class="space-y-1">
+                        <li v-for="lesson in section.lessons" :key="lesson.id">
+                            <Link v-if="isEnrolled || lesson.is_free_preview" :href="`/courses/${course.slug}/sections/${section.id}/lessons/${lesson.id}`"
+                                class="flex items-center justify-between text-sm px-3 py-2 rounded-lg hover:bg-[var(--surface2)]">
+                                <span>{{ lesson.title }}</span>
+                                <span class="text-xs text-[var(--text-muted)]">
+                                    {{ lesson.is_free_preview ? t('admin.courses.free_preview') + ' · ' : '' }}{{ lesson.duration_minutes }}min
+                                </span>
+                            </Link>
+                            <div v-else class="flex items-center justify-between text-sm px-3 py-2 rounded-lg text-[var(--text-muted)] opacity-60">
+                                <span>🔒 {{ lesson.title }}</span>
+                                <span class="text-xs">{{ lesson.duration_minutes }}min</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </template>
     </StudentLayout>
 </template>

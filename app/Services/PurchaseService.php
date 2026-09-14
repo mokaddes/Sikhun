@@ -27,6 +27,7 @@ class PurchaseService
         private SubscriptionService $subscriptions,
         private ReferralService $referrals,
         private BookAccessService $access,
+        private CourseDeliveryService $courseDelivery,
     ) {}
 
     /**
@@ -190,6 +191,16 @@ class PurchaseService
             ),
             default => null,
         };
+
+        // Link-based courses hand the student the product (the link) by email —
+        // video courses need nothing here, their content lives in the lessons.
+        if ($order->orderable_type === 'course') {
+            $course = Course::find($order->orderable_id);
+
+            if ($course) {
+                $this->courseDelivery->deliver($order->student, $course, $order);
+            }
+        }
 
         if ($order->orderable_type !== 'wallet_recharge') {
             $this->referrals->rewardIfEligible($order->student);

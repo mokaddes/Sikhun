@@ -17,12 +17,26 @@ class CourseRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', Rule::unique('courses', 'slug')->ignore($courseId)],
             'description' => ['nullable', 'string', 'max:5000'],
+            'delivery_type' => ['required', 'in:video,enrollment_link,file_download'],
+            // Link-based courses sell the link itself, so it is mandatory there.
+            'external_link' => [
+                'nullable', 'url', 'max:500',
+                'required_if:delivery_type,enrollment_link,file_download',
+            ],
+            'link_note' => ['nullable', 'string', 'max:2000'],
             'mentor_id' => ['nullable', 'exists:mentors,id'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'level' => ['nullable', 'in:ssc,hsc,university,job'],
             'price' => ['required', 'numeric', 'min:0'],
             'is_active' => ['boolean'],
             'cover_image' => ['nullable', 'image', 'max:2048'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'external_link.required_if' => 'A delivery link is required for link-based courses.',
         ];
     }
 }

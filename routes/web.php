@@ -38,6 +38,10 @@ Route::get('/library/{book:slug}', [LibraryController::class, 'show'])->name('li
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
 Route::get('/courses/{course:slug}', [CourseController::class, 'show'])->name('courses.show');
 Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}', [CourseController::class, 'lesson'])->name('courses.lesson');
+// Public like the lesson page itself — the controller re-checks enrollment /
+// free-preview / access grants before serving the file off the private disk.
+Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}/video', [CourseController::class, 'streamVideo'])->name('courses.lesson.video');
+Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}/download', [CourseController::class, 'downloadAttachment'])->name('courses.lesson.download');
 Route::get('/p/{page:slug}', [PageController::class, 'show'])->name('pages.show');
 
 Route::post('/language/{locale}', function (string $locale) {

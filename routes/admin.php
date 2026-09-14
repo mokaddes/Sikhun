@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\CourseLessonController;
 use App\Http\Controllers\Admin\CourseSectionController;
+use App\Http\Controllers\Admin\CourseVideoUploadController;
 use App\Http\Controllers\Admin\CustomPageController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FreeCampaignController;
@@ -58,6 +59,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('courses/{course}/sections/{section}/lessons', [CourseLessonController::class, 'store'])->name('courses.lessons.store');
         Route::put('courses/{course}/sections/{section}/lessons/{lesson}', [CourseLessonController::class, 'update'])->name('courses.lessons.update');
         Route::delete('courses/{course}/sections/{section}/lessons/{lesson}', [CourseLessonController::class, 'destroy'])->name('courses.lessons.destroy');
+        // Chunked lesson-video upload (mirrors the book PDF flow).
+        Route::post('courses/video/chunk', [CourseVideoUploadController::class, 'uploadChunk'])->name('courses.video.chunk');
+        Route::post('courses/video/merge', [CourseVideoUploadController::class, 'mergeChunks'])->name('courses.video.merge');
 
         Route::resource('plans', PlanController::class)->except(['show']);
 

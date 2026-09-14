@@ -2,20 +2,25 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Http\Controllers\Concerns\StreamsLessonMedia;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\PurchaseRequest;
 use App\Models\Category;
 use App\Models\Course;
 use App\Services\CertificateService;
+use App\Services\CourseDeliveryService;
 use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CourseController extends Controller
 {
+    use StreamsLessonMedia;
+
     public function index(Request $request, \App\Services\SeoService $seo): Response
     {
         $sort = $request->input('sort', 'newest');
@@ -49,9 +54,18 @@ class CourseController extends Controller
 
         $enrollment = $student ? $student->courseEnrollments()->where('course_id', $course->id)->first() : null;
         $hasAccess = $student && $grants->hasActiveAccess($student);
+        $ownsCourse = (bool) $enrollment || $hasAccess;
+
+        $course->load(['mentor', 'category', 'sections.lessons'])->decorateLessonsForStudent();
+
+        if ($ownsCourse) {
+            // The delivery link *is* the product for link-based courses — it is
+            // hidden by default on the model and revealed only to owners.
+            $course->makeVisible(['external_link', 'link_note']);
+        }
 
         return Inertia::render('Student/Courses/Show', [
-            'course' => $course->load(['mentor', 'category', 'sections.lessons']),
+            'course' => $course,
             'enrollment' => $enrollment,
             'isEnrolled' => (bool) $enrollment,
             'hasAccess' => $hasAccess,
@@ -59,7 +73,7 @@ class CourseController extends Controller
         ]);
     }
 
-    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, ZinipayService $zinipay, \App\Services\AccessGrantService $grants): \Symfony\Component\HttpFoundation\Response
+    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, ZinipayService $zinipay, \App\Services\AccessGrantService $grants, CourseDeliveryService $delivery): \Symfony\Component\HttpFoundation\Response
     {
         $student = auth('web')->user();
 
@@ -71,6 +85,7 @@ class CourseController extends Controller
         // certificates work exactly like a paid enrollment.
         if ($grants->hasActiveAccess($student) || (float) $course->price === 0.0) {
             $student->courseEnrollments()->create(['course_id' => $course->id, 'progress_percentage' => 0]);
+            $delivery->deliver($student, $course);
 
             return redirect()->route('courses.show', $course)->with('success', 'Enrolled!');
         }
@@ -99,22 +114,37 @@ class CourseController extends Controller
         $student = auth('web')->user();
         $enrollment = $student ? $student->courseEnrollments()->where('course_id', $course->id)->first() : null;
 
-        abort_unless(
-            $enrollment || $lesson->is_free_preview || ($student && $grants->hasActiveAccess($student)),
-            403,
-            'Enroll in this course to view this lesson.'
-        );
+        $this->ensureLessonBelongsToCourse($course, $section, $lesson);
+        $this->ensureLessonAccess($student, $course, $lesson, $grants);
 
         $progress = $enrollment
             ? \App\Models\LessonProgress::where('student_id', $student->id)->where('course_lesson_id', $lesson->id)->first()
             : null;
 
         return Inertia::render('Student/Courses/Lesson', [
-            'course' => $course->load('sections.lessons'),
-            'lesson' => $lesson,
+            'course' => $course->load('sections.lessons')->decorateLessonsForStudent(),
+            'lesson' => $lesson->forStudent($course),
             'isCompleted' => (bool) $progress?->is_completed,
             'isEnrolled' => (bool) $enrollment,
         ]);
+    }
+
+    /** Streams an uploaded lesson video. Range requests make seeking work. */
+    public function streamVideo(Course $course, \App\Models\CourseSection $section, \App\Models\CourseLesson $lesson, \App\Services\AccessGrantService $grants): BinaryFileResponse
+    {
+        $this->ensureLessonBelongsToCourse($course, $section, $lesson);
+        $this->ensureLessonAccess(auth('web')->user(), $course, $lesson, $grants);
+
+        return $this->streamLessonVideo($lesson);
+    }
+
+    /** Downloads an uploaded lesson PDF (a lesson may attach one instead of a video). */
+    public function downloadAttachment(Course $course, \App\Models\CourseSection $section, \App\Models\CourseLesson $lesson, \App\Services\AccessGrantService $grants): BinaryFileResponse
+    {
+        $this->ensureLessonBelongsToCourse($course, $section, $lesson);
+        $this->ensureLessonAccess(auth('web')->user(), $course, $lesson, $grants);
+
+        return $this->downloadLessonPdf($lesson);
     }
 
     public function completeLesson(Course $course, \App\Models\CourseSection $section, \App\Models\CourseLesson $lesson, CertificateService $certificates): RedirectResponse

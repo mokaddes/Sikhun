@@ -209,7 +209,26 @@
             "add_lesson": "Add Lesson",
             "lesson_type": "Type",
             "duration": "Duration (min)",
-            "free_preview": "Free Preview"
+            "free_preview": "Free Preview",
+            "delivery_type": "Course Type",
+            "delivery_video": "Video lessons (upload videos per lesson)",
+            "delivery_enrollment_link": "Enrollment link (live class / batch invite)",
+            "delivery_file_download": "File download link",
+            "delivery_help": "Video courses use sections and lessons. Link courses deliver a single link to the student after purchase.",
+            "external_link": "Delivery link",
+            "external_link_help": "Sent to the student by email after purchase and shown on the course page.",
+            "link_note": "Note for students (optional)",
+            "link_course_hint": "This course delivers a single link — no sections or lessons are needed.",
+            "upload_video": "Upload video file",
+            "upload_pdf": "Upload PDF file",
+            "or_video_url": "Or use an external video URL",
+            "uploading": "Uploading",
+            "video_ready": "Video uploaded — save to attach it.",
+            "video_attached": "video",
+            "pdf_attached": "pdf",
+            "remove_video": "Remove the uploaded video",
+            "pdf_replace_hint": "Uploading a new file replaces the current one.",
+            "no_lessons": "No lessons yet."
         },
         "plans": {
             "title": "Plans",
@@ -484,7 +503,13 @@
         "no_courses": "Courses coming soon.",
         "progress": "Progress",
         "download_certificate": "Download Certificate",
-        "enroll_free": "Enroll for Free"
+        "enroll_free": "Enroll for Free",
+        "open_link": "Open your course link",
+        "download_files": "Download your files",
+        "link_emailed": "We have also emailed this link to you.",
+        "download_lesson_file": "Download lesson file",
+        "no_video": "No video has been added to this lesson yet.",
+        "no_file": "No file has been attached to this lesson yet."
     },
     "support": {
         "title": "Support Chat",

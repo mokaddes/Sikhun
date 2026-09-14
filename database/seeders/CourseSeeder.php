@@ -26,6 +26,7 @@ class CourseSeeder extends Seeder
                 array_merge($courseData, [
                     'description' => "{$courseData['title']} — লাইভ ক্লাস, রেকর্ডেড ভিডিও এবং প্র্যাকটিস সিট সহ সম্পূর্ণ প্যাকেজ।",
                     'mentor_id' => $mentors[$i % max($mentors->count(), 1)]?->id,
+                    'delivery_type' => 'video',
                     'is_active' => true,
                 ])
             );

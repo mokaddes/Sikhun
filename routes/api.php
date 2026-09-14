@@ -60,6 +60,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('courses/{course:slug}', [CourseController::class, 'show']);
     Route::post('courses/{course}/enroll', [CourseController::class, 'enroll']);
     Route::get('courses/{course}/sections/{section}/lessons/{lesson}', [CourseController::class, 'lesson']);
+    // Media URLs used by the mobile client; access is enforced in the controller.
+    Route::get('courses/{course:slug}/sections/{section}/lessons/{lesson}/video', [CourseController::class, 'streamVideo']);
+    Route::get('courses/{course:slug}/sections/{section}/lessons/{lesson}/download', [CourseController::class, 'downloadAttachment']);
     Route::post('courses/{course}/sections/{section}/lessons/{lesson}/complete', [CourseController::class, 'completeLesson']);
 
     Route::get('wallet', [WalletController::class, 'index']);

@@ -209,7 +209,26 @@
             "add_lesson": "Add Lesson",
             "lesson_type": "Type",
             "duration": "Duration (min)",
-            "free_preview": "Free Preview"
+            "free_preview": "Free Preview",
+            "delivery_type": "কোর্সের ধরন",
+            "delivery_video": "ভিডিও লেসন (প্রতি লেসনে ভিডিও আপলোড)",
+            "delivery_enrollment_link": "এনরোলমেন্ট লিংক (লাইভ ক্লাস / ব্যাচ)",
+            "delivery_file_download": "ফাইল ডাউনলোড লিংক",
+            "delivery_help": "ভিডিও কোর্সে সেকশন ও লেসন থাকে। লিংক কোর্সে কেনার পর শিক্ষার্থী একটি লিংক পায়।",
+            "external_link": "ডেলিভারি লিংক",
+            "external_link_help": "কেনার পর শিক্ষার্থীকে ইমেইলে পাঠানো হবে এবং কোর্স পেজে দেখানো হবে।",
+            "link_note": "শিক্ষার্থীর জন্য নোট (ঐচ্ছিক)",
+            "link_course_hint": "এই কোর্সে একটি লিংক দেওয়া হয় — সেকশন বা লেসন প্রয়োজন নেই।",
+            "upload_video": "ভিডিও ফাইল আপলোড করুন",
+            "upload_pdf": "PDF ফাইল আপলোড করুন",
+            "or_video_url": "অথবা বাইরের ভিডিও লিংক দিন",
+            "uploading": "আপলোড হচ্ছে",
+            "video_ready": "ভিডিও আপলোড হয়েছে — সংযুক্ত করতে সেভ করুন।",
+            "video_attached": "ভিডিও",
+            "pdf_attached": "PDF",
+            "remove_video": "আপলোড করা ভিডিও মুছুন",
+            "pdf_replace_hint": "নতুন ফাইল আপলোড করলে আগেরটি প্রতিস্থাপিত হবে।",
+            "no_lessons": "এখনো কোনো লেসন নেই।"
         },
         "plans": {
             "title": "Plans",
@@ -484,7 +503,13 @@
         "no_courses": "শীঘ্রই কোর্স যুক্ত হবে।",
         "progress": "অগ্রগতি",
         "download_certificate": "সার্টিফিকেট ডাউনলোড করুন",
-        "enroll_free": "ফ্রি ভর্তি হন"
+        "enroll_free": "ফ্রি ভর্তি হন",
+        "open_link": "আপনার কোর্স লিংক খুলুন",
+        "download_files": "আপনার ফাইল ডাউনলোড করুন",
+        "link_emailed": "এই লিংকটি আপনার ইমেইলেও পাঠানো হয়েছে।",
+        "download_lesson_file": "লেসন ফাইল ডাউনলোড করুন",
+        "no_video": "এই লেসনে এখনো কোনো ভিডিও যুক্ত হয়নি।",
+        "no_file": "এই লেসনে এখনো কোনো ফাইল যুক্ত হয়নি।"
     },
     "support": {
         "title": "সাপোর্ট চ্যাট",

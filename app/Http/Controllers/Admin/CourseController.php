@@ -49,6 +49,10 @@ class CourseController extends Controller
      */
     public function edit(Course $course): Response
     {
+        // The delivery link is hidden by default on the model (students must
+        // never see it for free) — the admin form needs it back.
+        $course->makeVisible(['external_link', 'link_note']);
+
         return Inertia::render('Admin/Courses/Form', [
             'course' => $course->load('sections.lessons'),
             ...$this->formOptions(),

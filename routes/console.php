@@ -18,21 +18,25 @@ Schedule::command('subscriptions:expiry-check')->dailyAt('09:00');
 Schedule::command('subscriptions:expire-lapsed')->dailyAt('00:30');
 
 // Remove abandoned chunked-upload staging folders every 30 minutes.
-// Each folder is small while uploading, but left behind uploads waste disk space.
+// Each folder is small while uploading, but left behind uploads waste disk
+// space — and an abandoned lesson video can be gigabytes.
 Schedule::call(function () {
     $storage = Storage::disk('private');
-    $base = 'books/temp';
-    if (! $storage->exists($base)) {
-        return;
-    }
     $cutoff = now()->subHour();
-    foreach ($storage->directories($base) as $dir) {
-        $meta = $storage->exists("{$dir}/meta.json")
-            ? json_decode((string) $storage->get("{$dir}/meta.json"), true)
-            : null;
-        $updatedAt = $meta['updated_at'] ?? null;
-        if (! $updatedAt || \Carbon\Carbon::parse($updatedAt)->lessThan($cutoff)) {
-            $storage->deleteDirectory($dir);
+
+    foreach (['books/temp', 'courses/temp'] as $base) {
+        if (! $storage->exists($base)) {
+            continue;
+        }
+
+        foreach ($storage->directories($base) as $dir) {
+            $meta = $storage->exists("{$dir}/meta.json")
+                ? json_decode((string) $storage->get("{$dir}/meta.json"), true)
+                : null;
+            $updatedAt = $meta['updated_at'] ?? null;
+            if (! $updatedAt || \Carbon\Carbon::parse($updatedAt)->lessThan($cutoff)) {
+                $storage->deleteDirectory($dir);
+            }
         }
     }
 })->everyThirtyMinutes();

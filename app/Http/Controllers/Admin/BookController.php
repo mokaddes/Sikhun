@@ -9,15 +9,17 @@ use App\Models\Author;
 use App\Models\Book;
 use App\Models\Category;
 use App\Models\Publication;
+use App\Services\ChunkedUploadService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class BookController extends Controller
 {
+    public function __construct(private ChunkedUploadService $uploads) {}
+
     public function index(): Response
     {
         return Inertia::render('Admin/Books/Index', [
@@ -121,32 +123,16 @@ class BookController extends Controller
             return ['pdf_path' => $request->file('pdf_file')->store('books/pdfs', 'private')];
         }
 
-        $tempPath = trim((string) $request->input('temp_pdf_path'));
+        // promote() re-validates the client-supplied path (it must be a direct
+        // child of a books/temp upload dir) before touching the filesystem.
+        $stored = $this->uploads->promote(
+            BookUploadController::PREFIX,
+            trim((string) $request->input('temp_pdf_path')),
+            'books/pdfs',
+            BookUploadController::ALLOWED_EXTENSIONS,
+        );
 
-        if ($tempPath === '' || ! Str::startsWith($tempPath, 'books/temp/')) {
-            return [];
-        }
-
-        $storage = Storage::disk('private');
-
-        if (! $storage->exists($tempPath)) {
-            return [];
-        }
-
-        // books/temp/{uploadId}/{filename}
-        $parts = explode('/', $tempPath);
-        $uploadId = $parts[2] ?? '';
-
-        $newPath = 'books/pdfs/'.Str::uuid()->toString().'.pdf';
-
-        $storage->move($tempPath, $newPath);
-
-        // Remove the entire staging folder (meta.json + any leftovers).
-        if ($uploadId !== '') {
-            $storage->deleteDirectory("books/temp/{$uploadId}");
-        }
-
-        return ['pdf_path' => $newPath];
+        return $stored ? ['pdf_path' => $stored] : [];
     }
 
     public function destroy(Book $book): RedirectResponse

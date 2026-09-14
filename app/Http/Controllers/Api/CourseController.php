@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\StreamsLessonMedia;
 use App\Http\Requests\Student\PurchaseRequest;
 use App\Models\Course;
 use App\Models\CourseLesson;
@@ -9,13 +10,16 @@ use App\Models\CourseSection;
 use App\Models\LessonProgress;
 use App\Services\AccessGrantService;
 use App\Services\CertificateService;
+use App\Services\CourseDeliveryService;
 use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CourseController extends BaseApiController
 {
+    use StreamsLessonMedia;
     public function index(Request $request): JsonResponse
     {
         $courses = Course::active()->with(['mentor:id,name', 'category:id,name'])
@@ -30,16 +34,23 @@ class CourseController extends BaseApiController
         abort_unless($course->is_active, 404);
         $student = auth('sanctum')->user();
         $enrollment = $student->courseEnrollments()->where('course_id', $course->id)->first();
+        $hasAccess = $grants->hasActiveAccess($student);
+
+        $course->load(['mentor', 'category', 'sections.lessons'])->decorateLessonsForStudent();
+
+        if ($enrollment || $hasAccess) {
+            $course->makeVisible(['external_link', 'link_note']);
+        }
 
         return $this->success([
-            'course' => $course->load(['mentor', 'category', 'sections.lessons']),
+            'course' => $course,
             'enrollment' => $enrollment,
             'is_enrolled' => (bool) $enrollment,
-            'has_access' => $grants->hasActiveAccess($student),
+            'has_access' => $hasAccess,
         ]);
     }
 
-    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, ZinipayService $zinipay, AccessGrantService $grants): JsonResponse
+    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, ZinipayService $zinipay, AccessGrantService $grants, CourseDeliveryService $delivery): JsonResponse
     {
         $student = auth('sanctum')->user();
 
@@ -49,6 +60,7 @@ class CourseController extends BaseApiController
 
         if ($grants->hasActiveAccess($student) || (float) $course->price === 0.0) {
             $enrollment = $student->courseEnrollments()->create(['course_id' => $course->id, 'progress_percentage' => 0]);
+            $delivery->deliver($student, $course);
 
             return $this->success($enrollment, 'Enrolled', 201);
         }
@@ -65,12 +77,34 @@ class CourseController extends BaseApiController
     public function lesson(Course $course, CourseSection $section, CourseLesson $lesson, AccessGrantService $grants): JsonResponse
     {
         $student = auth('sanctum')->user();
-        $enrollment = $student->courseEnrollments()->where('course_id', $course->id)->first();
-        abort_unless($enrollment || $lesson->is_free_preview || $grants->hasActiveAccess($student), 403);
 
+        $this->ensureLessonBelongsToCourse($course, $section, $lesson);
+        $this->ensureLessonAccess($student, $course, $lesson, $grants);
+
+        $enrollment = $student->courseEnrollments()->where('course_id', $course->id)->first();
         $progress = $enrollment ? LessonProgress::where('student_id', $student->id)->where('course_lesson_id', $lesson->id)->first() : null;
 
-        return $this->success(['lesson' => $lesson, 'is_completed' => (bool) $progress?->is_completed]);
+        return $this->success([
+            'lesson' => $lesson->forStudent($course),
+            'is_completed' => (bool) $progress?->is_completed,
+        ]);
+    }
+
+    /** Streams an uploaded lesson video with HTTP Range support. */
+    public function streamVideo(Course $course, CourseSection $section, CourseLesson $lesson, AccessGrantService $grants): BinaryFileResponse
+    {
+        $this->ensureLessonBelongsToCourse($course, $section, $lesson);
+        $this->ensureLessonAccess(auth('sanctum')->user(), $course, $lesson, $grants);
+
+        return $this->streamLessonVideo($lesson);
+    }
+
+    public function downloadAttachment(Course $course, CourseSection $section, CourseLesson $lesson, AccessGrantService $grants): BinaryFileResponse
+    {
+        $this->ensureLessonBelongsToCourse($course, $section, $lesson);
+        $this->ensureLessonAccess(auth('sanctum')->user(), $course, $lesson, $grants);
+
+        return $this->downloadLessonPdf($lesson);
     }
 
     public function completeLesson(Course $course, CourseSection $section, CourseLesson $lesson, CertificateService $certificates): JsonResponse

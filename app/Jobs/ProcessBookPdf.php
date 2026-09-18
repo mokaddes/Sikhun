@@ -80,6 +80,22 @@ class ProcessBookPdf implements ShouldQueue
             $parser = $parsers->resolve();
             $doc = $parser->parse($book);
 
+            // A completed run MUST contain text — otherwise the book would
+            // silently end up "completed" with empty chapters/chunks and both
+            // the reader and chat return nothing while the admin sees success.
+            // Scanned/image-only PDFs (common for CV exports) extract no text;
+            // mark them failed with an actionable reason instead.
+            $pagesWithText = collect($doc->pages)
+                ->filter(fn (array $page) => mb_strlen(trim((string) ($page['content'] ?? ''))) > 0)
+                ->count();
+
+            if ($pagesWithText === 0) {
+                throw new PdfParserException(
+                    'No text could be extracted from this PDF. It is likely a scanned or image-based document — '
+                    .'re-export it as a text PDF, or upload a PDF with selectable text.'
+                );
+            }
+
             $stats = $storage->replaceAll($book, $doc);
 
             $chunkCount = $chunking->rebuildForBook($book);

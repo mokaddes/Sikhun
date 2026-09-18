@@ -52,15 +52,27 @@ class BookChunkRetrievalService
 
         $candidates = $this->fulltextCandidates($book, $question, $accessibleChapterIds, $limit * self::CANDIDATE_MULTIPLIER);
 
-        // FULLTEXT can return nothing for very short/stopword-only queries.
+        // FULLTEXT can return nothing for very short/stopword-only queries
+        // (Bengali question words, "CV", book titles, …). Falling back to the
+        // first N chunks is fine for keyword-ish questions but useless for
+        // book-level ones ("whose CV is this?") when the answer sits deeper
+        // in the document — so sample the opening PLUS evenly spaced chunks
+        // across the whole book instead of only pages 1..N.
         if ($candidates->isEmpty()) {
-            $candidates = BookChunk::query()
+            $base = BookChunk::query()
                 ->where('book_id', $book->id)
                 ->when($accessibleChapterIds !== [], fn ($q) => $q->whereIn('chapter_id', $accessibleChapterIds))
                 ->when($accessibleChapterIds === [], fn ($q) => $q->whereNull('chapter_id'))
-                ->orderBy('chunk_index')
-                ->limit($limit * self::CANDIDATE_MULTIPLIER)
-                ->get(['id', 'chapter_id', 'page_id', 'page_number', 'content', 'metadata', 'embedding']);
+                ->orderBy('chunk_index');
+
+            $sample = $this->spreadSample($base->pluck('id')->all(), $limit * self::CANDIDATE_MULTIPLIER);
+
+            if ($sample) {
+                $candidates = BookChunk::query()
+                    ->whereIn('id', array_values($sample))
+                    ->orderByRaw('FIELD(id, '.implode(',', array_map('intval', array_values($sample))).')')
+                    ->get(['id', 'chapter_id', 'page_id', 'page_number', 'content', 'metadata', 'embedding']);
+            }
         }
 
         if ($candidates->isEmpty()) {
@@ -188,6 +200,35 @@ class BookChunkRetrievalService
         });
 
         return $scored->sortByDesc('score')->take($limit)->values()->all();
+    }
+
+    /**
+     * Pick `want` chunks from an ordered id list with the widest possible
+     * coverage: always the first, always the last, and evenly spaced in
+     * between (deduplicated, reading order preserved).
+     *
+     * @param  array<int, int>  $orderedIds
+     * @return array<int, int>
+     */
+    private function spreadSample(array $orderedIds, int $want): array
+    {
+        $count = count($orderedIds);
+
+        if ($count === 0) {
+            return [];
+        }
+
+        if ($count <= $want) {
+            return $orderedIds;
+        }
+
+        $picked = [];
+
+        for ($i = 0; $i < $want; $i++) {
+            $picked[] = $orderedIds[(int) round($i * ($count - 1) / max($want - 1, 1))];
+        }
+
+        return array_values(array_unique($picked));
     }
 
     private function relatedTables(Book $book, array $chapterIds, array $pageIds): array

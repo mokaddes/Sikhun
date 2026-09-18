@@ -138,6 +138,16 @@ class SmalotPdfParser implements PdfParserContract
      * Heuristic heading test (no per-run font metrics available from
      * smalot's text extraction): short single-line, Title Case or ALL
      * CAPS, no terminal punctuation, optionally numbered ("2.1 Distance").
+     *
+     * Case-based tests only apply to scripts that HAVE case (Latin,
+     * Cyrillic, Greek). For caseless scripts (Bengali, Arabic, Devanagari,
+     * CJK, …) mb_strtoupper()/title-case are identity transforms, so a
+     * naive check would classify nearly every short CV line (name, phone,
+     * email, address — usually "Samiha Rahman" or "সামিহা রহমান") as a
+     * heading. Headings are deliberately excluded from RAG chunks, which
+     * would strip the book of most of its content. Without caseless-script
+     * awareness, a Bengali CV degrades to a few fragments — exactly the
+     * "chat can't find anything" failure.
      */
     private function classifyParagraph(string $paragraph): string
     {
@@ -147,12 +157,17 @@ class SmalotPdfParser implements PdfParserContract
         }
 
         $line = trim($lines[0]);
-        $isNumbered = (bool) preg_match('/^\d+(\.\d+)*[.:\s]/', $line);
+        if ($line === '') {
+            return 'text';
+        }
 
-        $looksTitleish = mb_strlen($line) > 0 && mb_strlen($line) <= 80
+        $isNumbered = (bool) preg_match('/^\d+(\.\d+)*[.:\s]/', $line);
+        $hasCasedLetters = preg_match('/[A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF]/u', $line) === 1;
+
+        $looksTitleish = mb_strlen($line) <= 80
             && ($isNumbered
-                || mb_strtoupper($line, 'UTF-8') === $line
-                || $line === mb_convert_case($line, MB_CASE_TITLE, 'UTF-8'))
+                || ($hasCasedLetters && mb_strtoupper($line, 'UTF-8') === $line)
+                || ($hasCasedLetters && $line === mb_convert_case($line, MB_CASE_TITLE, 'UTF-8')))
             && ! preg_match('/[.!?,;:]$/', $line);
 
         return $looksTitleish ? 'heading' : 'text';

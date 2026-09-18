@@ -135,14 +135,34 @@ class AiChatController extends Controller
             $systemPrompt = 'You are a helpful, encouraging study assistant for a Bangladeshi student. Answer clearly and concisely. Respond in the same language the student writes in (Bengali or English).';
 
             if ($session->source_type === 'book' && $session->book && $userMessage !== '') {
+                $book = $session->book;
+
+                $systemPrompt .= "\n\nThe student has attached the book \"{$book->title}\" (up to {$book->total_pages} pages). "
+                    .'Ground your answer in that book where relevant and cite its chapter and page (e.g. "Chapter 3, Page 42").';
+
                 // Access-aware structured context (chunks restricted to
                 // readable chapters) with chapter/page citation info.
-                $contextBlocks = $retrieval->buildContext($session->book, $userMessage, $student);
+                $contextBlocks = $retrieval->buildContext($book, $userMessage, $student);
 
                 if ($contextBlocks) {
-                    $systemPrompt .= "\n\nUse these excerpts from the book \"{$session->book->title}\" to ground your answer where relevant. "
-                        ."When you use an excerpt, mention its chapter and page (e.g. \"Chapter 3, Page 42\"):\n\n"
-                        .$this->renderContext($contextBlocks);
+                    $systemPrompt .= "\n\nExcerpts from \"{$book->title}\":\n\n".$this->renderContext($contextBlocks);
+                } elseif (! $book->chunks()->exists()) {
+                    // Book attached but its content was never indexed (still
+                    // processing, or a failed run). Say so honestly instead of
+                    // pretending the attachment doesn't exist.
+                    $systemPrompt .= "\n\nIMPORTANT: The attached book's content has not been indexed yet "
+                        .'(there are no searchable chunks for it at this moment). If the student asks about the '
+                        ."book's content, politely explain that the book is still being prepared and ask them to "
+                        .'try again in a few minutes. Do not claim you have no information about the attachment.';
+                } else {
+                    $systemPrompt .= "\n\nNo excerpt from the attached book matched the student's question. "
+                        .'Answer from general knowledge, but do not invent book-specific content and note that '
+                        .'you could not find it in the attached book.';
+                }
+
+                $outline = $book->chapters()->orderBy('sort_order')->pluck('title');
+                if ($outline->isNotEmpty()) {
+                    $systemPrompt .= "\n\nBook chapter outline: ".$outline->implode(' | ');
                 }
             }
 

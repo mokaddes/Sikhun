@@ -47,6 +47,9 @@ const embeddingCoverage = props.stats.chunks > 0
                 <p class="text-sm text-[var(--text-muted)] mt-1">{{ book.author?.name }} · {{ book.total_pages }} pages</p>
             </div>
             <div class="flex gap-3">
+                <Link :href="`/admin/books/${book.id}/pdf`" class="px-4 py-2 rounded-lg bg-[var(--secondary)]/15 text-[var(--secondary)] text-sm font-medium hover:bg-[var(--secondary)]/25">
+                    {{ book.pdf_path ? 'Replace PDF' : 'Upload PDF' }}
+                </Link>
                 <Link :href="`/admin/books/${book.id}/edit`" class="px-4 py-2 rounded-lg border border-[var(--border)] hover:bg-[var(--surface2)] text-sm font-medium">
                     {{ t('common.edit') }}
                 </Link>

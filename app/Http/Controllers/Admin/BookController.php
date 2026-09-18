@@ -48,16 +48,13 @@ class BookController extends Controller
             $data['cover_image'] = $request->file('cover_image')->store('books/covers', 'public');
         }
 
-        $pdfFromUpload = $this->resolvePdfPath($request);
-        $data = array_merge($data, $pdfFromUpload);
-
         $book = Book::create($data);
 
-        if (isset($data['pdf_path'])) {
-            ProcessBookPdf::dispatch($book->id);
-        }
-
-        return redirect()->route('admin.books.index')->with('success', 'Book created.');
+        // PDFs are attached in a separate step (admin.books.pdf-upload) so a
+        // large upload never blocks the metadata form. Processing runs in a
+        // background job and can take a few minutes for big files.
+        return redirect()->route('admin.books.pdf-upload', $book)
+            ->with('success', 'Book created. Upload the PDF now — processing may take a few minutes.');
     }
 
     public function edit(Book $book): Response
@@ -83,56 +80,84 @@ class BookController extends Controller
             $data['cover_image'] = $request->file('cover_image')->store('books/covers', 'public');
         }
 
-        $pdfChanged = $request->hasFile('pdf_file') || $request->filled('temp_pdf_path');
-        if ($pdfChanged) {
-            $resolved = $this->resolvePdfPath($request);
-
-            // Only remove the old PDF once the replacement is safely on disk.
-            // If resolution failed (e.g. a broken/missing temp upload), the
-            // book keeps its existing file instead of being left as a dead
-            // pdf_path reference that would silently skip reprocessing.
-            if (isset($resolved['pdf_path'])) {
-                if ($book->pdf_path) {
-                    Storage::disk('private')->delete($book->pdf_path);
-                }
-                $data['pdf_path'] = $resolved['pdf_path'];
-            }
-        }
-
         $book->update($data);
 
-        if ($pdfChanged && ! empty($data['pdf_path'])) {
-            ProcessBookPdf::dispatch($book->id);
-        }
+        // Changing the PDF is intentionally NOT part of this form — it lives
+        // on the dedicated admin.books.pdf-upload page and is processed in a
+        // background job so a large upload can't hold up metadata edits.
 
         return redirect()->route('admin.books.index')->with('success', 'Book updated.');
     }
 
     /**
-     * Resolve which PDF source the request carries:
-     *  1. Direct `pdf_file` upload (small files, legacy path)
-     *  2. `temp_pdf_path` from a chunked upload handled by BookUploadController
-     * The temp file is moved into the private books/pdfs directory and its
-     * staging folder is removed in both cases.
+     * Dedicated page for attaching/replacing a book's PDF. Uses the chunked
+     * uploader (5 MB slices + a background merge) so multi-hundred-MB files
+     * work even when a single HTTP request would time out; processing then
+     * runs in the ProcessBookPdf queue job.
      */
-    private function resolvePdfPath(Request $request): array
+    public function pdfUpload(Book $book): Response
     {
+        return Inertia::render('Admin/Books/PdfUpload', [
+            'book' => $book,
+            'current' => $book->pdf_path ? [
+                'filename' => basename($book->pdf_path),
+                'size' => Storage::disk('private')->size($book->pdf_path),
+            ] : null,
+        ]);
+    }
+
+    /**
+     * Attach a new PDF to the book and queue PDF processing.
+     *
+     * Accepts either a direct `pdf_file` (small files) or a `temp_pdf_path`
+     * produced by the chunked upload + merge endpoints. The old PDF is only
+     * removed once the replacement is safely on the private disk.
+     */
+    public function storePdf(Request $request, Book $book): RedirectResponse
+    {
+        $validated = $request->validate([
+            'pdf_file' => ['nullable', 'mimes:pdf', 'max:512000'], // 500 MB direct (chunked for larger)
+            'temp_pdf_path' => ['nullable', 'string', 'max:255', 'regex:/^books\/temp\/[a-zA-Z0-9\-]{8,64}\/[^\/]+$/'],
+        ]);
+
+        $pdfPath = null;
+
         if ($request->hasFile('pdf_file')) {
             // NEVER store on the 'public' disk. This path is only ever resolved
             // server-side through the signed, watermarked reader endpoint.
-            return ['pdf_path' => $request->file('pdf_file')->store('books/pdfs', 'private')];
+            $pdfPath = $request->file('pdf_file')->store('books/pdfs', 'private');
+        } elseif (filled($validated['temp_pdf_path'])) {
+            // promote() re-validates the client-supplied path (must be a direct
+            // child of a books/temp upload dir) and sweeps the staging folder.
+            $pdfPath = $this->uploads->promote(
+                BookUploadController::PREFIX,
+                $validated['temp_pdf_path'],
+                'books/pdfs',
+                BookUploadController::ALLOWED_EXTENSIONS,
+            );
         }
 
-        // promote() re-validates the client-supplied path (it must be a direct
-        // child of a books/temp upload dir) before touching the filesystem.
-        $stored = $this->uploads->promote(
-            BookUploadController::PREFIX,
-            trim((string) $request->input('temp_pdf_path')),
-            'books/pdfs',
-            BookUploadController::ALLOWED_EXTENSIONS,
-        );
+        if (! $pdfPath) {
+            return back()->with('error', 'No valid PDF was provided.');
+        }
 
-        return $stored ? ['pdf_path' => $stored] : [];
+        if ($book->pdf_path && $book->pdf_path !== $pdfPath) {
+            Storage::disk('private')->delete($book->pdf_path);
+        }
+
+        $book->forceFill([
+            'pdf_path' => $pdfPath,
+            'pdf_content_hash' => null,
+            'processing_status' => 'pending',
+            'processing_error' => null,
+            'processing_started_at' => null,
+            'processing_completed_at' => null,
+        ])->save();
+
+        ProcessBookPdf::dispatch($book->id);
+
+        return redirect()->route('admin.books.show', $book)
+            ->with('success', 'PDF uploaded. Processing started — this may take a few minutes.');
     }
 
     public function destroy(Book $book): RedirectResponse

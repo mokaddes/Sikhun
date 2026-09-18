@@ -60,6 +60,7 @@ const { t } = useI18n();
                             <span v-else class="text-xs text-[var(--text-muted)]">—</span>
                         </td>
                         <td class="px-5 py-3 text-right space-x-3">
+                            <Link :href="`/admin/books/${book.id}/pdf`" :class="book.pdf_path ? '' : 'text-[var(--accent)]'" class="text-sm font-medium hover:underline">PDF</Link>
                             <Link :href="`/admin/books/${book.id}`" class="text-sm font-medium text-[var(--primary)] hover:underline">View</Link>
                             <Link :href="`/admin/books/${book.id}/edit`" class="text-sm font-medium text-[var(--primary)] hover:underline">{{ t('common.edit') }}</Link>
                             <ConfirmButton :href="`/admin/books/${book.id}`" method="delete" />

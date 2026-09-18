@@ -48,6 +48,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('publications', PublicationController::class)->except(['show']);
         Route::resource('mentors', MentorController::class)->except(['show']);
         Route::resource('books', BookController::class);
+        Route::get('books/{book}/pdf', [BookController::class, 'pdfUpload'])->name('books.pdf-upload');
+        Route::post('books/{book}/pdf', [BookController::class, 'storePdf'])->name('books.pdf-store');
         Route::post('books/upload-chunk', [BookUploadController::class, 'uploadChunk'])->name('books.upload-chunk');
         Route::post('books/merge-chunks', [BookUploadController::class, 'mergeChunks'])->name('books.merge-chunks');
         Route::get('books/merge-chunks/status/{upload_id}', [BookUploadController::class, 'mergeStatus'])

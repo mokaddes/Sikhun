@@ -84,6 +84,21 @@ class BookChunkRetrievalService
         $chunks = $this->relevantChunks($book, $question, $student, $limit);
 
         if (! $chunks) {
+            // Empty context = chat degrades to "no info", which reads as a
+            // bug to users — log WHY so operators can tell apart "book not
+            // processed yet" from a retrieval failure.
+            Log::info('AiChat buildContext returned no chunks', [
+                'book_id' => $book->id,
+                'title' => $book->title,
+                'chunks' => $book->chunks()->count(),
+                'chapters' => $book->chapters()->count(),
+                'processing_status' => $book->processing_status,
+                'paginate' => [
+                    'student' => $student?->id,
+                    'accessible' => $this->access->accessibleChapterIds($student, $book),
+                ],
+            ]);
+
             return [];
         }
 

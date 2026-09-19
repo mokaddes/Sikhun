@@ -84,7 +84,24 @@ class OpenDataLoaderWorkerParser implements PdfParserContract
                 '--output', $workDir,
             ];
 
-            if ($ocrLang = config('pdf-parsing.opendataloader.ocr_lang')) {
+            if (! (bool) config('pdf-parsing.ocr.enabled', true)) {
+                $args[] = '--no-ocr';
+            } else {
+                $args[] = '--ocr-dpi';
+                $args[] = (string) (config('pdf-parsing.ocr.dpi', 200) ?: 200);
+
+                if ($tesseract = config('pdf-parsing.ocr.tesseract_path')) {
+                    $args[] = '--tesseract';
+                    $args[] = (string) $tesseract;
+                }
+
+                if ($pdftoppm = config('pdf-parsing.ocr.pdftoppm_path')) {
+                    $args[] = '--pdftoppm';
+                    $args[] = (string) $pdftoppm;
+                }
+            }
+
+            if ($ocrLang = config('pdf-parsing.ocr.lang') ?: config('pdf-parsing.opendataloader.ocr_lang')) {
                 $args[] = '--ocr-lang';
                 $args[] = (string) $ocrLang;
             }
@@ -140,6 +157,8 @@ class OpenDataLoaderWorkerParser implements PdfParserContract
         $doc = new ParsedDocument;
         $doc->parserName = 'opendataloader';
         $doc->parserVersion = $this->manifestVersion($workDir) ?? 'unknown';
+
+        $this->applyOcrProvenance($doc, $workDir);
 
         $imagesDir = $workDir.DIRECTORY_SEPARATOR.'images';
 
@@ -268,15 +287,9 @@ class OpenDataLoaderWorkerParser implements PdfParserContract
 
     private function manifestVersion(string $workDir): ?string
     {
-        $path = $workDir.DIRECTORY_SEPARATOR.'manifest.json';
+        $meta = $this->manifest($workDir);
 
-        if (! is_file($path)) {
-            return null;
-        }
-
-        $meta = json_decode((string) file_get_contents($path), true);
-
-        if (! is_array($meta)) {
+        if ($meta === null) {
             return null;
         }
 
@@ -289,6 +302,34 @@ class OpenDataLoaderWorkerParser implements PdfParserContract
         }
 
         return null;
+    }
+
+    /** Copy OCR fallback provenance (ocr_used/tool/lang/pages) onto the doc. */
+    private function applyOcrProvenance(ParsedDocument $doc, string $workDir): void
+    {
+        $meta = $this->manifest($workDir);
+
+        if ($meta === null) {
+            return;
+        }
+
+        $doc->ocrUsed = (bool) ($meta['ocr_used'] ?? false);
+        $doc->ocrTool = is_string($meta['ocr_tool'] ?? null) ? $meta['ocr_tool'] : null;
+        $doc->ocrLang = is_string($meta['ocr_lang'] ?? null) ? $meta['ocr_lang'] : null;
+        $doc->ocrPages = isset($meta['ocr_pages']) ? (int) $meta['ocr_pages'] : null;
+    }
+
+    private function manifest(string $workDir): ?array
+    {
+        $path = $workDir.DIRECTORY_SEPARATOR.'manifest.json';
+
+        if (! is_file($path)) {
+            return null;
+        }
+
+        $meta = json_decode((string) file_get_contents($path), true);
+
+        return is_array($meta) ? $meta : null;
     }
 
     private function normalizeType(mixed $raw): string

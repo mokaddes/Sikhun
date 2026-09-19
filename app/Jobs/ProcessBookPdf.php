@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Contracts\ParsedDocument;
 use App\Models\Book;
 use App\Services\Ai\BookChunkingService;
 use App\Services\Ai\EmbeddingService;
@@ -84,16 +85,13 @@ class ProcessBookPdf implements ShouldQueue
             // silently end up "completed" with empty chapters/chunks and both
             // the reader and chat return nothing while the admin sees success.
             // Scanned/image-only PDFs (common for CV exports) extract no text;
-            // mark them failed with an actionable reason instead.
-            $pagesWithText = collect($doc->pages)
-                ->filter(fn (array $page) => mb_strlen(trim((string) ($page['content'] ?? ''))) > 0)
-                ->count();
+            // the OpenDataLoader worker already retried those with tesseract
+            // OCR. Only when text is STILL empty do we fail, with the reason
+            // tailored to whether the OCR pass ran or was unavailable.
+            $pagesWithText = $this->countPagesWithText($doc);
 
             if ($pagesWithText === 0) {
-                throw new PdfParserException(
-                    'No text could be extracted from this PDF. It is likely a scanned or image-based document — '
-                    .'re-export it as a text PDF, or upload a PDF with selectable text.'
-                );
+                throw new PdfParserException($this->emptyTextFailure($doc));
             }
 
             $stats = $storage->replaceAll($book, $doc);
@@ -113,6 +111,10 @@ class ProcessBookPdf implements ShouldQueue
 
             Log::info('ProcessBookPdf completed', array_merge(['book_id' => $book->id], $stats, [
                 'chunks' => $chunkCount,
+                'ocr_used' => $doc->ocrUsed,
+                'ocr_tool' => $doc->ocrTool,
+                'ocr_lang' => $doc->ocrLang,
+                'ocr_pages' => $doc->ocrPages,
             ]));
 
             // Embeddings are an enhancement: a missing embedding provider
@@ -150,5 +152,35 @@ class ProcessBookPdf implements ShouldQueue
         ])->save();
 
         Log::error('ProcessBookPdf failed', ['book_id' => $book->id, 'error' => $error]);
+    }
+
+    private function countPagesWithText(ParsedDocument $doc): int
+    {
+        return collect($doc->pages)
+            ->filter(fn (array $page) => mb_strlen(trim((string) ($page['content'] ?? ''))) > 0)
+            ->count();
+    }
+
+    /**
+     * Failure message for a parse run with zero text. The wording depends on
+     * whether the OpenDataLoader worker already attempted its tesseract OCR
+     * fallback — telling the admin what to actually change.
+     */
+    private function emptyTextFailure(ParsedDocument $doc): string
+    {
+        if ($doc->ocrUsed) {
+            return 'No text could be extracted even after OCR. The document is likely a low-quality scan, or no '
+                .'OCR language is installed for this document’s script ('.(string) $doc->ocrLang.
+                '). Install the matching tesseract language pack (e.g. tesseract-ocr-ben), set PDF_OCR_LANG, '
+                .'and press Retry — or re-export the PDF with selectable text.';
+        }
+
+        return 'No text could be extracted from this PDF. It is likely a scanned or image-based document, and the '
+            .'OCR fallback could not run. Install poppler-utils and tesseract-ocr on the server (plus language '
+            .'packs, e.g. tesseract-ocr-ben), ensure PDF_OCR_ENABLED=true, then press Retry — or re-export the '
+            .'PDF as a text PDF.'
+            .($doc->ocrTool
+                ? ' (OCR attempted with '.$doc->ocrTool.($doc->ocrLang ? ' / '.$doc->ocrLang : '').', no usable text.)'
+                : '');
     }
 }

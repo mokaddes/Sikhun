@@ -39,6 +39,26 @@ return [
     ],
 
     /*
+    | OCR fallback for scanned/image-only PDFs.
+    |
+    | OpenDataLoader's structured pass extracts zero text from scanned
+    | documents; the worker then rasterizes each page (poppler-utils'
+    | pdftoppm) and reads it back with tesseract (poppler-utils +
+    | tesseract-ocr + language packs must be installed on the host).
+    | 'lang' defaults to opendataloader.ocr_lang so a single OCR language
+    | setting drives both passes.
+    */
+    'ocr' => [
+        'enabled' => env('PDF_OCR_ENABLED', true),
+        // Absolute binary paths when they are not on the server's PATH.
+        'tesseract_path' => env('PDF_TESSERACT_PATH', 'tesseract'),
+        'pdftoppm_path' => env('PDF_PDFTOPPM_PATH', 'pdftoppm'),
+        // Rasterization DPI — higher catches smaller text, slower to run.
+        'dpi' => (int) env('PDF_OCR_DPI', 200),
+        'lang' => env('PDF_OCR_LANG') ?: env('OPENDATALOADER_OCR_LANG'),
+    ],
+
+    /*
     | Chunking for RAG. Max chunk ~chars with overlap; tables/formulas are
     | never split mid-element (see BookChunkingService).
     */

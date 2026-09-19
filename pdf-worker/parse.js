@@ -13,16 +13,23 @@
  *   safe argv array (never shell strings) and reads back its output.
  *
  *   OUTPUT  {outputDir}/
- *     manifest.json   small index: page count, parser/version info
+ *     manifest.json   small index: page count, parser/version info, OCR status
  *     page-0001.json  one file per page (bounded memory — Laravel streams
  *                     pages one at a time instead of loading one giant JSON)
  *     images/…        extracted image binaries, referenced via `file`
  *     book.md         secondary Markdown (informational, not primary)
  *
+ *   OCR     Scanned/image-only PDFs (zero extracted text) fall back to a
+ *           tesseract pass: every page is rasterized with pdftoppm and read
+ *           back per page. Requires poppler-utils + tesseract (with the
+ *           language data for --ocr-lang) on PATH; without them the run
+ *           still exits 0 with empty pages so Laravel can report the fix.
+ *
  *   EXIT  0 success · 1 OpenDataLoader/conversion failure · 2 not runnable
  *         (missing SDK/Java) — stderr carries the human-readable reason.
  *
- *   INVOKE  node parse.js --input <pdf> --output <dir> [--ocr-lang <lang>]
+ *   INVOKE  node parse.js --input <pdf> --output <dir>
+ *           [--ocr-lang <lang>] [--ocr-dpi <dpi>] [--no-ocr]
  *
  * The canonical shape is deliberately vendor-neutral, so OpenDataLoader's
  * own JSON schema (a flat `kids` array — see normalizers below) is fully
@@ -31,7 +38,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, writeFileSync, readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { unlinkSync, mkdirSync, writeFileSync, readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { dirname, extname, join } from 'node:path';
 
 const ARGS = parseArgs(process.argv.slice(2));
@@ -42,7 +49,9 @@ if (ARGS.help) {
 }
 
 if (!ARGS.input || !ARGS.output) {
-  console.error('Usage: node parse.js --input <pdf> --output <dir> [--ocr-lang <lang>]');
+  console.error(
+    'Usage: node parse.js --input <pdf> --output <dir> [--ocr-lang <lang>] [--no-ocr]',
+  );
   process.exit(2);
 }
 
@@ -81,6 +90,11 @@ async function run() {
     throw new Error('OpenDataLoader produced a JSON with no readable pages.');
   }
 
+  // OCR fallback: when OpenDataLoader extracted no text at all (scanned /
+  // image-only PDF), rasterize each page and read it back with tesseract.
+  const needsOcr = !pages.some((p) => p.text && p.text.trim().length > 0);
+  const ocr = needsOcr ? runOcrPass(ARGS.input, pages, outDir) : null;
+
   const imagesDir = join(outDir, 'images');
   mkdirSync(imagesDir, { recursive: true });
 
@@ -107,9 +121,170 @@ async function run() {
       odl_version: odl.version ?? odl['api version'] ?? 'unknown',
       sdk_version: odlSdkVersion(),
       pages: pages.length,
+      ocr_used: ocr?.used ?? false,
+      ocr_tool: ocr?.tool ?? null,
+      ocr_lang: ocr?.lang ?? null,
+      ocr_pages: ocr?.pages ?? null,
       generated_at: new Date().toISOString(),
     }),
   );
+}
+
+/**
+ * OCR fallback for scanned/image-only PDFs. Tesseract reads every page by
+ * rasterizing it first with poppler-utils' pdftoppm (preserves layout
+ * better than rendering through the ODL Java engine). Runs only when the
+ * structured pass extracted zero text.
+ *
+ * Missing tools degrade without failing the run — an empty page set is a
+ * legitimate signal Laravel turns into its actionable error message.
+ *
+ * @param {object[]} pages page objects from extractPages() (mutated in place)
+ * @returns {{used: boolean, tool: string|null, lang: string|null, pages: number}|null}
+ */
+function runOcrPass(pdfPath, pages, outDir) {
+  const ocr = {
+    used: false,
+    tool: null,
+    lang: ARGS.ocrLang || 'eng',
+    dpi: ARGS.ocrDpi || 200,
+    pages: 0,
+    skipped: 0,
+  };
+
+  if (ARGS.noOcr) {
+    console.warn('[ocr] disabled via --no-ocr; scanned pages will produce no text.');
+    return ocr;
+  }
+
+  const pdftoppm = ARGS.pdftoppm || 'pdftoppm';
+  const tesseract = ARGS.tesseract || 'tesseract';
+
+  const hasPdftoppm = toolAvailable(pdftoppm);
+  const hasTesseract = toolAvailable(tesseract);
+
+  if (!hasPdftoppm || !hasTesseract) {
+    const missing = [
+      !hasPdftoppm ? 'pdftoppm (poppler-utils)' : null,
+      !hasTesseract ? 'tesseract-ocr' : null,
+    ].filter(Boolean);
+    console.error(
+      `[ocr] OCR fallback unavailable: missing ${missing.join(' and ')}. ` +
+        'Install poppler-utils and tesseract-ocr (plus language packs, e.g. tesseract-ocr-ben for Bengali) and re-run.',
+    );
+    return ocr;
+  }
+
+  const ocrDir = join(outDir, 'ocr');
+  mkdirSync(ocrDir, { recursive: true });
+
+  for (const page of pages) {
+    const rendered = renderPage(pdftoppm, pdfPath, page.page, ocr.dpi, ocrDir);
+    if (!rendered) {
+      ocr.skipped += 1;
+      continue;
+    }
+
+    const text = ocrImage(tesseract, rendered.png, rendered.base, ocr.lang);
+    cleanupOcrArtifacts(rendered);
+
+    if (text === null) {
+      ocr.skipped += 1;
+      continue;
+    }
+
+    page.text = text;
+    page.elements = ocrElements(page.page, text);
+    ocr.pages += 1;
+  }
+
+  ocr.used = ocr.pages > 0;
+  ocr.tool = 'tesseract';
+
+  if (ocr.used) {
+    console.log(`[ocr] tesseract OCR extracted text from ${ocr.pages}/${pages.length} pages (lang: ${ocr.lang}).`);
+  } else {
+    console.error(
+      `[ocr] tesseract OCR produced no usable text (${ocr.skipped}/${pages.length} pages skipped, lang: ${ocr.lang}). ` +
+        'Check that the requested language data is installed (e.g. tesseract-ocr-ben) or set PDF_OCR_LANG.',
+    );
+  }
+
+  return ocr;
+}
+
+function toolAvailable(executable) {
+  const res = spawnSync(executable, ['--version'], { encoding: 'utf8', timeout: 15_000 });
+  return res.status === 0;
+}
+
+/** Render exactly one page to PNG; returns { png, base } or null. */
+function renderPage(pdftoppm, pdfPath, pageNumber, dpi, ocrDir) {
+  const base = join(ocrDir, `page-${pageNumber}`);
+  const res = spawnSync(
+    pdftoppm,
+    ['-png', '-r', String(dpi), '-f', String(pageNumber), '-l', String(pageNumber), pdfPath, base],
+    { encoding: 'utf8', timeout: 180_000 },
+  );
+
+  if (res.status !== 0) {
+    console.error(`[ocr] pdftoppm failed for page ${pageNumber}: ${res.error?.message || (res.stderr || '').trim().slice(0, 300)}`);
+    return null;
+  }
+
+  let png = null;
+  for (const entry of readdirSync(ocrDir)) {
+    if (entry.startsWith(`page-${pageNumber}-`) && entry.toLowerCase().endsWith('.png')) {
+      png = join(ocrDir, entry);
+      break;
+    }
+  }
+
+  return png ? { png, base } : null;
+}
+
+/** Run tesseract on one rendered page; returns page text or null. */
+function ocrImage(tesseract, png, base, lang) {
+  const outBase = `${base}-ocr`;
+  const res = spawnSync(tesseract, [png, outBase, '-l', lang, '--psm', '3'], {
+    encoding: 'utf8',
+    timeout: 180_000,
+  });
+
+  const txtPath = `${outBase}.txt`;
+  const text = existsSync(txtPath) ? readFileSync(txtPath, 'utf8') : null;
+  if (existsSync(txtPath)) {
+    unlinkSync(txtPath);
+  }
+
+  if (res.status !== 0) {
+    console.error(`[ocr] tesseract failed for page: ${res.error?.message || (res.stderr || '').trim().slice(0, 300)}`);
+    return null;
+  }
+
+  return text && text.trim().length > 0 ? text.replace(/\r\n/g, '\n').trim() : null;
+}
+
+function cleanupOcrArtifacts({ png, base }) {
+  if (existsSync(png)) unlinkSync(png);
+  const leftover = `${base}.txt`;
+  if (existsSync(leftover)) unlinkSync(leftover);
+}
+
+/** OCR text → per-line text elements, keeping page-wise reading order. */
+function ocrElements(pageNumber, text) {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line, i) => ({
+      id: `ocr-${pageNumber}-${i + 1}`,
+      type: 'text',
+      text: line,
+      bbox: null,
+      level: 1,
+      metadata: { source: 'ocr' },
+    }));
 }
 
 function verifyJava() {
@@ -486,6 +661,18 @@ function parseArgs(argv) {
       case '--ocr-lang':
         args.ocrLang = argv[++i];
         break;
+      case '--ocr-dpi':
+        args.ocrDpi = Number(argv[++i]);
+        break;
+      case '--no-ocr':
+        args.noOcr = true;
+        break;
+      case '--pdftoppm':
+        args.pdftoppm = argv[++i];
+        break;
+      case '--tesseract':
+        args.tesseract = argv[++i];
+        break;
       default:
         break;
     }
@@ -504,5 +691,9 @@ function printHelp() {
 Usage: node parse.js --input <pdf> --output <dir> [--ocr-lang <lang>]
   --input    absolute path to the PDF to parse
   --output   absolute output directory (created if missing)
-  --ocr-lang optional OCR language hint, e.g. eng+ben`);
+  --ocr-lang optional OCR language hint, e.g. eng+ben
+  --ocr-dpi  render DPI for the OCR fallback (default 200)
+  --no-ocr   disable the tesseract OCR fallback
+  --pdftoppm path to poppler-utils pdftoppm (default: on PATH)
+  --tesseract path to tesseract (default: on PATH)`);
 }

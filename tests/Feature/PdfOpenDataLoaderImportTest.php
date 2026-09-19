@@ -97,6 +97,29 @@ class PdfOpenDataLoaderImportTest extends TestCase
         $this->assertSame('diagram', $doc->images[0]['alt_text']);
     }
 
+    public function test_ocr_fallback_provenance_surfaces_from_manifest(): void
+    {
+        File::put($this->runDir.'/manifest.json', json_encode([
+            'odl_version' => '2.5.0',
+            'pages' => 3,
+            'ocr_used' => true,
+            'ocr_tool' => 'tesseract',
+            'ocr_lang' => 'eng+ben',
+            'ocr_pages' => 3,
+        ]));
+
+        $this->writePage(1, [
+            ['id' => 'p1-l1', 'type' => 'text', 'text' => 'Line one from OCR.', 'metadata' => ['source' => 'ocr']],
+        ], 'Line one from OCR.');
+
+        $doc = (new OpenDataLoaderWorkerParser)->documentFromRunDir($this->runDir);
+
+        $this->assertTrue($doc->ocrUsed);
+        $this->assertSame('tesseract', $doc->ocrTool);
+        $this->assertSame('eng+ben', $doc->ocrLang);
+        $this->assertSame(3, $doc->ocrPages);
+    }
+
     public function test_worker_unavailable_degrades_and_forced_parser_fails_loudly(): void
     {
         config()->set('pdf-parsing.node_worker.enabled', false);

@@ -46,4 +46,17 @@ class ParsedDocument
     public string $parserName = '';
 
     public string $parserVersion = '';
+
+    /**
+     * OCR fallback provenance (scanned PDFs read back with tesseract).
+     * Populated by parsers that support OCR; null when the doc came from
+     * pure text extraction.
+     */
+    public bool $ocrUsed = false;
+
+    public ?string $ocrTool = null;
+
+    public ?string $ocrLang = null;
+
+    public ?int $ocrPages = null;
 }

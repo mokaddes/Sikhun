@@ -17,7 +17,10 @@ ProcessBookPdf job (queued, async)
 PdfParserManager → OpenDataLoaderWorkerParser (Node worker, preferred) | SmalotPdfParser (fallback)
         ↓
 ParsedDocument (vendor-neutral DTO)
-        ↓
+        ↓   ┌──────────────────────────────────────────────┐
+        │   text extracted anywhere?         NO → OCR pass  │
+        │   (open runs its tesseract fallback)             │
+        ↓   └──────────────────────────────────────────────┘
 ParsedDocumentStorageService (single transaction)
         ├── book_chapters   (hierarchical, parent_id)
         ├── book_pages      (page ↔ chapter traceability)
@@ -64,11 +67,40 @@ PDF_WORKER_PATH=pdf-worker/parse.js
 PDF_OUTPUT_PATH=storage/app/pdf-parsing
 PDF_WORKER_TIMEOUT=1200
 OPENDATALOADER_OCR_LANG=eng+ben    # optional OCR language hint
+PDF_OCR_ENABLED=true               # tesseract OCR fallback master switch
+# PDF_TESSERACT_PATH=tesseract     # override when not on PATH
+# PDF_PDFTOPPM_PATH=pdftoppm
+# PDF_OCR_DPI=200
+PDF_OCR_LANG=eng+ben               # tesseract languages; defaults to OPENDATALOADER_OCR_LANG
 ```
 
 If the worker (or Java) is missing, `isAvailable()` returns false and `auto`
 degrades to smalot — a book never fails just because the worker is absent.
 Forcing `PDF_PARSER=opendataloader` fails loudly instead.
+
+### Input layer & OCR fallback
+
+OpenDataLoader's structured pass extracts **reliable text only from
+text-based PDFs**. When the whole document yields zero text (scanned or
+image-only — the classic "No text could be extracted from this PDF" failure),
+the worker automatically runs a **tesseract OCR pass**:
+
+1. Every page is rasterized to PNG with `pdftoppm` (poppler-utils).
+2. `tesseract` reads it back per page (`-l <lang>`, `--psm 3`).
+3. OCR text becomes the page content (line → text element), re-entering the
+   exact same chunking → embeddings → RAG pipeline.
+
+Host prerequisites: `poppler-utils` and `tesseract-ocr` plus the language
+data for every script in the books, e.g.:
+
+```bash
+sudo apt install poppler-utils tesseract-ocr tesseract-ocr-eng tesseract-ocr-ben
+```
+
+If both are missing the run exits successfully with empty pages, and the
+Laravel job fails the book with a message telling the admin to install them
+(and press Retry). OCR provenance (`ocr_used` / `ocr_tool` / `ocr_lang` /
+`ocr_pages`) is written into `manifest.json` and surfaces in the job log.
 
 ### Smalot fallback
 
@@ -117,5 +149,6 @@ Admin sees the same data on `/admin/books/{book}`.
 |---|---|---|
 | Status stuck `processing` | Worker died mid-run | Retry button (dispatches fresh with force) |
 | `failed: Parser failure` | Worker missing / corrupt PDF | Check `processing_error`, install Node+Java or fix PDF |
+| `failed: No text could be extracted…` | Scanned/image-only PDF | The worker auto-runs tesseract OCR; if it still fails, install `poppler-utils` + `tesseract-ocr` (+ language packs), set `PDF_OCR_LANG`, press Retry |
 | No tables/images | Smalot fallback ran | Install the OpenDataLoader worker (Node + Java) for full extraction |
 | Chunks exist, no embeddings | No embedding provider configured | Configure an OpenAI-compatible provider in `/admin/ai-providers` |

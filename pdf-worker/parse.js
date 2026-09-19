@@ -160,8 +160,8 @@ function runOcrPass(pdfPath, pages, outDir) {
   const pdftoppm = ARGS.pdftoppm || 'pdftoppm';
   const tesseract = ARGS.tesseract || 'tesseract';
 
-  const hasPdftoppm = toolAvailable(pdftoppm);
-  const hasTesseract = toolAvailable(tesseract);
+  const hasPdftoppm = toolAvailable(pdftoppm, ['-v']);
+  const hasTesseract = toolAvailable(tesseract, ['--version']);
 
   if (!hasPdftoppm || !hasTesseract) {
     const missing = [
@@ -213,8 +213,8 @@ function runOcrPass(pdfPath, pages, outDir) {
   return ocr;
 }
 
-function toolAvailable(executable) {
-  const res = spawnSync(executable, ['--version'], { encoding: 'utf8', timeout: 15_000 });
+function toolAvailable(executable, probeArgs = ['--version']) {
+  const res = spawnSync(executable, probeArgs, { encoding: 'utf8', timeout: 15_000 });
   return res.status === 0;
 }
 

@@ -35,7 +35,10 @@ class ProcessBookPdf implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $timeout = 3600;
+    // A 440-page scanned book OCRs at ~10–15s/page (JVM + pdftoppm +
+    // tesseract), so a full parse can take ~1.5h. Queue retry_after must
+    // stay above this or a long job gets re-delivered mid-run.
+    public $timeout = 10800;
     public $tries = 2;
 
     public function __construct(

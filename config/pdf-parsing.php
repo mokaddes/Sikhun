@@ -29,8 +29,9 @@ return [
         // Work directory root for a single parse run (created per book).
         'output_path' => env('PDF_OUTPUT_PATH', storage_path('app/pdf-parsing')),
         // Total seconds the worker may run before Laravel kills it (JVM
-        // startup + a large PDF can take minutes; job timeout is 3600s).
-        'timeout' => env('PDF_WORKER_TIMEOUT', 1200),
+        // startup + a large scanned PDF OCR at ~10–15s/page can take over
+        // an hour; keep below the job timeout). Job timeout is 10800s.
+        'timeout' => env('PDF_WORKER_TIMEOUT', 10800),
     ],
 
     'opendataloader' => [

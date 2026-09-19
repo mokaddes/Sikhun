@@ -6,7 +6,7 @@ use App\Models\Book;
 use App\Models\BookChunk;
 use App\Models\Student;
 use App\Services\BookAccessService;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -38,7 +38,7 @@ class BookChunkRetrievalService
      *
      * @return array<int, array{
      *     content: string, chapter_id: ?int, page_id: ?int, page_number: ?int,
-     *     metadata: ?array, score: float
+     *     metadata: ?array, element_ids: ?array, score: float
      * }>
      */
     public function relevantChunks(Book $book, string $question, ?Student $student = null, int $limit = 5): array
@@ -68,10 +68,15 @@ class BookChunkRetrievalService
             $sample = $this->spreadSample($base->pluck('id')->all(), $limit * self::CANDIDATE_MULTIPLIER);
 
             if ($sample) {
+                $order = array_flip(array_values($sample));
+
+                // Order in PHP: FIELD() is MySQL-only (sqlite tests lack it),
+                // and the id list is always small enough to sort in memory.
                 $candidates = BookChunk::query()
                     ->whereIn('id', array_values($sample))
-                    ->orderByRaw('FIELD(id, '.implode(',', array_map('intval', array_values($sample))).')')
-                    ->get(['id', 'chapter_id', 'page_id', 'page_number', 'content', 'metadata', 'embedding']);
+                    ->get(['id', 'chapter_id', 'page_id', 'page_number', 'content', 'metadata', 'embedding', 'element_ids'])
+                    ->sortBy(fn (BookChunk $chunk) => $order[$chunk->id] ?? PHP_INT_MAX)
+                    ->values();
             }
         }
 
@@ -88,7 +93,7 @@ class BookChunkRetrievalService
      *
      * @return array<int, array{
      *     book: string, chapter: ?string, section: ?string, page: ?int,
-     *     content: string, tables: array, images: array, formulas: array
+     *     content: string, element_ids: ?array, tables: array, images: array, formulas: array
      * }>
      */
     public function buildContext(Book $book, string $question, ?Student $student = null, int $limit = 5): array
@@ -134,6 +139,7 @@ class BookChunkRetrievalService
                 'section' => $chunk['metadata']['heading_path'][0] ?? null,
                 'page' => $chunk['page_number'],
                 'content' => $chunk['content'],
+                'element_ids' => $chunk['element_ids'] ?? null,
                 'tables' => $tables,
                 'images' => $images,
                 'formulas' => $formulas,
@@ -144,7 +150,7 @@ class BookChunkRetrievalService
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, BookChunk>
+     * @return Collection<int, BookChunk>
      */
     private function fulltextCandidates(Book $book, string $question, array $accessibleChapterIds, int $limit)
     {
@@ -155,7 +161,7 @@ class BookChunkRetrievalService
                 ->when(! $accessibleChapterIds, fn ($q) => $q->whereNull('chapter_id'))
                 ->whereRaw('MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE)', [$question])
                 ->limit($limit)
-                ->get(['id', 'chapter_id', 'page_id', 'page_number', 'content', 'metadata', 'embedding']);
+                ->get(['id', 'chapter_id', 'page_id', 'page_number', 'content', 'metadata', 'embedding', 'element_ids']);
         } catch (\Throwable $e) {
             // FULLTEXT is MySQL-only (sqlite test DBs lack it) and can also
             // misbehave on corrupted indexes — degrade to the ordering
@@ -168,7 +174,7 @@ class BookChunkRetrievalService
      * Hybrid ranking: cosine similarity when embeddings exist on both
      * sides, FULLTEXT-order as the floor for legacy chunks.
      *
-     * @return array<int, array{content: string, chapter_id: ?int, page_id: ?int, page_number: ?int, metadata: ?array, score: float}>
+     * @return array<int, array{content: string, chapter_id: ?int, page_id: ?int, page_number: ?int, metadata: ?array, element_ids: ?array, score: float}>
      */
     private function rank($candidates, string $question, int $limit): array
     {
@@ -195,6 +201,7 @@ class BookChunkRetrievalService
                 'page_id' => $chunk->page_id,
                 'page_number' => $chunk->page_number,
                 'metadata' => $chunk->metadata,
+                'element_ids' => $chunk->element_ids,
                 'score' => $score,
             ];
         });

@@ -11,7 +11,11 @@ return new class extends Migration
     {
         // Add a `custom` provider type: any OpenAI-compatible endpoint with a
         // full URL and admin-defined request headers (custom API key names, etc).
-        DB::statement("ALTER TABLE ai_providers MODIFY type ENUM('openai','gemini','claude','groq','deepseek','ollama','vllm','huggingface','custom') NOT NULL");
+        // Raw ENUM modification is MySQL-only; sqlite (tests) stores enums as
+        // plain strings and needs no extension.
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE ai_providers MODIFY type ENUM('openai','gemini','claude','groq','deepseek','ollama','vllm','huggingface','custom') NOT NULL");
+        }
 
         Schema::table('ai_providers', function (Blueprint $table) {
             $table->json('custom_headers')->nullable()->after('api_endpoint');
@@ -24,6 +28,8 @@ return new class extends Migration
             $table->dropColumn('custom_headers');
         });
 
-        DB::statement("ALTER TABLE ai_providers MODIFY type ENUM('openai','gemini','claude','groq','deepseek','ollama','vllm','huggingface') NOT NULL");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE ai_providers MODIFY type ENUM('openai','gemini','claude','groq','deepseek','ollama','vllm','huggingface') NOT NULL");
+        }
     }
 };

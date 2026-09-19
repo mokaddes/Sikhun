@@ -14,7 +14,7 @@ Admin uploads PDF (Admin\BookController)
         ↓
 ProcessBookPdf job (queued, async)
         ↓
-PdfParserManager → OpenDataLoaderPdfParser (preferred) | SmalotPdfParser (fallback)
+PdfParserManager → OpenDataLoaderWorkerParser (Node worker, preferred) | SmalotPdfParser (fallback)
         ↓
 ParsedDocument (vendor-neutral DTO)
         ↓
@@ -26,7 +26,7 @@ ParsedDocumentStorageService (single transaction)
         ├── book_images     (binary → private disk; description/OCR in DB)
         └── book_formulas   (LaTeX)
         ↓
-BookChunkingService (structure-aware chunks: chapter_id, page_id, metadata)
+BookChunkingService (structure-aware chunks: chapter_id, page_id, metadata, element_ids)
         ↓
 EmbeddingService (batch, best-effort, non-fatal)
 ```
@@ -35,22 +35,40 @@ EmbeddingService (batch, best-effort, non-fatal)
 
 ### OpenDataLoader PDF (preferred)
 
-External Rust CLI: https://github.com/opendataloader-project/opendataloader-pdf
+OpenDataLoader is a Java-based document-understanding engine wrapped by the
+official Node SDK (`@opendataloader/pdf`). It cannot run inside PHP, so
+`OpenDataLoaderWorkerParser` spawns the Node worker in `pdf-worker/parse.js`
+via Laravel's `Process` facade (argv array — never shell strings) and reads
+back its canonical per-page JSON + extracted images. The worker keeps
+vendor-schema knowledge in `pdf-worker/parse.js`; Laravel maps its output in
+`OpenDataLoaderWorkerParser`.
 
-It cannot run inside PHP, so `OpenDataLoaderPdfParser` shells out to the
-binary via Laravel's `Process` facade and reads back its JSON output. All
-vendor-schema knowledge is isolated in `mapOutputToDocument()` — if
-OpenDataLoader's JSON shape changes, only that method needs updating.
+The worker writes **one JSON file per page** plus a small `manifest.json`
+and an `images/` folder, so a large PDF is imported incrementally without
+ever loading the whole parse result into PHP memory. Output is cleaned up
+after each run.
 
-**Installation**: install the binary on the server (see the project's README
-for release downloads) and either put it on `PATH` or set:
+**Installation**: requires **Node.js 20+** and **Java 11+** on the server.
 
 ```
-OPENDATALOADER_BINARY=/usr/local/bin/opendataloader-pdf
-OPENDATALOADER_TIMEOUT=600
-OPENDATALOADER_OCR_LANG=eng+ben   # optional OCR language packs
+cd pdf-worker && npm install
+```
+
+Then either rely on `auto`, or force it:
+
+```
 PDF_PARSER=auto                    # auto | opendataloader | smalot
+PDF_NODE_WORKER_ENABLED=true
+PDF_NODE_PATH=node                 # or absolute node binary path
+PDF_WORKER_PATH=pdf-worker/parse.js
+PDF_OUTPUT_PATH=storage/app/pdf-parsing
+PDF_WORKER_TIMEOUT=1200
+OPENDATALOADER_OCR_LANG=eng+ben    # optional OCR language hint
 ```
+
+If the worker (or Java) is missing, `isAvailable()` returns false and `auto`
+degrades to smalot — a book never fails just because the worker is absent.
+Forcing `PDF_PARSER=opendataloader` fails loudly instead.
 
 ### Smalot fallback
 
@@ -98,6 +116,6 @@ Admin sees the same data on `/admin/books/{book}`.
 | Symptom | Cause | Fix |
 |---|---|---|
 | Status stuck `processing` | Worker died mid-run | Retry button (dispatches fresh with force) |
-| `failed: Parser failure` | Binary missing / corrupt PDF | Check `processing_error`, install binary or fix PDF |
-| No tables/images | Smalot fallback ran | Install OpenDataLoader for full extraction |
+| `failed: Parser failure` | Worker missing / corrupt PDF | Check `processing_error`, install Node+Java or fix PDF |
+| No tables/images | Smalot fallback ran | Install the OpenDataLoader worker (Node + Java) for full extraction |
 | Chunks exist, no embeddings | No embedding provider configured | Configure an OpenAI-compatible provider in `/admin/ai-providers` |

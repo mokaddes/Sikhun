@@ -3,14 +3,14 @@
 namespace App\Services\Pdf;
 
 use App\Contracts\PdfParserContract;
-use App\Services\Pdf\OpenDataLoader\OpenDataLoaderPdfParser;
+use App\Services\Pdf\OpenDataLoader\OpenDataLoaderWorkerParser;
 use App\Services\Pdf\Php\SmalotPdfParser;
 use InvalidArgumentException;
 
 /**
  * Resolves which parser to use for a run. Preference order:
  *   1. The parser named in config('pdf-parsing.parser') if available
- *   2. OpenDataLoader, if its binary is on the host
+ *   2. OpenDataLoader (Node worker), when enabled and runnable
  *   3. Smalot (pure PHP, always available)
  *
  * This is the ONLY class callers need — jobs never instantiate a concrete
@@ -19,7 +19,7 @@ use InvalidArgumentException;
 class PdfParserManager
 {
     public function __construct(
-        private OpenDataLoaderPdfParser $openDataLoader,
+        private OpenDataLoaderWorkerParser $openDataLoader,
         private SmalotPdfParser $smalot,
     ) {}
 

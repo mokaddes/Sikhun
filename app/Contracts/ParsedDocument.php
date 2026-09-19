@@ -25,9 +25,12 @@ class ParsedDocument
 
     /**
      * @var array<int, array{
-     *     type: string, page_number: ?int, content: ?string, metadata: ?array, bbox: ?array, heading_path: ?string[]
+     *     type: string, page_number: ?int, content: ?string, metadata: ?array,
+     *     bbox: ?array, heading_path: ?string[], source_id: ?string
      * }>
      * Document elements in reading order. type is one of BookElement::TYPES.
+     * `source_id` is the parser's own element id (e.g. OpenDataLoader's),
+     * kept so results remain traceable to the exact extracted element.
      */
     public array $elements = [];
 
@@ -41,5 +44,6 @@ class ParsedDocument
     public array $formulas = [];
 
     public string $parserName = '';
+
     public string $parserVersion = '';
 }

@@ -11,7 +11,6 @@ use App\Models\BookImage;
 use App\Models\BookPage;
 use App\Models\BookTable;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -106,7 +105,8 @@ class ParsedDocumentStorageService
     /**
      * Chapters without an explicit end_page get the page before the next
      * chapter (at any depth) starts — good enough for reader deep-links.
-     * @param array<int, BookChapter> $rows
+     *
+     * @param  array<int, BookChapter>  $rows
      */
     private function backfillChapterPageRanges(array $rows): void
     {
@@ -203,6 +203,7 @@ class ParsedDocumentStorageService
             $row = $book->elements()->create([
                 'chapter_id' => $chapterId,
                 'page_id' => $pageIds[$pageNumber] ?? null,
+                'source_id' => $element['source_id'] ?? null,
                 'type' => $element['type'],
                 'content' => $element['content'],
                 'metadata' => array_merge(

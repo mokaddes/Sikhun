@@ -1,0 +1,16 @@
+{
+  "name": "sikhun-pdf-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OpenDataLoader PDF worker for Sikhun — parses a book PDF and emits canonical per-page JSON + extracted images for the Laravel importer.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "parse": "node parse.js"
+  },
+  "dependencies": {
+    "@opendataloader/pdf": "^2.5.0"
+  }
+}

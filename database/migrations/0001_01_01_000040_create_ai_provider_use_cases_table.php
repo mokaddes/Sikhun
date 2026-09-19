@@ -47,6 +47,13 @@ return new class extends Migration
             ]);
         }
 
+        // SQLite cannot drop a column while an index still references it
+        // (unlike MySQL, it does not drop the index implicitly) — remove
+        // the index first so the same migration runs on every driver.
+        Schema::table('ai_providers', function (Blueprint $table) {
+            $table->dropIndex('ai_providers_use_case_index');
+        });
+
         Schema::table('ai_providers', function (Blueprint $table) {
             $table->dropColumn(['use_case', 'is_default']);
         });

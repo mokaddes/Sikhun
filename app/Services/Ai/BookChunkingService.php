@@ -10,8 +10,13 @@ use Illuminate\Support\Facades\DB;
  * Structure-aware chunking: walks the book's parsed elements in reading
  * order and builds chunks that never cross a chapter boundary and never
  * split a table or formula mid-element. Each chunk records its chapter,
- * page, heading path and related tables/images/formulas in metadata so
- * the retrieval layer can build structured RAG context.
+ * page, heading path, related element ids and tables/images/formulas in
+ * metadata/columns so the retrieval layer can build structured RAG context
+ * and cite the exact source elements that fed the chunk.
+ *
+ * `element_ids` (book_elements.id) list every element whose text formed the
+ * chunk — headings included — preserving full traceability to the source
+ * parse without joining back to full texts.
  *
  * Replaces the old "split raw page text at N chars" approach while
  * remaining 100% backward compatible — old books simply have no chapter
@@ -52,6 +57,7 @@ class BookChunkingService
             $chunks = [];
             $current = null; // chunk under construction
             $headingPath = [];
+            $headingElementIds = []; // ids of headings active for the current window
             $chunkIndex = 0;
 
             foreach ($elements as $element) {
@@ -59,6 +65,9 @@ class BookChunkingService
                     $this->flushChunk($chunks, $current, $chunkIndex);
                     $headingPath[] = (string) $element->content;
                     $headingPath = array_slice($headingPath, -4);
+                    // Every chunk built until the next heading cites this one.
+                    $headingElementIds = array_slice([...$headingElementIds, $element->id], -4);
+
                     continue;
                 }
 
@@ -71,19 +80,28 @@ class BookChunkingService
                 // larger than maxChars.
                 if (in_array($element->type, ['table', 'formula'], true)) {
                     $this->flushChunk($chunks, $current, $chunkIndex);
-                    $chunks[] = $this->makeChunk($book, $element, $headingPath, $content, $chunkIndex++);
+                    $chunks[] = $this->makeChunk(
+                        $book,
+                        $element,
+                        $headingPath,
+                        $content,
+                        $chunkIndex++,
+                        array_unique([...$headingElementIds, $element->id]),
+                    );
+
                     continue;
                 }
 
                 if ($current === null) {
-                    $current = $this->newBuffer($element, $headingPath);
+                    $current = $this->newBuffer($element, $headingPath, $headingElementIds);
                 } elseif ($current['chapter_id'] !== $element->chapter_id || $current['page_number'] !== $element->page_number) {
                     // New chapter/page context — flush and start fresh so
                     // every chunk stays traceable to exactly one page.
                     $this->flushChunk($chunks, $current, $chunkIndex);
-                    $current = $this->newBuffer($element, $headingPath);
+                    $current = $this->newBuffer($element, $headingPath, $headingElementIds);
                 }
 
+                $current['element_ids'][] = $element->id;
                 $this->appendContent($current, $content, $chunks, $chunkIndex);
             }
 
@@ -99,7 +117,10 @@ class BookChunkingService
         });
     }
 
-    private function newBuffer(BookElement $element, array $headingPath): array
+    /**
+     * @param  array<int, int>  $headingElementIds
+     */
+    private function newBuffer(BookElement $element, array $headingPath, array $headingElementIds): array
     {
         return [
             'book_id' => $element->book_id,
@@ -107,6 +128,7 @@ class BookChunkingService
             'page_id' => $element->page_id,
             'page_number' => $element->page_number,
             'metadata' => ['heading_path' => $headingPath],
+            'element_ids' => array_values($headingElementIds),
             'content' => '',
         ];
     }
@@ -125,7 +147,10 @@ class BookChunkingService
         }
     }
 
-    private function makeChunk(Book $book, BookElement $element, array $headingPath, string $content, int $index): array
+    /**
+     * @param  array<int, int>  $elementIds
+     */
+    private function makeChunk(Book $book, BookElement $element, array $headingPath, string $content, int $index, array $elementIds): array
     {
         return [
             'book_id' => $book->id,
@@ -138,6 +163,7 @@ class BookChunkingService
                 'heading_path' => $headingPath,
                 'element_type' => $element->type,
             ],
+            'element_ids' => array_values($elementIds),
         ];
     }
 
@@ -171,6 +197,7 @@ class BookChunkingService
                 'chunk_index' => $index++,
                 'content' => $piece,
                 'metadata' => $buffer['metadata'],
+                'element_ids' => $buffer['element_ids'],
             ];
         }
 

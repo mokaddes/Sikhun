@@ -6,10 +6,13 @@ use App\Contracts\ParsedDocument;
 use App\Jobs\ProcessBookPdf;
 use App\Models\Book;
 use App\Services\Ai\BookChunkingService;
+use App\Services\Ai\EmbeddingService;
 use App\Services\Pdf\ParsedDocumentStorageService;
+use App\Services\Pdf\PdfParserManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
 
 /**
  * Reprocessing idempotency tests (spec §38): processing the same book
@@ -34,7 +37,7 @@ class BookProcessingTest extends TestCase
 
     private function makeDocument(): ParsedDocument
     {
-        $doc = new ParsedDocument();
+        $doc = new ParsedDocument;
         $doc->parserName = 'test-parser';
         $doc->parserVersion = '1.0';
 
@@ -137,10 +140,10 @@ class BookProcessingTest extends TestCase
 
         try {
             $job->handle(
-                app(\App\Services\Pdf\PdfParserManager::class),
+                app(PdfParserManager::class),
                 app(ParsedDocumentStorageService::class),
                 app(BookChunkingService::class),
-                app(\App\Services\Ai\EmbeddingService::class),
+                app(EmbeddingService::class),
             );
         } catch (\Throwable $e) {
             $this->fail('Job threw instead of handling failure gracefully: '.$e->getMessage());
@@ -174,10 +177,10 @@ class BookProcessingTest extends TestCase
 
         $job = new ProcessBookPdf($book->id, force: false);
         $job->handle(
-            app(\App\Services\Pdf\PdfParserManager::class),
+            app(PdfParserManager::class),
             app(ParsedDocumentStorageService::class),
             app(BookChunkingService::class),
-            app(\App\Services\Ai\EmbeddingService::class),
+            app(EmbeddingService::class),
         );
 
         $book->refresh();

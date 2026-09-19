@@ -3,13 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\Book;
-use App\Models\BookChapter;
 use App\Models\Student;
 use App\Services\AccessGrantService;
 use App\Services\Ai\BookChunkRetrievalService;
 use App\Services\BookAccessService;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
+use Tests\TestCase;
 
 /**
  * Chapter-access and RAG-security tests (spec §38). The critical invariant:
@@ -66,6 +67,8 @@ class ChapterAccessTest extends TestCase
             'name' => 'Test Student',
             'email' => 'test-'.uniqid().'@sikhun.test',
             'password' => 'password',
+            'type' => 'hsc',
+            'referral_code' => 'REF'.strtoupper(uniqid()),
         ]);
     }
 
@@ -231,7 +234,7 @@ class ChapterAccessTest extends TestCase
         ]);
 
         // Simulate a concurrent second insert hitting the unique constraint.
-        $this->expectException(\Illuminate\Database\QueryException::class);
+        $this->expectException(QueryException::class);
 
         $student->ownedChapters()->create([
             'book_id' => $book->id, 'chapter_id' => $chapter->id,

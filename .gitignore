@@ -1,4 +1,8 @@
 /node_modules
+# Turn.js commercial package (license at turnjs.com/license.txt) — unchanged
+# upstream archive. The small set of files the app actually uses is vendored
+# into resources/js/vendor/turnjs so builds stay reproducible.
+/turnjs4
 # /public/build is committed so production (no node) can serve built assets
 /public/hot
 /public/storage

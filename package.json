@@ -24,6 +24,7 @@
         "@tiptap/vue-3": "^2.5.8",
         "@vueuse/core": "^10.9.0",
         "apexcharts": "^5.10.0",
+        "jquery": "^3.7.1",
         "dayjs": "^1.11.11",
         "laravel-echo": "^1.16.1",
         "pinia": "^2.1.7",

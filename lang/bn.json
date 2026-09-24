@@ -383,7 +383,9 @@
         "back_to_book": "বইয়ের পাতায় ফিরুন",
         "chat_title": "এই পৃষ্ঠা নিয়ে জিজ্ঞাসা করুন",
         "chat_hint": "যা পড়ছেন তা নিয়ে প্রশ্ন করুন — AI বর্তমান পৃষ্ঠার প্রসঙ্গ দিয়ে উত্তর দেয়।",
-        "current_page": "পৃষ্ঠা :current"
+        "current_page": "পৃষ্ঠা :current",
+        "pages_of": "পৃষ্ঠা :start\u2013:end / :total",
+        "load_failed": "এই পৃষ্ঠাটি লোড করা যায়নি"
     },
     "plans_page": {
         "title": "সাবস্ক্রিপশন প্ল্যান",

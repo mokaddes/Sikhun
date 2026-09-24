@@ -383,7 +383,9 @@
         "back_to_book": "Back to book",
         "chat_title": "Ask about this page",
         "chat_hint": "Ask about what you're reading — the AI answers using the current page for context.",
-        "current_page": "Page :current"
+        "current_page": "Page :current",
+        "pages_of": "Pages :start\u2013:end of :total",
+        "load_failed": "Couldn't load this page."
     },
     "plans_page": {
         "title": "Subscription Plans",

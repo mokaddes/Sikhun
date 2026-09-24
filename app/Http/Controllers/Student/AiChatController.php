@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\CreateChatSessionRequest;
 use App\Models\AiSession;
 use App\Models\Book;
+use App\Models\MyBook;
 use App\Services\Ai\AiProviderFactory;
 use App\Services\Ai\BookChunkRetrievalService;
 use App\Services\Ai\Providers\AbstractOpenAiCompatibleProvider;
@@ -29,12 +30,28 @@ class AiChatController extends Controller
         return Inertia::render('Student/AiChat/Index', [
             'sessions' => $student->aiSessions()->latest()->get(['id', 'title', 'source_type', 'created_at']),
             'books' => $student->books()->get(['books.id', 'books.title']),
+            'myBooks' => $student->myBooks()->latest()->get(['id', 'title']),
         ]);
     }
 
     public function create(CreateChatSessionRequest $request, BookAccessService $access): RedirectResponse
     {
         $student = auth('web')->user();
+
+        if ($request->source_my_book_id ?? $request->my_book_id) {
+            $myBook = MyBook::find($request->my_book_id ?? $request->source_my_book_id);
+            abort_unless($myBook && $myBook->student_id === $student->id, 403, 'You can only chat about your own books.');
+
+            $session = $student->aiSessions()->create([
+                'source_type' => 'upload',
+                'source_my_book_id' => $myBook->id,
+                'title' => $request->title ?: $myBook->title,
+                'messages' => [],
+            ]);
+
+            return redirect()->route('ai-chat.show', $session);
+        }
+
         $book = $request->source_book_id ? Book::find($request->source_book_id) : null;
 
         if ($book) {
@@ -57,9 +74,10 @@ class AiChatController extends Controller
         $student = auth('web')->user();
 
         return Inertia::render('Student/AiChat/Show', [
-            'session' => $session->load('book'),
+            'session' => $session->load(['book', 'myBook']),
             'sessions' => $student->aiSessions()->latest()->get(['id', 'title', 'source_type', 'created_at']),
             'books' => $student->books()->get(['books.id', 'books.title', 'books.cover_image']),
+            'myBooks' => $student->myBooks()->latest()->get(['id', 'title']),
         ]);
     }
 
@@ -71,21 +89,52 @@ class AiChatController extends Controller
         return redirect()->route('ai-chat.index')->with('success', 'Chat deleted.');
     }
 
+    public function rename(Request $request, AiSession $session): RedirectResponse
+    {
+        $this->authorizeSession($session);
+
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+        ]);
+
+        $session->update(['title' => trim($validated['title'])]);
+
+        return back();
+    }
+
     public function attachBook(Request $request, AiSession $session, BookAccessService $access): RedirectResponse
     {
         $this->authorizeSession($session);
 
         $validated = $request->validate([
-            'book_id' => ['required', 'integer', 'exists:books,id'],
+            'book_id' => ['nullable', 'integer', 'exists:books,id'],
+            'my_book_id' => ['nullable', 'integer', 'exists:my_books,id'],
         ]);
 
-        $book = Book::find($validated['book_id']);
+        abort_unless($validated['book_id'] || $validated['my_book_id'], 422, 'Select a book to attach.');
 
-        abort_unless($access->hasAccess(auth('web')->user(), $book), 403, 'You need access to this book to attach it.');
+        $student = auth('web')->user();
+
+        if ($validated['my_book_id']) {
+            $myBook = MyBook::find($validated['my_book_id']);
+            abort_unless($myBook && $myBook->student_id === $student->id, 403, 'You can only attach your own books.');
+
+            $session->update([
+                'source_type' => 'upload',
+                'source_book_id' => null,
+                'source_my_book_id' => $myBook->id,
+            ]);
+
+            return back();
+        }
+
+        $book = Book::find($validated['book_id']);
+        abort_unless($access->hasAccess($student, $book), 403, 'You need access to this book to attach it.');
 
         $session->update([
             'source_type' => 'book',
             'source_book_id' => $book->id,
+            'source_my_book_id' => null,
         ]);
 
         return back();
@@ -163,6 +212,27 @@ class AiChatController extends Controller
                 $outline = $book->chapters()->orderBy('sort_order')->pluck('title');
                 if ($outline->isNotEmpty()) {
                     $systemPrompt .= "\n\nBook chapter outline: ".$outline->implode(' | ');
+                }
+            } elseif ($session->source_type === 'upload' && $session->myBook && $userMessage !== '') {
+                $myBook = $session->myBook;
+
+                $systemPrompt .= "\n\nThe student has attached their own uploaded document \"{$myBook->title}\". "
+                    .'Ground your answer in that document where relevant and cite the page (e.g. "Page 12").';
+
+                if ($myBook->processing_status !== 'completed') {
+                    $systemPrompt .= "\n\nIMPORTANT: The uploaded document's content has not been prepared yet. "
+                        ."If the student asks about \"{$myBook->title}\", politely explain it is still being prepared "
+                        .'and ask them to try again in a few minutes. Do not claim the document is attached but empty.';
+                } else {
+                    $context = $this->myBookContext($myBook, $userMessage);
+
+                    if ($context) {
+                        $systemPrompt .= "\n\nExcerpts from \"{$myBook->title}\":\n\n".$context;
+                    } else {
+                        $systemPrompt .= "\n\nNo part of the uploaded document matched the student's question. "
+                            .'Answer from general knowledge, but do not invent document-specific content and note '
+                            .'that you could not find it in the attached document.';
+                    }
                 }
             }
 
@@ -271,6 +341,55 @@ class AiChatController extends Controller
     private function authorizeSession(AiSession $session): void
     {
         abort_unless($session->student_id === Auth::guard('web')->id(), 403);
+    }
+
+    /**
+     * Lightweight retrieval for a student's own uploaded document: score
+     * pages by how many distinctive question terms appear in them, then
+     * return the best pages as bounded excerpt blocks. No embeddings, no
+     * chapters — fine for personal notes.
+     */
+    private function myBookContext(MyBook $myBook, string $question): string
+    {
+        $terms = collect(preg_split('/\s+/u', mb_strtolower($question) ?: '') ?? [])
+            ->filter(fn (string $w) => mb_strlen($w) > 2)
+            ->values();
+
+        $pages = $myBook->pages()->get(['page_number', 'content']);
+
+        if ($terms->isEmpty()) {
+            $pages = $pages->take(5);
+        } else {
+            $pages = $pages->map(function ($page) use ($terms) {
+                $lower = mb_strtolower((string) $page->content);
+                $score = $terms->sum(fn (string $w) => mb_substr_count($lower, $w));
+
+                return ['page' => $page, 'score' => $score];
+            })->filter(fn ($row) => $row['score'] > 0)
+                ->sortByDesc('score')
+                ->take(5)
+                ->map(fn ($row) => $row['page']);
+        }
+
+        $blocks = [];
+        $budget = 9000;
+
+        foreach ($pages as $page) {
+            $content = mb_substr((string) $page->content, 0, 6000);
+            if (trim($content) === '') {
+                continue;
+            }
+
+            $block = "[Source: {$myBook->title} — Page {$page->page_number}]\n".$content;
+            if ($budget <= 0) {
+                break;
+            }
+
+            $blocks[] = mb_substr($block, 0, $budget);
+            $budget -= mb_strlen(end($blocks));
+        }
+
+        return implode("\n---\n", $blocks);
     }
 
     /**

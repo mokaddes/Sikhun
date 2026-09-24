@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class AiSession extends Model
 {
     protected $fillable = [
-        'student_id', 'source_type', 'source_book_id', 'title', 'messages', 'tokens_used',
+        'student_id', 'source_type', 'source_book_id', 'source_my_book_id', 'title', 'messages', 'tokens_used',
     ];
 
     protected function casts(): array
@@ -17,4 +17,5 @@ class AiSession extends Model
 
     public function student() { return $this->belongsTo(Student::class); }
     public function book() { return $this->belongsTo(Book::class, 'source_book_id'); }
+    public function myBook() { return $this->belongsTo(MyBook::class, 'source_my_book_id'); }
 }

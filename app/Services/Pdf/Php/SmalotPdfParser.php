@@ -4,7 +4,7 @@ namespace App\Services\Pdf\Php;
 
 use App\Contracts\ParsedDocument;
 use App\Contracts\PdfParserContract;
-use App\Models\Book;
+use App\Contracts\PdfParsable;
 use App\Services\Pdf\PdfParserException;
 use Illuminate\Support\Facades\Storage;
 use Smalot\PdfParser\Parser;
@@ -31,15 +31,15 @@ class SmalotPdfParser implements PdfParserContract
         return class_exists(Parser::class);
     }
 
-    public function parse(Book $book): ParsedDocument
+    public function parse(PdfParsable $source): ParsedDocument
     {
-        if (! $book->pdf_path || ! Storage::disk('private')->exists($book->pdf_path)) {
-            throw new PdfParserException("Book {$book->id} has no PDF on the private disk.");
+        if (! $source->pdfFilePath() || ! Storage::disk('private')->exists($source->pdfFilePath())) {
+            throw new PdfParserException("Book {$source->pdfSourceId()} has no PDF on the private disk.");
         }
 
         try {
             $parser = new Parser();
-            $pdf = $parser->parseFile(Storage::disk('private')->path($book->pdf_path));
+            $pdf = $parser->parseFile(Storage::disk('private')->path($source->pdfFilePath()));
         } catch (\Throwable $e) {
             throw new PdfParserException('smalot could not open the PDF: '.$e->getMessage(), 0, $e);
         }

@@ -2,8 +2,6 @@
 
 namespace App\Contracts;
 
-use App\Models\Book;
-
 /**
  * Abstraction over the document-understanding layer so the parsing
  * pipeline never depends on a specific parser vendor. Implementations
@@ -17,7 +15,7 @@ interface PdfParserContract
     /**
      * @throws \App\Services\Pdf\PdfParserException when the document cannot be parsed at all
      */
-    public function parse(Book $book): ParsedDocument;
+    public function parse(PdfParsable $source): ParsedDocument;
 
     /** Is the underlying parser runtime available on this host? */
     public function isAvailable(): bool;

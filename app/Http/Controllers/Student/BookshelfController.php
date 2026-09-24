@@ -17,6 +17,7 @@ class BookshelfController extends Controller
                 ->with('book:id,title,slug,cover_image,level,subject,total_pages')
                 ->latest('added_at')
                 ->get(),
+            'myBooks' => $student->myBooks()->latest()->get(),
         ]);
     }
 }

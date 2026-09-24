@@ -43,6 +43,7 @@ class Student extends Authenticatable
     public function walletTransactions() { return $this->hasMany(WalletTransaction::class); }
     public function orders() { return $this->hasMany(Order::class); }
     public function aiSessions() { return $this->hasMany(AiSession::class); }
+    public function myBooks() { return $this->hasMany(MyBook::class); }
     public function examSessions() { return $this->hasMany(ExamSession::class); }
     public function flashcardSets() { return $this->hasMany(FlashcardSet::class); }
     public function essaySubmissions() { return $this->hasMany(EssaySubmission::class); }

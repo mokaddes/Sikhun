@@ -13,7 +13,7 @@ import {
     SparklesIcon,
 } from '@heroicons/vue/24/outline';
 
-const props = defineProps({ session: Object, sessions: Array, books: Array });
+const props = defineProps({ session: Object, sessions: Array, books: Array, myBooks: Array });
 
 const { t } = useI18n();
 const page = usePage();
@@ -34,7 +34,10 @@ const selectedImage = ref(null);
 const imagePreview = ref(null);
 const fileInput = ref(null);
 
-const attachedBook = computed(() => props.session.source_book_id ? props.session.book : null);
+const attachedBook = computed(() => {
+    if (props.session.source_type === 'upload') return props.session.myBook ?? null;
+    return props.session.source_book_id ? (props.session.book ?? null) : null;
+});
 
 const renderMessages = computed(() =>
     messages.value.map((m) => {
@@ -81,6 +84,18 @@ function autogrow() {
 function attachBook(book) {
     attachingBook.value = true;
     router.patch(`/ai/chat/${props.session.id}/book`, { book_id: book.id }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            bookModalOpen.value = false;
+            attachingBook.value = false;
+        },
+        onError: () => (attachingBook.value = false),
+    });
+}
+
+function attachMyBook(myBook) {
+    attachingBook.value = true;
+    router.patch(`/ai/chat/${props.session.id}/book`, { my_book_id: myBook.id }, {
         preserveScroll: true,
         onSuccess: () => {
             bookModalOpen.value = false;
@@ -326,7 +341,30 @@ onMounted(scrollToBottom);
                     </button>
                 </div>
 
-                <div class="space-y-2 max-h-72 overflow-y-auto">
+                <div v-if="myBooks.length" class="eyebrow px-1 mb-2">{{ t('ai_chat.my_uploads') }}</div>
+
+                <div v-if="myBooks.length" class="space-y-2 max-h-40 overflow-y-auto mb-4">
+                    <button
+                        v-for="myBook in myBooks"
+                        :key="myBook.id"
+                        type="button"
+                        class="w-full flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface2)] hover:border-[var(--primary)] p-3 text-left disabled:opacity-50"
+                        :disabled="attachingBook"
+                        @click="attachMyBook(myBook)"
+                    >
+                        <span class="h-12 w-9 rounded-md bg-[var(--surface)] flex items-center justify-center text-[var(--secondary)]">
+                            <BookOpenIcon class="w-5 h-5" />
+                        </span>
+                        <span class="flex-1 min-w-0">
+                            <span class="block text-sm font-medium truncate">{{ myBook.title }}</span>
+                            <span class="block text-xs text-[var(--text-muted)]">{{ t('my_books.my_note') }}</span>
+                        </span>
+                    </button>
+                </div>
+
+                <div class="eyebrow px-1 mb-2">{{ t('ai_chat.library_books') }}</div>
+
+                <div class="space-y-2 max-h-40 overflow-y-auto">
                     <button
                         v-for="book in books"
                         :key="book.id"
@@ -343,7 +381,7 @@ onMounted(scrollToBottom);
                         </span>
                     </button>
 
-                    <div v-if="!books.length" class="py-10 text-center text-sm text-[var(--text-muted)]">
+                    <div v-if="!books.length && !myBooks.length" class="py-10 text-center text-sm text-[var(--text-muted)]">
                         {{ t('ai_chat.no_books_to_attach') }}
                     </div>
                 </div>

@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
+use App\Contracts\PdfParsable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 
-class Book extends Model
+class Book extends Model implements PdfParsable
 {
     protected $fillable = [
         'title', 'slug', 'description', 'cover_image', 'author_id', 'publication_id',
@@ -57,5 +58,15 @@ class Book extends Model
     public function getCoverImageUrlAttribute(): ?string
     {
         return $this->cover_image ? asset('storage/'.$this->cover_image) : null;
+    }
+
+    public function pdfSourceId(): int
+    {
+        return (int) $this->id;
+    }
+
+    public function pdfFilePath(): ?string
+    {
+        return $this->pdf_path;
     }
 }

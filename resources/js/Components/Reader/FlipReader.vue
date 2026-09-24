@@ -10,13 +10,20 @@ const props = defineProps({
     // student's chapter purchases cover. Server re-validates every page
     // request anyway — this list only drives navigation affordances.
     accessiblePages: { type: Array, default: null },
+    // Base used to mint page-image URLs, e.g. `/library/${bookId}/read` or
+    // `/my-books/${bookId}/read`. The full URL is `${base}/page/${n}/url`.
+    urlPrefix: { type: String, default: null },
 });
+
+const emit = defineEmits(['page-change']);
 
 const { t } = useI18n();
 const currentPage = ref(1);
 const imageUrl = ref(null);
 const loading = ref(true);
 const direction = ref('next'); // drives the CSS transition direction
+
+const pageUrlBase = computed(() => props.urlPrefix ?? `/library/${props.bookId}/read`);
 
 const canPrev = computed(() => currentPage.value > 1);
 const canNext = computed(() => currentPage.value < props.totalPages);
@@ -30,10 +37,16 @@ onMounted(() => {
     window.addEventListener('keydown', onKeydown);
 });
 
+function announcePage(page) {
+    currentPage.value = page;
+    emit('page-change', page);
+}
+
 async function loadPage(page) {
+    announcePage(page);
     loading.value = true;
     try {
-        const { data } = await axios.get(`/library/${props.bookId}/read/page/${page}/url`);
+        const { data } = await axios.get(`${pageUrlBase.value}/page/${page}/url`);
         imageUrl.value = data.url;
     } catch (e) {
         // 403 on a gated page — the server is the authority, not this list.
@@ -54,8 +67,7 @@ function next() {
     do { page++; } while (page < props.totalPages && !pageAccessible(page));
     if (!pageAccessible(page)) return;
     direction.value = 'next';
-    currentPage.value = page;
-    loadPage(currentPage.value);
+    loadPage(page);
 }
 
 function prev() {
@@ -64,8 +76,7 @@ function prev() {
     do { page--; } while (page > 1 && !pageAccessible(page));
     if (!pageAccessible(page)) return;
     direction.value = 'prev';
-    currentPage.value = page;
-    loadPage(currentPage.value);
+    loadPage(page);
 }
 
 function onKeydown(e) {

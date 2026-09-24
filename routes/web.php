@@ -12,6 +12,8 @@ use App\Http\Controllers\Student\ExamController;
 use App\Http\Controllers\Student\FlashcardController;
 use App\Http\Controllers\Student\LeaderboardController;
 use App\Http\Controllers\Student\LibraryController;
+use App\Http\Controllers\Student\MyBookController;
+use App\Http\Controllers\Student\MyBookReaderController;
 use App\Http\Controllers\Student\NotificationController;
 use App\Http\Controllers\Student\ProfileController;
 use App\Http\Controllers\Student\ReaderController;
@@ -30,18 +32,9 @@ Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/contact', [\App\Http\Controllers\Public\ContactController::class, 'show'])->name('contact.show');
 Route::post('/contact', [\App\Http\Controllers\Public\ContactController::class, 'submit'])->name('contact.submit');
 
-// Library & Courses browsing is intentionally public (not behind auth:web) —
-// these pages need to be crawlable and indexable by search engines per the
-// SEO requirements; only purchase/enroll/read actions require a login.
-Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
-Route::get('/library/{book:slug}', [LibraryController::class, 'show'])->name('library.show');
-Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
-Route::get('/courses/{course:slug}', [CourseController::class, 'show'])->name('courses.show');
-Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}', [CourseController::class, 'lesson'])->name('courses.lesson');
-// Public like the lesson page itself — the controller re-checks enrollment /
-// free-preview / access grants before serving the file off the private disk.
-Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}/video', [CourseController::class, 'streamVideo'])->name('courses.lesson.video');
-Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}/download', [CourseController::class, 'downloadAttachment'])->name('courses.lesson.download');
+// Note: /library, /courses and their detail pages are NOT public — they sit
+// inside the authenticated group below. The public homepage only surfaces
+// the latest courses and latest books as a taste of the catalog.
 Route::get('/p/{page:slug}', [PageController::class, 'show'])->name('pages.show');
 
 Route::post('/language/{locale}', function (string $locale) {
@@ -75,20 +68,40 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Library (browse/detail are public — see below; purchase requires login)
+    // Library (browse/detail require login; purchase requires login too)
+    Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
+    Route::get('/library/{book:slug}', [LibraryController::class, 'show'])->name('library.show');
     Route::post('/library/{book}/purchase', [LibraryController::class, 'purchase'])->name('library.purchase');
     Route::post('/library/{book}/chapters/{chapter}/purchase', [LibraryController::class, 'purchaseChapter'])->name('library.chapters.purchase');
+    Route::post('/library/{book}/shelf', [LibraryController::class, 'addToShelf'])->name('library.shelf-add');
 
     // Bookshelf
     Route::get('/bookshelf', [BookshelfController::class, 'index'])->name('bookshelf.index');
 
-    // Courses (browse/detail/free-preview lessons are public; enroll/complete require login)
+    // My Books — student's own uploaded PDFs
+    Route::post('/my-books', [MyBookController::class, 'store'])->name('my-books.store');
+    Route::delete('/my-books/{myBook}', [MyBookController::class, 'destroy'])->name('my-books.destroy');
+
+    // Courses (browse/detail/lessons require login; enroll/complete too)
+    Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
+    Route::get('/courses/{course:slug}', [CourseController::class, 'show'])->name('courses.show');
+    Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}', [CourseController::class, 'lesson'])->name('courses.lesson');
+    // The lesson controller re-checks enrollment / free-preview / access
+    // grants before serving the file off the private disk.
+    Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}/video', [CourseController::class, 'streamVideo'])->name('courses.lesson.video');
+    Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}/download', [CourseController::class, 'downloadAttachment'])->name('courses.lesson.download');
     Route::post('/courses/{course}/enroll', [CourseController::class, 'enroll'])->name('courses.enroll');
     Route::post('/courses/{course}/sections/{section}/lessons/{lesson}/complete', [CourseController::class, 'completeLesson'])->name('courses.lesson.complete');
 
-    // Reader
+    // Reader (catalog books)
     Route::get('/library/{book}/read', [ReaderController::class, 'show'])->name('reader.show');
     Route::get('/library/{book}/read/page/{page}/url', [ReaderController::class, 'pageUrl'])->name('reader.page-url');
+    Route::post('/library/{book}/read/chat', [ReaderController::class, 'chat'])->name('reader.chat');
+
+    // My Book reader (own uploads)
+    Route::get('/my-books/{myBook}/read', [MyBookReaderController::class, 'show'])->name('my-books.reader.show');
+    Route::get('/my-books/{myBook}/read/page/{page}/url', [MyBookReaderController::class, 'pageUrl'])->name('my-books.reader.page-url');
+    Route::post('/my-books/{myBook}/read/chat', [MyBookReaderController::class, 'chat'])->name('my-books.reader.chat');
 
     // Wallet
     Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
@@ -102,6 +115,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/ai/chat', [AiChatController::class, 'index'])->name('ai-chat.index');
     Route::get('/ai/chat/{session}', [AiChatController::class, 'show'])->name('ai-chat.show');
     Route::delete('/ai/chat/{session}', [AiChatController::class, 'destroy'])->name('ai-chat.destroy');
+    Route::patch('/ai/chat/{session}', [AiChatController::class, 'rename'])->name('ai-chat.rename');
     Route::patch('/ai/chat/{session}/book', [AiChatController::class, 'attachBook'])->name('ai-chat.attach-book');
     Route::post('/ai/chat/{session}/stream', [AiChatController::class, 'stream'])->name('ai-chat.stream');
     Route::middleware('ai.access')->group(function () {
@@ -196,3 +210,13 @@ Route::match(['get', 'post'], '/wallet/gateway/cancel', [WalletController::class
 Route::middleware(['auth:web', 'signed', 'throttle:reader-pages'])
     ->get('/reader/{book}/page/{page}', [ReaderController::class, 'servePage'])
     ->name('reader.page');
+
+/*
+|--------------------------------------------------------------------------
+| Signed, rate-limited image for a student's own uploaded book — the same
+| private-render pipeline as catalog books, scoped to the owner.
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:web', 'signed', 'throttle:reader-pages'])
+    ->get('/reader/my-book/{myBook}/page/{page}', [MyBookReaderController::class, 'servePage'])
+    ->name('my-books.reader.page');

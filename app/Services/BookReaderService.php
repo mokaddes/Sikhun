@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Book;
+use App\Contracts\PdfParsable;
 use App\Models\Student;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -21,12 +21,12 @@ use Illuminate\Support\Facades\Storage;
  */
 class BookReaderService
 {
-    public function renderPage(Book $book, int $page, Student $student): string
+    public function renderPage(PdfParsable $book, int $page, Student $student): string
     {
-        $cacheKey = "book_page:{$book->id}:{$page}:{$student->id}";
+        $cacheKey = "book_page:{$book->pdfSourceId()}:{$page}:{$student->id}";
 
         return Cache::remember($cacheKey, 900, function () use ($book, $page, $student) {
-            if (! $book->pdf_path || ! Storage::disk('private')->exists($book->pdf_path)) {
+            if (! $book->pdfFilePath() || ! Storage::disk('private')->exists($book->pdfFilePath())) {
                 return $this->placeholderImage($book, $page, $student);
             }
 
@@ -42,9 +42,9 @@ class BookReaderService
         });
     }
 
-    private function renderFromPdf(Book $book, int $page, Student $student): string
+    private function renderFromPdf(PdfParsable $book, int $page, Student $student): string
     {
-        $pdfPath = Storage::disk('private')->path($book->pdf_path);
+        $pdfPath = Storage::disk('private')->path($book->pdfFilePath());
 
         $imagick = new \Imagick();
         $imagick->setResolution(150, 150);
@@ -70,7 +70,7 @@ class BookReaderService
      * image/svg+xml content type) so the reader UI works before real PDFs
      * exist, and so a render failure never surfaces a raw stack trace.
      */
-    private function placeholderImage(Book $book, int $page, Student $student, ?string $note = null): string
+    private function placeholderImage(PdfParsable $book, int $page, Student $student, ?string $note = null): string
     {
         $title = htmlspecialchars($book->title, ENT_QUOTES);
         $note = htmlspecialchars($note ?? 'No PDF uploaded yet for this book.', ENT_QUOTES);
@@ -87,8 +87,8 @@ class BookReaderService
         SVG;
     }
 
-    public function isPlaceholder(Book $book): bool
+    public function isPlaceholder(PdfParsable $book): bool
     {
-        return ! $book->pdf_path || ! Storage::disk('private')->exists($book->pdf_path) || ! extension_loaded('imagick');
+        return ! $book->pdfFilePath() || ! Storage::disk('private')->exists($book->pdfFilePath()) || ! extension_loaded('imagick');
     }
 }

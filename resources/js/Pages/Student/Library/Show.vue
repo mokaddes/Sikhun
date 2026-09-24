@@ -5,7 +5,7 @@ import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
 import { useI18n } from '@/i18n';
 
-const props = defineProps({ book: Object, accessType: String, chapters: { type: Array, default: () => [] }, seo: Object });
+const props = defineProps({ book: Object, accessType: String, onShelf: Boolean, chapters: { type: Array, default: () => [] }, seo: Object });
 const { t } = useI18n();
 const isLoggedIn = !!usePage().props.auth?.student;
 
@@ -17,6 +17,10 @@ function purchaseChapter(chapter, method) {
     router.post(`/library/${props.book.id}/chapters/${chapter.id}/purchase`, { payment_method: method }, {
         preserveScroll: true,
     });
+}
+
+function addToShelf() {
+    router.post(`/library/${props.book.id}/shelf`, {}, { preserveScroll: true });
 }
 
 // Top-level chapters with their sections nested for display.
@@ -58,7 +62,7 @@ const showChapters = computed(() => props.book.chapter_purchase_enabled && chapt
                 </div>
 
                 <!-- Access-type-driven CTA (REQ-LIB-06) -->
-                <div v-if="['free', 'granted', 'owned', 'subscription_gift'].includes(accessType)" class="flex items-center gap-3">
+                <div v-if="['free', 'granted', 'owned', 'subscription_gift'].includes(accessType)" class="flex items-center gap-3 flex-wrap">
                     <span v-if="accessType === 'granted'" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--primary)]/15 text-[var(--primary)]">
                         {{ t('book_show.coupon_access_badge') }}
                     </span>
@@ -68,6 +72,13 @@ const showChapters = computed(() => props.book.chapter_purchase_enabled && chapt
                     <Link :href="`/library/${book.id}/read`" class="px-6 py-3 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold">
                         {{ t('book_show.read_now') }}
                     </Link>
+                    <button
+                        v-if="book.is_free && !onShelf"
+                        @click="addToShelf"
+                        class="px-6 py-3 rounded-lg border border-[var(--secondary)]/40 bg-[var(--secondary)]/10 text-[var(--secondary)] hover:bg-[var(--secondary)]/20 font-semibold"
+                    >
+                        {{ t('book_show.add_to_shelf') }}
+                    </button>
                 </div>
 
                 <div v-else-if="accessType === 'guest'" class="flex flex-wrap gap-3">

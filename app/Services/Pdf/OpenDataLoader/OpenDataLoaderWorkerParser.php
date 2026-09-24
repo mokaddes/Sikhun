@@ -4,7 +4,7 @@ namespace App\Services\Pdf\OpenDataLoader;
 
 use App\Contracts\ParsedDocument;
 use App\Contracts\PdfParserContract;
-use App\Models\Book;
+use App\Contracts\PdfParsable;
 use App\Services\Pdf\PdfParserException;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
@@ -56,10 +56,10 @@ class OpenDataLoaderWorkerParser implements PdfParserContract
         }
     }
 
-    public function parse(Book $book): ParsedDocument
+    public function parse(PdfParsable $source): ParsedDocument
     {
-        if (! $book->pdf_path || ! Storage::disk('private')->exists($book->pdf_path)) {
-            throw new PdfParserException("Book {$book->id} has no PDF on the private disk.");
+        if (! $source->pdfFilePath() || ! Storage::disk('private')->exists($source->pdfFilePath())) {
+            throw new PdfParserException("Book {$source->pdfSourceId()} has no PDF on the private disk.");
         }
 
         if (! $this->isAvailable()) {
@@ -69,8 +69,8 @@ class OpenDataLoaderWorkerParser implements PdfParserContract
             );
         }
 
-        $pdfPath = Storage::disk('private')->path($book->pdf_path);
-        $workDir = $this->workDirectory($book->id);
+        $pdfPath = Storage::disk('private')->path($source->pdfFilePath());
+        $workDir = $this->workDirectory($source->pdfSourceId());
 
         if (! is_dir($workDir) && ! @mkdir($workDir, 0775, true) && ! is_dir($workDir)) {
             throw new PdfParserException("Could not create worker output directory at {$workDir}.");

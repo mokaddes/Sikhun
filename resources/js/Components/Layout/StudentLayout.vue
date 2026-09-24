@@ -36,6 +36,13 @@ const page = usePage();
 const student = page.props.auth?.student;
 const sidebarOpen = ref(false);
 
+// Reader pages host their own in-page chat widget in the bottom-right
+// corner, so the floating support bot must not sit on top of it.
+const hideSupport = computed(() => {
+    const component = String(page.component ?? '');
+    return component.endsWith('/Reader');
+});
+
 onMounted(() => theme.init());
 
 const url = computed(() => page.url.split('?')[0]);
@@ -192,5 +199,5 @@ function logout() {
             </div>
         </nav>
     </div>
-    <SupportWidget />
+    <SupportWidget v-if="!hideSupport" />
 </template>

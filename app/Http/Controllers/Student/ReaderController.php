@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\Book;
 use App\Models\ReadingSession;
+use App\Services\Ai\PageChatService;
 use App\Services\BookAccessService;
 use App\Services\BookReaderService;
 use Illuminate\Http\JsonResponse;
@@ -13,6 +14,7 @@ use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReaderController extends Controller
 {
@@ -83,6 +85,38 @@ class ReaderController extends Controller
         );
 
         return response()->json(['url' => $url]);
+    }
+
+    /**
+     * Streaming chat for the reader widget — grounded in the CURRENT page
+     * (plus one page either side for context) instead of whole-book RAG.
+     * The student must already be able to read that page; $chat re-checks
+     * AI quota and streams a single-turn reply.
+     */
+    public function chat(Request $request, Book $book, BookAccessService $access, PageChatService $chat): StreamedResponse
+    {
+        $student = auth('web')->user();
+
+        $validated = $request->validate([
+            'message' => ['required', 'string', 'max:4000'],
+            'page' => ['required', 'integer', 'min:1'],
+        ]);
+
+        abort_unless($access->canAccessPage($student, $book, (int) $validated['page']), 403);
+
+        $contextPages = collect([$validated['page'] - 1, $validated['page'], $validated['page'] + 1])
+            ->filter(fn (int $p) => $p >= 1 && ($book->total_pages === null || $p <= $book->total_pages))
+            ->map(fn (int $p) => $book->pages()->where('page_number', $p)->first())
+            ->filter()
+            ->map(fn ($page) => [
+                'page_number' => $page->page_number,
+                'content' => mb_substr((string) $page->content, 0, 8000),
+            ])
+            ->filter(fn (array $p) => trim($p['content']) !== '')
+            ->values()
+            ->all();
+
+        return $chat->stream($book->title, $contextPages, $validated['message']);
     }
 
     /**

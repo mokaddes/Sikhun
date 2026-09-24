@@ -85,9 +85,28 @@ class LibraryController extends Controller
         return Inertia::render('Student/Library/Show', [
             'book' => $book->load(['author', 'publication', 'category']),
             'accessType' => $access->accessType($student, $book),
+            'onShelf' => $student && $student->bookShelf()->where('book_id', $book->id)->exists(),
             'chapters' => $chapters,
             'seo' => $seo->forBook($book),
         ]);
+    }
+
+    /**
+     * One-click bookshelf add for FREE books only — no payment flow, the
+     * row is created directly (idempotent via the unique student/book pair).
+     */
+    public function addToShelf(Book $book): \Illuminate\Http\RedirectResponse
+    {
+        abort_unless($book->is_published && $book->is_free, 403, 'Only free books can be added directly to your bookshelf.');
+
+        $student = auth('web')->user();
+
+        $student->bookShelf()->firstOrCreate(
+            ['book_id' => $book->id],
+            ['source' => 'free', 'added_at' => now()]
+        );
+
+        return back()->with('success', 'Book added to your bookshelf!');
     }
 
     public function purchaseChapter(Request $request, Book $book, \App\Models\BookChapter $chapter, PurchaseService $purchases, ZinipayService $zinipay): \Symfony\Component\HttpFoundation\Response

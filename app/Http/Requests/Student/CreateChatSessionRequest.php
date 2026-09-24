@@ -12,6 +12,7 @@ class CreateChatSessionRequest extends FormRequest
     {
         return [
             'source_book_id' => ['nullable', 'exists:books,id'],
+            'my_book_id' => ['nullable', 'exists:my_books,id'],
             'title' => ['nullable', 'string', 'max:255'],
         ];
     }

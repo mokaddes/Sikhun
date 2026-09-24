@@ -332,6 +332,7 @@
         "read_now": "Start Reading",
         "subscription_gift_badge": "Included in your subscription",
         "coupon_access_badge": "Free access unlocked",
+        "add_to_shelf": "Add to my bookshelf",
         "buy_chapters": "Buy individual chapters",
         "buy_chapter": "Buy Chapter",
         "chapter_owned": "Purchased",
@@ -341,7 +342,25 @@
         "title": "My Bookshelf",
         "empty": "Your bookshelf is empty — add books from the library.",
         "added_on": "Added",
-        "continue_reading": "Continue Reading"
+        "continue_reading": "Continue Reading",
+        "library_books": "Library books",
+        "back_to_shelf": "Back to bookshelf"
+    },
+    "my_books": {
+        "add_own": "Add your own book or notes",
+        "add_own_hint": "Upload a PDF of your own book, notes or study material. You can read it here, and attach it to AI Chat.",
+        "title_placeholder": "e.g. Physics-1 notes",
+        "upload": "Upload",
+        "my_notes": "My book & notes",
+        "my_note": "Your upload",
+        "no_notes": "You haven't uploaded any books or notes yet.",
+        "processing_hint": "We're still preparing this document — pages are already readable while the AI index finishes.",
+        "status_completed": "Ready",
+        "status_processing": "Processing…",
+        "status_failed": "Failed",
+        "processing_error": "processing error",
+        "delete_confirm": "Delete this book from your shelf?",
+        "ask_ai": "Ask AI"
     },
     "wallet": {
         "title": "Wallet",
@@ -361,7 +380,10 @@
         "page_of": "Page :current of :total",
         "prev": "Previous",
         "next": "Next",
-        "back_to_book": "Back to book"
+        "back_to_book": "Back to book",
+        "chat_title": "Ask about this page",
+        "chat_hint": "Ask about what you're reading — the AI answers using the current page for context.",
+        "current_page": "Page :current"
     },
     "plans_page": {
         "title": "Subscription Plans",
@@ -391,7 +413,10 @@
         "image": "Attach image",
         "remove_image": "Remove image",
         "image_hint": "The AI can read text, diagrams and math in images.",
-        "book_attached_flash": "Book attached to this chat."
+        "book_attached_flash": "Book attached to this chat.",
+        "book_chat": "Book chat",
+        "my_uploads": "Your uploads",
+        "library_books": "Library books"
     },
     "exams": {
         "title": "Exams",

@@ -15,6 +15,9 @@ const props = defineProps({
     // Base used to mint page-image URLs, e.g. `/library/${bookId}/read` or
     // `/my-books/${bookId}/read`. The full URL is `${base}/page/${n}/url`.
     urlPrefix: { type: String, default: null },
+    // Pre-signed image URLs for the opening window, keyed by page number —
+    // lets the first pages paint without any extra requests.
+    pageUrls: { type: Object, default: () => null },
 });
 
 const emit = defineEmits(['page-change']);
@@ -105,20 +108,64 @@ function buildPages() {
     });
 }
 
+function applyPageImage(realPage, url) {
+    const $page = $(bookEl.value).find(`.page[data-real="${realPage}"]`).first();
+    if ($page.length) {
+        $page.css('background-image', `url(${url})`);
+        $page.children('.turn-page-loader').remove();
+    }
+}
+
 function ensureUrl(realPage) {
     if (loaded[realPage] || inflight.has(realPage)) return;
+
+    // Pages pre-signed by the server (props.pageUrls) paint instantly with
+    // zero round-trips; anything else falls back to an on-demand mint.
+    const direct = props.pageUrls?.[realPage];
+    if (direct) {
+        loaded[realPage] = true;
+        applyPageImage(realPage, direct);
+        return;
+    }
+
     inflight.add(realPage);
-    const $page = $(bookEl.value).find(`.page[data-real="${realPage}"]`).first();
     axios
         .get(pageUrl(realPage))
         .then(({ data }) => {
             loaded[realPage] = true;
-            $page.css('background-image', `url(${data.url})`);
-            $page.children('.turn-page-loader').remove();
+            applyPageImage(realPage, data.url);
         })
         .catch(() => {
+            const $page = $(bookEl.value).find(`.page[data-real="${realPage}"]`).first();
             $page.children('.turn-page-loader').text(t('reader.load_failed')).addClass('is-error');
         })
+        .finally(() => {
+            inflight.delete(realPage);
+        });
+}
+
+// Off-screen pages must be _downloaded_ ahead of time (browsers won't fetch
+// a display:none page's background), so warm them via a hidden Image and let
+// the browser cache serve the bytes instantly when the flip reveals the page.
+function prewarm(realPage) {
+    if (loaded[realPage] || inflight.has(realPage)) return;
+
+    const direct = props.pageUrls?.[realPage];
+    const via = (url) => {
+        inflight.add(realPage);
+        const img = new Image();
+        img.onload = img.onerror = () => inflight.delete(realPage);
+        img.src = url;
+    };
+    if (direct) {
+        via(direct);
+        return;
+    }
+    inflight.add(realPage);
+    axios
+        .get(pageUrl(realPage))
+        .then(({ data }) => via(data.url))
+        .catch(() => {})
         .finally(() => {
             inflight.delete(realPage);
         });
@@ -136,11 +183,11 @@ function loadView(view, prefetch = true) {
     });
     if (prefetch) {
         view.forEach((pos) => {
-            [pos - 1, pos + 1].forEach((p) => {
+            [pos - 2, pos - 1, pos + 1, pos + 2].forEach((p) => {
                 const real = realPages.value[p - 1];
                 if (real !== undefined && !seen.has(real)) {
                     seen.add(real);
-                    ensureUrl(real);
+                    prewarm(real);
                 }
             });
         });

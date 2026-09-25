@@ -6,7 +6,7 @@ import FlipReader from '@/Components/Reader/FlipReader.vue';
 import ReaderChatPanel from '@/Components/Reader/ReaderChatPanel.vue';
 import { useI18n } from '@/i18n';
 
-const props = defineProps({ myBook: Object });
+const props = defineProps({ myBook: Object, pageUrls: { type: Object, default: () => null } });
 const { t } = useI18n();
 
 const currentPage = ref(1);
@@ -30,6 +30,7 @@ const ready = props.myBook.processing_status === 'completed';
             :book-id="myBook.id"
             :total-pages="Math.max(myBook.total_pages || 1, 1)"
             :url-prefix="`/my-books/${myBook.id}/read`"
+            :page-urls="pageUrls"
             @page-change="currentPage = $event"
         />
 

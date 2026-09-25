@@ -18,6 +18,29 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReaderController extends Controller
 {
+    // How many pages get signed URLs handed to the frontend up front, so the
+    // first pages paint with zero extra requests. Farther pages are minted on
+    // demand (fast, pure-HMAC) as the student flips.
+    private const PRE_SIGNED_WINDOW = 18;
+
+    /**
+     * Stable signing expiry: URLs minted for a page/student stay identical for
+     * the rest of the day, so browser HTTP caches and the Imagick cache are
+     * actually reused instead of re-downloading/re-rendering on every visit.
+     */
+    private function signingExpiry(): \Illuminate\Support\Carbon
+    {
+        return now()->startOfDay()->addDay();
+    }
+
+    private function signedPageUrl(int $bookId, int $page, int $studentId): string
+    {
+        return URL::temporarySignedRoute('reader.page', $this->signingExpiry(), [
+            'book' => $bookId,
+            'page' => $page,
+            'student' => $studentId,
+        ]);
+    }
     /**
      * The reader shell itself — Inertia page that mounts FlipReader.vue.
      * Starts (or resumes) today's ReadingSession row for this student+book.
@@ -57,11 +80,31 @@ class ReaderController extends Controller
             $book->increment('reading_count');
         }
 
+        // Pre-sign the opening window so the first pages render immediately.
+        $pageUrls = $this->preSignedWindow($book, $student, $accessiblePages);
+
         return Inertia::render('Student/Library/Reader', [
             'book' => $book->only(['id', 'title', 'slug', 'total_pages']),
             'accessiblePages' => $accessiblePages,
+            'pageUrls' => $pageUrls,
             'chapters' => $book->topChapters()->get(['id', 'title', 'chapter_number', 'start_page']),
         ]);
+    }
+
+    private function preSignedWindow(Book $book, $student, ?array $accessiblePages): array
+    {
+        $limit = min(self::PRE_SIGNED_WINDOW, (int) $book->total_pages);
+
+        $pages = $accessiblePages !== null
+            ? collect($accessiblePages)->filter(fn (int $p) => $p <= $limit)->sort()->values()->all()
+            : ($limit > 0 ? range(1, $limit) : []);
+
+        $urls = [];
+        foreach ($pages as $p) {
+            $urls[$p] = $this->signedPageUrl($book->id, $p, $student->id);
+        }
+
+        return $urls;
     }
 
     /**
@@ -78,13 +121,7 @@ class ReaderController extends Controller
 
         $this->trackProgress($student->id, $book->id, $page);
 
-        $url = URL::temporarySignedRoute(
-            'reader.page',
-            now()->addMinutes(15),
-            ['book' => $book->id, 'page' => $page, 'student' => $student->id]
-        );
-
-        return response()->json(['url' => $url]);
+        return response()->json(['url' => $this->signedPageUrl($book->id, $page, $student->id)]);
     }
 
     /**
@@ -134,7 +171,7 @@ class ReaderController extends Controller
 
         return response($bytes, 200, [
             'Content-Type' => $isSvgPlaceholder ? 'image/svg+xml' : 'image/jpeg',
-            'Cache-Control' => 'private, max-age=900',
+            'Cache-Control' => 'private, max-age=86400',
         ]);
     }
 

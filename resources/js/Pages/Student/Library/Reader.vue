@@ -6,7 +6,7 @@ import FlipReader from '@/Components/Reader/FlipReader.vue';
 import ReaderChatPanel from '@/Components/Reader/ReaderChatPanel.vue';
 import { useI18n } from '@/i18n';
 
-const props = defineProps({ book: Object, accessiblePages: { type: Array, default: null }, chapters: { type: Array, default: () => [] } });
+const props = defineProps({ book: Object, accessiblePages: { type: Array, default: null }, chapters: { type: Array, default: () => [] }, pageUrls: { type: Object, default: () => null } });
 const { t } = useI18n();
 
 const currentPage = ref(1);
@@ -26,6 +26,7 @@ const chatOpen = ref(false);
             :total-pages="book.total_pages || 1"
             :accessible-pages="accessiblePages"
             :url-prefix="`/library/${book.id}/read`"
+            :page-urls="pageUrls"
             @page-change="currentPage = $event"
         />
 

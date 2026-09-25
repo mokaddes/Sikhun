@@ -16,6 +16,28 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MyBookReaderController extends Controller
 {
+    // Pages pre-signed into the Inertia props so the opening window paints
+    // immediately. Farther pages are minted on demand while flipping.
+    private const PRE_SIGNED_WINDOW = 18;
+
+    /**
+     * Stable signing expiry: URLs for a page/student stay identical all day,
+     * so both browser caches and the Imagick cache are reused.
+     */
+    private function signingExpiry(): \Illuminate\Support\Carbon
+    {
+        return now()->startOfDay()->addDay();
+    }
+
+    private function signedPageUrl(int $bookId, int $page, int $studentId): string
+    {
+        return URL::temporarySignedRoute('my-books.reader.page', $this->signingExpiry(), [
+            'myBook' => $bookId,
+            'page' => $page,
+            'student' => $studentId,
+        ]);
+    }
+
     private function authorize(MyBook $myBook): void
     {
         abort_unless($myBook->student_id === auth('web')->id(), 403);
@@ -25,8 +47,17 @@ class MyBookReaderController extends Controller
     {
         $this->authorize($myBook);
 
+        $limit = min(self::PRE_SIGNED_WINDOW, (int) $myBook->total_pages);
+        $pageUrls = [];
+        if ($limit > 0) {
+            foreach (range(1, $limit) as $p) {
+                $pageUrls[$p] = $this->signedPageUrl($myBook->id, $p, auth('web')->id());
+            }
+        }
+
         return Inertia::render('Student/MyBooks/Reader', [
             'myBook' => $myBook->only(['id', 'title', 'total_pages', 'processing_status', 'processing_error']),
+            'pageUrls' => $pageUrls,
         ]);
     }
 
@@ -34,13 +65,7 @@ class MyBookReaderController extends Controller
     {
         $this->authorize($myBook);
 
-        $url = URL::temporarySignedRoute(
-            'my-books.reader.page',
-            now()->addMinutes(15),
-            ['myBook' => $myBook->id, 'page' => $page, 'student' => auth('web')->id()]
-        );
-
-        return response()->json(['url' => $url]);
+        return response()->json(['url' => $this->signedPageUrl($myBook->id, $page, auth('web')->id())]);
     }
 
     public function servePage(Request $request, MyBook $myBook, int $page, BookReaderService $reader): HttpResponse
@@ -54,7 +79,7 @@ class MyBookReaderController extends Controller
 
         return response($bytes, 200, [
             'Content-Type' => $isSvgPlaceholder ? 'image/svg+xml' : 'image/jpeg',
-            'Cache-Control' => 'private, max-age=900',
+            'Cache-Control' => 'private, max-age=86400',
         ]);
     }
 

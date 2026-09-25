@@ -25,7 +25,11 @@ class BookReaderService
     {
         $cacheKey = "book_page:{$book->pdfSourceId()}:{$page}:{$student->id}";
 
-        return Cache::remember($cacheKey, 900, function () use ($book, $page, $student) {
+        // Page images are immutable once a PDF is in place; cache the rendered
+        // JPEG for a day so revisits and re-flips never redo Imagick work. The
+        // signed URL is also stable for the day (ReaderController), so browsers
+        // reuse this cache too.
+        return Cache::remember($cacheKey, 86400, function () use ($book, $page, $student) {
             if (! $book->pdfFilePath() || ! Storage::disk('private')->exists($book->pdfFilePath())) {
                 return $this->placeholderImage($book, $page, $student);
             }

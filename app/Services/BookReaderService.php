@@ -21,52 +21,84 @@ use Illuminate\Support\Facades\Storage;
  */
 class BookReaderService
 {
+    // Rasterize once per page (not per student) and cache globally; the PDF→JPEG
+    // step is the expensive one (Ghostscript). The per-student watermark is a
+    // cheap annotate pass on top of that shared raster, so every student still
+    // gets their own watermarked bytes without re-running the raster.
+    private const RASTER_TTL = 86400;
+    private const WATERMARK_TTL = 86400;
+
+    // Display-appropriate size: the reader shows pages ~380×537 CSS px, so 120
+    // DPI (≈992×1403 A4) is sharp enough on real devices while cutting payload
+    // ~45% vs 150 DPI. Raise back to 150 if clients want crisper high-DPI text.
+    private const RASTER_DPI = 120;
+    private const JPEG_QUALITY = 82;
+
     public function renderPage(PdfParsable $book, int $page, Student $student): string
     {
-        $cacheKey = "book_page:{$book->pdfSourceId()}:{$page}:{$student->id}";
+        $source = $book->pdfSourceId();
 
-        // Page images are immutable once a PDF is in place; cache the rendered
-        // JPEG for a day so revisits and re-flips never redo Imagick work. The
-        // signed URL is also stable for the day (ReaderController), so browsers
-        // reuse this cache too.
-        return Cache::remember($cacheKey, 86400, function () use ($book, $page, $student) {
-            if (! $book->pdfFilePath() || ! Storage::disk('private')->exists($book->pdfFilePath())) {
-                return $this->placeholderImage($book, $page, $student);
+        $exists = $book->pdfFilePath() && Storage::disk('private')->exists($book->pdfFilePath());
+        if (! $exists || ! extension_loaded('imagick')) {
+            $note = null;
+            if ($exists && ! extension_loaded('imagick')) {
+                $note = 'Imagick extension not installed on this server.';
             }
+            // Placeholder contains the student's name, so keep it per-student
+            // (it's tiny SVG and cheap to rebuild).
+            return Cache::remember("book_page:pl:{$source}:{$page}:{$student->id}", self::RASTER_TTL, function () use ($book, $page, $student, $note) {
+                return $this->placeholderImage($book, $page, $student, $note);
+            });
+        }
 
-            if (! extension_loaded('imagick')) {
-                return $this->placeholderImage($book, $page, $student, 'Imagick extension not installed on this server.');
-            }
-
-            try {
-                return $this->renderFromPdf($book, $page, $student);
-            } catch (\Throwable $e) {
-                return $this->placeholderImage($book, $page, $student, 'Could not render this page: '.$e->getMessage());
-            }
-        });
-    }
-
-    private function renderFromPdf(PdfParsable $book, int $page, Student $student): string
-    {
         $pdfPath = Storage::disk('private')->path($book->pdfFilePath());
 
-        $imagick = new \Imagick();
-        $imagick->setResolution(150, 150);
-        $imagick->readImage("{$pdfPath}[".($page - 1).']');
-        $imagick->setImageFormat('jpg');
-        $imagick->setImageCompressionQuality(85);
+        // Expensive step — shared by every student, so it runs once per page.
+        $raw = Cache::remember("book_page:raw:{$source}:{$page}", self::RASTER_TTL, function () use ($pdfPath, $page) {
+            try {
+                $imagick = new \Imagick();
+                $imagick->setResolution(self::RASTER_DPI, self::RASTER_DPI);
+                $imagick->readImage("{$pdfPath}[".($page - 1).']');
+                $imagick->setImageFormat('jpg');
+                $imagick->setImageCompressionQuality(self::JPEG_QUALITY);
+                $blob = $imagick->getImageBlob();
+                $imagick->clear();
 
-        $draw = new \ImagickDraw();
-        $draw->setFillColor(new \ImagickPixel('rgba(0,0,0,0.28)'));
-        $draw->setFontSize(16);
-        $draw->setTextAntialias(true);
-        $watermark = "{$student->name} · ID:{$student->id} · sikhun.com";
-        $imagick->annotateImage($draw, 16, 28, 0, $watermark);
+                return $blob;
+            } catch (\Throwable $e) {
+                return null;
+            }
+        });
 
-        $blob = $imagick->getImageBlob();
-        $imagick->clear();
+        if ($raw === null) {
+            return Cache::remember("book_page:pl:{$source}:{$page}:{$student->id}", self::RASTER_TTL, function () use ($book, $page, $student) {
+                return $this->placeholderImage($book, $page, $student, 'Could not render this page.');
+            });
+        }
 
-        return $blob;
+        // Cheap step — overlay this student's watermark on the shared raster.
+        return Cache::remember("book_page:wm:{$source}:{$page}:{$student->id}", self::WATERMARK_TTL, function () use ($raw, $student) {
+            try {
+                $imagick = new \Imagick();
+                $imagick->readImageBlob($raw);
+
+                $draw = new \ImagickDraw();
+                $draw->setFillColor(new \ImagickPixel('rgba(0,0,0,0.28)'));
+                $draw->setFontSize(16);
+                $draw->setTextAntialias(true);
+                $watermark = "{$student->name} · ID:{$student->id} · sikhun.com";
+                $imagick->annotateImage($draw, 16, 28, 0, $watermark);
+
+                $blob = $imagick->getImageBlob();
+                $imagick->clear();
+
+                return $blob;
+            } catch (\Throwable $e) {
+                // Unwatermarked fallback beats a broken reader; the signed URL
+                // still gates access per student.
+                return $raw;
+            }
+        });
     }
 
     /**

@@ -21,7 +21,7 @@ const emit = defineEmits(['page-change']);
 
 const { t } = useI18n();
 
-const PAGE_ASPECT = 1.414; // A4 portrait at 150 DPI (matches the SVG placeholder)
+const PAGE_ASPECT = 1.414; // A4 portrait at 150 DPI
 
 const rootEl = ref(null);
 const bookEl = ref(null);
@@ -59,6 +59,17 @@ const indicatorText = computed(() => {
     return t('reader.page_of', { current: currentPage.value, total });
 });
 
+const bookStyle = computed(() => {
+    const { pageW, pageH, double } = size.value;
+    const width = double ? pageW * 2 : pageW;
+    return {
+        width: `${width}px`,
+        height: `${pageH}px`,
+        left: `${-width / 2}px`,
+        top: `${-pageH / 2}px`,
+    };
+});
+
 function computeSize() {
     const viewportW = rootEl.value?.clientWidth ?? 0;
     const containerW = Math.max(viewportW > 0 ? viewportW : window.innerWidth - 32, 240);
@@ -86,19 +97,18 @@ function buildPages() {
     const book = $(bookEl.value);
     book.empty();
     realPages.value.forEach((p) => {
-        book.append(
-            $('<div class="turn-page"></div>')
-                .attr('data-real', p)
-                .append(`<div class="turn-page-loader">${t('reader.loading')}</div>`)
-                .on('contextmenu', (e) => e.preventDefault())
-        );
+        $('<div class="page"></div>')
+            .attr('data-real', p)
+            .append(`<div class="turn-page-loader">${t('reader.loading')}</div>`)
+            .on('contextmenu', (e) => e.preventDefault())
+            .appendTo(book);
     });
 }
 
 function ensureUrl(realPage) {
     if (loaded[realPage] || inflight.has(realPage)) return;
     inflight.add(realPage);
-    const $page = $(bookEl.value).find(`.turn-page[data-real="${realPage}"]`).first();
+    const $page = $(bookEl.value).find(`.page[data-real="${realPage}"]`).first();
     axios
         .get(pageUrl(realPage))
         .then(({ data }) => {
@@ -155,25 +165,31 @@ function handleTurned(e, page, view) {
 function createTurn() {
     const el = bookEl.value;
     if (!el) return;
-    const { pageW, pageH, double } = size.value;
+    const { pageH, double } = size.value;
+    const { width } = bookStyle.value;
 
+    const $el = $(el);
     try {
-        $(el).turn('destroy');
-    } catch (e) {
-        /* element may have no instance yet */
+        // Turn.js stores its instance data on the element; destroy only
+        // touches an element that actually has a flipbook on it.
+        if ($el.turn('is')) $el.turn('destroy');
+    } catch (err) {
+        console.warn('turn:destroy skipped', err);
     }
+
     for (const key in loaded) delete loaded[key];
     inflight = new Set();
     buildPages();
 
-    $(el).turn({
-        width: double ? pageW * 2 : pageW,
+    // Same initialisation as turnjs4/samples/basic (raw turn.js), with the
+    // two page lifecycle callbacks we need for per-view image loading.
+    $el.turn({
+        width,
         height: pageH,
         elevation: 50,
         gradients: true,
         autoCenter: true,
         display: double ? 'double' : 'single',
-        duration: 600,
         when: {
             turning: (e, page, view) => {
                 if (view) loadView(view);
@@ -183,13 +199,15 @@ function createTurn() {
     });
 
     const startPos = Math.max(1, Math.min(currentPos.value || 1, realPages.value.length));
-    $(el).turn('page', startPos);
-    syncFromView($(el).turn('view') ?? [startPos]);
+    $el.turn('page', startPos);
+    syncFromView($el.turn('view') ?? [startPos]);
 }
 
 async function initTurn() {
-    try {
+    if ($.fn.turn && typeof window !== 'undefined') {
         window.jQuery = window.$ = $;
+    }
+    try {
         await import('@/vendor/turnjs/turn.js');
     } catch (e) {
         initializing.value = false;
@@ -199,17 +217,24 @@ async function initTurn() {
     }
     await nextTick();
     size.value = computeSize();
-    createTurn();
+    try {
+        createTurn();
+    } catch (e) {
+        console.error('Turn.js failed to create the flipbook', e);
+        initError.value = true;
+        initializing.value = false;
+        return;
+    }
     ready.value = true;
     initializing.value = false;
 }
 
 function goPrev() {
-    if ($.fn.turn && bookEl.value) $(bookEl.value).turn('previous');
+    if (ready.value && bookEl.value) $(bookEl.value).turn('previous');
 }
 
 function goNext() {
-    if ($.fn.turn && bookEl.value) $(bookEl.value).turn('next');
+    if (ready.value && bookEl.value) $(bookEl.value).turn('next');
 }
 
 function jumpTo() {
@@ -232,7 +257,7 @@ function jumpTo() {
 }
 
 function turnTo(pos) {
-    if ($.fn.turn && bookEl.value) $(bookEl.value).turn('page', Math.max(1, Math.min(pos, realPages.value.length)));
+    if (ready.value && bookEl.value) $(bookEl.value).turn('page', Math.max(1, Math.min(pos, realPages.value.length)));
 }
 
 function onKeydown(e) {
@@ -251,19 +276,30 @@ function onResize() {
         if (next.double !== size.value.double || Math.abs(next.pageW - size.value.pageW) > 4) {
             size.value = next;
             if (!ready.value) return;
-            if ($.fn.turn && bookEl.value) {
-                try {
-                    $(bookEl.value).turn('destroy');
-                } catch (e) {
-                    /* no instance */
-                }
+            try {
+                createTurn();
+            } catch (e) {
+                console.error('Turn.js resize failed', e);
             }
-            createTurn();
         }
     }, 220);
 }
 
+// Console helper for diagnosing the flipbook state in the browser.
 onMounted(() => {
+    window.__sikhunTurn = function () {
+        return {
+            turnLoaded: Boolean($.fn.turn),
+            state: initError.value ? 'error' : initializing.value ? 'loading' : ready.value ? 'ready' : 'unknown',
+            size: size.value,
+            pages: bookEl.value ? (($.fn.turn && ready.value) ? $(bookEl.value).turn('pages') : null) : null,
+            view: bookEl.value ? (($.fn.turn && ready.value) ? $(bookEl.value).turn('view') : null) : null,
+            pageWrappers: bookEl.value ? $(bookEl.value).find('.page-wrapper').length : 0,
+            loadedImages: Object.keys(loaded).length,
+            realPages: realPages.value.length,
+        };
+    };
+
     currentPage.value = realPages.value[0] ?? 1;
     initTurn();
     window.addEventListener('keydown', onKeydown);
@@ -274,9 +310,10 @@ onBeforeUnmount(() => {
     window.clearTimeout(resizeTimer);
     window.removeEventListener('keydown', onKeydown);
     window.removeEventListener('resize', onResize);
-    if ($.fn.turn && bookEl.value) {
+    if (bookEl.value && $.fn.turn) {
         try {
-            $(bookEl.value).turn('destroy');
+            const $el = $(bookEl.value);
+            if ($el.turn('is')) $el.turn('destroy');
         } catch (e) {
             /* already torn down */
         }
@@ -285,63 +322,73 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div ref="rootEl" class="turn-reader select-none">
-        <div v-if="initError" class="py-24 text-center text-sm text-red-600">
+    <div
+        ref="rootEl"
+        class="flipbook-viewport turn-reader relative select-none"
+        :style="{ height: `${size.pageH}px` }"
+    >
+        <div
+            v-if="initError"
+            class="absolute inset-0 z-20 flex items-center justify-center text-sm text-red-600"
+        >
             {{ t('reader.load_failed') }}
         </div>
 
-        <div v-else-if="!realPages.length" class="py-24 text-center text-sm text-[var(--text-muted)]">
+        <div
+            v-else-if="!realPages.length"
+            class="absolute inset-0 z-20 flex items-center justify-center text-sm text-[var(--text-muted)]"
+        >
             {{ t('reader.load_failed') }}
         </div>
 
         <template v-else>
-            <div class="turn-viewport relative" :style="{ height: `${size.pageH}px` }">
-                <div
-                    v-if="initializing"
-                    class="absolute inset-0 z-10 flex items-center justify-center gap-3 rounded-xl bg-[var(--surface)] text-sm text-[var(--text-muted)]"
-                >
-                    {{ t('reader.loading') }}
-                </div>
-
-                <div ref="bookEl" class="flipbook"></div>
+            <div
+                v-if="initializing"
+                class="absolute inset-0 z-20 flex items-center justify-center gap-3 rounded-xl bg-[var(--surface)] text-sm text-[var(--text-muted)]"
+            >
+                {{ t('reader.loading') }}
             </div>
 
-            <div class="mt-6 flex items-center justify-center gap-4 text-sm">
-                <button
-                    type="button"
-                    class="reader-ctrl"
-                    :aria-label="t('reader.prev')"
-                    :disabled="!ready || currentPos <= 1"
-                    @click="goPrev"
-                >
-                    ‹
-                </button>
-
-                <div class="flex items-center gap-2 text-[var(--text-muted)]">
-                    <input
-                        type="number"
-                        min="1"
-                        :max="totalPages"
-                        v-model.number="jumpTarget"
-                        :placeholder="String(currentPage)"
-                        :disabled="!ready"
-                        @keydown.enter="jumpTo"
-                        class="w-16 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2 py-1 text-center text-sm outline-none focus:border-[var(--primary)] disabled:opacity-50"
-                    />
-                    <span>{{ indicatorText }}</span>
-                </div>
-
-                <button
-                    type="button"
-                    class="reader-ctrl"
-                    :aria-label="t('reader.next')"
-                    :disabled="!ready || currentPos >= realPages.length"
-                    @click="goNext"
-                >
-                    ›
-                </button>
+            <div class="container">
+                <div ref="bookEl" class="flipbook" :style="bookStyle"></div>
             </div>
         </template>
+    </div>
+
+    <div class="mt-6 flex items-center justify-center gap-4 text-sm">
+        <button
+            type="button"
+            class="reader-ctrl"
+            :aria-label="t('reader.prev')"
+            :disabled="!ready || currentPos <= 1"
+            @click="goPrev"
+        >
+            ‹
+        </button>
+
+        <div class="flex items-center gap-2 text-[var(--text-muted)]">
+            <input
+                type="number"
+                min="1"
+                :max="totalPages"
+                v-model.number="jumpTarget"
+                :placeholder="String(currentPage)"
+                :disabled="!ready"
+                @keydown.enter="jumpTo"
+                class="w-16 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2 py-1 text-center text-sm outline-none focus:border-[var(--primary)] disabled:opacity-50"
+            />
+            <span>{{ indicatorText }}</span>
+        </div>
+
+        <button
+            type="button"
+            class="reader-ctrl"
+            :aria-label="t('reader.next')"
+            :disabled="!ready || currentPos >= realPages.length"
+            @click="goNext"
+        >
+            ›
+        </button>
     </div>
 </template>
 
@@ -369,34 +416,68 @@ onBeforeUnmount(() => {
 </style>
 
 <style>
-/* Global styles — pages are built imperatively by Turn.js, outside Vue's
-   scoped attribute reach, so these must be unscoped. */
-.turn-reader .flipbook {
-    position: relative;
+/* Stock styles straight from turnjs4/samples/basic/css/basic.css (body
+   overrides removed — they must not affect the rest of the app). Pages are
+   built by Turn.js outside Vue's scoped attribute reach, so this stays
+   unscoped. */
+
+.turn-reader.flipbook-viewport {
+    overflow: hidden;
+    width: 100%;
 }
-.turn-reader .turn-page {
-    background-color: #fff;
+
+.turn-reader .container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: auto;
+}
+
+.turn-reader .flipbook {
+    position: absolute;
+}
+
+.turn-reader .page {
+    background-color: #ffffff;
     background-repeat: no-repeat;
     background-size: 100% 100%;
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
 }
-.turn-reader .turn-page .turn-page-loader {
+
+.turn-reader .flipbook .page {
+    -webkit-box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    -ms-box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.turn-reader .page img,
+.turn-reader .page {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.turn-reader .shadow {
+    transition: box-shadow 0.5s;
+    box-shadow: 0 0 20px #cccccc;
+}
+
+.turn-reader .page .turn-page-loader {
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fff;
-    color: var(--text-muted);
+    background: #ffffff;
+    color: var(--text-muted, #6b7280);
     font-size: 12px;
     text-align: center;
     padding: 0.5rem;
 }
-.turn-reader .turn-page .turn-page-loader.is-error {
+.turn-reader .page .turn-page-loader.is-error {
     color: #dc2626;
-}
-.turn-reader .turn-shadow {
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import axios from 'axios';
 import { useI18n } from '@/i18n';
 
@@ -28,12 +28,10 @@ const bookEl = ref(null);
 const initializing = ref(true);
 const initError = ref(false);
 const ready = ref(false);
-const bookVersion = ref(0);
 
 const size = ref(computeSize());
-const pageImages = reactive({});
-const pageErrors = reactive({});
-const inflight = new Set();
+const loaded = {};
+let inflight = new Set();
 
 const currentPos = ref(1);
 const currentPage = ref(null);
@@ -48,11 +46,6 @@ const realPages = computed(() => {
 });
 
 const isDouble = computed(() => size.value.double);
-
-const pageStyle = computed(() => ({
-    width: `${size.value.pageW}px`,
-    height: `${size.value.pageH}px`,
-}));
 
 const indicatorText = computed(() => {
     const total = props.totalPages;
@@ -89,16 +82,32 @@ function pageUrl(realPage) {
     return `${props.urlPrefix ?? `/library/${props.bookId}/read`}/page/${realPage}/url`;
 }
 
+function buildPages() {
+    const book = $(bookEl.value);
+    book.empty();
+    realPages.value.forEach((p) => {
+        book.append(
+            $('<div class="turn-page"></div>')
+                .attr('data-real', p)
+                .append(`<div class="turn-page-loader">${t('reader.loading')}</div>`)
+                .on('contextmenu', (e) => e.preventDefault())
+        );
+    });
+}
+
 function ensureUrl(realPage) {
-    if (pageImages[realPage] || pageErrors[realPage] || inflight.has(realPage)) return;
+    if (loaded[realPage] || inflight.has(realPage)) return;
     inflight.add(realPage);
+    const $page = $(bookEl.value).find(`.turn-page[data-real="${realPage}"]`).first();
     axios
         .get(pageUrl(realPage))
         .then(({ data }) => {
-            pageImages[realPage] = data.url;
+            loaded[realPage] = true;
+            $page.css('background-image', `url(${data.url})`);
+            $page.children('.turn-page-loader').remove();
         })
         .catch(() => {
-            pageErrors[realPage] = true;
+            $page.children('.turn-page-loader').text(t('reader.load_failed')).addClass('is-error');
         })
         .finally(() => {
             inflight.delete(realPage);
@@ -148,13 +157,14 @@ function createTurn() {
     if (!el) return;
     const { pageW, pageH, double } = size.value;
 
-    if ($.fn.turn) {
-        try {
-            $(el).turn('destroy');
-        } catch (e) {
-            /* element may have no instance yet */
-        }
+    try {
+        $(el).turn('destroy');
+    } catch (e) {
+        /* element may have no instance yet */
     }
+    for (const key in loaded) delete loaded[key];
+    inflight = new Set();
+    buildPages();
 
     $(el).turn({
         width: double ? pageW * 2 : pageW,
@@ -188,8 +198,9 @@ async function initTurn() {
         return;
     }
     await nextTick();
-    ready.value = true;
+    size.value = computeSize();
     createTurn();
+    ready.value = true;
     initializing.value = false;
 }
 
@@ -240,8 +251,14 @@ function onResize() {
         if (next.double !== size.value.double || Math.abs(next.pageW - size.value.pageW) > 4) {
             size.value = next;
             if (!ready.value) return;
-            bookVersion.value++;
-            nextTick(() => createTurn());
+            if ($.fn.turn && bookEl.value) {
+                try {
+                    $(bookEl.value).turn('destroy');
+                } catch (e) {
+                    /* no instance */
+                }
+            }
+            createTurn();
         }
     }, 220);
 }
@@ -286,19 +303,7 @@ onBeforeUnmount(() => {
                     {{ t('reader.loading') }}
                 </div>
 
-                <div :key="`book-${bookVersion}`" ref="bookEl" class="flipbook">
-                    <div
-                        v-for="p in realPages"
-                        :key="p"
-                        class="turn-page"
-                        :style="pageStyle"
-                        @contextmenu.prevent
-                    >
-                        <div v-if="pageErrors[p]" class="turn-page-state">{{ t('reader.load_failed') }}</div>
-                        <div v-else-if="!pageImages[p]" class="turn-page-state">{{ t('reader.loading') }}</div>
-                        <div v-else class="turn-img" :style="{ backgroundImage: `url(${pageImages[p]})` }"></div>
-                    </div>
-                </div>
+                <div ref="bookEl" class="flipbook"></div>
             </div>
 
             <div class="mt-6 flex items-center justify-center gap-4 text-sm">
@@ -364,8 +369,8 @@ onBeforeUnmount(() => {
 </style>
 
 <style>
-/* Global styles — Turn.js injects page wrappers/shadows at runtime that are
-   outside Vue's scoped attribute reach, so these must be unscoped. */
+/* Global styles — pages are built imperatively by Turn.js, outside Vue's
+   scoped attribute reach, so these must be unscoped. */
 .turn-reader .flipbook {
     position: relative;
 }
@@ -375,15 +380,8 @@ onBeforeUnmount(() => {
     background-size: 100% 100%;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-    overflow: hidden;
 }
-.turn-reader .turn-page .turn-img {
-    position: absolute;
-    inset: 0;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
-}
-.turn-reader .turn-page .turn-page-state {
+.turn-reader .turn-page .turn-page-loader {
     position: absolute;
     inset: 0;
     display: flex;
@@ -394,6 +392,9 @@ onBeforeUnmount(() => {
     font-size: 12px;
     text-align: center;
     padding: 0.5rem;
+}
+.turn-reader .turn-page .turn-page-loader.is-error {
+    color: #dc2626;
 }
 .turn-reader .turn-shadow {
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);

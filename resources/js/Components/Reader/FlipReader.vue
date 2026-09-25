@@ -204,12 +204,15 @@ function createTurn() {
 }
 
 async function initTurn() {
-    if ($.fn.turn && typeof window !== 'undefined') {
-        window.jQuery = window.$ = $;
-    }
+    // The raw turn.js file reads the global `jQuery` at load time, so it must
+    // exist before the chunk executes (this is what the stock samples rely on).
+    window.jQuery = window.$ = $;
     try {
         await import('@/vendor/turnjs/turn.js');
     } catch (e) {
+        if (!window.jQuery && !$.fn.turn) {
+            window.jQuery = window.$ = $;
+        }
         initializing.value = false;
         initError.value = true;
         console.error('Turn.js failed to initialise', e);

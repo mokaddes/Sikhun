@@ -4,6 +4,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import FlipReader from '@/Components/Reader/FlipReader.vue';
 import ReaderChatPanel from '@/Components/Reader/ReaderChatPanel.vue';
+import { BookOpenIcon } from '@heroicons/vue/24/solid';
 import { useI18n } from '@/i18n';
 
 const props = defineProps({ book: Object, accessiblePages: { type: Array, default: null }, chapters: { type: Array, default: () => [] }, pageUrls: { type: Object, default: () => null } });
@@ -30,7 +31,7 @@ const chatOpen = ref(false);
             @page-change="currentPage = $event"
         />
 
-        <!-- Page-context chat — sits where the old support bot used to float -->
+        <!-- Page-context chat — floats bottom-right over the reader -->
         <div class="fixed bottom-5 right-5 z-40 w-80 max-w-[calc(100vw-2.5rem)]">
             <div v-if="chatOpen" class="mb-3">
                 <ReaderChatPanel
@@ -41,10 +42,12 @@ const chatOpen = ref(false);
             </div>
             <button
                 v-else
-                class="w-14 h-14 rounded-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xl flex items-center justify-center text-2xl"
+                class="w-14 h-14 rounded-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xl flex items-center justify-center transition-transform hover:scale-105"
+                :aria-label="t('reader.chat_title')"
+                :title="t('reader.chat_title')"
                 @click="chatOpen = true"
             >
-                💬
+                <BookOpenIcon class="w-7 h-7" />
             </button>
         </div>
     </StudentLayout>

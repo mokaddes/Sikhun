@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MyBook;
 use App\Services\Ai\PageChatService;
 use App\Services\BookReaderService;
+use App\Services\Pdf\PageTextService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
@@ -83,7 +84,7 @@ class MyBookReaderController extends Controller
         ]);
     }
 
-    public function chat(Request $request, MyBook $myBook, PageChatService $chat): StreamedResponse
+    public function chat(Request $request, MyBook $myBook, PageChatService $chat, PageTextService $pageText): StreamedResponse
     {
         $this->authorize($myBook);
 
@@ -92,17 +93,19 @@ class MyBookReaderController extends Controller
             'page' => ['required', 'integer', 'min:1'],
         ]);
 
-        $contextPages = $myBook->pages()
-            ->whereBetween('page_number', [$validated['page'] - 1, $validated['page'] + 1])
-            ->orderBy('page_number')
-            ->get()
-            ->map(fn ($p) => [
-                'page_number' => $p->page_number,
-                'content' => mb_substr((string) $p->content, 0, 8000),
-            ])
-            ->filter(fn ($p) => trim($p['content']) !== '')
-            ->values()
-            ->all();
+        $target = (int) $validated['page'];
+
+        $contextPages = [];
+        foreach ([$target - 1, $target, $target + 1] as $p) {
+            if ($p < 1 || $p > (int) $myBook->total_pages) {
+                continue;
+            }
+
+            $text = $pageText->forPage($myBook, $p);
+            if ($text !== null && trim($text) !== '') {
+                $contextPages[] = ['page_number' => $p, 'content' => mb_substr($text, 0, 8000)];
+            }
+        }
 
         return $chat->stream($myBook->title, $contextPages, $validated['message']);
     }

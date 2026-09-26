@@ -2,7 +2,7 @@
 import { ref, computed, nextTick, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useI18n } from '@/i18n';
-import { ArrowUpIcon, ChatBubbleLeftRightIcon, XMarkIcon } from '@heroicons/vue/24/outline';
+import { ArrowUpIcon, BookOpenIcon, XMarkIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     // Full POST endpoint for the streaming chat, e.g. `/library/3/read/chat`
@@ -123,7 +123,7 @@ function onComposerKeydown(e) {
     <div class="flex flex-col w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xl overflow-hidden lg:h-[calc(100dvh-11rem)]">
         <div class="flex items-center justify-between gap-2 px-4 py-3 border-b border-[var(--border)] bg-[var(--primary)] text-white">
             <div class="flex items-center gap-2 min-w-0">
-                <ChatBubbleLeftRightIcon class="w-4.5 h-4.5 shrink-0" />
+                <BookOpenIcon class="w-4.5 h-4.5 shrink-0" />
                 <span class="font-heading font-semibold text-sm truncate">{{ t('reader.chat_title') }}</span>
                 <span class="shrink-0 text-[11px] px-2 py-0.5 rounded-full bg-white/20">{{ t('reader.current_page', { current: page }) }}</span>
             </div>

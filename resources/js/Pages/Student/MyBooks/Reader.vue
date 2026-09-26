@@ -4,6 +4,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import FlipReader from '@/Components/Reader/FlipReader.vue';
 import ReaderChatPanel from '@/Components/Reader/ReaderChatPanel.vue';
+import { BookOpenIcon } from '@heroicons/vue/24/solid';
 import { useI18n } from '@/i18n';
 
 const props = defineProps({ myBook: Object, pageUrls: { type: Object, default: () => null } });
@@ -44,10 +45,12 @@ const ready = props.myBook.processing_status === 'completed';
             </div>
             <button
                 v-else
-                class="w-14 h-14 rounded-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xl flex items-center justify-center text-2xl"
+                class="w-14 h-14 rounded-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xl flex items-center justify-center transition-transform hover:scale-105"
+                :aria-label="t('reader.chat_title')"
+                :title="t('reader.chat_title')"
                 @click="chatOpen = true"
             >
-                💬
+                <BookOpenIcon class="w-7 h-7" />
             </button>
         </div>
     </StudentLayout>

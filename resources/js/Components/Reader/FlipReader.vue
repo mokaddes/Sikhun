@@ -160,16 +160,25 @@ function ensureUrl(realPage) {
 }
 
 // Off-screen pages must be _downloaded_ ahead of time (browsers won't fetch
-// a display:none page's background), so warm them via a hidden Image and let
-// the browser cache serve the bytes instantly when the flip reveals the page.
+// a display:none page's background), so warm them via a hidden Image AND
+// render the element's background from the same URL. Rendering matters as
+// much as caching: turn.js clones the visible .page elements when zooming in,
+// so a page that was only cache-warmed would come back blank in the zoomed
+// view (its loader div would still be up).
 function prewarm(realPage) {
     if (loaded[realPage] || inflight.has(realPage)) return;
 
     const direct = props.pageUrls?.[realPage];
     const via = (url) => {
+        loaded[realPage] = true;
+        applyPageImage(realPage, url);
         inflight.add(realPage);
         const img = new Image();
-        img.onload = img.onerror = () => inflight.delete(realPage);
+        img.onload = () => inflight.delete(realPage);
+        img.onerror = () => {
+            loaded[realPage] = false;
+            inflight.delete(realPage);
+        };
         img.src = url;
     };
     if (direct) {
@@ -393,6 +402,15 @@ function initZoom() {
         },
     });
     zoomReady.value = true;
+
+    // zoom.js fires 'zoom.change' just before every zoom in/out. Use it as a
+    // last-chance gate: pages in the current view that somehow still lack a
+    // rendered background (a fast zoom right after a jump) get one now, so the
+    // zoomer clone never captures a bare loader div.
+    $vp.on('zoom.change.turnzoom', () => {
+        const view = $(bookEl.value).turn('view');
+        if (Array.isArray(view)) loadView(view, false);
+    });
 
     // zoom.js listens for jQuery's legacy `mousewheel` event, which needs an
     // extra plugin that modern browsers never emit; mirror the native `wheel`

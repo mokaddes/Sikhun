@@ -6,6 +6,7 @@ use App\Contracts\ParsedDocument;
 use App\Jobs\ProcessBookPdf;
 use App\Models\Book;
 use App\Services\Ai\BookChunkingService;
+use App\Services\Ai\BookStructureDetectionService;
 use App\Services\Ai\EmbeddingService;
 use App\Services\Pdf\ParsedDocumentStorageService;
 use App\Services\Pdf\PdfParserManager;
@@ -144,6 +145,7 @@ class BookProcessingTest extends TestCase
                 app(ParsedDocumentStorageService::class),
                 app(BookChunkingService::class),
                 app(EmbeddingService::class),
+                app(BookStructureDetectionService::class),
             );
         } catch (\Throwable $e) {
             $this->fail('Job threw instead of handling failure gracefully: '.$e->getMessage());
@@ -181,6 +183,7 @@ class BookProcessingTest extends TestCase
             app(ParsedDocumentStorageService::class),
             app(BookChunkingService::class),
             app(EmbeddingService::class),
+            app(BookStructureDetectionService::class),
         );
 
         $book->refresh();

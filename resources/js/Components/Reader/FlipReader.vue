@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import axios from 'axios';
 import { useI18n } from '@/i18n';
+import { MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon } from '@heroicons/vue/24/outline';
 
 import $ from 'jquery';
 
@@ -26,11 +27,18 @@ const { t } = useI18n();
 
 const PAGE_ASPECT = 1.414; // A4 portrait at 150 DPI
 
+// Max zoom factor applied by the turn.js zoom plugin (magazine sample uses a
+// similar ~2.3x). Pages are rendered at ~992px wide, so ~2.2x reaches
+// display-native resolution for reading close-up.
+const ZOOM_MAX = 2.2;
+
 const rootEl = ref(null);
 const bookEl = ref(null);
 const initializing = ref(true);
 const initError = ref(false);
 const ready = ref(false);
+const zoomed = ref(false);
+const zoomReady = ref(false);
 
 const size = ref(computeSize());
 const loaded = {};
@@ -216,6 +224,20 @@ function createTurn() {
     const { width } = bookStyle.value;
 
     const $el = $(el);
+
+    // If a previous zoom session is still live, snap it closed before the
+    // flipbook is torn down below (zoom.js cleans up on turn('destroy'), but
+    // closing it synchronously avoids its 500ms animate racing the teardown).
+    const vp = rootEl.value;
+    if (vp && $.fn.zoom && $(vp).data('zoom')) {
+        try {
+            $(vp).zoom('zoomOut', 0);
+        } catch (err) {
+            console.warn('zoom:zoomOut skipped', err);
+        }
+        zoomed.value = false;
+    }
+
     try {
         // Turn.js stores its instance data on the element; destroy only
         // touches an element that actually has a flipbook on it.
@@ -247,6 +269,9 @@ function createTurn() {
 
     const startPos = Math.max(1, Math.min(currentPos.value || 1, realPages.value.length));
     $el.turn('page', startPos);
+
+    initZoom();
+
     syncFromView($el.turn('view') ?? [startPos]);
 }
 
@@ -264,6 +289,15 @@ async function initTurn() {
         initError.value = true;
         console.error('Turn.js failed to initialise', e);
         return;
+    }
+
+    // The zoom plugin (turnjs4/lib/zoom.js) is an enhancement — if it ever
+    // fails to load the flipbook still works, just without zooming.
+    try {
+        await import('@/vendor/turnjs/zoom.js');
+    } catch (e) {
+        console.warn('Turn.js zoom plugin failed to load', e);
+        zoomReady.value = false;
     }
     await nextTick();
     size.value = computeSize();
@@ -310,8 +344,83 @@ function turnTo(pos) {
     if (ready.value && bookEl.value) $(bookEl.value).turn('page', Math.max(1, Math.min(pos, realPages.value.length)));
 }
 
+function zoomValue() {
+    const vp = rootEl.value;
+    if (!vp || !$.fn.zoom || !$(vp).data('zoom')) return 1;
+    return $(vp).zoom('value');
+}
+
+function zoomToggle(e) {
+    if (!zoomReady.value) return;
+    if (zoomValue() === 1) $(rootEl.value).zoom('zoomIn', e ?? null);
+    else $(rootEl.value).zoom('zoomOut');
+}
+
+function zoomIn() {
+    if (!zoomReady.value || !$(rootEl.value).data('zoom')) return;
+    $(rootEl.value).zoom('zoomIn');
+}
+
+function zoomOut() {
+    if (!zoomReady.value || !$(rootEl.value).data('zoom')) return;
+    $(rootEl.value).zoom('zoomOut');
+}
+
+function initZoom() {
+    const vp = rootEl.value;
+    if (!vp || !$.fn.turn || !$.fn.zoom || !$(bookEl.value).turn('is')) {
+        zoomReady.value = false;
+        return;
+    }
+    const $vp = $(vp);
+    $vp.zoom({
+        flipbook: $(bookEl.value),
+        max: ZOOM_MAX,
+        when: {
+            zoomIn: () => {
+                zoomed.value = true;
+            },
+            zoomOut: () => {
+                zoomed.value = false;
+            },
+        },
+    });
+    zoomReady.value = true;
+
+    // zoom.js listens for jQuery's legacy `mousewheel` event, which needs an
+    // extra plugin that modern browsers never emit; mirror the native `wheel`
+    // event into the plugin's scroll API instead.
+    if (!vp.dataset.zoomWheel) {
+        vp.dataset.zoomWheel = '1';
+        $vp.on('wheel.turnzoom', (e) => {
+            const zd = $vp.data('zoom');
+            if (!zd || $vp.zoom('value') <= 1) return;
+            const de = e.originalEvent;
+            const cur = {
+                x: (zd.scrollPos?.x ?? 0) + de.deltaX,
+                y: (zd.scrollPos?.y ?? 0) + de.deltaY,
+            };
+            $vp.zoom('scroll', cur, false, true);
+            e.preventDefault();
+        });
+    }
+
+    // Magazine reference behaviour: tapping the book toggles the zoom scale.
+    // Desktop uses a single tap; touch uses a double tap so single taps don't
+    // fight with page dragging.
+    if ($.isTouch) $vp.off('.turnzoomtap').on('zoom.doubleTap.turnzoomtap', zoomToggle);
+    else $vp.off('.turnzoomtap').on('zoom.tap.turnzoomtap', zoomToggle);
+}
+
 function onKeydown(e) {
     if (e.target.closest('input')) return;
+    if (e.key === 'Escape') {
+        if (zoomed.value) {
+            e.preventDefault();
+            zoomOut();
+        }
+        return;
+    }
     if (e.key === 'ArrowRight') goNext();
     else if (e.key === 'ArrowLeft') goPrev();
     else if (e.key === 'Home') turnTo(1);
@@ -347,6 +456,10 @@ onMounted(() => {
             pageWrappers: bookEl.value ? $(bookEl.value).find('.page-wrapper').length : 0,
             loadedImages: Object.keys(loaded).length,
             realPages: realPages.value.length,
+            zoomPlugin: Boolean($.fn.zoom),
+            zoomReady: zoomReady.value,
+            zoom: ready.value ? zoomValue() : null,
+            zoomed: zoomed.value,
         };
     };
 
@@ -360,6 +473,9 @@ onBeforeUnmount(() => {
     window.clearTimeout(resizeTimer);
     window.removeEventListener('keydown', onKeydown);
     window.removeEventListener('resize', onResize);
+    if (rootEl.value && $.fn.zoom) {
+        $(rootEl.value).off('.turnzoom').off('.turnzoomtap');
+    }
     if (bookEl.value && $.fn.turn) {
         try {
             const $el = $(bookEl.value);
@@ -402,10 +518,41 @@ onBeforeUnmount(() => {
             <div class="container">
                 <div ref="bookEl" class="flipbook" :style="bookStyle"></div>
             </div>
+
+            <div
+                v-if="ready && zoomReady"
+                class="absolute top-2 right-2 z-30 flex items-center gap-1.5"
+            >
+                <button
+                    v-if="zoomed"
+                    type="button"
+                    class="zoom-exit"
+                    :aria-label="t('reader.zoom_exit')"
+                    @click="zoomOut"
+                >
+                    {{ t('reader.zoom_exit') }} · ESC
+                </button>
+                <button
+                    type="button"
+                    class="zoom-ctrl"
+                    :aria-label="t('reader.zoom_out')"
+                    @click="zoomOut"
+                >
+                    <MagnifyingGlassMinusIcon class="h-4 w-4" />
+                </button>
+                <button
+                    type="button"
+                    class="zoom-ctrl"
+                    :aria-label="t('reader.zoom_in')"
+                    @click="zoomIn"
+                >
+                    <MagnifyingGlassPlusIcon class="h-4 w-4" />
+                </button>
+            </div>
         </template>
     </div>
 
-    <div class="mt-6 flex items-center justify-center gap-4 text-sm">
+    <div v-if="!zoomed" class="mt-6 flex items-center justify-center gap-4 text-sm">
         <button
             type="button"
             class="reader-ctrl"
@@ -462,6 +609,37 @@ onBeforeUnmount(() => {
 .reader-ctrl:disabled {
     opacity: 0.35;
     cursor: not-allowed;
+}
+.zoom-ctrl {
+    width: 2.25rem;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+.zoom-ctrl:hover {
+    background: rgba(0, 0, 0, 0.78);
+    transform: scale(1.05);
+}
+.zoom-exit {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    background: var(--primary);
+    border-radius: 9999px;
+    padding: 0.375rem 0.75rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    transition: opacity 0.15s ease;
+}
+.zoom-exit:hover {
+    opacity: 0.88;
 }
 </style>
 

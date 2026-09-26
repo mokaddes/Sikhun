@@ -14,8 +14,8 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 const { t } = useI18n();
-const page = usePage();
-const csrfToken = computed(() => page.props.csrf_token ?? '');
+const inertia = usePage();
+const csrfToken = computed(() => inertia.props.csrf_token ?? '');
 
 const messages = ref([]);
 const draft = ref('');
@@ -125,7 +125,7 @@ function onComposerKeydown(e) {
             <div class="flex items-center gap-2 min-w-0">
                 <BookOpenIcon class="w-4.5 h-4.5 shrink-0" />
                 <span class="font-heading font-semibold text-sm truncate">{{ t('reader.chat_title') }}</span>
-                <span class="shrink-0 text-[11px] px-2 py-0.5 rounded-full bg-white/20">{{ t('reader.current_page', { current: page }) }}</span>
+                <span class="shrink-0 text-[11px] px-2 py-0.5 rounded-full bg-white/20">{{ t('reader.current_page', { current: props.page }) }}</span>
             </div>
             <button class="shrink-0 icon-btn w-7 h-7 !text-white hover:!bg-white/20" aria-label="Close" @click="emit('close')">
                 <XMarkIcon class="w-4 h-4" />

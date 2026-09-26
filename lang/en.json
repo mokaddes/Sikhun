@@ -385,7 +385,10 @@
         "chat_hint": "Ask about what you're reading — the AI answers using the current page for context.",
         "current_page": "Page :current",
         "pages_of": "Pages :start\u2013:end of :total",
-        "load_failed": "Couldn't load this page."
+        "load_failed": "Couldn't load this page.",
+        "zoom_in": "Zoom in",
+        "zoom_out": "Zoom out",
+        "zoom_exit": "Exit zoom"
     },
     "plans_page": {
         "title": "Subscription Plans",

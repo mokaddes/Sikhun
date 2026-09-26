@@ -690,6 +690,13 @@ onBeforeUnmount(() => {
     position: absolute;
 }
 
+/* zoom.js creates this clone with an inline z-index of 1,000,000. Keep it
+   above the pages but below the reader controls, or zoom traps the controls
+   underneath its own overlay. */
+.turn-reader .zoomer {
+    z-index: 20 !important;
+}
+
 .turn-reader .page {
     background-color: #ffffff;
     background-repeat: no-repeat;

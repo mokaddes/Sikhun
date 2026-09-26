@@ -26,9 +26,9 @@ class AiProviderRequest extends FormRequest
             // of use cases at once — this is the actual fix for "one
             // credential needs to work for all use cases".
             'use_cases' => ['required', 'array', 'min:1'],
-            'use_cases.*' => ['in:book_chat,exam_gen,flashcard_gen,essay_grade,schedule_gen,notification_gen,support_bot'],
+            'use_cases.*' => ['in:book_chat,exam_gen,flashcard_gen,essay_grade,schedule_gen,notification_gen,support_bot,book_ocr,book_retrieval,book_structure'],
             'default_use_cases' => ['nullable', 'array'],
-            'default_use_cases.*' => ['in:book_chat,exam_gen,flashcard_gen,essay_grade,schedule_gen,notification_gen,support_bot'],
+            'default_use_cases.*' => ['in:book_chat,exam_gen,flashcard_gen,essay_grade,schedule_gen,notification_gen,support_bot,book_ocr,book_retrieval,book_structure'],
         ];
     }
 }

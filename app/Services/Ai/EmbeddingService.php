@@ -112,16 +112,13 @@ class EmbeddingService
     }
 
     /**
-     * Reuses the admin-managed provider of the given use case when it is
-     * OpenAI-compatible; otherwise looks for any active OpenAI-compatible
-     * provider. Embeddings work on any of them by pointing at /embeddings.
+     * Uses only the configured book_retrieval provider. Embeddings require an
+     * OpenAI-compatible endpoint; an incompatible assignment is a clear setup error.
      */
     private function resolveEmbeddingProvider(): AiProvider
     {
-        // Prefer an explicit provider marked for embeddings via model
-        // naming convention the admin sets up; fall back to the book_chat
-        // default's provider if it is OpenAI-compatible.
-        $useCase = \App\Models\AiProviderUseCase::where('use_case', 'book_chat')
+        // Retrieval and embeddings share the book_retrieval assignment.
+        $useCase = \App\Models\AiProviderUseCase::where('use_case', 'book_retrieval')
             ->where('is_default', true)
             ->whereHas('provider', fn ($q) => $q->where('is_active', true))
             ->with('provider')
@@ -131,16 +128,7 @@ class EmbeddingService
             return $useCase->provider;
         }
 
-        $fallback = AiProvider::query()
-            ->where('is_active', true)
-            ->whereIn('type', ['openai', 'deepseek', 'vllm', 'ollama', 'custom'])
-            ->first();
-
-        if (! $fallback) {
-            throw new \RuntimeException('No active OpenAI-compatible AI provider for embeddings. Configure one in /admin/ai-providers.');
-        }
-
-        return $fallback;
+        throw new \RuntimeException('The configured book_retrieval provider must be OpenAI-compatible for embeddings. Configure one in /admin/ai-providers.');
     }
 
     private function embeddingsUrl(AiProvider $provider): string

@@ -126,17 +126,22 @@ class BookChunkRetrievalService
         $images = $this->relatedImages($book, $chapterIds, $pageIds);
         $formulas = $this->relatedFormulas($book, $chapterIds, $pageIds);
 
-        $chapterTitles = $book->chapters()->whereIn('id', $chapterIds)->get()->keyBy('id');
+        $chapterTitles = $book->chapters()->get(['id', 'parent_id', 'title', 'level'])->keyBy('id');
 
         $context = [];
 
         foreach ($chunks as $chunk) {
-            $chapter = $chunk['chapter_id'] ? $chapterTitles[$chunk['chapter_id']] ?? null : null;
+            $trail = [];
+            $node = $chunk['chapter_id'] ? ($chapterTitles[$chunk['chapter_id']] ?? null) : null;
+            while ($node) {
+                array_unshift($trail, $node->title);
+                $node = $node->parent_id ? ($chapterTitles[$node->parent_id] ?? null) : null;
+            }
 
             $context[] = [
                 'book' => $book->title,
-                'chapter' => $chapter?->title,
-                'section' => $chunk['metadata']['heading_path'][0] ?? null,
+                'chapter' => $trail[0] ?? null,
+                'section' => count($trail) > 1 ? implode(' / ', array_slice($trail, 1)) : (($chunk['metadata']['heading_path'] ?? []) ? implode(' / ', $chunk['metadata']['heading_path']) : null),
                 'page' => $chunk['page_number'],
                 'content' => $chunk['content'],
                 'element_ids' => $chunk['element_ids'] ?? null,

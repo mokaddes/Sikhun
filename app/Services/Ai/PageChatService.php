@@ -17,7 +17,7 @@ class PageChatService
     /**
      * @param  array<int, array{page_number: int, content: string}>  $pages
      */
-    public function stream(string $documentTitle, array $pages, string $message): StreamedResponse
+    public function stream(string $documentTitle, array $pages, string $message, ?string $chapterTitle = null): StreamedResponse
     {
         $student = Auth::guard('web')->user();
 
@@ -27,7 +27,7 @@ class PageChatService
 
         $system = 'You are a helpful, encouraging study assistant for a Bangladeshi student. '
             .'Answer clearly and concisely. Respond in the same language the student writes in (Bengali or English). '
-            ."The student is reading \"{$documentTitle}\" and has shared the surrounding page text with you. "
+            ."The student is reading \"{$documentTitle}\"".($chapterTitle ? " in chapter/section \"{$chapterTitle}\"" : '')." and has shared the surrounding page text with you. "
             .'Ground your answer in that text where relevant, citing the page number (e.g. "Page 12").';
 
         if ($pages) {

@@ -15,6 +15,9 @@ const useCaseOptions = [
     { value: 'schedule_gen', label: 'Study Schedule Generation' },
     { value: 'notification_gen', label: 'Daily AI Notifications' },
     { value: 'support_bot', label: 'Support Chat Bot' },
+    { value: 'book_ocr', label: 'Book OCR / Document Processing' },
+    { value: 'book_retrieval', label: 'Book RAG / Retrieval' },
+    { value: 'book_structure', label: 'Book Chapter / Structure Detection' },
 ];
 
 const form = useForm({

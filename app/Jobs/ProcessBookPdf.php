@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Contracts\ParsedDocument;
 use App\Models\Book;
 use App\Services\Ai\BookChunkingService;
+use App\Services\Ai\BookStructureDetectionService;
 use App\Services\Ai\EmbeddingService;
 use App\Services\Pdf\ParsedDocumentStorageService;
 use App\Services\Pdf\PdfParserException;
@@ -53,6 +54,7 @@ class ProcessBookPdf implements ShouldQueue
         ParsedDocumentStorageService $storage,
         BookChunkingService $chunking,
         EmbeddingService $embeddings,
+        BookStructureDetectionService $structure,
     ): void {
         $book = Book::find($this->bookId);
 
@@ -96,6 +98,8 @@ class ProcessBookPdf implements ShouldQueue
             if ($pagesWithText === 0) {
                 throw new PdfParserException($this->emptyTextFailure($doc));
             }
+
+            $structure->detect($doc);
 
             $stats = $storage->replaceAll($book, $doc);
 

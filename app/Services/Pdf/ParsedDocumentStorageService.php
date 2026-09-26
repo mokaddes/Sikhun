@@ -85,6 +85,7 @@ class ParsedDocumentStorageService
                 'end_page' => $chapter['end_page'],
                 'sort_order' => $i,
                 'metadata' => $chapter['metadata'],
+                'content' => $chapter['content'] ?? null,
             ]);
             $ids[$i] = $row->id;
             $rows[$i] = $row;

@@ -28,8 +28,8 @@ class AiProviderFactory
     }
 
     /**
-     * @param string $useCase one of: book_chat, exam_gen, flashcard_gen,
-     *                        essay_grade, schedule_gen, notification_gen, support_bot
+     * @param string $useCase configured AI feature, including book_chat, book_ocr,
+     *                        book_retrieval, and book_structure
      */
     public static function default(string $useCase): AiProviderContract
     {

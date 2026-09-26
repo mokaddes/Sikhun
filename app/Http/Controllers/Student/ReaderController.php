@@ -88,7 +88,7 @@ class ReaderController extends Controller
             'book' => $book->only(['id', 'title', 'slug', 'total_pages']),
             'accessiblePages' => $accessiblePages,
             'pageUrls' => $pageUrls,
-            'chapters' => $book->topChapters()->get(['id', 'title', 'chapter_number', 'start_page']),
+            'chapters' => $book->chapters()->orderBy('sort_order')->get(['id', 'parent_id', 'title', 'chapter_number', 'level', 'start_page', 'end_page']),
         ]);
     }
 
@@ -157,7 +157,11 @@ class ReaderController extends Controller
             }
         }
 
-        return $chat->stream($book->title, $contextPages, $validated['message']);
+        $chapter = $book->chapters()->where('start_page', '<=', $target)
+            ->where(fn ($q) => $q->whereNull('end_page')->orWhere('end_page', '>=', $target))
+            ->orderByDesc('level')->first();
+
+        return $chat->stream($book->title, $contextPages, $validated['message'], $chapter?->title);
     }
 
     /**

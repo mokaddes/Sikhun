@@ -104,6 +104,13 @@ function pageUrl(realPage) {
     return `${props.urlPrefix ?? `/library/${props.bookId}/read`}/page/${realPage}/url`;
 }
 
+function goToRealPage(page) {
+    const index = realPages.value.indexOf(Number(page));
+    if (ready.value && index >= 0) $(bookEl.value).turn('page', index + 1);
+}
+
+defineExpose({ goToRealPage });
+
 function buildPages() {
     const book = $(bookEl.value);
     book.empty();

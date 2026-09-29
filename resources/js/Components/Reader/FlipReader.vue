@@ -391,7 +391,10 @@ function initZoom() {
     const $vp = $(vp);
     $vp.zoom({
         flipbook: $(bookEl.value),
-        max: ZOOM_MAX,
+        // turnjs4/lib/zoom.js calls max() when zooming in (as does the
+        // magazine sample). Passing a number here leaves the plugin trying
+        // to invoke that number as a function.
+        max: () => ZOOM_MAX,
         when: {
             zoomIn: () => {
                 zoomed.value = true;

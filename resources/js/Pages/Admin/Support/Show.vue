@@ -36,7 +36,7 @@ function close() {
             <div v-for="m in conversation.messages" :key="m.id" class="flex" :class="m.sender_type === 'student' ? 'justify-start' : 'justify-end'">
                 <div class="max-w-[70%] px-3 py-2 rounded-xl text-sm"
                     :class="{
-                        'bg-[#111a15]': m.sender_type === 'student',
+                        'bg-[var(--surface2)]': m.sender_type === 'student',
                         'bg-[var(--primary)]/20 text-[var(--primary)]': m.sender_type === 'bot',
                         'bg-[var(--secondary)]/20 text-[var(--secondary)]': m.sender_type === 'admin',
                     }">
@@ -47,7 +47,7 @@ function close() {
         </div>
 
         <form @submit.prevent="reply" class="flex gap-2">
-            <input v-model="form.message" type="text" placeholder="Type a manual reply..." class="flex-1 px-4 py-2.5 rounded-lg bg-[#111a15] border border-[var(--border)] text-white text-sm" />
+            <input v-model="form.message" type="text" placeholder="Type a manual reply..." class="flex-1 px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)] text-[var(--text)] text-sm" />
             <button type="submit" :disabled="form.processing" class="px-5 py-2.5 rounded-lg bg-[var(--primary)] text-white text-sm font-semibold disabled:opacity-60">Send</button>
         </form>
     </AdminLayout>

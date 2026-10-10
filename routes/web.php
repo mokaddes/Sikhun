@@ -176,11 +176,16 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::put('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::put('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
-    // Profile / Settings (theme sync, leaderboard opt-out, notification preferences)
+    // Notification settings (leaderboard opt-out + notification preferences)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile/theme', [ProfileController::class, 'updateTheme'])->name('profile.theme');
     Route::put('/profile/leaderboard-opt-out', [ProfileController::class, 'updateLeaderboardOptOut'])->name('profile.leaderboard-opt-out');
     Route::put('/profile/notification-preferences', [ProfileController::class, 'updateNotificationPreferences'])->name('profile.notification-preferences');
+
+    // Profile settings (account information + password)
+    Route::get('/profile/settings', [ProfileController::class, 'settings'])->name('profile.settings');
+    Route::put('/profile/info', [ProfileController::class, 'updateProfile'])->name('profile.info');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     // Coupons / free-access status
     Route::get('/access', [AccessController::class, 'index'])->name('access.index');

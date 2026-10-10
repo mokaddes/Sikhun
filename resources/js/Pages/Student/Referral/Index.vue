@@ -3,9 +3,10 @@ import { ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
+import { ClipboardDocumentIcon, CheckIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({ referralCode: String, referralLink: String, stats: Object, referrals: Array });
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const copied = ref(false);
 
 function copyLink() {
@@ -18,50 +19,57 @@ function copyLink() {
 <template>
     <Head :title="t('referral_page.title')" />
     <StudentLayout>
-        <h1 class="font-heading text-2xl font-extrabold mb-6">{{ t('referral_page.title') }}</h1>
+        <header class="anim-rise mb-6">
+            <span class="eyebrow">{{ locale === 'en' ? 'Grow' : 'উন্নতি' }}</span>
+            <h1 class="mt-1 font-heading text-2xl font-extrabold sm:text-3xl">{{ t('referral_page.title') }}</h1>
+        </header>
 
-        <div class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 mb-6">
-            <label class="block text-sm font-medium mb-2">{{ t('referral_page.your_link') }}</label>
-            <div class="flex gap-2">
-                <input :value="referralLink" readonly class="flex-1 px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)] text-sm" />
-                <button @click="copyLink" class="px-5 py-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-semibold whitespace-nowrap">
+        <div class="card anim-rise mb-6 rounded-2xl p-6">
+            <label class="label">{{ t('referral_page.your_link') }}</label>
+            <div class="flex flex-col gap-2 sm:flex-row">
+                <input :value="referralLink" readonly class="input flex-1" />
+                <button @click="copyLink" class="btn btn-primary shrink-0">
+                    <CheckIcon v-if="copied" class="h-4 w-4" />
+                    <ClipboardDocumentIcon v-else class="h-4 w-4" />
                     {{ copied ? t('referral_page.copied') : t('referral_page.copy') }}
                 </button>
             </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-4 mb-6">
-            <div class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-                <div class="text-sm text-[var(--text-muted)] mb-1">{{ t('referral_page.total_referred') }}</div>
-                <div class="text-2xl font-heading font-extrabold">{{ stats.total_referred }}</div>
+        <div class="stagger mb-6 grid grid-cols-3 gap-4">
+            <div class="card rounded-2xl p-5">
+                <div class="text-sm text-[var(--text-muted)]">{{ t('referral_page.total_referred') }}</div>
+                <div class="mt-2 font-heading text-2xl font-extrabold">{{ stats.total_referred }}</div>
             </div>
-            <div class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-                <div class="text-sm text-[var(--text-muted)] mb-1">{{ t('referral_page.total_converted') }}</div>
-                <div class="text-2xl font-heading font-extrabold">{{ stats.total_converted }}</div>
+            <div class="card rounded-2xl p-5">
+                <div class="text-sm text-[var(--text-muted)]">{{ t('referral_page.total_converted') }}</div>
+                <div class="mt-2 font-heading text-2xl font-extrabold">{{ stats.total_converted }}</div>
             </div>
-            <div class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-                <div class="text-sm text-[var(--text-muted)] mb-1">{{ t('referral_page.total_earned') }}</div>
-                <div class="text-2xl font-heading font-extrabold">৳{{ stats.total_earned }}</div>
+            <div class="card rounded-2xl p-5">
+                <div class="text-sm text-[var(--text-muted)]">{{ t('referral_page.total_earned') }}</div>
+                <div class="mt-2 font-heading text-2xl font-extrabold text-[var(--secondary)]">৳{{ stats.total_earned }}</div>
             </div>
         </div>
 
-        <h2 class="font-heading text-lg font-bold mb-3">{{ t('referral_page.your_referrals') }}</h2>
-        <div v-if="referrals.length" class="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-x-auto">
-            <table class="w-full text-sm">
-                <tbody>
-                    <tr v-for="r in referrals" :key="r.id" class="border-b border-[var(--border)] last:border-0">
-                        <td class="px-5 py-3">{{ r.referee.name }}</td>
-                        <td class="px-5 py-3 text-[var(--text-muted)]">{{ new Date(r.referee.created_at).toLocaleDateString() }}</td>
-                        <td class="px-5 py-3 text-right">
-                            <span class="px-2 py-0.5 rounded text-xs font-medium" :class="r.status === 'rewarded' ? 'bg-[var(--secondary)]/15 text-[var(--secondary)]' : 'bg-[var(--text-muted)]/15 text-[var(--text-muted)]'">
-                                {{ r.status === 'rewarded' ? t('referral_page.status_rewarded') : t('referral_page.status_pending') }}
-                            </span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <h2 class="mb-3 font-heading text-lg font-bold">{{ t('referral_page.your_referrals') }}</h2>
+        <div v-if="referrals.length" class="card overflow-hidden rounded-2xl">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <tbody>
+                        <tr v-for="r in referrals" :key="r.id" class="border-b border-[var(--border)] last:border-0">
+                            <td class="px-5 py-3.5 font-medium">{{ r.referee.name }}</td>
+                            <td class="px-5 py-3.5 text-[var(--text-muted)]">{{ new Date(r.referee.created_at).toLocaleDateString() }}</td>
+                            <td class="px-5 py-3.5 text-right">
+                                <span class="badge" :class="r.status === 'rewarded' ? 'bg-[var(--secondary)]/15 text-[var(--secondary)]' : 'bg-[var(--text-muted)]/15 text-[var(--text-muted)]'">
+                                    {{ r.status === 'rewarded' ? t('referral_page.status_rewarded') : t('referral_page.status_pending') }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div v-else class="rounded-xl border border-dashed border-[var(--border)] p-8 text-center text-[var(--text-muted)]">
+        <div v-else class="card rounded-2xl border-dashed p-8 text-center text-[var(--text-muted)]">
             {{ t('referral_page.no_referrals') }}
         </div>
     </StudentLayout>

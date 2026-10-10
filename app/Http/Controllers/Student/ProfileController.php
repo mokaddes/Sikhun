@@ -8,6 +8,9 @@ use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -31,6 +34,48 @@ class ProfileController extends Controller
             'student' => $student,
             'preferences' => $preferences,
         ]);
+    }
+
+    /** Account information + password form. */
+    public function settings(): Response
+    {
+        return Inertia::render('Student/Profile/Settings', [
+            'student' => auth('web')->user(),
+        ]);
+    }
+
+    public function updateProfile(Request $request): RedirectResponse
+    {
+        $student = auth('web')->user();
+
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('students', 'email')->ignore($student->id)],
+        ]);
+
+        $student->update($data);
+
+        return back()->with('success', 'Profile information updated.');
+    }
+
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $student = auth('web')->user();
+
+        if (! Hash::check($data['current_password'], $student->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => 'The current password is incorrect.',
+            ]);
+        }
+
+        $student->update(['password' => $data['password']]);
+
+        return back()->with('success', 'Password updated.');
     }
 
     /** Called from the Pinia theme store — persists across devices, not just localStorage. */

@@ -3,10 +3,10 @@ import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
-import { BookOpenIcon, TrashIcon, ChatBubbleLeftRightIcon } from '@heroicons/vue/24/outline';
+import { BookOpenIcon, TrashIcon, ChatBubbleLeftRightIcon, CloudArrowUpIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({ shelves: Array, myBooks: Array });
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const title = ref('');
 const description = ref('');
@@ -65,96 +65,95 @@ const statusStyle = (status) =>
 <template>
     <Head :title="t('bookshelf.title')" />
     <StudentLayout>
-        <h1 class="font-heading text-2xl font-extrabold mb-6">{{ t('bookshelf.title') }}</h1>
+        <header class="anim-rise mb-6">
+            <span class="eyebrow">{{ locale === 'en' ? 'Your collection' : 'আপনার সংগ্রহ' }}</span>
+            <h1 class="mt-1 font-heading text-2xl font-extrabold sm:text-3xl">{{ t('bookshelf.title') }}</h1>
+        </header>
 
         <!-- Upload your own book / notes PDF -->
-        <div class="mb-10 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-            <h2 class="font-heading text-lg font-bold mb-1">{{ t('my_books.add_own') }}</h2>
-            <p class="text-sm text-[var(--text-muted)] mb-4">{{ t('my_books.add_own_hint') }}</p>
+        <div class="card anim-rise mb-8 rounded-2xl p-5">
+            <div class="mb-4 flex items-start gap-3">
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--primary)]/10 text-[var(--primary)]">
+                    <CloudArrowUpIcon class="h-5 w-5" />
+                </span>
+                <div>
+                    <h2 class="font-heading font-bold">{{ t('my_books.add_own') }}</h2>
+                    <p class="text-sm text-[var(--text-muted)]">{{ t('my_books.add_own_hint') }}</p>
+                </div>
+            </div>
 
-            <div class="grid md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+            <div class="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-[var(--text-muted)] mb-1.5">{{ t('common.title') }}</label>
-                    <input v-model="title" type="text" :placeholder="t('my_books.title_placeholder')"
-                        class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40" />
+                    <label class="label">{{ t('common.title') }}</label>
+                    <input v-model="title" type="text" :placeholder="t('my_books.title_placeholder')" class="input" />
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-[var(--text-muted)] mb-1.5">PDF</label>
+                    <label class="label">PDF</label>
                     <input id="my-book-pdf" type="file" accept="application/pdf" @change="onPickFile"
-                        class="w-full text-sm file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-[var(--primary)] file:text-white file:cursor-pointer text-[var(--text-muted)]" />
+                        class="w-full text-sm text-[var(--text-muted)] file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[var(--primary)] file:px-3 file:py-2 file:text-white" />
                 </div>
-                <button
-                    @click="uploadBook"
-                    :disabled="uploading || !title.trim() || !pdfFile"
-                    class="px-5 py-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold disabled:opacity-60"
-                >
+                <button @click="uploadBook" :disabled="uploading || !title.trim() || !pdfFile" class="btn btn-primary md:mb-0.5">
                     {{ uploading ? t('common.saving') : t('my_books.upload') }}
                 </button>
             </div>
         </div>
 
         <!-- My uploaded books -->
-        <h2 class="font-heading text-lg font-bold mb-4">{{ t('my_books.my_notes') }}</h2>
-        <div v-if="myBooks.length" class="mb-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div v-for="myBook in myBooks" :key="myBook.id" class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-                <div class="flex items-start justify-between gap-2 mb-2">
-                    <div class="flex items-center gap-2 min-w-0">
-                        <BookOpenIcon class="w-5 h-5 shrink-0 text-[var(--primary)]" />
-                        <span class="font-medium text-sm truncate">{{ myBook.title }}</span>
+        <h2 class="mb-4 font-heading text-lg font-bold">{{ t('my_books.my_notes') }}</h2>
+        <div v-if="myBooks.length" class="stagger mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div v-for="myBook in myBooks" :key="myBook.id" class="card card-hover flex flex-col rounded-2xl p-4">
+                <div class="mb-2 flex items-start justify-between gap-2">
+                    <div class="flex min-w-0 items-center gap-2">
+                        <BookOpenIcon class="h-5 w-5 shrink-0 text-[var(--primary)]" />
+                        <span class="truncate text-sm font-medium">{{ myBook.title }}</span>
                     </div>
-                    <button :title="t('common.delete')" class="shrink-0 text-[var(--text-muted)] hover:text-[var(--accent)]" @click="removeBook(myBook, $event)">
-                        <TrashIcon class="w-4 h-4" />
+                    <button :title="t('common.delete')" class="shrink-0 text-[var(--text-muted)] transition hover:text-[var(--accent)]" @click="removeBook(myBook, $event)">
+                        <TrashIcon class="h-4 w-4" />
                     </button>
                 </div>
 
                 <div class="mb-3">
-                    <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium" :class="statusStyle(myBook.processing_status)">
-                        {{ statusLabel(myBook) }}
-                    </span>
+                    <span class="badge" :class="statusStyle(myBook.processing_status)">{{ statusLabel(myBook) }}</span>
                     <span v-if="myBook.total_pages" class="ml-2 text-xs text-[var(--text-muted)]">{{ myBook.total_pages }} {{ t('book_show.pages') }}</span>
                 </div>
-                <p v-if="myBook.processing_error" class="text-xs text-red-500 mb-3 break-words">{{ myBook.processing_error }}</p>
+                <p v-if="myBook.processing_error" class="mb-3 break-words text-xs text-red-500">{{ myBook.processing_error }}</p>
 
-                <div class="flex gap-2">
-                    <Link :href="`/my-books/${myBook.id}/read`" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface2)] border border-[var(--border)] text-xs font-semibold hover:border-[var(--primary)]">
+                <div class="mt-auto flex gap-2">
+                    <Link :href="`/my-books/${myBook.id}/read`" class="btn btn-outline btn-sm flex-1">
                         {{ t('bookshelf.continue_reading') }}
                     </Link>
-                    <button
-                        @click="askAi(myBook)"
-                        title="Ask AI about this book"
-                        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--secondary)]/20 text-xs font-semibold hover:bg-[var(--primary)]/20"
-                    >
-                        <ChatBubbleLeftRightIcon class="w-4 h-4" />
-                        {{ t('my_books.ask_ai') }}
+                    <button @click="askAi(myBook)" title="Ask AI about this book" class="btn btn-sm btn-primary">
+                        <ChatBubbleLeftRightIcon class="h-4 w-4" /> {{ t('my_books.ask_ai') }}
                     </button>
                 </div>
             </div>
         </div>
-        <div v-else class="rounded-xl border border-dashed border-[var(--border)] p-8 mb-10 text-center text-sm text-[var(--text-muted)]">
+        <div v-else class="card mb-10 flex flex-col items-center gap-2 rounded-2xl border-dashed p-8 text-center text-sm text-[var(--text-muted)]">
+            <BookOpenIcon class="h-9 w-9 opacity-40" />
             {{ t('my_books.no_notes') }}
         </div>
 
         <!-- Library books on the shelf -->
-        <h2 class="font-heading text-lg font-bold mb-4">{{ t('bookshelf.library_books') }}</h2>
-        <div v-if="shelves.length" class="grid grid-cols-2 md:grid-cols-4 gap-5">
-            <div v-for="shelf in shelves" :key="shelf.id" class="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
-                <div class="aspect-[3/4] bg-[var(--surface2)] flex items-center justify-center text-[var(--text-muted)] text-xs overflow-hidden">
-                    <img v-if="shelf.book.cover_image_url" :src="shelf.book.cover_image_url" class="w-full h-full object-cover" />
-                    <span v-else>{{ t('home.no_cover') }}</span>
+        <h2 class="mb-4 font-heading text-lg font-bold">{{ t('bookshelf.library_books') }}</h2>
+        <div v-if="shelves.length" class="stagger grid grid-cols-2 gap-5 md:grid-cols-4">
+            <div v-for="shelf in shelves" :key="shelf.id" class="card card-hover group overflow-hidden rounded-2xl">
+                <div class="aspect-[3/4] overflow-hidden bg-[var(--surface2)]">
+                    <img v-if="shelf.book.cover_image_url" :src="shelf.book.cover_image_url" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <div v-else class="flex h-full w-full items-center justify-center text-[var(--text-muted)]">
+                        <BookOpenIcon class="h-10 w-10 opacity-40" />
+                    </div>
                 </div>
                 <div class="p-4">
-                    <div class="font-medium text-sm mb-2 line-clamp-2">{{ shelf.book.title }}</div>
+                    <div class="mb-2 line-clamp-2 text-sm font-medium">{{ shelf.book.title }}</div>
                     <Link :href="`/library/${shelf.book.id}/read`" class="text-sm font-medium text-[var(--primary)] hover:underline">
                         {{ t('bookshelf.continue_reading') }} →
                     </Link>
                 </div>
             </div>
         </div>
-        <div v-else class="rounded-xl border border-dashed border-[var(--border)] p-12 text-center text-[var(--text-muted)]">
+        <div v-else class="card flex flex-col items-center gap-2 rounded-2xl border-dashed p-12 text-center text-[var(--text-muted)]">
             {{ t('bookshelf.empty') }}
-            <div class="mt-4">
-                <Link href="/library" class="text-[var(--primary)] font-medium">{{ t('nav.library') }} →</Link>
-            </div>
+            <Link href="/library" class="btn btn-outline btn-sm mt-2">{{ t('nav.library') }} →</Link>
         </div>
     </StudentLayout>
 </template>

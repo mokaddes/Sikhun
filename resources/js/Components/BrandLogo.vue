@@ -19,20 +19,12 @@ const site = usePage().props.site;
 <template>
     <Link :href="href" class="flex items-center gap-0.5 font-heading font-extrabold tracking-tight" :class="size">
         <img
-            v-if="site?.logo_url"
-            :src="site.logo_url"
-            :alt="site?.name || 'logo'"
-            class="object-contain"
-            :class="imgClass || (compact ? 'h-12 w-auto' : 'h-14 w-auto max-w-[180px]')"
+            src="/images/sikhun-mark.svg"
+            alt=""
+            class="shrink-0 object-contain drop-shadow-[0_0_12px_rgba(0,217,242,.18)]"
+            :class="compact ? 'h-8 w-8' : 'h-10 w-10'"
         />
-      <span v-if="site?.logo_url">{{ site?.name || 'Sikhun.com' }}</span>
-        <template v-else>
-            <span
-                class="sun-disc flex items-center justify-center text-white font-heading font-extrabold"
-                :class="compact ? 'w-7 h-7 text-[11px]' : 'w-9 h-9 text-sm'"
-            >শি</span>
-            <span>{{ site?.name || 'Sikhun.com' }}</span>
-        </template>
+        <span>{{ site?.name || 'Sikhun.com' }}</span>
         <span v-if="suffix" :class="suffixClass || 'text-xs font-normal text-[var(--text-muted)]'">{{ suffix }}</span>
     </Link>
 </template>

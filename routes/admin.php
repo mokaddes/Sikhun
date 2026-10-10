@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\MentorController;
 use App\Http\Controllers\Admin\NotificationBroadcastController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\PublicationController;
 use App\Http\Controllers\Admin\ReferralController;
 use App\Http\Controllers\Admin\SiteSettingController;
@@ -88,6 +89,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('settings', [SiteSettingController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [SiteSettingController::class, 'update'])->name('settings.update');
+
+        // Admin account: profile information + password
+        Route::get('profile', [ProfileController::class, 'settings'])->name('profile.settings');
+        Route::put('profile/info', [ProfileController::class, 'updateProfile'])->name('profile.info');
+        Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
         Route::resource('pages', CustomPageController::class)->except(['show']);
 

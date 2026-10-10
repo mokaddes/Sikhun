@@ -62,7 +62,11 @@
         "practice": "Practice",
         "ai_studio": "AI Studio",
         "grow": "Grow",
-        "account": "Account"
+        "account": "Account",
+        "access": "Access",
+        "settings": "Settings",
+        "notification_settings": "Notification Settings",
+        "profile_settings": "Profile Settings"
     },
     "footer": {
         "tagline": "Bangladesh's first AI-powered education platform.",
@@ -131,7 +135,14 @@
             "authors": "Authors",
             "publications": "Publications",
             "mentors": "Mentors",
-            "pages": "Pages"
+            "pages": "Pages",
+            "growth": "Growth",
+            "community": "Community",
+            "platform": "Platform",
+            "referrals": "Referrals",
+            "leaderboard": "Leaderboard",
+            "notifications": "Notifications",
+            "support": "Support"
         },
         "dashboard": {
             "title": "Dashboard",
@@ -527,6 +538,21 @@
         "notification_settings": "Notification Settings",
         "preferred_time": "Preferred Time",
         "save": "Save"
+    },
+    "profile_settings_page": {
+        "title": "Profile Settings",
+        "subtitle": "Manage your account information and password.",
+        "info_title": "Profile Information",
+        "info_subtitle": "Update your name and email address.",
+        "name": "Name",
+        "email": "Email address",
+        "save_info": "Save Changes",
+        "password_title": "Update Password",
+        "password_subtitle": "Use a long, random password to stay secure.",
+        "current_password": "Current Password",
+        "new_password": "New Password",
+        "confirm_password": "Confirm Password",
+        "save_password": "Update Password"
     },
     "courses_page": {
         "title": "Courses",

@@ -49,7 +49,7 @@ class PageController extends Controller
                 ->get(['id', 'title', 'slug', 'cover_image', 'price', 'level', 'mentor_id']),
             'popularBooks' => Book::published()
                 ->with('author:id,name')
-                ->orderByDesc('reading_count')
+                ->latest()
                 ->take(5)
                 ->get(['id', 'title', 'slug', 'cover_image', 'price', 'is_free', 'level', 'total_pages', 'author_id']),
             'plans' => Plan::where('is_active', true)->orderBy('price_monthly')->get(),
@@ -73,8 +73,14 @@ class PageController extends Controller
                 'content' => $page->localizedContent(),
             ],
             'seo' => [
-                'title' => $page->localizedMetaTitle() ?: "{$page->localizedTitle()} | Sikhun.com",
-                'description' => $page->localizedMetaDescription(),
+                'title' => $page->slug === 'about'
+                    ? (app()->getLocale() === 'bn' ? 'Sikhun সম্পর্কে | শেখার আরও ভালো উপায়' : 'About Sikhun | A better way to learn')
+                    : ($page->localizedMetaTitle() ?: "{$page->localizedTitle()} | Sikhun.com"),
+                'description' => $page->slug === 'about'
+                    ? (app()->getLocale() === 'bn'
+                        ? 'Sikhun-এ বই, মেন্টর পরিচালিত কোর্স এবং AI-সহায়ক স্টাডি টুল দিয়ে নিজের গতিতে শিখুন।'
+                        : 'Discover Sikhun: digital books, mentor-led courses, and thoughtful AI study tools in one welcoming learning space.')
+                    : $page->localizedMetaDescription(),
                 'og_image' => $seo->socialImage(),
                 'canonical' => url('/p/'.$page->slug),
             ],

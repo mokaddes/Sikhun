@@ -25,23 +25,23 @@ function submit() {
         <form @submit.prevent="submit" class="max-w-xl space-y-5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
             <div>
                 <label class="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">Student Name</label>
-                <input v-model="form.student_name" type="text" required class="w-full px-4 py-2.5 rounded-lg bg-[#111a15] border border-[var(--border)] text-white" />
+                <input v-model="form.student_name" type="text" required class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)] text-[var(--text)]" />
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">Role / Context (e.g. "HSC Student, Dhaka")</label>
-                <input v-model="form.student_role" type="text" class="w-full px-4 py-2.5 rounded-lg bg-[#111a15] border border-[var(--border)] text-white" />
+                <input v-model="form.student_role" type="text" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)] text-[var(--text)]" />
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">Quote</label>
-                <textarea v-model="form.quote" rows="4" required class="w-full px-4 py-2.5 rounded-lg bg-[#111a15] border border-[var(--border)] text-white"></textarea>
+                <textarea v-model="form.quote" rows="4" required class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)] text-[var(--text)]"></textarea>
                 <p class="text-xs text-[var(--text-muted)] mt-1">Use the student's actual words — this appears publicly as a real testimonial.</p>
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">Sort Order</label>
-                <input v-model="form.sort_order" type="number" min="0" class="w-full px-4 py-2.5 rounded-lg bg-[#111a15] border border-[var(--border)] text-white" />
+                <input v-model="form.sort_order" type="number" min="0" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)] text-[var(--text)]" />
             </div>
             <label class="flex items-center gap-2 text-sm text-[var(--text-muted)]"><input v-model="form.is_published" type="checkbox" class="rounded" /> Published</label>
-            <button type="submit" :disabled="form.processing" class="px-5 py-2.5 rounded-lg bg-[#e8935c] hover:bg-[#dc8148] text-white text-sm font-semibold disabled:opacity-60">
+            <button type="submit" :disabled="form.processing" class="px-5 py-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-semibold disabled:opacity-60">
                 {{ form.processing ? 'Saving...' : 'Save' }}
             </button>
         </form>

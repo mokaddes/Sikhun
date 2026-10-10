@@ -1,17 +1,18 @@
 <script setup>
 import { computed } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
 import { useI18n } from '@/i18n';
 
-defineProps({ page: Object, seo: Object });
-const { t, locale } = useI18n();
+defineProps({ seo: Object });
+const { locale } = useI18n();
 
 const stats = computed(() => [
-    { value: '৭+', label: locale.value === 'en' ? 'AI Features' : 'AI ফিচার' },
-    { value: '৪', label: locale.value === 'en' ? 'Student Levels' : 'শিক্ষার্থীর ধরন' },
-    { value: 'EN/বাং', label: locale.value === 'en' ? 'Bilingual Platform' : 'দ্বিভাষিক প্ল্যাটফর্ম' },
-    { value: '২৪/৭', label: locale.value === 'en' ? 'AI Support' : 'AI সাপোর্ট' },
+    { value: '01', label: locale.value === 'en' ? 'Learn from books' : 'বই থেকে শিখুন' },
+    { value: '02', label: locale.value === 'en' ? 'Learn with mentors' : 'মেন্টরের সাথে শিখুন' },
+    { value: '03', label: locale.value === 'en' ? 'Practice with AI' : 'AI দিয়ে অনুশীলন করুন' },
+    { value: '04', label: locale.value === 'en' ? 'Grow at your pace' : 'নিজের গতিতে এগোন' },
 ]);
 </script>
 
@@ -20,29 +21,61 @@ const stats = computed(() => [
     <PublicLayout>
         <!-- Hero -->
         <section class="relative overflow-hidden border-b border-[var(--border)]">
-            <div class="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/10 via-transparent to-[var(--secondary)]/10 pointer-events-none" />
-            <div class="max-w-4xl mx-auto px-5 pt-16 pb-14 text-center relative">
-                <div class="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] flex items-center justify-center text-3xl">
-                    🎓
+            <div class="absolute -top-48 left-1/3 w-[620px] h-[620px] rounded-full bg-[var(--primary)]/10 blur-[130px] pointer-events-none" />
+            <div class="absolute -bottom-56 -right-24 w-[560px] h-[560px] rounded-full bg-[var(--tertiary)]/10 blur-[140px] pointer-events-none" />
+            <div class="max-w-7xl mx-auto px-5 pt-20 pb-16 md:pt-28 md:pb-24 relative">
+                <div class="max-w-4xl">
+                    <span class="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)]/75 px-4 py-2 text-xs font-bold tracking-wide text-[var(--primary)]"><span class="w-2 h-2 rounded-full bg-[var(--primary)]" />{{ locale === 'en' ? 'ABOUT SIKHUN · LEARN WITH PURPOSE' : 'SIKHUN পরিচিতি · লক্ষ্য নিয়ে শিখুন' }}</span>
+                    <h1 class="font-heading text-4xl md:text-6xl xl:text-7xl font-extrabold tracking-tight leading-[1.06] mt-7 mb-6">{{ locale === 'en' ? 'A better way to make learning your own.' : 'শেখাকে নিজের করে নেওয়ার আরও ভালো উপায়।' }}</h1>
+                    <p class="text-lg md:text-xl text-[var(--text-muted)] leading-relaxed max-w-3xl">{{ locale === 'en' ? 'Sikhun brings learning resources, human guidance, and thoughtful AI tools into one welcoming space—so every learner can move from questions to understanding, one step at a time.' : 'Sikhun শেখার উপকরণ, মানুষের দিকনির্দেশনা এবং যত্ন নিয়ে তৈরি AI টুলকে এক উন্মুক্ত জায়গায় নিয়ে আসে—যাতে প্রতিটি শিক্ষার্থী ধাপে ধাপে প্রশ্ন থেকে উপলব্ধিতে পৌঁছাতে পারে।' }}</p>
+                    <div class="flex flex-wrap gap-3 mt-8"><Link href="/register" class="btn btn-primary">{{ locale === 'en' ? 'Start learning' : 'শেখা শুরু করুন' }} <span aria-hidden="true">→</span></Link><Link href="/#latest-courses" class="btn btn-outline">{{ locale === 'en' ? 'Explore the platform' : 'প্ল্যাটফর্ম ঘুরে দেখুন' }}</Link></div>
                 </div>
-                <h1 class="font-heading text-3xl md:text-4xl font-extrabold mb-3">{{ page.title }}</h1>
-                <p class="text-[var(--text-muted)] max-w-xl mx-auto">
-                    {{ locale === 'en' ? 'Built in Bangladesh, for Bangladeshi students.' : 'বাংলাদেশে তৈরি, বাংলাদেশের শিক্ষার্থীদের জন্য।' }}
-                </p>
             </div>
         </section>
 
-        <!-- Stats strip -->
-        <section class="max-w-4xl mx-auto px-5 -mt-1 py-10 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div v-for="s in stats" :key="s.label" class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 text-center">
-                <div class="font-heading text-2xl font-extrabold text-[var(--primary)] mb-1">{{ s.value }}</div>
-                <div class="text-xs text-[var(--text-muted)]">{{ s.label }}</div>
+        <section class="max-w-7xl mx-auto px-5 -mt-1 py-8 md:py-12 grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div v-for="s in stats" :key="s.label" class="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/85 p-5 flex items-center gap-4 shadow-sm">
+                <div class="font-mono text-sm font-bold text-[var(--primary)]">{{ s.value }}</div>
+                <div class="text-sm font-semibold">{{ s.label }}</div>
             </div>
         </section>
 
-        <!-- Rich content from the database, styled by @tailwindcss/typography -->
-        <section class="max-w-3xl mx-auto px-5 pb-20">
-            <div class="prose prose-lg dark:prose-invert max-w-none" v-html="page.content" />
+        <section class="max-w-7xl mx-auto px-5 pb-20 space-y-16 md:space-y-24">
+            <div class="grid lg:grid-cols-12 gap-10 lg:gap-16 items-start">
+                <div class="lg:col-span-5"><span class="eyebrow">{{ locale === 'en' ? 'Why Sikhun' : 'কেন Sikhun' }}</span><h2 class="font-heading text-3xl md:text-4xl font-extrabold mt-3">{{ locale === 'en' ? 'Learning should open doors—not add friction.' : 'শেখা নতুন দরজা খুলবে—বাধা বাড়াবে না।' }}</h2></div>
+                <div class="lg:col-span-7 space-y-5 text-[var(--text-muted)] leading-relaxed text-base md:text-lg">
+                    <p>{{ locale === 'en' ? 'A good learning journey needs more than a pile of content. It needs a clear next step, room to ask questions, and chances to put new ideas into practice. We are shaping Sikhun around that complete journey.' : 'ভালো শেখার যাত্রার জন্য শুধু অনেক কনটেন্ট যথেষ্ট নয়। দরকার পরের ধাপের স্পষ্ট ধারণা, প্রশ্ন করার সুযোগ এবং নতুন ধারণা কাজে লাগানোর অনুশীলন। এই পূর্ণাঙ্গ যাত্রাকে সামনে রেখেই আমরা Sikhun তৈরি করছি।' }}</p>
+                    <p>{{ locale === 'en' ? 'Our platform brings together digital books, courses from mentors, and AI-supported study tools. Learners can choose what fits their goals, return to it when they need, and build confidence through steady practice.' : 'আমাদের প্ল্যাটফর্মে আছে ডিজিটাল বই, মেন্টরদের কোর্স এবং AI-সহায়ক স্টাডি টুল। শিক্ষার্থীরা নিজেদের লক্ষ্যের সাথে মানানসই বিষয় বেছে নিতে, প্রয়োজনমতো ফিরে আসতে এবং নিয়মিত অনুশীলনে আত্মবিশ্বাস গড়তে পারেন।' }}</p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-5">
+                <article v-for="(item, i) in [
+                    { icon: '▤', en: 'Knowledge you can return to', bn: 'বারবার ফিরে দেখার মতো উপকরণ', textEn: 'Build understanding with a growing digital library. Read, revisit, and connect ideas to the subjects you are working toward.', textBn: 'ডিজিটাল লাইব্রেরির বই দিয়ে ধারণা পরিষ্কার করুন। পড়ুন, আবার দেখুন এবং আপনার লক্ষ্যের বিষয়গুলোর সাথে নতুন ধারণা যুক্ত করুন।' },
+                    { icon: '↗', en: 'Guidance from real mentors', bn: 'অভিজ্ঞ মেন্টরের দিকনির্দেশনা', textEn: 'Learn through structured courses led by mentors, with lessons designed to make progress feel clear and achievable.', textBn: 'মেন্টর পরিচালিত সাজানো কোর্সে শিখুন—যেখানে প্রতিটি পাঠ শেখার অগ্রগতিকে স্পষ্ট ও অর্জনযোগ্য করে।' },
+                    { icon: '✧', en: 'Practice that adapts to you', bn: 'আপনার উপযোগী অনুশীলন', textEn: 'Use AI study features to explore questions, make practice material, and organize your study routine around your needs.', textBn: 'AI স্টাডি ফিচার দিয়ে প্রশ্ন বুঝুন, অনুশীলনের উপকরণ তৈরি করুন এবং নিজের প্রয়োজনমতো পড়ার রুটিন সাজান।' },
+                ]" :key="i" class="group rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-7 md:p-8 shadow-sm hover:-translate-y-1 hover:shadow-[var(--shadow-lg)] transition-all duration-300">
+                    <div class="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 text-[var(--primary)] grid place-items-center text-xl font-bold mb-6">{{ item.icon }}</div>
+                    <div class="eyebrow">0{{ i + 1 }}</div>
+                    <h3 class="font-heading text-xl font-bold mt-2 mb-3">{{ locale === 'en' ? item.en : item.bn }}</h3>
+                    <p class="text-sm leading-relaxed text-[var(--text-muted)]">{{ locale === 'en' ? item.textEn : item.textBn }}</p>
+                </article>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8 items-center rounded-[2rem] border border-[var(--border)] bg-[var(--surface)] p-7 md:p-12 relative overflow-hidden">
+                <div class="absolute -right-20 -top-24 w-80 h-80 rounded-full bg-[var(--secondary)]/10 blur-3xl" />
+                <div class="relative"><span class="eyebrow">{{ locale === 'en' ? 'Our approach' : 'আমাদের পদ্ধতি' }}</span><h2 class="font-heading text-3xl md:text-4xl font-extrabold mt-3 mb-5">{{ locale === 'en' ? 'Technology in service of good teaching.' : 'ভালো শিক্ষার সহায়তায় প্রযুক্তি।' }}</h2><p class="text-[var(--text-muted)] leading-relaxed">{{ locale === 'en' ? 'AI can make study more interactive and help learners practice, but meaningful learning still starts with sound resources, thoughtful teaching, and the learner’s own curiosity. We bring these elements together and keep the learner in control.' : 'AI পড়াশোনাকে আরও অংশগ্রহণমূলক করতে এবং অনুশীলনে সাহায্য করতে পারে। তবে অর্থবহ শেখার শুরু হয় নির্ভরযোগ্য উপকরণ, যত্নশীল পাঠদান এবং শিক্ষার্থীর নিজের কৌতূহল থেকে। আমরা এই উপাদানগুলো একত্র করি এবং শেখার নিয়ন্ত্রণ শিক্ষার্থীর হাতেই রাখি।' }}</p></div>
+                <div class="relative rounded-2xl bg-[var(--bg)] border border-[var(--border)] p-6 md:p-8 space-y-5">
+                    <div v-for="(line, i) in (locale === 'en' ? ['Choose a goal that matters to you', 'Explore a book or a guided course', 'Ask, practice, reflect, and repeat'] : ['আপনার কাছে গুরুত্বপূর্ণ লক্ষ্য বেছে নিন', 'বই বা নির্দেশিত কোর্সে শেখা শুরু করুন', 'প্রশ্ন করুন, অনুশীলন করুন, আবার শিখুন'])" :key="line" class="flex items-center gap-4">
+                        <span class="h-9 w-9 rounded-xl bg-[var(--secondary)]/15 text-[var(--secondary)] grid place-items-center font-mono text-sm font-bold">0{{ i + 1 }}</span><span class="font-semibold">{{ line }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#111827] to-[#1c2840] text-white p-8 md:p-14">
+                <div class="absolute -right-16 -top-32 w-96 h-96 rounded-full bg-[var(--primary)]/20 blur-[100px]" />
+                <div class="relative max-w-3xl"><span class="text-xs font-bold tracking-[.16em] uppercase text-[var(--primary)]">{{ locale === 'en' ? 'Your next chapter starts here' : 'আপনার শেখার পরের অধ্যায় এখানেই' }}</span><h2 class="font-heading text-3xl md:text-4xl font-extrabold mt-3 mb-4">{{ locale === 'en' ? 'Bring your curiosity. We’ll help you keep going.' : 'কৌতূহল নিয়ে আসুন। এগিয়ে যেতে আমরা পাশে থাকব।' }}</h2><p class="text-white/75 text-lg leading-relaxed">{{ locale === 'en' ? 'Start with one subject, one book, or one question. Build a learning rhythm that fits your life and let every small step count.' : 'একটি বিষয়, একটি বই কিংবা একটি প্রশ্ন দিয়ে শুরু করুন। আপনার জীবনের সাথে মানানসই শেখার অভ্যাস গড়ুন—প্রতিটি ছোট পদক্ষেপই মূল্যবান।' }}</p><Link href="/register" class="btn mt-7 bg-white text-[#172033] hover:bg-white/90">{{ locale === 'en' ? 'Create your account' : 'অ্যাকাউন্ট তৈরি করুন' }} →</Link></div>
+            </div>
         </section>
     </PublicLayout>
 </template>

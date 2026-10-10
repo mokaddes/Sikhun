@@ -45,7 +45,7 @@
     -->
     <script>
         (function () {
-            var mode = localStorage.getItem('sikhun_theme') || 'system';
+            var mode = localStorage.getItem('sikhun_theme') || 'dark';
             var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             if (mode === 'dark' || (mode === 'system' && prefersDark)) {
                 document.documentElement.classList.add('dark');
@@ -61,6 +61,8 @@
     @if($favicon)
         <link rel="icon" href="{{ asset('storage/'.$favicon) }}">
         <link rel="apple-touch-icon" href="{{ asset('storage/'.$favicon) }}">
+    @else
+        <link rel="icon" type="image/svg+xml" href="{{ asset('images/sikhun-mark.svg') }}">
     @endif
 
     <link rel="preconnect" href="https://fonts.googleapis.com">

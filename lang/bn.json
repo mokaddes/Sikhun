@@ -62,7 +62,11 @@
         "practice": "অনুশীলন",
         "ai_studio": "AI স্টুডিও",
         "grow": "বৃদ্ধি",
-        "account": "অ্যাকাউন্ট"
+        "account": "অ্যাকাউন্ট",
+        "access": "অ্যাক্সেস",
+        "settings": "সেটিংস",
+        "notification_settings": "নোটিফিকেশন সেটিংস",
+        "profile_settings": "প্রোফাইল সেটিংস"
     },
     "footer": {
         "tagline": "বাংলাদেশের প্রথম AI-চালিত শিক্ষা প্ল্যাটফর্ম।",
@@ -131,7 +135,14 @@
             "authors": "Authors",
             "publications": "Publications",
             "mentors": "Mentors",
-            "pages": "Pages"
+            "pages": "Pages",
+            "growth": "Growth",
+            "community": "Community",
+            "platform": "Platform",
+            "referrals": "Referrals",
+            "leaderboard": "Leaderboard",
+            "notifications": "Notifications",
+            "support": "Support"
         },
         "dashboard": {
             "title": "Dashboard",
@@ -527,6 +538,21 @@
         "notification_settings": "নোটিফিকেশন সেটিংস",
         "preferred_time": "পছন্দের সময়",
         "save": "সংরক্ষণ করুন"
+    },
+    "profile_settings_page": {
+        "title": "প্রোফাইল সেটিংস",
+        "subtitle": "আপনার অ্যাকাউন্ট তথ্য ও পাসওয়ার্ড ব্যবস্থাপনা করুন।",
+        "info_title": "প্রোফাইল তথ্য",
+        "info_subtitle": "আপনার নাম ও ইমেইল ঠিকানা হালনাগাদ করুন।",
+        "name": "নাম",
+        "email": "ইমেইল ঠিকানা",
+        "save_info": "পরিবর্তন সংরক্ষণ করুন",
+        "password_title": "পাসওয়ার্ড পরিবর্তন",
+        "password_subtitle": "নিরাপদ থাকতে একটি দীর্ঘ, অনুমান-অযোগ্য পাসওয়ার্ড ব্যবহার করুন।",
+        "current_password": "বর্তমান পাসওয়ার্ড",
+        "new_password": "নতুন পাসওয়ার্ড",
+        "confirm_password": "পাসওয়ার্ড নিশ্চিত করুন",
+        "save_password": "পাসওয়ার্ড হালনাগাদ করুন"
     },
     "courses_page": {
         "title": "কোর্স",

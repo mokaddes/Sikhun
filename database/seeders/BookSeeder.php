@@ -28,6 +28,7 @@ class BookSeeder extends Seeder
             'jeebbijngan-prthm-ptr', 'ucctr-gnit-prthm-ptr',
             'bangla-prthm-ptr-hsc', 'ingreji-prthm-ptr-hsc',
             'sadharn-bijngan-ssc', 'gnit-ssc',
+            'tthz-oo-zogazog-przukti-hsc',
         ])->delete();
 
         // NCTB textbooks — titles only, no PDF attached yet.
@@ -56,7 +57,6 @@ class BookSeeder extends Seeder
             ['title' => 'সাহিত্য পাঠ', 'subject' => 'bangla', 'level' => 'hsc'],
             ['title' => 'সহপাঠ', 'subject' => 'bangla', 'level' => 'hsc'],
             ['title' => 'ইংরেজি', 'subject' => 'english', 'level' => 'hsc'],
-            ['title' => 'তথ্য ও যোগাযোগ প্রযুক্তি', 'subject' => 'ict', 'level' => 'hsc'],
             ['title' => 'রসায়ন প্রথম পত্র', 'subject' => 'chemistry', 'level' => 'hsc'],
             ['title' => 'রসায়ন দ্বিতীয় পত্র', 'subject' => 'chemistry', 'level' => 'hsc'],
             ['title' => 'পদার্থবিজ্ঞান প্রথম পত্র', 'subject' => 'physics', 'level' => 'hsc'],

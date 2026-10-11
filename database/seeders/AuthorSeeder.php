@@ -10,7 +10,7 @@ class AuthorSeeder extends Seeder
 {
     public function run(): void
     {
-        $authors = ['ড. মোহাম্মদ কিবরিয়া', 'প্রফেসর আনোয়ার হোসেন', 'ড. ফারজানা আক্তার', 'মোঃ রফিকুল ইসলাম', 'ড. সুমাইয়া রহমান'];
+        $authors = ['NCTB', 'ড. মোহাম্মদ কিবরিয়া', 'প্রফেসর আনোয়ার হোসেন', 'ড. ফারজানা আক্তার', 'মোঃ রফিকুল ইসলাম', 'ড. সুমাইয়া রহমান'];
 
         foreach ($authors as $name) {
             Author::updateOrCreate(['slug' => Str::slug($name)], ['name' => $name]);

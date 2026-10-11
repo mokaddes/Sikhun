@@ -1,18 +1,35 @@
 <script setup>
-import { ref } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import axios from 'axios';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import FlipReader from '@/Components/Reader/FlipReader.vue';
 import ReaderChatPanel from '@/Components/Reader/ReaderChatPanel.vue';
 import { BookOpenIcon } from '@heroicons/vue/24/solid';
 import { useI18n } from '@/i18n';
 
-const props = defineProps({ myBook: Object, pageUrls: { type: Object, default: () => null } });
+const props = defineProps({ myBook: Object, pageUrls: { type: Object, default: () => null }, initialPage: { type: Number, default: 1 } });
 const { t } = useI18n();
 
-const currentPage = ref(1);
+const page = usePage();
+const csrfToken = computed(() => page.props.csrf_token ?? '');
+
+const currentPage = ref(props.initialPage || 1);
 const chatOpen = ref(false);
 const ready = props.myBook.processing_status === 'completed';
+
+// Persist the reading position (debounced) so the reader resumes here next
+// time — a plain XHR keeps saving from interrupting the flipbook.
+let saveTimer = 0;
+function onPageChange(pageNumber) {
+    currentPage.value = pageNumber;
+    window.clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(() => {
+        axios
+            .post(`/my-books/${props.myBook.id}/read/progress`, { page: pageNumber }, { headers: { 'X-CSRF-TOKEN': csrfToken.value } })
+            .catch(() => {});
+    }, 900);
+}
 </script>
 
 <template>
@@ -32,7 +49,8 @@ const ready = props.myBook.processing_status === 'completed';
             :total-pages="Math.max(myBook.total_pages || 1, 1)"
             :url-prefix="`/my-books/${myBook.id}/read`"
             :page-urls="pageUrls"
-            @page-change="currentPage = $event"
+            :initial-page="initialPage"
+            @page-change="onPageChange"
         />
 
         <div class="fixed bottom-5 right-5 z-40 w-80 max-w-[calc(100vw-2.5rem)]">

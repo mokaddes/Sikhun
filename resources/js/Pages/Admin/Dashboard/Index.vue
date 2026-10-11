@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import AdminLayout from '@/Components/Layout/AdminLayout.vue';
+import VueApexCharts from 'vue3-apexcharts';
 import { useI18n } from '@/i18n';
 import { useThemeStore } from '@/Stores/theme';
 import {
@@ -119,7 +120,7 @@ const today = computed(() => new Date().toLocaleDateString(locale.value === 'bn'
                         </span>
                         {{ t('admin.dashboard.revenue_chart') }}
                     </div>
-                    <apexchart type="area" height="260" :options="revenueOptions" :series="revenueSeries" />
+                    <VueApexCharts type="area" height="260" :options="revenueOptions" :series="revenueSeries" />
                 </div>
                 <div class="card anim-rise rounded-2xl p-5">
                     <div class="mb-4 flex items-center gap-2 font-heading font-semibold">
@@ -128,7 +129,7 @@ const today = computed(() => new Date().toLocaleDateString(locale.value === 'bn'
                         </span>
                         {{ t('admin.dashboard.registrations_chart') }}
                     </div>
-                    <apexchart type="bar" height="260" :options="regOptions" :series="regSeries" />
+                    <VueApexCharts type="bar" height="260" :options="regOptions" :series="regSeries" />
                 </div>
             </div>
 

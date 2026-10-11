@@ -126,7 +126,7 @@ class BookController extends Controller
             // NEVER store on the 'public' disk. This path is only ever resolved
             // server-side through the signed, watermarked reader endpoint.
             $pdfPath = $request->file('pdf_file')->store('books/pdfs', 'private');
-        } elseif (filled($validated['temp_pdf_path'])) {
+        } elseif (filled($validated['temp_pdf_path'] ?? null)) {
             // promote() re-validates the client-supplied path (must be a direct
             // child of a books/temp upload dir) and sweeps the staging folder.
             $pdfPath = $this->uploads->promote(

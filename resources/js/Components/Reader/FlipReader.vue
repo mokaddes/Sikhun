@@ -19,6 +19,9 @@ const props = defineProps({
     // Pre-signed image URLs for the opening window, keyed by page number —
     // lets the first pages paint without any extra requests.
     pageUrls: { type: Object, default: () => null },
+    // Real page number to open on (resume last read page). Falls back to the
+    // first accessible page when null/out of range.
+    initialPage: { type: Number, default: null },
 });
 
 const emit = defineEmits(['page-change']);
@@ -111,16 +114,37 @@ function goToRealPage(page) {
 
 defineExpose({ goToRealPage });
 
+// Map a real page number onto a 1-based position within `realPages` (which may
+// be a sparse subset for chapter buyers). Returns the nearest page when the
+// exact one isn't accessible.
+function resolveInitialPos() {
+    const target = Number(props.initialPage);
+    if (!target || target < 1) return 1;
+
+    let idx = realPages.value.indexOf(target);
+    if (idx === -1) {
+        let nearest = realPages.value[0];
+        for (const p of realPages.value) {
+            if (Math.abs(p - target) < Math.abs(nearest - target)) nearest = p;
+        }
+        idx = realPages.value.indexOf(nearest);
+    }
+    return idx >= 0 ? idx + 1 : 1;
+}
+
 function buildPages() {
     const book = $(bookEl.value);
     book.empty();
-    realPages.value.forEach((p) => {
-        $('<div class="page"></div>')
-            .attr('data-real', p)
-            .append(`<div class="turn-page-loader">${t('reader.loading')}</div>`)
-            .on('contextmenu', (e) => e.preventDefault())
-            .appendTo(book);
-    });
+    // Build every leaf as a single HTML string and insert it once — appending
+    // page-by-page into a live DOM node triggers a reflow per page, which made
+    // first paint crawl on books with hundreds of pages.
+    const loading = t('reader.loading');
+    const html = realPages.value
+        .map((p) => `<div class="page" data-real="${p}"><div class="turn-page-loader">${loading}</div></div>`)
+        .join('');
+    book.html(html);
+    // One delegated handler instead of one per page.
+    book.off('contextmenu.reader').on('contextmenu.reader', '.page', (e) => e.preventDefault());
 }
 
 function applyPageImage(realPage, url) {
@@ -286,7 +310,9 @@ function createTurn() {
     const startPos = Math.max(1, Math.min(currentPos.value || 1, realPages.value.length));
     $el.turn('page', startPos);
 
-    initZoom();
+    // zoom.js loads asynchronously after the book paints; only (re)bind it
+    // once its plugin is actually present.
+    if ($.fn.zoom) initZoom();
 
     syncFromView($el.turn('view') ?? [startPos]);
 }
@@ -307,14 +333,6 @@ async function initTurn() {
         return;
     }
 
-    // The zoom plugin (turnjs4/lib/zoom.js) is an enhancement — if it ever
-    // fails to load the flipbook still works, just without zooming.
-    try {
-        await import('@/vendor/turnjs/zoom.js');
-    } catch (e) {
-        console.warn('Turn.js zoom plugin failed to load', e);
-        zoomReady.value = false;
-    }
     await nextTick();
     size.value = computeSize();
     try {
@@ -327,6 +345,25 @@ async function initTurn() {
     }
     ready.value = true;
     initializing.value = false;
+
+    // The zoom plugin (turnjs4/lib/zoom.js) is an optional enhancement, so load
+    // it in the background *after* the first page is visible rather than
+    // blocking the book on a second network round-trip.
+    import('@/vendor/turnjs/zoom.js')
+        .then(() => {
+            if (ready.value && bookEl.value && $.fn.zoom && $(bookEl.value).turn('is')) {
+                try {
+                    initZoom();
+                } catch (e) {
+                    console.warn('Turn.js zoom init failed', e);
+                    zoomReady.value = false;
+                }
+            }
+        })
+        .catch((e) => {
+            console.warn('Turn.js zoom plugin failed to load', e);
+            zoomReady.value = false;
+        });
 }
 
 function goPrev() {
@@ -491,7 +528,9 @@ onMounted(() => {
         };
     };
 
-    currentPage.value = realPages.value[0] ?? 1;
+    const startPos = resolveInitialPos();
+    currentPos.value = startPos;
+    currentPage.value = realPages.value[startPos - 1] ?? 1;
     initTurn();
     window.addEventListener('keydown', onKeydown);
     window.addEventListener('resize', onResize);

@@ -96,11 +96,13 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     // Reader (catalog books)
     Route::get('/library/{book}/read', [ReaderController::class, 'show'])->name('reader.show');
     Route::get('/library/{book}/read/page/{page}/url', [ReaderController::class, 'pageUrl'])->name('reader.page-url');
+    Route::post('/library/{book}/read/progress', [ReaderController::class, 'saveProgress'])->name('reader.progress');
     Route::post('/library/{book}/read/chat', [ReaderController::class, 'chat'])->name('reader.chat');
 
     // My Book reader (own uploads)
     Route::get('/my-books/{myBook}/read', [MyBookReaderController::class, 'show'])->name('my-books.reader.show');
     Route::get('/my-books/{myBook}/read/page/{page}/url', [MyBookReaderController::class, 'pageUrl'])->name('my-books.reader.page-url');
+    Route::post('/my-books/{myBook}/read/progress', [MyBookReaderController::class, 'saveProgress'])->name('my-books.reader.progress');
     Route::post('/my-books/{myBook}/read/chat', [MyBookReaderController::class, 'chat'])->name('my-books.reader.chat');
 
     // Wallet

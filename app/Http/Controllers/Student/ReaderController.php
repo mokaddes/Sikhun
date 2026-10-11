@@ -12,6 +12,7 @@ use App\Services\Pdf\PageTextService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -29,7 +30,7 @@ class ReaderController extends Controller
      * the rest of the day, so browser HTTP caches and the Imagick cache are
      * actually reused instead of re-downloading/re-rendering on every visit.
      */
-    private function signingExpiry(): \Illuminate\Support\Carbon
+    private function signingExpiry(): Carbon
     {
         return now()->startOfDay()->addDay();
     }
@@ -42,6 +43,7 @@ class ReaderController extends Controller
             'student' => $studentId,
         ]);
     }
+
     /**
      * The reader shell itself — Inertia page that mounts FlipReader.vue.
      * Starts (or resumes) today's ReadingSession row for this student+book.
@@ -84,10 +86,24 @@ class ReaderController extends Controller
         // Pre-sign the opening window so the first pages render immediately.
         $pageUrls = $this->preSignedWindow($book, $student, $accessiblePages);
 
+        // Resume where the student last stopped (most recent session for this
+        // book, regardless of day). The frontend snaps to the nearest
+        // accessible page if this one isn't in their purchased set.
+        $lastPage = ReadingSession::where('student_id', $student->id)
+            ->where('book_id', $book->id)
+            ->whereNotNull('last_page')
+            ->latest('id')
+            ->value('last_page');
+
+        $initialPage = $lastPage
+            ? max(1, min((int) $lastPage, (int) ($book->total_pages ?: $lastPage)))
+            : 1;
+
         return Inertia::render('Student/Library/Reader', [
             'book' => $book->only(['id', 'title', 'slug', 'total_pages']),
             'accessiblePages' => $accessiblePages,
             'pageUrls' => $pageUrls,
+            'initialPage' => $initialPage,
             'chapters' => $book->chapters()->orderBy('sort_order')->get(['id', 'parent_id', 'title', 'chapter_number', 'level', 'start_page', 'end_page']),
         ]);
     }
@@ -123,6 +139,44 @@ class ReaderController extends Controller
         $this->trackProgress($student->id, $book->id, $page);
 
         return response()->json(['url' => $this->signedPageUrl($book->id, $page, $student->id)]);
+    }
+
+    /**
+     * Persist the page the student is currently looking at, so reopening the
+     * reader resumes here. Called (debounced) by the frontend on every page
+     * turn — unlike pageUrl() this is *not* triggered by background prefetch,
+     * so it records the true reading position rather than the furthest one.
+     */
+    public function saveProgress(Request $request, Book $book, BookAccessService $access): JsonResponse
+    {
+        $student = auth('web')->user();
+
+        $validated = $request->validate([
+            'page' => ['required', 'integer', 'min:1'],
+        ]);
+
+        $page = (int) $validated['page'];
+
+        // Silently ignore pages this student can't actually read (e.g. a stray
+        // jump target) instead of surfacing an error mid-read.
+        if (! $access->canAccessPage($student, $book, $page)) {
+            return response()->json(['saved' => false]);
+        }
+
+        $session = ReadingSession::where('student_id', $student->id)
+            ->where('book_id', $book->id)
+            ->whereDate('created_at', today())
+            ->latest()
+            ->first();
+
+        if ($session) {
+            $session->update([
+                'last_page' => $page,
+                'last_activity_at' => now(),
+            ]);
+        }
+
+        return response()->json(['saved' => true]);
     }
 
     /**

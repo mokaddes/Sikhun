@@ -5,7 +5,6 @@ import { createApp, h } from 'vue';
 import { createInertiaApp, router } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createPinia } from 'pinia';
-import VueApexCharts from 'vue3-apexcharts';
 import { useThemeStore } from './Stores/theme';
 import { useNotificationStore } from './Stores/notifications';
 
@@ -32,8 +31,7 @@ createInertiaApp({
         const pinia = createPinia();
         const app = createApp({ render: () => h(App, props) })
             .use(plugin)
-            .use(pinia)
-            .use(VueApexCharts);
+            .use(pinia);
 
         app.mount(el);
 

@@ -1,19 +1,37 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import axios from 'axios';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import FlipReader from '@/Components/Reader/FlipReader.vue';
 import ReaderChatPanel from '@/Components/Reader/ReaderChatPanel.vue';
 import { BookOpenIcon } from '@heroicons/vue/24/solid';
 import { useI18n } from '@/i18n';
 
-const props = defineProps({ book: Object, accessiblePages: { type: Array, default: null }, chapters: { type: Array, default: () => [] }, pageUrls: { type: Object, default: () => null } });
+const props = defineProps({ book: Object, accessiblePages: { type: Array, default: null }, chapters: { type: Array, default: () => [] }, pageUrls: { type: Object, default: () => null }, initialPage: { type: Number, default: 1 } });
 const { t } = useI18n();
 
-const currentPage = ref(1);
+const page = usePage();
+const csrfToken = computed(() => page.props.csrf_token ?? '');
+
+const currentPage = ref(props.initialPage || 1);
 const chatOpen = ref(false);
 const flipReader = ref(null);
 const currentChapter = computed(() => props.chapters.find((chapter) => currentPage.value >= (chapter.start_page || 1) && currentPage.value <= (chapter.end_page || props.book.total_pages)) || null);
+
+// Persist the reading position (debounced) so the reader resumes here next
+// time. Uses a plain XHR rather than an Inertia visit so saving never
+// interrupts the flipbook.
+let saveTimer = 0;
+function onPageChange(pageNumber) {
+    currentPage.value = pageNumber;
+    window.clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(() => {
+        axios
+            .post(`/library/${props.book.id}/read/progress`, { page: pageNumber }, { headers: { 'X-CSRF-TOKEN': csrfToken.value } })
+            .catch(() => {});
+    }, 900);
+}
 </script>
 
 <template>
@@ -43,7 +61,8 @@ const currentChapter = computed(() => props.chapters.find((chapter) => currentPa
             :accessible-pages="accessiblePages"
             :url-prefix="`/library/${book.id}/read`"
             :page-urls="pageUrls"
-            @page-change="currentPage = $event"
+            :initial-page="initialPage"
+            @page-change="onPageChange"
         />
 
         <!-- Page-context chat — floats bottom-right over the reader -->

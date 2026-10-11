@@ -10,6 +10,7 @@ use App\Services\Pdf\PageTextService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,7 +26,7 @@ class MyBookReaderController extends Controller
      * Stable signing expiry: URLs for a page/student stay identical all day,
      * so both browser caches and the Imagick cache are reused.
      */
-    private function signingExpiry(): \Illuminate\Support\Carbon
+    private function signingExpiry(): Carbon
     {
         return now()->startOfDay()->addDay();
     }
@@ -59,6 +60,7 @@ class MyBookReaderController extends Controller
         return Inertia::render('Student/MyBooks/Reader', [
             'myBook' => $myBook->only(['id', 'title', 'total_pages', 'processing_status', 'processing_error']),
             'pageUrls' => $pageUrls,
+            'initialPage' => max(1, min((int) ($myBook->last_page ?: 1), (int) ($myBook->total_pages ?: 1))),
         ]);
     }
 
@@ -67,6 +69,25 @@ class MyBookReaderController extends Controller
         $this->authorize($myBook);
 
         return response()->json(['url' => $this->signedPageUrl($myBook->id, $page, auth('web')->id())]);
+    }
+
+    /**
+     * Remember the student's last page in their own upload so the reader
+     * resumes there next time.
+     */
+    public function saveProgress(Request $request, MyBook $myBook): JsonResponse
+    {
+        $this->authorize($myBook);
+
+        $validated = $request->validate([
+            'page' => ['required', 'integer', 'min:1'],
+        ]);
+
+        $page = max(1, min((int) $validated['page'], (int) ($myBook->total_pages ?: 1)));
+
+        $myBook->update(['last_page' => $page]);
+
+        return response()->json(['saved' => true]);
     }
 
     public function servePage(Request $request, MyBook $myBook, int $page, BookReaderService $reader): HttpResponse

@@ -8,10 +8,10 @@ use App\Http\Requests\Student\CreateChatSessionRequest;
 use App\Models\AiSession;
 use App\Models\Book;
 use App\Models\MyBook;
+use App\Services\AccessGrantService;
 use App\Services\Ai\AiProviderFactory;
 use App\Services\Ai\BookChunkRetrievalService;
 use App\Services\Ai\Providers\AbstractOpenAiCompatibleProvider;
-use App\Services\AccessGrantService;
 use App\Services\BookAccessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -111,12 +111,15 @@ class AiChatController extends Controller
             'my_book_id' => ['nullable', 'integer', 'exists:my_books,id'],
         ]);
 
-        abort_unless($validated['book_id'] || $validated['my_book_id'], 422, 'Select a book to attach.');
+        $bookId = $validated['book_id'] ?? null;
+        $myBookId = $validated['my_book_id'] ?? null;
+
+        abort_unless($bookId || $myBookId, 422, 'Select a book to attach.');
 
         $student = auth('web')->user();
 
-        if ($validated['my_book_id']) {
-            $myBook = MyBook::find($validated['my_book_id']);
+        if ($myBookId) {
+            $myBook = MyBook::find($myBookId);
             abort_unless($myBook && $myBook->student_id === $student->id, 403, 'You can only attach your own books.');
 
             $session->update([
@@ -125,10 +128,10 @@ class AiChatController extends Controller
                 'source_my_book_id' => $myBook->id,
             ]);
 
-            return back();
+            return redirect()->route('ai-chat.show', $session);
         }
 
-        $book = Book::find($validated['book_id']);
+        $book = Book::find($bookId);
         abort_unless($access->hasAccess($student, $book), 403, 'You need access to this book to attach it.');
 
         $session->update([
@@ -137,7 +140,7 @@ class AiChatController extends Controller
             'source_my_book_id' => null,
         ]);
 
-        return back();
+        return redirect()->route('ai-chat.show', $session);
     }
 
     /**

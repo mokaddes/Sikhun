@@ -75,9 +75,14 @@ async function run() {
   let odlVersion = 'poppler-fallback';
   let pages = [];
 
-  if (popplerProbe && popplerProbe.totalPages > 0 && popplerProbe.pagesWithText === 0) {
+  const isMostlyScanned =
+    popplerProbe &&
+    popplerProbe.totalPages > 0 &&
+    popplerProbe.pagesWithText < Math.max(1, Math.floor(popplerProbe.totalPages * 0.2));
+
+  if (isMostlyScanned) {
     console.log(
-      `[odl] PDF (${popplerProbe.totalPages} pages) has 0 selectable text (scanned PDF); skipping Java verapdf and proceeding directly to OCR.`,
+      `[odl] PDF (${popplerProbe.totalPages} pages, ${popplerProbe.pagesWithText} with text) is a scanned PDF; skipping Java verapdf and proceeding directly to OCR.`,
     );
     pages = popplerProbe.pages;
   } else {
@@ -115,9 +120,10 @@ async function run() {
     throw new Error('OpenDataLoader produced a JSON with no readable pages.');
   }
 
-  // OCR fallback: when no text was extracted (scanned / image-only PDF),
-  // rasterize each page and read it back with tesseract concurrently.
-  const needsOcr = !pages.some((p) => p.text && p.text.trim().length > 0);
+  // OCR fallback: when fewer than 50% of pages have meaningful text (scanned / image-only PDF),
+  // rasterize the missing pages and read them back with tesseract concurrently.
+  const pagesWithMeaningfulText = pages.filter((p) => p.text && p.text.trim().length >= 40).length;
+  const needsOcr = pagesWithMeaningfulText < Math.max(1, Math.floor(pages.length * 0.5));
   const ocr = needsOcr ? await runOcrPass(ARGS.input, pages, outDir) : null;
 
   const imagesDir = join(outDir, 'images');
@@ -202,14 +208,14 @@ function probeWithPoppler(pdfPath) {
 
   for (let p = 1; p <= totalPages; p++) {
     const rawText = (pageTexts[p - 1] ?? '').replace(/\r\n/g, '\n').trim();
-    const hasText = rawText.length > 0;
-    if (hasText) pagesWithText += 1;
+    const hasMeaningfulText = rawText.length >= 40;
+    if (hasMeaningfulText) pagesWithText += 1;
 
     pages.push({
       page: p,
-      text: hasText ? rawText : null,
+      text: rawText.length > 0 ? rawText : null,
       size,
-      elements: hasText ? ocrElements(p, rawText, 'pdftotext') : [],
+      elements: rawText.length > 0 ? ocrElements(p, rawText, 'pdftotext') : [],
     });
   }
 
@@ -217,8 +223,8 @@ function probeWithPoppler(pdfPath) {
 }
 
 /**
- * OCR fallback for scanned/image-only PDFs. Runs with bounded concurrency (4 workers)
- * so multi-hundred-page books finish quickly on multi-core servers.
+ * OCR fallback for scanned/image-only PDFs. Runs with bounded concurrency (4 workers
+ * with OMP_THREAD_LIMIT=1) so multi-hundred-page books finish fast without starving CPU.
  */
 async function runOcrPass(pdfPath, pages, outDir) {
   const pdftoppm = ARGS.pdftoppm || 'pdftoppm';
@@ -228,7 +234,7 @@ async function runOcrPass(pdfPath, pages, outDir) {
     used: false,
     tool: null,
     lang: resolveOcrLang(tesseract, ARGS.ocrLang),
-    dpi: ARGS.ocrDpi || 150,
+    dpi: Math.min(ARGS.ocrDpi || 115, 120),
     pages: 0,
     skipped: 0,
   };
@@ -256,12 +262,13 @@ async function runOcrPass(pdfPath, pages, outDir) {
   const ocrDir = join(outDir, 'ocr');
   mkdirSync(ocrDir, { recursive: true });
 
+  const targetPages = pages.filter((p) => !p.text || p.text.trim().length < 40);
   const concurrency = 4;
   let index = 0;
 
   async function worker() {
-    while (index < pages.length) {
-      const page = pages[index++];
+    while (index < targetPages.length) {
+      const page = targetPages[index++];
       if (!page) break;
 
       const rendered = await renderPageAsync(pdftoppm, pdfPath, page.page, ocr.dpi, ocrDir);
@@ -270,7 +277,7 @@ async function runOcrPass(pdfPath, pages, outDir) {
         continue;
       }
 
-      const text = await ocrImageAsync(tesseract, rendered.png, rendered.base, ocr.lang);
+      const text = await ocrImageAsync(tesseract, rendered.img, rendered.base, ocr.lang);
       cleanupOcrArtifacts(rendered);
 
       if (text === null) {
@@ -284,16 +291,16 @@ async function runOcrPass(pdfPath, pages, outDir) {
     }
   }
 
-  await Promise.all(Array.from({ length: Math.min(concurrency, pages.length) }, () => worker()));
+  await Promise.all(Array.from({ length: Math.min(concurrency, targetPages.length) }, () => worker()));
 
   ocr.used = ocr.pages > 0;
   ocr.tool = 'tesseract';
 
   if (ocr.used) {
-    console.log(`[ocr] tesseract OCR extracted text from ${ocr.pages}/${pages.length} pages (lang: ${ocr.lang}).`);
+    console.log(`[ocr] tesseract OCR extracted text from ${ocr.pages}/${targetPages.length} pages (lang: ${ocr.lang}).`);
   } else {
     console.error(
-      `[ocr] tesseract OCR produced no usable text (${ocr.skipped}/${pages.length} pages skipped, lang: ${ocr.lang}). ` +
+      `[ocr] tesseract OCR produced no usable text (${ocr.skipped}/${targetPages.length} pages skipped, lang: ${ocr.lang}). ` +
         'Check that the requested language data is installed (e.g. tesseract-ocr-ben) or set PDF_OCR_LANG.',
     );
   }
@@ -337,7 +344,10 @@ function spawnPromise(cmd, args, timeoutMs = 180_000) {
   return new Promise((resolve) => {
     let stderr = '';
     let finished = false;
-    const child = spawn(cmd, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+    const child = spawn(cmd, args, {
+      stdio: ['ignore', 'ignore', 'pipe'],
+      env: { ...process.env, OMP_THREAD_LIMIT: '1' },
+    });
 
     const timer = setTimeout(() => {
       if (!finished) {
@@ -369,11 +379,14 @@ function spawnPromise(cmd, args, timeoutMs = 180_000) {
   });
 }
 
-/** Render one page to PNG asynchronously; returns { png, base } or null. */
+/** Render one page to grayscale JPEG asynchronously; returns { img, base } or null. */
 async function renderPageAsync(pdftoppm, pdfPath, pageNumber, dpi, ocrDir) {
   const base = join(ocrDir, `page-${pageNumber}`);
   const res = await spawnPromise(pdftoppm, [
-    '-png',
+    '-jpeg',
+    '-gray',
+    '-jpegopt',
+    'quality=82',
     '-r',
     String(dpi),
     '-f',
@@ -389,21 +402,21 @@ async function renderPageAsync(pdftoppm, pdfPath, pageNumber, dpi, ocrDir) {
     return null;
   }
 
-  let png = null;
+  let img = null;
   for (const entry of readdirSync(ocrDir)) {
-    if (entry.startsWith(`page-${pageNumber}-`) && entry.toLowerCase().endsWith('.png')) {
-      png = join(ocrDir, entry);
+    if (entry.startsWith(`page-${pageNumber}-`) && entry.toLowerCase().endsWith('.jpg')) {
+      img = join(ocrDir, entry);
       break;
     }
   }
 
-  return png ? { png, base } : null;
+  return img ? { img, base } : null;
 }
 
 /** Run tesseract on one rendered page asynchronously; returns page text or null. */
-async function ocrImageAsync(tesseract, png, base, lang) {
+async function ocrImageAsync(tesseract, img, base, lang) {
   const outBase = `${base}-ocr`;
-  const res = await spawnPromise(tesseract, [png, outBase, '-l', lang, '--psm', '3']);
+  const res = await spawnPromise(tesseract, [img, outBase, '-l', lang, '--psm', '3']);
 
   const txtPath = `${outBase}.txt`;
   const text = existsSync(txtPath) ? readFileSync(txtPath, 'utf8') : null;
@@ -419,8 +432,8 @@ async function ocrImageAsync(tesseract, png, base, lang) {
   return text && text.trim().length > 0 ? text.replace(/\r\n/g, '\n').trim() : null;
 }
 
-function cleanupOcrArtifacts({ png, base }) {
-  if (existsSync(png)) unlinkSync(png);
+function cleanupOcrArtifacts({ img, base }) {
+  if (img && existsSync(img)) unlinkSync(img);
   const leftover = `${base}.txt`;
   if (existsSync(leftover)) unlinkSync(leftover);
 }

@@ -2,53 +2,56 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import axios from 'axios';
 import { useI18n } from '@/i18n';
-import { MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon } from '@heroicons/vue/24/outline';
-
+import {
+    MagnifyingGlassMinusIcon,
+    MagnifyingGlassPlusIcon,
+    ArrowPathIcon,
+    ArrowsPointingOutIcon,
+    ArrowsPointingInIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+} from '@heroicons/vue/24/outline';
 import $ from 'jquery';
 
 const props = defineProps({
     bookId: { type: Number, required: true },
     totalPages: { type: Number, required: true },
-    // null = unrestricted (full access); array = the only pages the
-    // student's chapter purchases cover. Server re-validates every page
-    // request anyway — this list only drives which pages get a book leaf.
+    // null = unrestricted (full access); array = the only pages the student's chapter purchases cover.
     accessiblePages: { type: Array, default: null },
-    // Base used to mint page-image URLs, e.g. `/library/${bookId}/read` or
-    // `/my-books/${bookId}/read`. The full URL is `${base}/page/${n}/url`.
+    // Base used to mint page-image URLs, e.g. `/library/${bookId}/read`
     urlPrefix: { type: String, default: null },
-    // Pre-signed image URLs for the opening window, keyed by page number —
-    // lets the first pages paint without any extra requests.
+    // Pre-signed image URLs for pages, keyed by page number — lets pages paint instantly with 0 round-trips.
     pageUrls: { type: Object, default: () => null },
-    // Real page number to open on (resume last read page). Falls back to the
-    // first accessible page when null/out of range.
+    // Real page number to open on (resume last read page).
     initialPage: { type: Number, default: null },
 });
 
 const emit = defineEmits(['page-change']);
-
 const { t } = useI18n();
 
-const PAGE_ASPECT = 1.414; // A4 portrait at 150 DPI
-
-// Max zoom factor applied by the turn.js zoom plugin (magazine sample uses a
-// similar ~2.3x). Pages are rendered at ~992px wide, so ~2.2x reaches
-// display-native resolution for reading close-up.
-const ZOOM_MAX = 2.2;
+const PAGE_ASPECT = 1.414; // Standard A4 portrait aspect ratio
 
 const rootEl = ref(null);
 const bookEl = ref(null);
 const initializing = ref(true);
 const initError = ref(false);
 const ready = ref(false);
-const zoomed = ref(false);
-const zoomReady = ref(false);
+const isFullscreen = ref(false);
+
+// Smooth CSS Zoom & Pan state
+const zoomLevel = ref(1.0);
+const ZOOM_LEVELS = [1.0, 1.4, 1.8, 2.2];
+const pan = ref({ x: 0, y: 0 });
+const isDragging = ref(false);
+let dragStart = { x: 0, y: 0 };
+let panStart = { x: 0, y: 0 };
 
 const size = ref(computeSize());
 const loaded = {};
 let inflight = new Set();
 
 const currentPos = ref(1);
-const currentPage = ref(null);
+const currentPage = ref(1);
 const currentView = ref([]);
 const jumpTarget = ref('');
 
@@ -84,15 +87,30 @@ const bookStyle = computed(() => {
     };
 });
 
+const containerStyle = computed(() => {
+    if (zoomLevel.value <= 1.0) {
+        return {
+            transform: 'none',
+            transition: isDragging.value ? 'none' : 'transform 0.22s cubic-bezier(0.2, 0, 0, 1)',
+        };
+    }
+    return {
+        transform: `translate(${pan.value.x}px, ${pan.value.y}px) scale(${zoomLevel.value})`,
+        transformOrigin: 'center center',
+        transition: isDragging.value ? 'none' : 'transform 0.22s cubic-bezier(0.2, 0, 0, 1)',
+        cursor: isDragging.value ? 'grabbing' : 'grab',
+    };
+});
+
 function computeSize() {
     const viewportW = rootEl.value?.clientWidth ?? 0;
-    const containerW = Math.max(viewportW > 0 ? viewportW : window.innerWidth - 32, 240);
-    const maxH = Math.max(window.innerHeight * 0.72, 320);
+    const containerW = Math.max(viewportW > 0 ? viewportW : window.innerWidth - 32, 280);
+    const maxH = Math.max(Math.min(window.innerHeight * 0.76, 880), 380);
     const double = window.innerWidth >= 768;
 
     let pageW = double
-        ? Math.min(Math.floor((containerW - 16) / 2), 380)
-        : Math.min(containerW - 16, 440);
+        ? Math.min(Math.floor((containerW - 32) / 2), 520)
+        : Math.min(containerW - 20, 520);
     let pageH = Math.round(pageW * PAGE_ASPECT);
 
     if (pageH > maxH) {
@@ -109,14 +127,13 @@ function pageUrl(realPage) {
 
 function goToRealPage(page) {
     const index = realPages.value.indexOf(Number(page));
-    if (ready.value && index >= 0) $(bookEl.value).turn('page', index + 1);
+    if (ready.value && index >= 0) {
+        $(bookEl.value).turn('page', index + 1);
+    }
 }
 
 defineExpose({ goToRealPage });
 
-// Map a real page number onto a 1-based position within `realPages` (which may
-// be a sparse subset for chapter buyers). Returns the nearest page when the
-// exact one isn't accessible.
 function resolveInitialPos() {
     const target = Number(props.initialPage);
     if (!target || target < 1) return 1;
@@ -135,31 +152,61 @@ function resolveInitialPos() {
 function buildPages() {
     const book = $(bookEl.value);
     book.empty();
-    // Build every leaf as a single HTML string and insert it once — appending
-    // page-by-page into a live DOM node triggers a reflow per page, which made
-    // first paint crawl on books with hundreds of pages.
     const loading = t('reader.loading');
     const html = realPages.value
-        .map((p) => `<div class="page" data-real="${p}"><div class="turn-page-loader">${loading}</div></div>`)
+        .map(
+            (p) =>
+                `<div class="page" data-real="${p}"><div class="turn-page-loader"><div class="loader-spinner"></div><span>${loading}</span></div></div>`
+        )
         .join('');
     book.html(html);
-    // One delegated handler instead of one per page.
     book.off('contextmenu.reader').on('contextmenu.reader', '.page', (e) => e.preventDefault());
 }
 
 function applyPageImage(realPage, url) {
     const $page = $(bookEl.value).find(`.page[data-real="${realPage}"]`).first();
-    if ($page.length) {
-        $page.css('background-image', `url(${url})`);
-        $page.children('.turn-page-loader').remove();
-    }
+    if (!$page.length) return;
+
+    if ($page.attr('data-loaded-url') === url) return;
+
+    // Use Image preloader so background never flashes blank or white
+    const img = new Image();
+    img.onload = () => {
+        $page.attr('data-loaded-url', url);
+        $page.css({
+            'background-image': `url("${url}")`,
+            'background-size': '100% 100%',
+            'background-repeat': 'no-repeat',
+            'background-position': 'center',
+        });
+        const loader = $page.children('.turn-page-loader');
+        if (loader.length) {
+            loader.fadeOut(120, function () {
+                $(this).remove();
+            });
+        }
+    };
+    img.onerror = () => {
+        loaded[realPage] = false;
+        const loader = $page.children('.turn-page-loader');
+        if (loader.length) {
+            loader.html(`
+                <span class="text-red-500 mb-1">${t('reader.load_failed')}</span>
+                <button type="button" class="retry-btn text-xs text-indigo-600 underline hover:text-indigo-800">Retry</button>
+            `);
+            loader.find('.retry-btn').off('click').on('click', () => {
+                delete loaded[realPage];
+                ensureUrl(realPage);
+            });
+        }
+    };
+    img.src = url;
 }
 
 function ensureUrl(realPage) {
     if (loaded[realPage] || inflight.has(realPage)) return;
 
-    // Pages pre-signed by the server (props.pageUrls) paint instantly with
-    // zero round-trips; anything else falls back to an on-demand mint.
+    // Pre-signed direct URL from server
     const direct = props.pageUrls?.[realPage];
     if (direct) {
         loaded[realPage] = true;
@@ -176,19 +223,24 @@ function ensureUrl(realPage) {
         })
         .catch(() => {
             const $page = $(bookEl.value).find(`.page[data-real="${realPage}"]`).first();
-            $page.children('.turn-page-loader').text(t('reader.load_failed')).addClass('is-error');
+            const loader = $page.children('.turn-page-loader');
+            if (loader.length) {
+                loader.html(`
+                    <span class="text-red-500 mb-1">${t('reader.load_failed')}</span>
+                    <button type="button" class="retry-btn text-xs text-indigo-600 underline hover:text-indigo-800">Retry</button>
+                `);
+                loader.find('.retry-btn').off('click').on('click', () => {
+                    delete loaded[realPage];
+                    ensureUrl(realPage);
+                });
+            }
         })
         .finally(() => {
             inflight.delete(realPage);
         });
 }
 
-// Off-screen pages must be _downloaded_ ahead of time (browsers won't fetch
-// a display:none page's background), so warm them via a hidden Image AND
-// render the element's background from the same URL. Rendering matters as
-// much as caching: turn.js clones the visible .page elements when zooming in,
-// so a page that was only cache-warmed would come back blank in the zoomed
-// view (its loader div would still be up).
+// Pre-load neighboring pages into browser cache for instant page flips
 function prewarm(realPage) {
     if (loaded[realPage] || inflight.has(realPage)) return;
 
@@ -205,10 +257,12 @@ function prewarm(realPage) {
         };
         img.src = url;
     };
+
     if (direct) {
         via(direct);
         return;
     }
+
     inflight.add(realPage);
     axios
         .get(pageUrl(realPage))
@@ -223,31 +277,53 @@ function loadView(view, prefetch = true) {
     if (!Array.isArray(view)) return;
     const seen = new Set();
     view.forEach((pos) => {
-        const real = realPages.value[pos - 1];
-        if (real !== undefined && !seen.has(real)) {
-            seen.add(real);
-            ensureUrl(real);
+        if (pos > 0) {
+            const real = realPages.value[pos - 1];
+            if (real !== undefined && !seen.has(real)) {
+                seen.add(real);
+                ensureUrl(real);
+            }
         }
     });
+
     if (prefetch) {
-        view.forEach((pos) => {
-            [pos - 2, pos - 1, pos + 1, pos + 2].forEach((p) => {
-                const real = realPages.value[p - 1];
+        // Aggressive prefetch: ahead by 1..5 pages and behind by 1..2 pages
+        const activePos = view.filter((p) => p > 0);
+        const maxPos = Math.max(...activePos, 1);
+        const minPos = Math.min(...activePos, 1);
+
+        const targets = [
+            maxPos + 1,
+            maxPos + 2,
+            maxPos + 3,
+            maxPos + 4,
+            maxPos + 5,
+            minPos - 1,
+            minPos - 2,
+        ];
+
+        targets.forEach((pos) => {
+            if (pos > 0 && pos <= realPages.value.length) {
+                const real = realPages.value[pos - 1];
                 if (real !== undefined && !seen.has(real)) {
                     seen.add(real);
                     prewarm(real);
                 }
-            });
+            }
         });
     }
 }
 
 function syncFromView(view) {
     if (!Array.isArray(view) || !view.length) return;
-    const real = view.map((pos) => realPages.value[pos - 1]).filter((p) => p !== undefined);
+    const valid = view.filter((p) => p > 0);
+    if (!valid.length) return;
+
+    const real = valid.map((pos) => realPages.value[pos - 1]).filter((p) => p !== undefined);
     if (!real.length) return;
+
     currentView.value = real;
-    currentPos.value = Math.min(view[0], realPages.value.length);
+    currentPos.value = valid[0];
     currentPage.value = real[0];
     emit('page-change', currentPage.value);
     loadView(view);
@@ -262,25 +338,9 @@ function createTurn() {
     if (!el) return;
     const { pageH, double } = size.value;
     const { width } = bookStyle.value;
-
     const $el = $(el);
 
-    // If a previous zoom session is still live, snap it closed before the
-    // flipbook is torn down below (zoom.js cleans up on turn('destroy'), but
-    // closing it synchronously avoids its 500ms animate racing the teardown).
-    const vp = rootEl.value;
-    if (vp && $.fn.zoom && $(vp).data('zoom')) {
-        try {
-            $(vp).zoom('zoomOut', 0);
-        } catch (err) {
-            console.warn('zoom:zoomOut skipped', err);
-        }
-        zoomed.value = false;
-    }
-
     try {
-        // Turn.js stores its instance data on the element; destroy only
-        // touches an element that actually has a flipbook on it.
         if ($el.turn('is')) $el.turn('destroy');
     } catch (err) {
         console.warn('turn:destroy skipped', err);
@@ -290,15 +350,15 @@ function createTurn() {
     inflight = new Set();
     buildPages();
 
-    // Same initialisation as turnjs4/samples/basic (raw turn.js), with the
-    // two page lifecycle callbacks we need for per-view image loading.
     $el.turn({
         width,
         height: pageH,
         elevation: 50,
+        duration: 380, // Snappy & super responsive page flip
         gradients: true,
         autoCenter: true,
         display: double ? 'double' : 'single',
+        acceleration: true,
         when: {
             turning: (e, page, view) => {
                 if (view) loadView(view);
@@ -310,16 +370,10 @@ function createTurn() {
     const startPos = Math.max(1, Math.min(currentPos.value || 1, realPages.value.length));
     $el.turn('page', startPos);
 
-    // zoom.js loads asynchronously after the book paints; only (re)bind it
-    // once its plugin is actually present.
-    if ($.fn.zoom) initZoom();
-
     syncFromView($el.turn('view') ?? [startPos]);
 }
 
 async function initTurn() {
-    // The raw turn.js file reads the global `jQuery` at load time, so it must
-    // exist before the chunk executes (this is what the stock samples rely on).
     window.jQuery = window.$ = $;
     try {
         await import('@/vendor/turnjs/turn.js');
@@ -345,33 +399,18 @@ async function initTurn() {
     }
     ready.value = true;
     initializing.value = false;
-
-    // The zoom plugin (turnjs4/lib/zoom.js) is an optional enhancement, so load
-    // it in the background *after* the first page is visible rather than
-    // blocking the book on a second network round-trip.
-    import('@/vendor/turnjs/zoom.js')
-        .then(() => {
-            if (ready.value && bookEl.value && $.fn.zoom && $(bookEl.value).turn('is')) {
-                try {
-                    initZoom();
-                } catch (e) {
-                    console.warn('Turn.js zoom init failed', e);
-                    zoomReady.value = false;
-                }
-            }
-        })
-        .catch((e) => {
-            console.warn('Turn.js zoom plugin failed to load', e);
-            zoomReady.value = false;
-        });
 }
 
 function goPrev() {
-    if (ready.value && bookEl.value) $(bookEl.value).turn('previous');
+    if (ready.value && bookEl.value) {
+        $(bookEl.value).turn('previous');
+    }
 }
 
 function goNext() {
-    if (ready.value && bookEl.value) $(bookEl.value).turn('next');
+    if (ready.value && bookEl.value) {
+        $(bookEl.value).turn('next');
+    }
 }
 
 function jumpTo() {
@@ -394,95 +433,136 @@ function jumpTo() {
 }
 
 function turnTo(pos) {
-    if (ready.value && bookEl.value) $(bookEl.value).turn('page', Math.max(1, Math.min(pos, realPages.value.length)));
+    if (ready.value && bookEl.value) {
+        $(bookEl.value).turn('page', Math.max(1, Math.min(pos, realPages.value.length)));
+    }
 }
 
-function zoomValue() {
-    const vp = rootEl.value;
-    if (!vp || !$.fn.zoom || !$(vp).data('zoom')) return 1;
-    return $(vp).zoom('value');
-}
+// ----------------- Modern Smooth Zoom & Pan -----------------
 
-function zoomToggle(e) {
-    if (!zoomReady.value) return;
-    if (zoomValue() === 1) $(rootEl.value).zoom('zoomIn', e ?? null);
-    else $(rootEl.value).zoom('zoomOut');
+function setZoom(next) {
+    const clamped = Math.min(Math.max(next, 1.0), 2.5);
+    zoomLevel.value = Math.round(clamped * 100) / 100;
+    if (zoomLevel.value <= 1.0) {
+        pan.value = { x: 0, y: 0 };
+    }
 }
 
 function zoomIn() {
-    if (!zoomReady.value || !$(rootEl.value).data('zoom')) return;
-    $(rootEl.value).zoom('zoomIn');
+    const currentIndex = ZOOM_LEVELS.findIndex((z) => z >= zoomLevel.value - 0.05);
+    if (currentIndex < ZOOM_LEVELS.length - 1) {
+        setZoom(ZOOM_LEVELS[currentIndex + 1]);
+    } else {
+        setZoom(Math.min(zoomLevel.value + 0.3, 2.5));
+    }
 }
 
 function zoomOut() {
-    if (!zoomReady.value || !$(rootEl.value).data('zoom')) return;
-    $(rootEl.value).zoom('zoomOut');
+    const currentIndex = ZOOM_LEVELS.findIndex((z) => z >= zoomLevel.value - 0.05);
+    if (currentIndex > 0) {
+        setZoom(ZOOM_LEVELS[currentIndex - 1]);
+    } else {
+        resetZoom();
+    }
 }
 
-function initZoom() {
-    const vp = rootEl.value;
-    if (!vp || !$.fn.turn || !$.fn.zoom || !$(bookEl.value).turn('is')) {
-        zoomReady.value = false;
-        return;
-    }
-    const $vp = $(vp);
-    $vp.zoom({
-        flipbook: $(bookEl.value),
-        // turnjs4/lib/zoom.js calls max() when zooming in (as does the
-        // magazine sample). Passing a number here leaves the plugin trying
-        // to invoke that number as a function.
-        max: () => ZOOM_MAX,
-        when: {
-            zoomIn: () => {
-                zoomed.value = true;
-            },
-            zoomOut: () => {
-                zoomed.value = false;
-            },
-        },
-    });
-    zoomReady.value = true;
+function resetZoom() {
+    zoomLevel.value = 1.0;
+    pan.value = { x: 0, y: 0 };
+}
 
-    // zoom.js fires 'zoom.change' just before every zoom in/out. Use it as a
-    // last-chance gate: pages in the current view that somehow still lack a
-    // rendered background (a fast zoom right after a jump) get one now, so the
-    // zoomer clone never captures a bare loader div.
-    $vp.on('zoom.change.turnzoom', () => {
-        const view = $(bookEl.value).turn('view');
-        if (Array.isArray(view)) loadView(view, false);
-    });
-
-    // zoom.js listens for jQuery's legacy `mousewheel` event, which needs an
-    // extra plugin that modern browsers never emit; mirror the native `wheel`
-    // event into the plugin's scroll API instead.
-    if (!vp.dataset.zoomWheel) {
-        vp.dataset.zoomWheel = '1';
-        $vp.on('wheel.turnzoom', (e) => {
-            const zd = $vp.data('zoom');
-            if (!zd || $vp.zoom('value') <= 1) return;
-            const de = e.originalEvent;
-            const cur = {
-                x: (zd.scrollPos?.x ?? 0) + de.deltaX,
-                y: (zd.scrollPos?.y ?? 0) + de.deltaY,
+function toggleZoom(e) {
+    if (zoomLevel.value > 1.0) {
+        resetZoom();
+    } else {
+        // Zoom into 1.8x centered towards where the user double-clicked
+        if (e && rootEl.value) {
+            const rect = rootEl.value.getBoundingClientRect();
+            const clickX = e.clientX - rect.left - rect.width / 2;
+            const clickY = e.clientY - rect.top - rect.height / 2;
+            pan.value = {
+                x: Math.round(-clickX * 0.7),
+                y: Math.round(-clickY * 0.7),
             };
-            $vp.zoom('scroll', cur, false, true);
-            e.preventDefault();
-        });
+        }
+        zoomLevel.value = 1.8;
     }
+}
 
-    // Magazine reference behaviour: tapping the book toggles the zoom scale.
-    // Desktop uses a single tap; touch uses a double tap so single taps don't
-    // fight with page dragging.
-    if ($.isTouch) $vp.off('.turnzoomtap').on('zoom.doubleTap.turnzoomtap', zoomToggle);
-    else $vp.off('.turnzoomtap').on('zoom.tap.turnzoomtap', zoomToggle);
+function onMouseDown(e) {
+    if (zoomLevel.value <= 1.0) return;
+    if (e.button !== 0) return; // Left click only
+    isDragging.value = true;
+    dragStart = { x: e.clientX, y: e.clientY };
+    panStart = { ...pan.value };
+    e.preventDefault();
+}
+
+function onMouseMove(e) {
+    if (!isDragging.value) return;
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    pan.value = {
+        x: panStart.x + dx,
+        y: panStart.y + dy,
+    };
+}
+
+function onMouseUp() {
+    isDragging.value = false;
+}
+
+function onTouchStart(e) {
+    if (zoomLevel.value <= 1.0 || e.touches.length !== 1) return;
+    isDragging.value = true;
+    dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    panStart = { ...pan.value };
+}
+
+function onTouchMove(e) {
+    if (!isDragging.value || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - dragStart.x;
+    const dy = e.touches[0].clientY - dragStart.y;
+    pan.value = {
+        x: panStart.x + dx,
+        y: panStart.y + dy,
+    };
+}
+
+function onTouchEnd() {
+    isDragging.value = false;
+}
+
+function onWheel(e) {
+    // Zoom with Ctrl + Wheel or when already zoomed
+    if (e.ctrlKey || zoomLevel.value > 1.0) {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.15 : -0.15;
+        setZoom(zoomLevel.value + delta);
+    }
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        rootEl.value?.requestFullscreen().catch(() => {});
+        isFullscreen.value = true;
+    } else {
+        document.exitFullscreen().catch(() => {});
+        isFullscreen.value = false;
+    }
+}
+
+function onFullscreenChange() {
+    isFullscreen.value = Boolean(document.fullscreenElement);
+    onResize();
 }
 
 function onKeydown(e) {
     if (e.target.closest('input')) return;
     if (e.key === 'Escape') {
-        if (zoomed.value) {
+        if (zoomLevel.value > 1.0) {
             e.preventDefault();
-            zoomOut();
+            resetZoom();
         }
         return;
     }
@@ -506,43 +586,26 @@ function onResize() {
                 console.error('Turn.js resize failed', e);
             }
         }
-    }, 220);
+    }, 200);
 }
 
-// Console helper for diagnosing the flipbook state in the browser.
 onMounted(() => {
-    window.__sikhunTurn = function () {
-        return {
-            turnLoaded: Boolean($.fn.turn),
-            state: initError.value ? 'error' : initializing.value ? 'loading' : ready.value ? 'ready' : 'unknown',
-            size: size.value,
-            pages: bookEl.value ? (($.fn.turn && ready.value) ? $(bookEl.value).turn('pages') : null) : null,
-            view: bookEl.value ? (($.fn.turn && ready.value) ? $(bookEl.value).turn('view') : null) : null,
-            pageWrappers: bookEl.value ? $(bookEl.value).find('.page-wrapper').length : 0,
-            loadedImages: Object.keys(loaded).length,
-            realPages: realPages.value.length,
-            zoomPlugin: Boolean($.fn.zoom),
-            zoomReady: zoomReady.value,
-            zoom: ready.value ? zoomValue() : null,
-            zoomed: zoomed.value,
-        };
-    };
-
     const startPos = resolveInitialPos();
     currentPos.value = startPos;
     currentPage.value = realPages.value[startPos - 1] ?? 1;
+
     initTurn();
     window.addEventListener('keydown', onKeydown);
     window.addEventListener('resize', onResize);
+    document.addEventListener('fullscreenchange', onFullscreenChange);
 });
 
 onBeforeUnmount(() => {
     window.clearTimeout(resizeTimer);
     window.removeEventListener('keydown', onKeydown);
     window.removeEventListener('resize', onResize);
-    if (rootEl.value && $.fn.zoom) {
-        $(rootEl.value).off('.turnzoom').off('.turnzoomtap');
-    }
+    document.removeEventListener('fullscreenchange', onFullscreenChange);
+
     if (bookEl.value && $.fn.turn) {
         try {
             const $el = $(bookEl.value);
@@ -557,69 +620,101 @@ onBeforeUnmount(() => {
 <template>
     <div
         ref="rootEl"
-        class="flipbook-viewport turn-reader relative select-none"
-        :style="{ height: `${size.pageH}px` }"
+        class="flipbook-viewport turn-reader relative select-none rounded-2xl bg-neutral-900 shadow-2xl overflow-hidden flex flex-col justify-center items-center"
+        :class="{ 'is-zoomed': zoomLevel > 1.0, 'is-fullscreen': isFullscreen }"
+        :style="{ height: isFullscreen ? '100vh' : `${size.pageH + 40}px` }"
+        @mousedown="onMouseDown"
+        @mousemove="onMouseMove"
+        @mouseup="onMouseUp"
+        @mouseleave="onMouseUp"
+        @touchstart.passive="onTouchStart"
+        @touchmove.passive="onTouchMove"
+        @touchend.passive="onTouchEnd"
+        @wheel.passive="onWheel"
+        @dblclick="toggleZoom"
     >
-        <div
-            v-if="initError"
-            class="absolute inset-0 z-20 flex items-center justify-center text-sm text-red-600"
-        >
-            {{ t('reader.load_failed') }}
+        <!-- Floating Header Controls (Zoom + Fullscreen) -->
+        <div class="absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-lg">
+            <span v-if="zoomLevel > 1.0" class="text-xs font-semibold text-white/90 mr-1">
+                {{ Math.round(zoomLevel * 100) }}%
+            </span>
+
+            <button
+                v-if="zoomLevel > 1.0"
+                type="button"
+                class="zoom-btn"
+                title="Reset Zoom (ESC)"
+                aria-label="Reset Zoom"
+                @click.stop="resetZoom"
+            >
+                <ArrowPathIcon class="w-4 h-4" />
+            </button>
+
+            <button
+                type="button"
+                class="zoom-btn"
+                :disabled="zoomLevel <= 1.0"
+                title="Zoom Out"
+                aria-label="Zoom Out"
+                @click.stop="zoomOut"
+            >
+                <MagnifyingGlassMinusIcon class="w-4 h-4" />
+            </button>
+
+            <button
+                type="button"
+                class="zoom-btn"
+                :disabled="zoomLevel >= 2.5"
+                title="Zoom In"
+                aria-label="Zoom In"
+                @click.stop="zoomIn"
+            >
+                <MagnifyingGlassPlusIcon class="w-4 h-4" />
+            </button>
+
+            <div class="w-px h-4 bg-white/20 mx-1"></div>
+
+            <button
+                type="button"
+                class="zoom-btn"
+                :title="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'"
+                :aria-label="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'"
+                @click.stop="toggleFullscreen"
+            >
+                <ArrowsPointingInIcon v-if="isFullscreen" class="w-4 h-4" />
+                <ArrowsPointingOutIcon v-else class="w-4 h-4" />
+            </button>
         </div>
 
-        <div
-            v-else-if="!realPages.length"
-            class="absolute inset-0 z-20 flex items-center justify-center text-sm text-[var(--text-muted)]"
-        >
+        <div v-if="initError" class="absolute inset-0 z-20 flex flex-col items-center justify-center text-sm text-red-400 gap-2">
+            <span>{{ t('reader.load_failed') }}</span>
+            <button type="button" @click="initTurn" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-xs text-white">
+                Retry
+            </button>
+        </div>
+
+        <div v-else-if="!realPages.length" class="absolute inset-0 z-20 flex items-center justify-center text-sm text-white/60">
             {{ t('reader.load_failed') }}
         </div>
 
         <template v-else>
             <div
                 v-if="initializing"
-                class="absolute inset-0 z-20 flex items-center justify-center gap-3 rounded-xl bg-[var(--surface)] text-sm text-[var(--text-muted)]"
+                class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-neutral-900/90 text-sm text-white/80"
             >
-                {{ t('reader.loading') }}
+                <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <span>{{ t('reader.loading') }}</span>
             </div>
 
-            <div class="container">
+            <!-- Book Container with dynamic CSS Pan & Zoom -->
+            <div class="container" :style="containerStyle">
                 <div ref="bookEl" class="flipbook" :style="bookStyle"></div>
-            </div>
-
-            <div
-                v-if="ready && zoomReady"
-                class="absolute top-2 right-2 z-30 flex items-center gap-1.5"
-            >
-                <button
-                    v-if="zoomed"
-                    type="button"
-                    class="zoom-exit"
-                    :aria-label="t('reader.zoom_exit')"
-                    @click="zoomOut"
-                >
-                    {{ t('reader.zoom_exit') }} · ESC
-                </button>
-                <button
-                    type="button"
-                    class="zoom-ctrl"
-                    :aria-label="t('reader.zoom_out')"
-                    @click="zoomOut"
-                >
-                    <MagnifyingGlassMinusIcon class="h-4 w-4" />
-                </button>
-                <button
-                    type="button"
-                    class="zoom-ctrl"
-                    :aria-label="t('reader.zoom_in')"
-                    @click="zoomIn"
-                >
-                    <MagnifyingGlassPlusIcon class="h-4 w-4" />
-                </button>
             </div>
         </template>
     </div>
 
-    <div v-if="!zoomed" class="mt-6 flex items-center justify-center gap-4 text-sm">
+    <!-- Bottom Navigation Bar -->
+    <div class="mt-5 flex items-center justify-center gap-4 text-sm">
         <button
             type="button"
             class="reader-ctrl"
@@ -627,10 +722,10 @@ onBeforeUnmount(() => {
             :disabled="!ready || currentPos <= 1"
             @click="goPrev"
         >
-            ‹
+            <ChevronLeftIcon class="w-5 h-5" />
         </button>
 
-        <div class="flex items-center gap-2 text-[var(--text-muted)]">
+        <div class="flex items-center gap-2 text-[var(--text-muted)] bg-[var(--surface)] border border-[var(--border)] px-3 py-1.5 rounded-xl shadow-sm">
             <input
                 type="number"
                 min="1"
@@ -639,9 +734,9 @@ onBeforeUnmount(() => {
                 :placeholder="String(currentPage)"
                 :disabled="!ready"
                 @keydown.enter="jumpTo"
-                class="w-16 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2 py-1 text-center text-sm outline-none focus:border-[var(--primary)] disabled:opacity-50"
+                class="w-14 rounded-md border border-[var(--border)] bg-[var(--surface2)] px-2 py-0.5 text-center text-sm font-semibold outline-none focus:border-[var(--primary)] disabled:opacity-50"
             />
-            <span>{{ indicatorText }}</span>
+            <span class="font-medium text-xs sm:text-sm">{{ indicatorText }}</span>
         </div>
 
         <button
@@ -651,74 +746,66 @@ onBeforeUnmount(() => {
             :disabled="!ready || currentPos >= realPages.length"
             @click="goNext"
         >
-            ›
+            <ChevronRightIcon class="w-5 h-5" />
         </button>
     </div>
 </template>
 
 <style scoped>
 .reader-ctrl {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2.75rem;
+    height: 2.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 9999px;
     background: color-mix(in srgb, var(--primary) 12%, transparent);
     color: var(--primary);
-    font-size: 1.25rem;
-    line-height: 1;
-    transition: background 0.15s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: all 0.15s ease;
 }
 .reader-ctrl:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--primary) 22%, transparent);
+    background: color-mix(in srgb, var(--primary) 24%, transparent);
+    transform: scale(1.05);
 }
 .reader-ctrl:disabled {
-    opacity: 0.35;
+    opacity: 0.3;
     cursor: not-allowed;
 }
-.zoom-ctrl {
-    width: 2.25rem;
-    height: 2.25rem;
+
+.zoom-btn {
+    width: 2rem;
+    height: 2rem;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 9999px;
-    background: rgba(0, 0, 0, 0.55);
     color: #fff;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-    transition: background 0.15s ease, transform 0.15s ease;
+    background: transparent;
+    transition: all 0.15s ease;
 }
-.zoom-ctrl:hover {
-    background: rgba(0, 0, 0, 0.78);
-    transform: scale(1.05);
+.zoom-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
 }
-.zoom-exit {
-    display: flex;
-    align-items: center;
-    font-size: 12px;
-    font-weight: 600;
-    color: #fff;
-    background: var(--primary);
-    border-radius: 9999px;
-    padding: 0.375rem 0.75rem;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-    transition: opacity 0.15s ease;
-}
-.zoom-exit:hover {
-    opacity: 0.88;
+.zoom-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
 }
 </style>
 
 <style>
-/* Stock styles straight from turnjs4/samples/basic/css/basic.css (body
-   overrides removed — they must not affect the rest of the app). Pages are
-   built by Turn.js outside Vue's scoped attribute reach, so this stays
-   unscoped. */
-
+/* Unscoped Turn.js container & page layout */
 .turn-reader.flipbook-viewport {
-    overflow: hidden;
     width: 100%;
+}
+
+.turn-reader.is-fullscreen {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+    border-radius: 0 !important;
+    background: #000000 !important;
 }
 
 .turn-reader .container {
@@ -726,60 +813,60 @@ onBeforeUnmount(() => {
     top: 50%;
     left: 50%;
     margin: auto;
+    will-change: transform;
 }
 
 .turn-reader .flipbook {
     position: absolute;
-}
-
-/* zoom.js creates this clone with an inline z-index of 1,000,000. Keep it
-   above the pages but below the reader controls, or zoom traps the controls
-   underneath its own overlay. */
-.turn-reader .zoomer {
-    z-index: 20 !important;
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
 }
 
 .turn-reader .page {
     background-color: #ffffff;
     background-repeat: no-repeat;
     background-size: 100% 100%;
-}
-
-.turn-reader .flipbook .page {
-    -webkit-box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-    -moz-box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-    -ms-box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    background-position: center;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
 }
 
 .turn-reader .page img,
 .turn-reader .page {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
-    -khtml-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-}
-
-.turn-reader .shadow {
-    transition: box-shadow 0.5s;
-    box-shadow: 0 0 20px #cccccc;
 }
 
 .turn-reader .page .turn-page-loader {
     position: absolute;
     inset: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: #ffffff;
-    color: var(--text-muted, #6b7280);
-    font-size: 12px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 13px;
     text-align: center;
-    padding: 0.5rem;
+    padding: 1rem;
+    gap: 8px;
+    z-index: 5;
 }
-.turn-reader .page .turn-page-loader.is-error {
-    color: #dc2626;
+
+.turn-reader .loader-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: turn-spin 0.8s linear infinite;
+}
+
+@keyframes turn-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 </style>

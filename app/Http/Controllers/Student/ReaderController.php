@@ -20,10 +20,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReaderController extends Controller
 {
-    // How many pages get signed URLs handed to the frontend up front, so the
-    // first pages paint with zero extra requests. Farther pages are minted on
-    // demand (fast, pure-HMAC) as the student flips.
-    private const PRE_SIGNED_WINDOW = 18;
+    // Pre-sign up to 250 pages so almost any book requires zero extra round-trips
+    // to mint URLs. Farther pages are minted on demand.
+    private const PRE_SIGNED_WINDOW = 250;
 
     /**
      * Stable signing expiry: URLs minted for a page/student stay identical for
@@ -228,12 +227,12 @@ class ReaderController extends Controller
         abort_unless((int) $request->query('student') === auth('web')->id(), 403);
 
         $student = auth('web')->user();
-        $isSvgPlaceholder = $reader->isPlaceholder($book);
         $bytes = $reader->renderPage($book, $page, $student);
+        $isSvg = str_starts_with(ltrim($bytes), '<svg');
 
         return response($bytes, 200, [
-            'Content-Type' => $isSvgPlaceholder ? 'image/svg+xml' : 'image/jpeg',
-            'Cache-Control' => 'private, max-age=86400',
+            'Content-Type' => $isSvg ? 'image/svg+xml' : 'image/jpeg',
+            'Cache-Control' => 'private, max-age=86400, immutable',
         ]);
     }
 

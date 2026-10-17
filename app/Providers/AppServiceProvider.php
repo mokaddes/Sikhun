@@ -16,12 +16,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Book reader page images — 5 requests per 10 seconds per student
-        // (or per IP for the rare unauthenticated edge case). Deliberately
-        // tight: a real reader flips pages far slower than this, so this
-        // mainly exists to make bulk-scraping a book impractical.
+        // Book reader page images — 180 requests per minute per student
+        // allows smooth flipping, prefetching and zooming without 429 errors.
         RateLimiter::for('reader-pages', function ($request) {
-            return Limit::perSecond(5, 10)->by($request->user()?->id ?: $request->ip());
+            return Limit::perMinute(180)->by($request->user()?->id ?: $request->ip());
         });
 
         // REST API — general vs AI-generation endpoints get different budgets

@@ -25,36 +25,106 @@ class BookReaderService
     // step is the expensive one (Ghostscript). The per-student watermark is a
     // cheap annotate pass on top of that shared raster, so every student still
     // gets their own watermarked bytes without re-running the raster.
-    private const RASTER_TTL = 86400;
-    private const WATERMARK_TTL = 86400;
+    private const RASTER_TTL = 86400 * 7;
+    private const WATERMARK_TTL = 86400 * 7;
 
-    // Display-appropriate size: the reader shows pages ~380×537 CSS px, so 120
-    // DPI (≈992×1403 A4) is sharp enough on real devices while cutting payload
-    // ~45% vs 150 DPI. Raise back to 150 if clients want crisper high-DPI text.
+    // Display-appropriate size: 120 DPI (≈992×1403 A4) is crisp on high-DPI
+    // screens while keeping file sizes small (~120KB-200KB per page).
     private const RASTER_DPI = 120;
     private const JPEG_QUALITY = 82;
 
     public function renderPage(PdfParsable $book, int $page, Student $student): string
     {
         $source = $book->pdfSourceId();
+        $renderedRelPath = "books/rendered/{$source}/{$page}.jpg";
+        $watermarkedRelPath = "books/watermarked/{$source}/{$student->id}/{$page}.jpg";
 
-        $exists = $book->pdfFilePath() && Storage::disk('private')->exists($book->pdfFilePath());
-        if (! $exists || ! extension_loaded('imagick')) {
-            $note = null;
-            if ($exists && ! extension_loaded('imagick')) {
-                $note = 'Imagick extension not installed on this server.';
-            }
-            // Placeholder contains the student's name, so keep it per-student
-            // (it's tiny SVG and cheap to rebuild).
-            return Cache::remember("book_page:pl:{$source}:{$page}:{$student->id}", self::RASTER_TTL, function () use ($book, $page, $student, $note) {
-                return $this->placeholderImage($book, $page, $student, $note);
-            });
+        // 1. Ultra-fast path: already watermarked for this student on disk
+        if (Storage::disk('private')->exists($watermarkedRelPath)) {
+            return Storage::disk('private')->get($watermarkedRelPath);
         }
 
-        $pdfPath = Storage::disk('private')->path($book->pdfFilePath());
+        // 2. Check if raw raster is already on disk (e.g. pre-rendered)
+        $raw = null;
+        if (Storage::disk('private')->exists($renderedRelPath)) {
+            $raw = Storage::disk('private')->get($renderedRelPath);
+        }
 
-        // Expensive step — shared by every student, so it runs once per page.
-        $raw = Cache::remember("book_page:raw:{$source}:{$page}", self::RASTER_TTL, function () use ($pdfPath, $page) {
+        // 3. Check memory/cache fallback
+        if ($raw === null) {
+            $raw = Cache::get("book_page:raw:{$source}:{$page}");
+        }
+
+        // 4. If not available on disk or in cache, render on-demand
+        if ($raw === null) {
+            $exists = $book->pdfFilePath() && Storage::disk('private')->exists($book->pdfFilePath());
+            if (! $exists) {
+                return $this->placeholderImage($book, $page, $student, 'No PDF uploaded yet for this book.');
+            }
+
+            $pdfPath = Storage::disk('private')->path($book->pdfFilePath());
+            $raw = $this->rasterizePage($pdfPath, $page);
+
+            if ($raw !== null) {
+                // Permanently persist to disk so this page NEVER needs rasterizing again!
+                Storage::disk('private')->put($renderedRelPath, $raw);
+                Cache::put("book_page:raw:{$source}:{$page}", $raw, self::RASTER_TTL);
+            }
+        }
+
+        if ($raw === null) {
+            return $this->placeholderImage($book, $page, $student, 'Could not render this page.');
+        }
+
+        // 5. Watermark pass
+        $watermarked = $this->applyWatermark($raw, $student);
+
+        // Cache watermarked version to disk for sub-millisecond future reads
+        try {
+            Storage::disk('private')->put($watermarkedRelPath, $watermarked);
+        } catch (\Throwable $e) {
+            // Ignore write errors to avoid blocking the user
+        }
+
+        return $watermarked;
+    }
+
+    /**
+     * Rasterize a single PDF page using pdftoppm if available, falling back to Imagick.
+     */
+    protected function rasterizePage(string $pdfPath, int $page): ?string
+    {
+        // 1. Fast path: pdftoppm via Poppler
+        if (function_exists('exec')) {
+            $tempDir = storage_path('app/temp');
+            if (! is_dir($tempDir)) {
+                @mkdir($tempDir, 0775, true);
+            }
+            $tempPrefix = $tempDir . '/page_' . uniqid('', true) . '_' . $page;
+            $cmd = sprintf(
+                'pdftoppm -jpeg -r %d -f %d -l %d %s %s 2>&1',
+                self::RASTER_DPI,
+                $page,
+                $page,
+                escapeshellarg($pdfPath),
+                escapeshellarg($tempPrefix)
+            );
+
+            @exec($cmd, $output, $code);
+            if ($code === 0) {
+                $matches = glob($tempPrefix . '-*.jpg');
+                if (! empty($matches) && file_exists($matches[0])) {
+                    $bytes = file_get_contents($matches[0]);
+                    @unlink($matches[0]);
+                    if ($bytes && strlen($bytes) > 0) {
+                        return $bytes;
+                    }
+                }
+            }
+        }
+
+        // 2. Fallback: PHP Imagick
+        if (extension_loaded('imagick')) {
             try {
                 $imagick = new \Imagick();
                 $imagick->setResolution(self::RASTER_DPI, self::RASTER_DPI);
@@ -68,43 +138,43 @@ class BookReaderService
             } catch (\Throwable $e) {
                 return null;
             }
-        });
-
-        if ($raw === null) {
-            return Cache::remember("book_page:pl:{$source}:{$page}:{$student->id}", self::RASTER_TTL, function () use ($book, $page, $student) {
-                return $this->placeholderImage($book, $page, $student, 'Could not render this page.');
-            });
         }
 
-        // Cheap step — overlay this student's watermark on the shared raster.
-        return Cache::remember("book_page:wm:{$source}:{$page}:{$student->id}", self::WATERMARK_TTL, function () use ($raw, $student) {
-            try {
-                $imagick = new \Imagick();
-                $imagick->readImageBlob($raw);
-
-                $draw = new \ImagickDraw();
-                $draw->setFillColor(new \ImagickPixel('rgba(0,0,0,0.28)'));
-                $draw->setFontSize(16);
-                $draw->setTextAntialias(true);
-                $watermark = "{$student->name} · ID:{$student->id} · sikhun.com";
-                $imagick->annotateImage($draw, 16, 28, 0, $watermark);
-
-                $blob = $imagick->getImageBlob();
-                $imagick->clear();
-
-                return $blob;
-            } catch (\Throwable $e) {
-                // Unwatermarked fallback beats a broken reader; the signed URL
-                // still gates access per student.
-                return $raw;
-            }
-        });
+        return null;
     }
 
     /**
-     * SVG placeholder (converted to nothing extra needed — served with
-     * image/svg+xml content type) so the reader UI works before real PDFs
-     * exist, and so a render failure never surfaces a raw stack trace.
+     * Cheap step: overlay student watermark onto the JPEG raster.
+     */
+    protected function applyWatermark(string $raw, Student $student): string
+    {
+        if (! extension_loaded('imagick')) {
+            return $raw;
+        }
+
+        try {
+            $imagick = new \Imagick();
+            $imagick->readImageBlob($raw);
+
+            $draw = new \ImagickDraw();
+            $draw->setFillColor(new \ImagickPixel('rgba(0,0,0,0.28)'));
+            $draw->setFontSize(16);
+            $draw->setTextAntialias(true);
+            $watermark = "{$student->name} · ID:{$student->id} · sikhun.com";
+            $imagick->annotateImage($draw, 16, 28, 0, $watermark);
+
+            $blob = $imagick->getImageBlob();
+            $imagick->clear();
+
+            return $blob;
+        } catch (\Throwable $e) {
+            return $raw;
+        }
+    }
+
+    /**
+     * SVG placeholder so the reader UI works before real PDFs exist,
+     * and so a render failure never surfaces a raw 500 error.
      */
     private function placeholderImage(PdfParsable $book, int $page, Student $student, ?string $note = null): string
     {
@@ -125,6 +195,12 @@ class BookReaderService
 
     public function isPlaceholder(PdfParsable $book): bool
     {
-        return ! $book->pdfFilePath() || ! Storage::disk('private')->exists($book->pdfFilePath()) || ! extension_loaded('imagick');
+        $source = $book->pdfSourceId();
+        // If pre-rendered page exists on disk, it is definitely not a placeholder!
+        if (Storage::disk('private')->exists("books/rendered/{$source}/1.jpg")) {
+            return false;
+        }
+
+        return ! $book->pdfFilePath() || ! Storage::disk('private')->exists($book->pdfFilePath());
     }
 }

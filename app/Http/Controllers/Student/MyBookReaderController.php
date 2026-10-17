@@ -18,9 +18,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MyBookReaderController extends Controller
 {
-    // Pages pre-signed into the Inertia props so the opening window paints
-    // immediately. Farther pages are minted on demand while flipping.
-    private const PRE_SIGNED_WINDOW = 18;
+    // Pre-sign up to 250 pages so the opening window paints immediately.
+    private const PRE_SIGNED_WINDOW = 250;
 
     /**
      * Stable signing expiry: URLs for a page/student stay identical all day,
@@ -96,12 +95,12 @@ class MyBookReaderController extends Controller
 
         abort_unless((int) $request->query('student') === auth('web')->id(), 403);
 
-        $isSvgPlaceholder = $reader->isPlaceholder($myBook);
         $bytes = $reader->renderPage($myBook, $page, auth('web')->user());
+        $isSvg = str_starts_with(ltrim($bytes), '<svg');
 
         return response($bytes, 200, [
-            'Content-Type' => $isSvgPlaceholder ? 'image/svg+xml' : 'image/jpeg',
-            'Cache-Control' => 'private, max-age=86400',
+            'Content-Type' => $isSvg ? 'image/svg+xml' : 'image/jpeg',
+            'Cache-Control' => 'private, max-age=86400, immutable',
         ]);
     }
 

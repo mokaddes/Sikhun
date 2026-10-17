@@ -74,6 +74,11 @@ class ReaderController extends Controller
                 ->all();
         }
 
+        $session = ReadingSession::where('student_id', $student->id)
+            ->where('book_id', $book->id)
+            ->whereDate('created_at', today())
+            ->first();
+
         // Resume where the student last stopped (most recent session for this
         // book, regardless of day). Supports explicit ?page= parameter as well.
         $lastPage = $request->query('page') ?: ReadingSession::where('student_id', $student->id)

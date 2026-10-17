@@ -44,9 +44,16 @@ class MyBookReaderController extends Controller
         abort_unless($myBook->student_id === auth('web')->id(), 403);
     }
 
-    public function show(MyBook $myBook): Response
+    public function show(MyBook $myBook, BookReaderService $reader): Response
     {
         $this->authorize($myBook);
+
+        if ((int) $myBook->total_pages <= 0 && $myBook->file_path && \Illuminate\Support\Facades\Storage::disk('private')->exists($myBook->file_path)) {
+            $detected = $reader->detectPageCount(\Illuminate\Support\Facades\Storage::disk('private')->path($myBook->file_path));
+            if ($detected !== null && $detected > 0) {
+                $myBook->update(['total_pages' => $detected]);
+            }
+        }
 
         $limit = min(self::PRE_SIGNED_WINDOW, (int) $myBook->total_pages);
         $pageUrls = [];

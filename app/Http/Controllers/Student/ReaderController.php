@@ -47,13 +47,20 @@ class ReaderController extends Controller
      * The reader shell itself — Inertia page that mounts FlipReader.vue.
      * Starts (or resumes) today's ReadingSession row for this student+book.
      */
-    public function show(Request $request, Book $book, BookAccessService $access): Response
+    public function show(Request $request, Book $book, BookAccessService $access, BookReaderService $reader): Response
     {
         $student = auth('web')->user();
         // Reader shell access: full book access OR ownership of ANY chapter.
         $canOpenReader = $access->hasAccess($student, $book)
             || ($student && $student->ownedChapters()->where('book_id', $book->id)->exists());
         abort_unless($canOpenReader, 403, 'You do not have access to this book.');
+
+        if ((int) $book->total_pages <= 0 && $book->pdf_path && \Illuminate\Support\Facades\Storage::disk('private')->exists($book->pdf_path)) {
+            $detected = $reader->detectPageCount(\Illuminate\Support\Facades\Storage::disk('private')->path($book->pdf_path));
+            if ($detected !== null && $detected > 0) {
+                $book->update(['total_pages' => $detected]);
+            }
+        }
 
         // Which pages may this student turn to? (null = no restriction)
         $accessibleChapterIds = $access->accessibleChapterIds($student, $book);

@@ -17,8 +17,14 @@ use Inertia\Response;
 
 class StudentAuthController extends Controller
 {
-    public function showRegister(): Response
+    public function showRegister(\Illuminate\Http\Request $request): Response
     {
+        if ($redirect = $request->query('redirect')) {
+            if (is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
+                session(['url.intended' => $redirect]);
+            }
+        }
+
         return Inertia::render('Auth/Register');
     }
 
@@ -40,13 +46,23 @@ class StudentAuthController extends Controller
         Auth::guard('web')->login($student);
         $request->session()->regenerate();
 
-        Mail::to($student->email)->send(new WelcomeMail($student));
+        try {
+            Mail::to($student->email)->send(new WelcomeMail($student));
+        } catch (\Throwable) {
+            // Do not block registration if mail transport is not configured
+        }
 
-        return redirect()->route('dashboard')->with('success', 'Welcome to Sikhun.com!');
+        return redirect()->intended(route('dashboard'))->with('success', 'Welcome to Sikhun.com!');
     }
 
-    public function showLogin(): Response
+    public function showLogin(\Illuminate\Http\Request $request): Response
     {
+        if ($redirect = $request->query('redirect')) {
+            if (is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
+                session(['url.intended' => $redirect]);
+            }
+        }
+
         return Inertia::render('Auth/Login');
     }
 

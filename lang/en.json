@@ -58,6 +58,7 @@
         "referrals": "Referrals",
         "profile": "Profile Settings",
         "courses": "Courses",
+        "blog": "Blog",
         "learn": "Learn",
         "practice": "Practice",
         "ai_studio": "AI Studio",
@@ -136,6 +137,11 @@
             "publications": "Publications",
             "mentors": "Mentors",
             "pages": "Pages",
+            "blog": "Blog",
+            "blog_posts": "Blog Posts",
+            "blog_categories": "Blog Categories",
+            "blog_sources": "Scrape Sources",
+            "blog_blocklist": "Blocklist",
             "growth": "Growth",
             "community": "Community",
             "platform": "Platform",
@@ -151,8 +157,27 @@
             "active_subscriptions": "Active Subscriptions",
             "revenue_total": "Revenue (Total)",
             "revenue_today": "Revenue (Today)",
+            "draft_blogs": "Draft Blogs",
             "revenue_chart": "Revenue — Last 14 Days",
             "registrations_chart": "Registrations — Last 14 Days"
+        },
+        "blog": {
+            "title": "Blog Posts",
+            "subtitle": "Manage manual & auto-scraped Bengali blog posts. Auto-scraped posts stay in draft until you publish them.",
+            "new": "New Blog Post",
+            "draft": "Draft",
+            "drafts": "Drafts Waiting",
+            "blocked": "Blocked",
+            "origin_auto": "Auto (AI)",
+            "origin_manual": "Manual",
+            "publish_now": "Publish",
+            "unpublish": "Unpublish",
+            "move_to_draft": "Move to Draft",
+            "block": "Block",
+            "unblock": "Unblock",
+            "confirm_block": "Block this blog post and add its source URL/title to the blocklist so it is never scraped again?",
+            "excerpt": "Excerpt / Short Summary",
+            "featured_image": "Featured Cover Image"
         },
         "books": {
             "title": "Books",
@@ -587,5 +612,14 @@
         "server": "Something went wrong on our end. We're working on it.",
         "unavailable": "The site is temporarily down for maintenance.",
         "go_home": "Back to homepage"
+    },
+    "blog_page": {
+        "title": "Sikhun Blog",
+        "subtitle": "Articles on science, technology, artificial intelligence, and academic preparation in Bengali.",
+        "read_more": "Read Article",
+        "no_posts": "No published blog articles found.",
+        "all_posts": "All Blog Articles",
+        "share_link": "Copy Share Link",
+        "related_posts": "Related Articles"
     }
 }

@@ -63,6 +63,9 @@ class SiteSettingController extends Controller
             'referee_reward_amount' => ['required', 'numeric', 'min:0'],
             'max_referral_per_month' => ['required', 'integer', 'min:0'],
             'support_bot_system_prompt' => ['nullable', 'string', 'max:2000'],
+            'blog_digest_email' => ['nullable', 'email', 'max:255'],
+            'blog_credit_enabled' => ['nullable', 'boolean'],
+            'blog_daily_ai_limit' => ['nullable', 'integer', 'min:1', 'max:200'],
         ]);
 
         foreach ($validated as $key => $value) {

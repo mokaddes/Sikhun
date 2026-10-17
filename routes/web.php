@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Public\BlogController;
 use App\Http\Controllers\Public\PageController;
 use App\Http\Controllers\Student\AccessController;
 use App\Http\Controllers\Student\AiChatController;
@@ -32,9 +33,25 @@ Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/contact', [\App\Http\Controllers\Public\ContactController::class, 'show'])->name('contact.show');
 Route::post('/contact', [\App\Http\Controllers\Public\ContactController::class, 'submit'])->name('contact.submit');
 
-// Note: /library, /courses and their detail pages are NOT public — they sit
-// inside the authenticated group below. The public homepage only surfaces
-// the latest courses and latest books as a taste of the catalog.
+// Public Blog (accessible without login)
+Route::prefix('blog')->name('blog.')->group(function () {
+    Route::get('/', [BlogController::class, 'index'])->name('index');
+    Route::get('/category/{category:slug}', [BlogController::class, 'category'])->name('category');
+    Route::get('/{post:slug}', [BlogController::class, 'show'])->name('show');
+});
+
+// Public Library (browse & detail are public; read, buy, and add-to-shelf require auth)
+Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
+Route::get('/library/{book:slug}', [LibraryController::class, 'show'])->name('library.show');
+
+// Public Courses (browse, detail, free-preview lessons & guest checkout are public)
+Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
+Route::get('/courses/{course:slug}', [CourseController::class, 'show'])->name('courses.show');
+Route::post('/courses/{course}/guest-enroll', [CourseController::class, 'guestEnroll'])->name('courses.guest-enroll');
+Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}', [CourseController::class, 'lesson'])->name('courses.lesson');
+Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}/video', [CourseController::class, 'streamVideo'])->name('courses.lesson.video');
+Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}/download', [CourseController::class, 'downloadAttachment'])->name('courses.lesson.download');
+
 Route::get('/p/{page:slug}', [PageController::class, 'show'])->name('pages.show');
 
 Route::post('/language/{locale}', function (string $locale) {
@@ -68,9 +85,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Library (browse/detail require login; purchase requires login too)
-    Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
-    Route::get('/library/{book:slug}', [LibraryController::class, 'show'])->name('library.show');
+    // Library actions (read, purchase, chapter purchase, add to shelf MUST require auth)
     Route::post('/library/{book}/purchase', [LibraryController::class, 'purchase'])->name('library.purchase');
     Route::post('/library/{book}/chapters/{chapter}/purchase', [LibraryController::class, 'purchaseChapter'])->name('library.chapters.purchase');
     Route::post('/library/{book}/shelf', [LibraryController::class, 'addToShelf'])->name('library.shelf-add');
@@ -82,14 +97,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::post('/my-books', [MyBookController::class, 'store'])->name('my-books.store');
     Route::delete('/my-books/{myBook}', [MyBookController::class, 'destroy'])->name('my-books.destroy');
 
-    // Courses (browse/detail/lessons require login; enroll/complete too)
-    Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
-    Route::get('/courses/{course:slug}', [CourseController::class, 'show'])->name('courses.show');
-    Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}', [CourseController::class, 'lesson'])->name('courses.lesson');
-    // The lesson controller re-checks enrollment / free-preview / access
-    // grants before serving the file off the private disk.
-    Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}/video', [CourseController::class, 'streamVideo'])->name('courses.lesson.video');
-    Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}/download', [CourseController::class, 'downloadAttachment'])->name('courses.lesson.download');
+    // Authenticated Course enrollment & lesson completion
     Route::post('/courses/{course}/enroll', [CourseController::class, 'enroll'])->name('courses.enroll');
     Route::post('/courses/{course}/sections/{section}/lessons/{lesson}/complete', [CourseController::class, 'completeLesson'])->name('courses.lesson.complete');
 

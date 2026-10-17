@@ -15,6 +15,7 @@ import {
     Cog6ToothIcon,
     ArrowRightIcon,
     CalendarDaysIcon,
+    NewspaperIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({ stats: Object, charts: Object });
@@ -31,11 +32,12 @@ const statCards = computed(() => [
     { label: t('admin.dashboard.total_books'), value: props.stats.total_books, icon: BookOpenIcon, tint: 'bg-[var(--primary)]/10 text-[var(--primary)]', href: '/admin/books' },
     { label: t('admin.dashboard.active_subscriptions'), value: props.stats.active_subscriptions, icon: CreditCardIcon, tint: 'bg-[var(--tertiary)]/10 text-[var(--tertiary)]', href: '/admin/plans' },
     { label: t('admin.dashboard.revenue_total'), value: `৳${props.stats.revenue_total}`, icon: BanknotesIcon, tint: 'bg-[var(--accent)]/10 text-[var(--accent)]', href: '/admin/orders' },
+    { label: t('admin.dashboard.draft_blogs'), value: props.stats.draft_blogs ?? 0, icon: NewspaperIcon, tint: 'bg-amber-500/10 text-amber-500', href: '/admin/blog?status=draft' },
 ]);
 
 const quickActions = [
     { label: t('admin.nav.books'), href: '/admin/books', icon: BookOpenIcon },
-    { label: t('admin.nav.students'), href: '/admin/students', icon: UsersIcon },
+    { label: t('admin.nav.blog'), href: '/admin/blog', icon: NewspaperIcon },
     { label: t('admin.nav.orders'), href: '/admin/orders', icon: InboxIcon },
     { label: t('admin.nav.settings'), href: '/admin/settings', icon: Cog6ToothIcon },
 ];

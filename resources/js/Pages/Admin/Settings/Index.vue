@@ -24,6 +24,9 @@ const form = useForm({
     referee_reward_amount: props.settings.referee_reward_amount ?? 20,
     max_referral_per_month: props.settings.max_referral_per_month ?? 10,
     support_bot_system_prompt: props.settings.support_bot_system_prompt ?? '',
+    blog_digest_email: props.settings.blog_digest_email ?? props.settings.site_email ?? '',
+    blog_credit_enabled: props.settings.blog_credit_enabled === undefined ? true : Boolean(Number(props.settings.blog_credit_enabled) || props.settings.blog_credit_enabled === 'true' || props.settings.blog_credit_enabled === true),
+    blog_daily_ai_limit: props.settings.blog_daily_ai_limit ?? 25,
 });
 
 const logoPreview = ref(props.settings.site_logo ?? null);
@@ -165,6 +168,22 @@ function submit() {
                     Sikhun.com topics (library, courses, plans, payments, account, AI tools) and declines anything
                     else — this field cannot widen that scope. Leave blank for the default tone.
                 </p>
+            </div>
+            <div class="border-t border-[var(--border)] pt-5 space-y-4">
+                <div class="text-sm font-semibold">Automated Blog Settings</div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Blog Draft Digest Email</label>
+                    <input v-model="form.blog_digest_email" type="email" placeholder="admin@sikhun.com" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+                    <p class="text-xs text-[var(--text-muted)] mt-1">Receives the draft count digest email after each daily blog scrape run.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Daily AI Blog Generation Limit</label>
+                    <input v-model="form.blog_daily_ai_limit" type="number" min="1" max="200" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+                </div>
+                <label class="flex items-center gap-2 text-sm">
+                    <input v-model="form.blog_credit_enabled" type="checkbox" class="rounded" />
+                    Append source credit link at the bottom of AI-rewritten blog posts
+                </label>
             </div>
             <button type="submit" :disabled="form.processing" class="px-5 py-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-semibold disabled:opacity-60">
                 {{ form.processing ? t('common.saving') : t('common.save') }}

@@ -3,6 +3,10 @@
 use App\Http\Controllers\Admin\AiProviderController;
 use App\Http\Controllers\Admin\Auth\AdminAuthController;
 use App\Http\Controllers\Admin\AuthorController;
+use App\Http\Controllers\Admin\BlogBlocklistController;
+use App\Http\Controllers\Admin\BlogCategoryController;
+use App\Http\Controllers\Admin\BlogPostController;
+use App\Http\Controllers\Admin\BlogSourceController;
 use App\Http\Controllers\Admin\BookController;
 use App\Http\Controllers\Admin\BookUploadController;
 use App\Http\Controllers\Admin\CategoryController;
@@ -96,6 +100,21 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
         Route::resource('pages', CustomPageController::class)->except(['show']);
+
+        // Blog module (Posts, Categories, Scraper Sources, Blocklist)
+        Route::post('blog/bulk', [BlogPostController::class, 'bulkAction'])->name('blog.bulk');
+        Route::post('blog/{blog}/toggle-publish', [BlogPostController::class, 'togglePublish'])->name('blog.toggle-publish');
+        Route::post('blog/{blog}/block', [BlogPostController::class, 'block'])->name('blog.block');
+        Route::resource('blog', BlogPostController::class)->except(['show']);
+
+        Route::resource('blog-categories', BlogCategoryController::class)->only(['index', 'store', 'update', 'destroy']);
+
+        Route::post('blog-sources/run-all', [BlogSourceController::class, 'runAll'])->name('blog-sources.run-all');
+        Route::post('blog-sources/{blogSource}/run', [BlogSourceController::class, 'runNow'])->name('blog-sources.run');
+        Route::resource('blog-sources', BlogSourceController::class)->only(['index', 'store', 'update', 'destroy']);
+
+        Route::resource('blog-blocklist', BlogBlocklistController::class)->only(['index', 'store', 'destroy'])
+            ->parameters(['blog-blocklist' => 'blocklist']);
 
         Route::get('referrals', [ReferralController::class, 'index'])->name('referrals.index');
 

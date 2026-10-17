@@ -20,7 +20,7 @@ class LibraryController extends Controller
         $sort = $request->input('sort', 'newest');
 
         $books = Book::published()
-            ->with(['author:id,name', 'category:id,name'])
+            ->with(['author:id,name', 'category:id,name', 'publication:id,name'])
             ->when($request->level, fn ($q) => $q->where('level', $request->level))
             ->when($request->subject, fn ($q) => $q->where('subject', $request->subject))
             ->when($request->category_id, fn ($q) => $q->where('category_id', $request->category_id))
@@ -82,11 +82,21 @@ class LibraryController extends Controller
                 });
         }
 
+        $relatedBooks = Book::published()
+            ->where('id', '!=', $book->id)
+            ->when($book->category_id, fn ($q) => $q->where('category_id', $book->category_id))
+            ->with(['author:id,name', 'category:id,name'])
+            ->latest()
+            ->take(4)
+            ->get();
+
         return Inertia::render('Student/Library/Show', [
             'book' => $book->load(['author', 'publication', 'category']),
             'accessType' => $access->accessType($student, $book),
             'onShelf' => $student && $student->bookShelf()->where('book_id', $book->id)->exists(),
+            'walletBalance' => $student ? (float) $student->wallet_balance : 0.0,
             'chapters' => $chapters,
+            'relatedBooks' => $relatedBooks,
             'seo' => $seo->forBook($book),
         ]);
     }

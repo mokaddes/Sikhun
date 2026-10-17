@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Models\BlogCategory;
+use App\Models\BlogPost;
 use App\Models\Book;
 use App\Models\Course;
 use App\Models\CustomPage;
@@ -13,7 +15,7 @@ class GenerateSitemap extends Command
 {
     protected $signature = 'sitemap:generate';
 
-    protected $description = 'Regenerate public/sitemap.xml from published books, active courses, and CMS pages';
+    protected $description = 'Regenerate public/sitemap.xml from published books, active courses, blog posts, and CMS pages';
 
     public function handle(): int
     {
@@ -23,9 +25,26 @@ class GenerateSitemap extends Command
 
         $sitemap = Sitemap::create()
             ->add(Url::create('/')->setPriority(1.0))
+            ->add(Url::create('/blog')->setPriority(0.9))
             ->add(Url::create('/library')->setPriority(0.9))
             ->add(Url::create('/courses')->setPriority(0.9))
             ->add(Url::create('/contact')->setPriority(0.5));
+
+        foreach (BlogCategory::active()->get() as $category) {
+            $sitemap->add(
+                Url::create("/blog/category/{$category->slug}")
+                    ->setLastModificationDate($category->updated_at)
+                    ->setPriority(0.7)
+            );
+        }
+
+        foreach (BlogPost::published()->get() as $post) {
+            $sitemap->add(
+                Url::create("/blog/{$post->slug}")
+                    ->setLastModificationDate($post->updated_at)
+                    ->setPriority(0.8)
+            );
+        }
 
         foreach (CustomPage::published()->where('slug', '!=', 'contact')->get() as $page) {
             $sitemap->add(

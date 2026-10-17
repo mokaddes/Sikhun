@@ -51,33 +51,56 @@ class WalletController extends Controller
      */
     public function gatewaySuccess(Request $request, PurchaseService $purchases, ZinipayService $zinipay): RedirectResponse
     {
-
         $order = Order::where('order_number', $request->input('order_number'))
             ->orWhere('gateway_invoice_id', $request->input('invoice_id'))
             ->first();
 
         if (! $order || ! $order->gateway_invoice_id) {
-            return redirect()->route('wallet.index')->with('error', 'Payment could not be verified.');
+            return redirect()->route('home')->with('error', 'Payment could not be verified.');
         }
 
         $verified = $zinipay->verifiedData($order->gateway_invoice_id);
 
         if (! $verified) {
-            return redirect()->route('wallet.index')->with('error', 'Payment could not be verified.');
+            return $this->redirectAfterGateway($order, 'error', 'Payment could not be verified.');
         }
 
         $purchases->completeGatewayOrder($order, $verified['transaction_id'] ?? $order->gateway_invoice_id);
 
-        return redirect()->route('wallet.index')->with('success', 'Payment successful!');
+        if ($order->orderable_type === 'course' && $order->orderable_id) {
+            session(["guest_enrolled_course_{$order->orderable_id}" => true]);
+        }
+
+        return $this->redirectAfterGateway($order, 'success', 'Payment successful!');
     }
 
-    public function gatewayFail(): RedirectResponse
+    public function gatewayFail(Request $request): RedirectResponse
     {
-        return redirect()->route('wallet.index')->with('error', 'Payment failed. Please try again.');
+        $order = Order::where('order_number', $request->input('order_number'))->first();
+
+        return $this->redirectAfterGateway($order, 'error', 'Payment failed. Please try again.');
     }
 
-    public function gatewayCancel(): RedirectResponse
+    public function gatewayCancel(Request $request): RedirectResponse
     {
-        return redirect()->route('wallet.index')->with('error', 'Payment cancelled.');
+        $order = Order::where('order_number', $request->input('order_number'))->first();
+
+        return $this->redirectAfterGateway($order, 'error', 'Payment cancelled.');
+    }
+
+    private function redirectAfterGateway(?Order $order, string $flashKey, string $message): RedirectResponse
+    {
+        if ($order && $order->orderable_type === 'course') {
+            $course = \App\Models\Course::find($order->orderable_id);
+            if ($course) {
+                return redirect()->route('courses.show', $course->slug)->with($flashKey, $message);
+            }
+        }
+
+        if (auth('web')->check()) {
+            return redirect()->route('wallet.index')->with($flashKey, $message);
+        }
+
+        return redirect()->route('courses.index')->with($flashKey, $message);
     }
 }

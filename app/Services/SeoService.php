@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\BlogCategory;
+use App\Models\BlogPost;
 use App\Models\Book;
 use App\Models\Course;
 use Illuminate\Support\Str;
@@ -173,6 +175,84 @@ class SeoService
                     'acceptedAnswer' => ['@type' => 'Answer', 'text' => $qa['answer']],
                 ])->all(),
             ],
+        ];
+    }
+
+    public function forBlogIndex(?BlogCategory $category = null): array
+    {
+        $title = $category
+            ? "{$category->name_bn} — ব্লগ | {$this->siteName}"
+            : "ব্লগ — বিজ্ঞান, প্রযুক্তি, AI ও শিক্ষা | {$this->siteName}";
+
+        $canonical = $category
+            ? "{$this->siteUrl}/blog/category/{$category->slug}"
+            : "{$this->siteUrl}/blog";
+
+        $crumbs = [
+            ['name' => 'Home', 'url' => $this->siteUrl],
+            ['name' => 'Blog', 'url' => $this->siteUrl.'/blog'],
+        ];
+        if ($category) {
+            $crumbs[] = ['name' => $category->name_bn, 'url' => $canonical];
+        }
+
+        return [
+            'title' => $title,
+            'description' => 'বিজ্ঞান, প্রযুক্তি, কৃত্রিম বুদ্ধিমত্তা (AI) এবং একাডেমিক প্রস্তুতি নিয়ে বাংলা শিক্ষামূলক ব্লগ ও আর্টিকেল।',
+            'og_image' => $this->socialImage(),
+            'canonical' => $canonical,
+            'keywords' => 'বাংলা ব্লগ, প্রযুক্তি ব্লগ, AI ব্লগ, বিজ্ঞান আর্টিকেল, শিক্ষা ব্লগ, Sikhun blog',
+            'json_ld' => [
+                '@context' => 'https://schema.org',
+                '@type' => 'Blog',
+                'name' => $title,
+                'url' => $canonical,
+                'inLanguage' => ['bn', 'en'],
+                'publisher' => ['@type' => 'Organization', 'name' => $this->siteName, 'url' => $this->siteUrl],
+            ],
+            'breadcrumb' => $this->breadcrumb($crumbs),
+        ];
+    }
+
+    public function forBlogPost(BlogPost $post): array
+    {
+        $metaTitle = $post->meta_title ?: "{$post->title} | {$this->siteName}";
+        $metaDescription = $post->meta_description ?: Str::limit(strip_tags($post->excerpt ?: $post->content), 155);
+        $canonical = "{$this->siteUrl}/blog/{$post->slug}";
+        $image = $post->featured_image_url ?? $this->socialImage();
+
+        $crumbs = [
+            ['name' => 'Home', 'url' => $this->siteUrl],
+            ['name' => 'Blog', 'url' => $this->siteUrl.'/blog'],
+        ];
+        if ($post->category) {
+            $crumbs[] = [
+                'name' => $post->category->name_bn,
+                'url' => "{$this->siteUrl}/blog/category/{$post->category->slug}",
+            ];
+        }
+        $crumbs[] = ['name' => $post->title, 'url' => $canonical];
+
+        return [
+            'title' => $metaTitle,
+            'description' => $metaDescription,
+            'og_image' => $image,
+            'canonical' => $canonical,
+            'keywords' => implode(', ', array_filter([$post->title, $post->category?->name_bn, 'ব্লগ', 'Sikhun'])),
+            'json_ld' => array_filter([
+                '@context' => 'https://schema.org',
+                '@type' => 'Article',
+                'headline' => Str::limit($post->title, 110, ''),
+                'description' => $metaDescription,
+                'image' => [$image],
+                'datePublished' => ($post->published_at ?? $post->created_at)?->toIso8601String(),
+                'dateModified' => $post->updated_at?->toIso8601String(),
+                'inLanguage' => 'bn',
+                'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $canonical],
+                'author' => ['@type' => 'Organization', 'name' => $this->siteName, 'url' => $this->siteUrl],
+                'publisher' => ['@type' => 'Organization', 'name' => $this->siteName, 'url' => $this->siteUrl],
+            ]),
+            'breadcrumb' => $this->breadcrumb($crumbs),
         ];
     }
 

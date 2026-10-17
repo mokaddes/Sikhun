@@ -36,6 +36,7 @@ function adjustDisplay(key, amount) {
 const nav = computed(() => [
     { label: t('nav.courses'), href: '/courses' },
     { label: t('nav.library'), href: '/library' },
+    { label: t('nav.blog'), href: '/blog' },
     { label: locale.value === 'bn' ? 'AI স্টাডি হাব' : 'AI Study Hub', href: '/#ai-study-hub' },
     { label: t('plans_page.title'), href: '/#pricing' },
     { label: t('nav.about'), href: '/p/about' },
@@ -91,7 +92,7 @@ const nav = computed(() => [
                             :href="item.href"
                             class="nav-link text-[var(--text-muted)] hover:text-[var(--text)]"
                             @click="mobileOpen = false"
-                        >{{ t(item.tKey || `nav.${item.label}`) }}</Link>
+                        >{{ item.label }}</Link>
                         <Link href="/contact" class="nav-link text-[var(--text-muted)] hover:text-[var(--text)]" @click="mobileOpen = false">{{ t('nav.contact') }}</Link>
                         <div class="my-2 dot-seam"></div>
                         <Link v-if="!student" href="/login" class="btn btn-outline" @click="mobileOpen = false">{{ t('nav.login') }}</Link>
@@ -114,7 +115,7 @@ const nav = computed(() => [
                     </div>
                     <div>
                         <div class="font-semibold mb-4">{{ locale === 'bn' ? 'প্ল্যাটফর্ম' : 'Platform' }}</div>
-                        <ul class="space-y-3 text-sm text-[#a2aabc]"><li><Link href="/courses" class="hover:text-[var(--primary)] transition-colors">{{ t('courses_page.title') }}</Link></li><li><Link href="/library" class="hover:text-[var(--primary)] transition-colors">{{ t('nav.library') }}</Link></li><li><Link href="/#ai-study-hub" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'AI স্টাডি হাব' : 'AI Study Hub' }}</Link></li><li><Link href="/#pricing" class="hover:text-[var(--primary)] transition-colors">{{ t('plans_page.title') }}</Link></li></ul>
+                        <ul class="space-y-3 text-sm text-[#a2aabc]"><li><Link href="/courses" class="hover:text-[var(--primary)] transition-colors">{{ t('courses_page.title') }}</Link></li><li><Link href="/library" class="hover:text-[var(--primary)] transition-colors">{{ t('nav.library') }}</Link></li><li><Link href="/blog" class="hover:text-[var(--primary)] transition-colors">{{ t('nav.blog') }}</Link></li><li><Link href="/#ai-study-hub" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'AI স্টাডি হাব' : 'AI Study Hub' }}</Link></li><li><Link href="/#pricing" class="hover:text-[var(--primary)] transition-colors">{{ t('plans_page.title') }}</Link></li></ul>
                     </div>
                     <div>
                         <div class="font-semibold mb-4">{{ locale === 'bn' ? 'আরও জানুন' : 'Explore Sikhun' }}</div>

@@ -1,0 +1,90 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\BlogCategory;
+use App\Models\BlogSource;
+use App\Models\SiteSetting;
+use Illuminate\Database\Seeder;
+
+class BlogSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $categories = [
+            ['slug' => 'science-space', 'name_bn' => 'বিজ্ঞান ও মহাকাশ', 'name_en' => 'Science & Space', 'sort_order' => 1],
+            ['slug' => 'artificial-intelligence', 'name_bn' => 'কৃত্রিম বুদ্ধিমত্তা (AI)', 'name_en' => 'Artificial Intelligence', 'sort_order' => 2],
+            ['slug' => 'technology-programming', 'name_bn' => 'প্রযুক্তি ও প্রোগ্রামিং', 'name_en' => 'Technology & Programming', 'sort_order' => 3],
+            ['slug' => 'academic-career', 'name_bn' => 'একাডেমিক ও পরীক্ষা প্রস্তুতি', 'name_en' => 'Academic & Exam Prep', 'sort_order' => 4],
+            ['slug' => 'research-innovation', 'name_bn' => 'গবেষণা ও উদ্ভাবন', 'name_en' => 'Research & Innovation', 'sort_order' => 5],
+        ];
+
+        $catMap = [];
+        foreach ($categories as $cat) {
+            $model = BlogCategory::updateOrCreate(
+                ['slug' => $cat['slug']],
+                [
+                    'name_bn' => $cat['name_bn'],
+                    'name_en' => $cat['name_en'],
+                    'sort_order' => $cat['sort_order'],
+                    'is_active' => true,
+                ]
+            );
+            $catMap[$cat['slug']] = $model->id;
+        }
+
+        $sources = [
+            [
+                'name' => 'NASA Breaking News & Science',
+                'url' => 'https://www.nasa.gov/feed/',
+                'type' => 'rss',
+                'default_category_id' => $catMap['science-space'],
+                'max_per_run' => 3,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Hugging Face AI Blog',
+                'url' => 'https://huggingface.co/blog/feed.xml',
+                'type' => 'rss',
+                'default_category_id' => $catMap['artificial-intelligence'],
+                'max_per_run' => 3,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Google AI Blog',
+                'url' => 'https://blog.google/technology/ai/rss/',
+                'type' => 'rss',
+                'default_category_id' => $catMap['artificial-intelligence'],
+                'max_per_run' => 3,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'arXiv Artificial Intelligence (cs.AI)',
+                'url' => 'https://rss.arxiv.org/rss/cs.AI',
+                'type' => 'rss',
+                'default_category_id' => $catMap['research-innovation'],
+                'max_per_run' => 3,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'freeCodeCamp Programming & Tech',
+                'url' => 'https://www.freecodecamp.org/news/rss/',
+                'type' => 'rss',
+                'default_category_id' => $catMap['technology-programming'],
+                'max_per_run' => 3,
+                'is_active' => true,
+            ],
+        ];
+
+        foreach ($sources as $src) {
+            BlogSource::updateOrCreate(
+                ['url' => $src['url']],
+                $src
+            );
+        }
+
+        SiteSetting::firstOrCreate(['key' => 'blog_digest_email'], ['value' => 'admin@sikhun.com']);
+        SiteSetting::firstOrCreate(['key' => 'blog_credit_enabled'], ['value' => '1']);
+        SiteSetting::firstOrCreate(['key' => 'blog_daily_ai_limit'], ['value' => '25']);
+    }
+}

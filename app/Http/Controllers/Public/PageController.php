@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
+use App\Models\BlogPost;
 use App\Models\Book;
 use App\Models\Category;
 use App\Models\Course;
@@ -52,6 +53,11 @@ class PageController extends Controller
                 ->latest()
                 ->take(5)
                 ->get(['id', 'title', 'slug', 'cover_image', 'price', 'is_free', 'level', 'total_pages', 'author_id']),
+            'latestBlogs' => BlogPost::published()
+                ->with('category:id,name_bn,name_en,slug')
+                ->orderByDesc('published_at')
+                ->take(3)
+                ->get(['id', 'title', 'slug', 'excerpt', 'featured_image', 'blog_category_id', 'published_at', 'view_count']),
             'plans' => Plan::where('is_active', true)->orderBy('price_monthly')->get(),
             'testimonials' => Testimonial::published()->get(['student_name', 'student_role', 'avatar', 'quote']),
             'seo' => $seo->forHome(),

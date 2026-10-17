@@ -110,6 +110,17 @@ const nav = computed(() => [
         ],
     },
     {
+        id: 'blog',
+        label: t('admin.nav.blog'),
+        icon: NewspaperIcon,
+        items: [
+            { label: t('admin.nav.blog_posts'), href: '/admin/blog', icon: NewspaperIcon },
+            { label: t('admin.nav.blog_categories'), href: '/admin/blog-categories', icon: TagIcon },
+            { label: t('admin.nav.blog_sources'), href: '/admin/blog-sources', icon: BoltIcon },
+            { label: t('admin.nav.blog_blocklist'), href: '/admin/blog-blocklist', icon: ShieldCheckIcon },
+        ],
+    },
+    {
         id: 'platform',
         label: t('admin.nav.platform'),
         icon: Cog6ToothIcon,

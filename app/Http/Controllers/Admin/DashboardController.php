@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\BlogPost;
 use App\Models\Book;
 use App\Models\Order;
 use App\Models\Student;
@@ -35,6 +36,7 @@ class DashboardController extends Controller
                 'active_subscriptions' => StudentSubscription::where('status', 'active')->count(),
                 'revenue_total' => (float) Order::where('status', 'completed')->sum('amount'),
                 'revenue_today' => (float) Order::where('status', 'completed')->whereDate('created_at', today())->sum('amount'),
+                'draft_blogs' => BlogPost::where('status', 'draft')->count(),
             ],
             'charts' => [
                 'labels' => $days->map(fn ($d) => $d->format('M j'))->values(),

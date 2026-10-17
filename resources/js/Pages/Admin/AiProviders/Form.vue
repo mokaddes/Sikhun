@@ -18,6 +18,8 @@ const useCaseOptions = [
     { value: 'book_ocr', label: 'Book OCR / Document Processing' },
     { value: 'book_retrieval', label: 'Book RAG / Retrieval' },
     { value: 'book_structure', label: 'Book Chapter / Structure Detection' },
+    { value: 'blog_translate', label: 'Blog Translation (to Bengali)' },
+    { value: 'blog_rewrite', label: 'Blog AI Rewriting & SEO' },
 ];
 
 const form = useForm({

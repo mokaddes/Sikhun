@@ -12,10 +12,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
             $table->string('order_number')->unique();
-            $table->enum('orderable_type', ['book', 'course', 'subscription']);
-            $table->unsignedBigInteger('orderable_id');
+            $table->enum('orderable_type', ['book', 'book_chapter', 'course', 'subscription', 'wallet_recharge']);
+            $table->unsignedBigInteger('orderable_id')->nullable();
             $table->decimal('amount', 10, 2);
-            $table->enum('payment_method', ['wallet', 'sslcommerz', 'bkash', 'nagad', 'manual']);
+            $table->enum('payment_method', ['wallet', 'zinipay', 'sslcommerz', 'bkash', 'nagad', 'manual']);
             $table->string('gateway_transaction_id')->nullable();
             $table->enum('status', ['pending', 'completed', 'failed', 'refunded'])->default('pending');
             $table->timestamps();

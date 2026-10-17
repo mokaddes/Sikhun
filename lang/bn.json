@@ -58,6 +58,7 @@
         "referrals": "রেফারেল",
         "profile": "প্রোফাইল সেটিংস",
         "courses": "কোর্স",
+        "blog": "ব্লগ",
         "learn": "শেখা",
         "practice": "অনুশীলন",
         "ai_studio": "AI স্টুডিও",
@@ -136,6 +137,11 @@
             "publications": "Publications",
             "mentors": "Mentors",
             "pages": "Pages",
+            "blog": "ব্লগ",
+            "blog_posts": "ব্লগ পোস্ট",
+            "blog_categories": "ব্লগ ক্যাটাগরি",
+            "blog_sources": "স্ক্র্যাপ সোর্স",
+            "blog_blocklist": "ব্লকলিস্ট",
             "growth": "Growth",
             "community": "Community",
             "platform": "Platform",
@@ -151,8 +157,27 @@
             "active_subscriptions": "Active Subscriptions",
             "revenue_total": "Revenue (Total)",
             "revenue_today": "Revenue (Today)",
+            "draft_blogs": "ড্রাফট ব্লগ",
             "revenue_chart": "Revenue — Last 14 Days",
             "registrations_chart": "Registrations — Last 14 Days"
+        },
+        "blog": {
+            "title": "ব্লগ পোস্টসমূহ",
+            "subtitle": "ম্যানুয়াল এবং অটো-স্ক্র্যাপ করা বাংলা ব্লগ পরিচালনা করুন। অটো ব্লগগুলো ড্রাফট হিসেবে থাকে যতক্ষণ না আপনি পাবলিশ করেন।",
+            "new": "নতুন ব্লগ পোস্ট",
+            "draft": "ড্রাফট",
+            "drafts": "অপেক্ষমাণ ড্রাফট",
+            "blocked": "ব্লক করা",
+            "origin_auto": "অটো (AI)",
+            "origin_manual": "ম্যানুয়াল",
+            "publish_now": "পাবলিশ করুন",
+            "unpublish": "ড্রাফটে নিন",
+            "move_to_draft": "ড্রাফটে সরান",
+            "block": "ব্লক করুন",
+            "unblock": "আনব্লক করুন",
+            "confirm_block": "এই ব্লগটি ব্লক করে ব্লকলিস্টে যুক্ত করতে চান যেন ভবিষ্যতে আর স্ক্র্যাপ না হয়?",
+            "excerpt": "সংক্ষিপ্ত সারাংশ (Excerpt)",
+            "featured_image": "ফিচার্ড কভার ছবি"
         },
         "books": {
             "title": "Books",
@@ -587,5 +612,14 @@
         "server": "সার্ভারে একটি সমস্যা হয়েছে। আমরা এটি সমাধানে কাজ করছি।",
         "unavailable": "সাইটটি বর্তমানে রক্ষণাবেক্ষণের জন্য বন্ধ আছে।",
         "go_home": "হোমপেজে ফিরে যান"
+    },
+    "blog_page": {
+        "title": "Sikhun ব্লগ",
+        "subtitle": "বিজ্ঞান, প্রযুক্তি, কৃত্রিম বুদ্ধিমত্তা (AI) এবং একাডেমিক প্রস্তুতি নিয়ে শিক্ষামূলক বাংলা আর্টিকেল।",
+        "read_more": "বিস্তারিত পড়ুন",
+        "no_posts": "এখনো কোনো প্রকাশিত ব্লগ পোস্ট পাওয়া যায়নি।",
+        "all_posts": "সব ব্লগ আর্টিকেল",
+        "share_link": "লিংক কপি করুন",
+        "related_posts": "সম্পর্কিত আরও আর্টিকেল"
     }
 }

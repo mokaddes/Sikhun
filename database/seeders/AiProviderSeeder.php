@@ -25,7 +25,7 @@ class AiProviderSeeder extends Seeder
             ]
         );
 
-        $useCases = ['book_chat', 'exam_gen', 'flashcard_gen', 'essay_grade', 'schedule_gen', 'notification_gen', 'support_bot', 'book_ocr', 'book_retrieval', 'book_structure'];
+        $useCases = ['book_chat', 'exam_gen', 'flashcard_gen', 'essay_grade', 'schedule_gen', 'notification_gen', 'support_bot', 'book_ocr', 'book_retrieval', 'book_structure', 'blog_translate', 'blog_rewrite'];
 
         foreach ($useCases as $useCase) {
             $provider->useCases()->updateOrCreate(

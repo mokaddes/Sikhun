@@ -5,7 +5,7 @@ import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
 import { useI18n } from '@/i18n';
 
-const props = defineProps({ stats: Object, categories: Array, topCourses: Array, popularBooks: Array, plans: Array, testimonials: Array, seo: Object });
+const props = defineProps({ stats: Object, categories: Array, topCourses: Array, popularBooks: Array, latestBlogs: Array, plans: Array, testimonials: Array, seo: Object });
 const { locale } = useI18n();
 const en = computed(() => locale.value === 'en');
 
@@ -199,6 +199,37 @@ const bookPalette = ['from-[#123858] to-[#0a0e18]', 'from-[#0e513d] to-[#0a0e18]
                     </article>
                 </div>
                 <div v-else class="rounded-2xl border border-dashed border-white/10 bg-[#1c1f2a]/60 p-12 text-center text-sm text-[var(--text-muted)]">{{ en ? 'Plans will be available here soon.' : 'প্ল্যান শিগগিরই এখানে যুক্ত হবে।' }}</div>
+            </section>
+
+            <!-- Latest Blog Posts -->
+            <section v-if="latestBlogs?.length" id="blog" class="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20 scroll-mt-24">
+                <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <span class="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-[#10b981]">{{ en ? 'Insights · Science · AI · Education' : 'বিজ্ঞান · প্রযুক্তি · AI · শিক্ষা' }}</span>
+                        <h2 class="mt-2 font-heading text-3xl md:text-4xl font-bold tracking-tight">{{ en ? 'Latest from the blog' : 'সর্বশেষ ব্লগ আর্টিকেল' }}</h2>
+                        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-muted)]">{{ en ? 'Read Bengali articles on science, technology, artificial intelligence, and study tips.' : 'বিজ্ঞান, প্রযুক্তি, কৃত্রিম বুদ্ধিমত্তা ও পড়াশোনার কৌশল নিয়ে আমাদের সাম্প্রতিক বাংলা আর্টিকেলগুলো পড়ুন।' }}</p>
+                    </div>
+                    <Link href="/blog" class="inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)] transition hover:text-[#ffb690]">{{ en ? 'Read all articles' : 'সব ব্লগ পড়ুন' }} <span class="material-symbols-outlined">arrow_forward</span></Link>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <Link v-for="(post, i) in latestBlogs.slice(0, 3)" :key="post.id" :href="`/blog/${post.slug}`" class="group flex flex-col overflow-hidden rounded-2xl border border-white/5 bg-[#1c1f2a]/80 shadow-lg transition duration-300 hover:-translate-y-1.5 hover:border-white/10 hover:shadow-2xl">
+                        <div class="relative h-44 overflow-hidden bg-gradient-to-br" :class="coursePalette[i % coursePalette.length]">
+                            <img v-if="post.featured_image_url" :src="post.featured_image_url" :alt="post.title" loading="lazy" class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                            <div v-else class="absolute inset-0 grid place-items-center text-5xl text-white/60"><span class="material-symbols-outlined !text-5xl">article</span></div>
+                            <span v-if="post.category" class="absolute left-3 top-3 rounded-full bg-[#0a0e18]/85 px-2.5 py-1 font-mono text-[9px] font-semibold uppercase tracking-wider text-[#4cd7f6] backdrop-blur">{{ post.category.name }}</span>
+                        </div>
+                        <div class="flex flex-1 flex-col justify-between gap-4 p-5">
+                            <div>
+                                <h3 class="line-clamp-2 text-lg font-bold leading-snug transition group-hover:text-[var(--primary)]">{{ post.title }}</h3>
+                                <p v-if="post.excerpt" class="mt-2 line-clamp-3 text-xs leading-relaxed text-[var(--text-muted)]">{{ post.excerpt }}</p>
+                            </div>
+                            <div class="flex items-center justify-between border-t border-white/[.06] pt-3 text-xs text-[var(--text-muted)]">
+                                <span>{{ post.published_at ? new Date(post.published_at).toLocaleDateString(en ? 'en-GB' : 'bn-BD') : '' }}</span>
+                                <span class="font-semibold text-[var(--primary)]">{{ en ? 'Read more →' : 'বিস্তারিত পড়ুন →' }}</span>
+                            </div>
+                        </div>
+                    </Link>
+                </div>
             </section>
 
             <!-- Closing call to action -->

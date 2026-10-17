@@ -16,6 +16,7 @@ Schedule::command('leaderboard:reset-monthly')->monthlyOn(1, '00:00');
 Schedule::command('sitemap:generate')->daily();
 Schedule::command('subscriptions:expiry-check')->dailyAt('09:00');
 Schedule::command('subscriptions:expire-lapsed')->dailyAt('00:30');
+Schedule::command('blog:scrape')->dailyAt('03:00');
 
 // Remove abandoned chunked-upload staging folders every 30 minutes.
 // Each folder is small while uploading, but left behind uploads waste disk

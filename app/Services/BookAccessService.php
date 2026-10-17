@@ -33,12 +33,12 @@ class BookAccessService
 
     public function accessType(?Student $student, Book $book): string
     {
-        if ($book->is_free) {
-            return 'free';
+        if (! $student) {
+            return 'guest'; // must log in before purchasing, adding to shelf, or reading
         }
 
-        if (! $student) {
-            return 'guest'; // must log in before purchasing or reading
+        if ($book->is_free) {
+            return 'free';
         }
 
         if ($this->grants->hasActiveAccess($student)) {

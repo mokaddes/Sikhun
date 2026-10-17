@@ -91,8 +91,9 @@ class PurchaseService
         return ['redirect_url' => $redirectUrl, 'order' => $order];
     }
 
-    public function purchaseCourse(Student $student, Course $course, string $method, ?PaymentGatewayContract $gateway = null): array    {
-        $order = $this->createOrder($student, 'course', $course->id, $course->price, $method);
+    public function purchaseCourse(Student $student, Course $course, string $method, ?PaymentGatewayContract $gateway = null, array $meta = []): array
+    {
+        $order = $this->createOrder($student, 'course', $course->id, $course->price, $method, $meta);
 
         if ($method === 'wallet') {
             $this->wallet->debit($student, (float) $course->price, 'course_purchase', $order->order_number, "Enrolled: {$course->title}");

@@ -483,7 +483,17 @@
         "download_pdf": "PDF ডাউনলোড করুন",
         "no_exams": "এখনো কোনো পরীক্ষা নেই।",
         "retake": "আবার দিন",
-        "history": "ইতিহাস"
+        "history": "ইতিহাস",
+        "exam_name": "পরীক্ষার নাম",
+        "exam_name_placeholder": "যেমন: পদার্থবিজ্ঞান অধ্যায় ৩ প্রস্তুতি, জীববিজ্ঞান মিডটার্ম...",
+        "total_exams": "মোট পরীক্ষা",
+        "completed_exams": "সম্পন্ন পরীক্ষা",
+        "avg_score": "গড় স্কোর",
+        "highest_score": "সর্বোচ্চ স্কোর",
+        "view_result": "ফলাফল দেখুন",
+        "continue_exam": "চালিয়ে যান",
+        "questions": "টি প্রশ্ন",
+        "select_book": "একটি বই নির্বাচন করুন..."
     },
     "flashcards": {
         "title": "ফ্ল্যাশকার্ড",

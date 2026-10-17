@@ -17,12 +17,41 @@ use Inertia\Response;
 
 class ExamController extends Controller
 {
-    public function index(): Response
+    public function index(\Illuminate\Http\Request $request): Response
     {
         $student = auth('web')->user();
 
+        $query = $student->examSessions()->with('book:id,title');
+
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('source_text', 'like', "%{$search}%");
+            });
+        }
+
+        if ($status = $request->query('status')) {
+            if (in_array($status, ['completed', 'in_progress', 'generating', 'failed'])) {
+                $query->where('status', $status);
+            } elseif (in_array($status, ['practice', 'exam'])) {
+                $query->where('mode', $status);
+            }
+        }
+
+        $stats = [
+            'total' => $student->examSessions()->count(),
+            'completed' => $student->examSessions()->where('status', 'completed')->count(),
+            'avg_score' => round((float) ($student->examSessions()->where('status', 'completed')->avg('percentage') ?? 0), 1),
+            'highest_score' => round((float) ($student->examSessions()->where('status', 'completed')->max('percentage') ?? 0), 1),
+        ];
+
         return Inertia::render('Student/Exams/Index', [
-            'exams' => $student->examSessions()->latest()->paginate(15),
+            'exams' => $query->latest()->paginate(12)->withQueryString(),
+            'stats' => $stats,
+            'filters' => [
+                'search' => $request->query('search', ''),
+                'status' => $request->query('status', 'all'),
+            ],
         ]);
     }
 
@@ -45,10 +74,12 @@ class ExamController extends Controller
         }
 
         $session = $student->examSessions()->create([
+            'title' => $request->title ?: null,
             'source_type' => $request->source_type,
             'source_book_id' => $request->source_book_id,
             'source_text' => $request->source_text,
             'config' => [
+                'title' => $request->title ?: null,
                 'type' => $request->type,
                 'count' => $request->count,
                 'duration' => $request->duration,

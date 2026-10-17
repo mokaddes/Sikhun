@@ -171,8 +171,8 @@ const today = computed(() => new Date().toLocaleDateString(locale.value === 'bn'
                                 <ClipboardDocumentCheckIcon class="h-4 w-4" />
                             </span>
                             <div class="min-w-0">
-                                <div class="truncate text-sm font-medium">{{ exam.config?.type?.toUpperCase() }} · {{ exam.total }} {{ locale === 'en' ? 'questions' : 'প্রশ্ন' }}</div>
-                                <div class="text-xs text-[var(--text-muted)]">{{ new Date(exam.completed_at).toLocaleDateString() }}</div>
+                                <div class="truncate text-sm font-semibold text-[var(--text)]">{{ exam.title || exam.display_title || (exam.config?.type?.toUpperCase() + ' Exam') }}</div>
+                                <div class="text-xs text-[var(--text-muted)]">{{ exam.total }} {{ locale === 'en' ? 'questions' : 'প্রশ্ন' }} · {{ new Date(exam.completed_at).toLocaleDateString() }}</div>
                             </div>
                         </div>
                         <span class="font-heading text-lg font-bold" :class="exam.percentage >= 70 ? 'text-[var(--secondary)]' : exam.percentage >= 40 ? 'text-[var(--primary)]' : 'text-[var(--accent)]'">{{ exam.percentage }}%</span>

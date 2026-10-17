@@ -11,6 +11,7 @@ class CreateExamRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'title' => ['nullable', 'string', 'max:255'],
             'source_type' => ['required', 'in:book,topic,paragraph'],
             'source_book_id' => ['required_if:source_type,book', 'nullable', 'exists:books,id'],
             'source_text' => ['required_if:source_type,topic,paragraph', 'nullable', 'string', 'min:3', 'max:5000'],

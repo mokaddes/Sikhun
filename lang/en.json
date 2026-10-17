@@ -483,7 +483,17 @@
         "download_pdf": "Download PDF",
         "no_exams": "No exams yet.",
         "retake": "Retake",
-        "history": "History"
+        "history": "History",
+        "exam_name": "Exam Name",
+        "exam_name_placeholder": "e.g. Physics Chapter 3 Practice, Biology Midterm...",
+        "total_exams": "Total Exams",
+        "completed_exams": "Completed",
+        "avg_score": "Average Score",
+        "highest_score": "Highest Score",
+        "view_result": "View Result",
+        "continue_exam": "Continue Exam",
+        "questions": "Questions",
+        "select_book": "Select a book..."
     },
     "flashcards": {
         "title": "Flashcards",

@@ -124,7 +124,13 @@ class BookStructureDetectionService
     private function detectHeuristicHeadings(ParsedDocument $doc): array
     {
         $detected = [];
-        $pattern = '/^(?:(অধ্যায়|অধ্যায়|পাঠ|পরিচ্ছেদ|ইউনিট|Chapter|Unit|Lesson|Section)\s*[:\-–—]?\s*([০-৯0-9IVXivx]+)?\s*[:\-–—]?\s*(.*))$/mu';
+        $ordinalMap = [
+            'প্রথম' => '১', 'দ্বিতীয়' => '২', 'দ্বিতীয়' => '২', 'তৃতীয়' => '৩', 'তৃতীয়' => '৩',
+            'চতুর্থ' => '৪', 'পঞ্চম' => '৫', 'ষষ্ঠ' => '৬', 'সপ্তম' => '৭', 'অষ্টম' => '৮',
+            'নবম' => '৯', 'দশম' => '১০', 'একাদশ' => '১১', 'দ্বাদশ' => '১২',
+        ];
+        $ordinalRegex = '/^(প্রথম|দ্বিতীয়|দ্বিতীয়|তৃতীয়|তৃতীয়|চতুর্থ|পঞ্চম|ষষ্ঠ|সপ্তম|অষ্টম|নবম|দশম|একাদশ|দ্বাদশ)\s+(অধ্যায়|অধ্যায়|পাঠ|পরিচ্ছেদ)\s*[:\-–—]?\s*(.*)$/u';
+        $prefixRegex = '/^(অধ্যায়|অধ্যায়|পাঠ|পরিচ্ছেদ|ইউনিট|Chapter|Unit|Lesson|Section)\s*[:\-–—]?\s*([০-৯0-9IVXivx]+)\s*[:\-–—]?\s*(.*)$/iu';
 
         foreach ($doc->pages as $page) {
             $pageNum = (int) ($page['page_number'] ?? 0);
@@ -136,23 +142,48 @@ class BookStructureDetectionService
                 continue;
             }
 
-            $lines = array_slice(array_values(array_filter(array_map('trim', explode("\n", $text)))), 0, 6);
+            $lines = array_slice(array_values(array_filter(array_map('trim', explode("\n", $text)))), 0, 8);
+            // Skip Table of Contents (সূচিপত্র) pages
+            $topSample = implode(' ', array_slice($lines, 0, 4));
+            if (preg_match('/(সূচিপত্র|শিরোনাম\s+পৃষ্ঠা|table\s+of\s+contents)/iu', $topSample)) {
+                continue;
+            }
+
             foreach ($lines as $idx => $line) {
                 if (mb_strlen($line) > 120) {
                     continue;
                 }
-                if (preg_match($pattern, $line, $m)) {
-                    $prefix = trim($m[1] ?? '');
-                    $num = trim($m[2] ?? '');
+                if (preg_match($ordinalRegex, $line, $m)) {
+                    $ordWord = trim($m[1]);
+                    $kind = trim($m[2]);
                     $rest = trim($m[3] ?? '');
                     if ($rest === '' && isset($lines[$idx + 1]) && mb_strlen($lines[$idx + 1]) <= 100) {
                         $rest = $lines[$idx + 1];
                     }
-                    $title = trim($prefix.($num !== '' ? ' '.$num : '').($rest !== '' ? ': '.$rest : ''));
+                    $num = $ordinalMap[$ordWord] ?? $ordWord;
+                    $title = trim("{$ordWord} {$kind}".($rest !== '' ? ": {$rest}" : ''));
+                    $level = in_array($kind, ['পাঠ', 'পরিচ্ছেদ'], true) ? 2 : 1;
+                    $detected[] = [
+                        'title' => mb_substr($title, 0, 255),
+                        'chapter_number' => $num,
+                        'level' => $level,
+                        'start_page' => $pageNum,
+                    ];
+                    break;
+                }
+
+                if (preg_match($prefixRegex, $line, $m)) {
+                    $prefix = trim($m[1]);
+                    $num = trim($m[2]);
+                    $rest = trim($m[3] ?? '');
+                    if ($rest === '' && isset($lines[$idx + 1]) && mb_strlen($lines[$idx + 1]) <= 100) {
+                        $rest = $lines[$idx + 1];
+                    }
+                    $title = trim("{$prefix} {$num}".($rest !== '' ? ": {$rest}" : ''));
                     $level = in_array(mb_strtolower($prefix), ['পাঠ', 'পরিচ্ছেদ', 'lesson', 'section'], true) ? 2 : 1;
                     $detected[] = [
                         'title' => mb_substr($title, 0, 255),
-                        'chapter_number' => $num !== '' ? $num : null,
+                        'chapter_number' => $num,
                         'level' => $level,
                         'start_page' => $pageNum,
                     ];
@@ -166,10 +197,12 @@ class BookStructureDetectionService
 
     private function pageContent(ParsedDocument $doc, int $start, ?int $end): string
     {
-        return collect($doc->pages)
+        $combined = collect($doc->pages)
             ->filter(fn ($page) => (int) $page['page_number'] >= $start && ($end === null || (int) $page['page_number'] <= $end))
             ->map(fn ($page) => trim((string) ($page['content'] ?? '')))
             ->filter()
             ->implode("\n\n");
+
+        return mb_substr($combined, 0, 16000);
     }
 }

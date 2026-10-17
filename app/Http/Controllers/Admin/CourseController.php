@@ -8,16 +8,36 @@ use App\Models\Category;
 use App\Models\Course;
 use App\Models\Mentor;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class CourseController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $query = Course::with('mentor')->withCount('enrollments');
+
+        if ($request->filled('search')) {
+            $search = trim($request->input('search'));
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhereHas('mentor', fn ($mq) => $mq->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
         return Inertia::render('Admin/Courses/Index', [
-            'courses' => Course::with('mentor')->withCount('enrollments')->latest()->paginate(15),
+            'courses' => $query->latest()->paginate(15)->withQueryString(),
+            'filters' => $request->only(['search', 'status']),
         ]);
     }
 

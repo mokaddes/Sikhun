@@ -144,6 +144,20 @@ function selectGroup(group) {
     panelOpen.value = group.items.length > 0;  // sections without children stay collapsed
 }
 
+let hoverTimer = null;
+function onHoverGroup(group) {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
+    window.clearTimeout(hoverTimer);
+    hoverTimer = window.setTimeout(() => {
+        activeGroupId.value = group.id;
+        panelOpen.value = group.items.length > 0;
+    }, 70);
+}
+
+function cancelHover() {
+    window.clearTimeout(hoverTimer);
+}
+
 // Keep the rail + second level in sync with the current URL.
 watch(url, () => {
     const match = nav.value.find(group => group.items.some(item => isActive(item.href)));
@@ -200,6 +214,8 @@ function logout() {
                                transition-all duration-200 hover:bg-[var(--surface)] hover:text-[var(--text)]"
                         :class="activeGroupId === group.id ? 'bg-[var(--secondary)]/12 font-semibold text-[var(--secondary)] shadow-sm ring-1 ring-[var(--secondary)]/15' : ''"
                         @click="selectGroup(group)"
+                        @mouseenter="onHoverGroup(group)"
+                        @mouseleave="cancelHover"
                     >
                         <component :is="group.icon" class="h-5 w-5" />
                         <span class="w-full text-center text-[10px] font-semibold leading-tight">{{ group.label }}</span>

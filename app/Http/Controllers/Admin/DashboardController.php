@@ -43,6 +43,13 @@ class DashboardController extends Controller
                 'revenue' => $days->map(fn ($d) => (float) ($revenueByDay[$d->toDateString()] ?? 0))->values(),
                 'registrations' => $days->map(fn ($d) => (int) ($registrationsByDay[$d->toDateString()] ?? 0))->values(),
             ],
+            'recent_orders' => Order::with('student:id,name,email')
+                ->latest()
+                ->take(5)
+                ->get(['id', 'order_number', 'student_id', 'amount', 'payment_method', 'status', 'created_at']),
+            'recent_students' => Student::latest()
+                ->take(5)
+                ->get(['id', 'name', 'email', 'type', 'status', 'created_at']),
         ]);
     }
 }

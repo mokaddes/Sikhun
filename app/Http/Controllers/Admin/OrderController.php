@@ -15,6 +15,13 @@ class OrderController extends Controller
     public function index(Request $request): Response
     {
         $orders = Order::with('student:id,name,email')
+            ->when($request->search, function ($q) use ($request) {
+                $search = trim($request->search);
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('order_number', 'like', "%{$search}%")
+                        ->orWhereHas('student', fn ($sq) => $sq->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"));
+                });
+            })
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->latest()
             ->paginate(20)
@@ -22,7 +29,7 @@ class OrderController extends Controller
 
         return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
-            'filters' => $request->only('status'),
+            'filters' => $request->only('status', 'search'),
         ]);
     }
 

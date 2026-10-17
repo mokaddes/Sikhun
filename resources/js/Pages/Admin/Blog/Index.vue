@@ -4,7 +4,15 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import Pagination from '@/Components/UI/Pagination.vue';
 import ConfirmButton from '@/Components/UI/ConfirmButton.vue';
+import TableDropdown from '@/Components/UI/TableDropdown.vue';
 import { useI18n } from '@/i18n';
+import {
+    PencilSquareIcon,
+    EyeIcon,
+    NoSymbolIcon,
+    TrashIcon,
+    CheckCircleIcon,
+} from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     posts: Object,
@@ -62,6 +70,21 @@ function togglePublish(post) {
 function blockPost(post) {
     if (!window.confirm(t('admin.blog.confirm_block'))) return;
     router.post(`/admin/blog/${post.id}/block`, {}, { preserveScroll: true });
+}
+
+function getPostActions(post) {
+    return [
+        {
+            label: post.status === 'published' ? t('admin.blog.unpublish') : t('admin.blog.publish_now'),
+            onClick: () => togglePublish(post),
+            icon: CheckCircleIcon,
+        },
+        ...(post.status === 'published' ? [{ label: t('common.view'), href: `/blog/${post.slug}`, icon: EyeIcon }] : []),
+        { label: t('common.edit'), href: `/admin/blog/${post.id}/edit`, icon: PencilSquareIcon },
+        { label: t('admin.blog.block'), onClick: () => blockPost(post), danger: true, icon: NoSymbolIcon },
+        { divider: true },
+        { label: t('common.delete'), href: `/admin/blog/${post.id}`, method: 'delete', danger: true, icon: TrashIcon },
+    ];
 }
 </script>
 
@@ -188,22 +211,16 @@ function blockPost(post) {
                                 {{ post.status === 'published' ? t('common.published') : t('admin.blog.draft') }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-right whitespace-nowrap space-x-2.5">
-                            <button type="button" @click="togglePublish(post)"
-                                class="px-2.5 py-1 rounded-lg text-xs font-semibold"
-                                :class="post.status === 'published' ? 'bg-amber-500/15 text-amber-500 hover:bg-amber-500/25' : 'bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25'">
-                                {{ post.status === 'published' ? t('admin.blog.unpublish') : t('admin.blog.publish_now') }}
-                            </button>
-                            <a v-if="post.status === 'published'" :href="`/blog/${post.slug}`" target="_blank" class="text-xs text-[var(--text-muted)] hover:underline">
-                                {{ t('common.view') }}
-                            </a>
-                            <Link :href="`/admin/blog/${post.id}/edit`" class="text-xs font-medium text-[var(--primary)] hover:underline">
-                                {{ t('common.edit') }}
-                            </Link>
-                            <button type="button" @click="blockPost(post)" class="text-xs font-medium text-rose-500 hover:underline">
-                                {{ t('admin.blog.block') }}
-                            </button>
-                            <ConfirmButton :href="`/admin/blog/${post.id}`" method="delete" />
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <Link
+                                    :href="`/admin/blog/${post.id}/edit`"
+                                    class="hidden sm:inline-flex items-center gap-1 rounded-lg border border-transparent px-2.5 py-1 text-xs font-semibold text-[var(--primary)] hover:border-[var(--primary)]/20 hover:bg-[var(--primary)]/10 transition-colors"
+                                >
+                                    {{ t('common.edit') }}
+                                </Link>
+                                <TableDropdown :items="getPostActions(post)" align="right" />
+                            </div>
                         </td>
                     </tr>
                     <tr v-if="!posts.data?.length">

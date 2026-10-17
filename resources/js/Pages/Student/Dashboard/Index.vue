@@ -13,6 +13,7 @@ import {
     AcademicCapIcon,
     ArrowRightIcon,
     FireIcon,
+    TrophyIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -57,35 +58,66 @@ const today = computed(() => new Date().toLocaleDateString(locale.value === 'bn'
 <template>
     <Head :title="t('nav.dashboard')" />
     <StudentLayout>
-        <!-- Hero -->
-        <section class="sheen anim-rise relative mb-6 overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-[var(--secondary)]/12 via-[var(--surface)] to-[var(--primary)]/10 p-6 sm:p-8">
+        <!-- Hero with embedded stats and subscription status -->
+        <section class="sheen anim-rise relative mb-8 overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-[var(--secondary)]/12 via-[var(--surface)] to-[var(--primary)]/10 p-6 sm:p-8 shadow-sm">
             <div class="hero-glow pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full"></div>
-            <div class="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-                <div class="min-w-0">
+            <div class="relative grid gap-6 lg:grid-cols-12 lg:items-center">
+                <!-- Col 1: Welcome & Details -->
+                <div class="min-w-0 lg:col-span-5">
                     <span class="eyebrow">{{ locale === 'en' ? 'Student overview' : 'শিক্ষার্থী ওভারভিউ' }}</span>
-                    <h1 class="mt-2 font-heading text-2xl font-extrabold leading-tight sm:text-3xl">
+                    <h1 class="mt-2 font-heading text-2xl font-extrabold leading-tight sm:text-3xl text-[var(--text)]">
                         {{ t('dashboard.welcome') }}, {{ student?.name?.split(' ')[0] }} <span class="inline-block">👋</span>
                     </h1>
-                    <p class="mt-1.5 text-sm text-[var(--text-muted)] sm:text-base">{{ t('dashboard.subtitle') }}</p>
-                    <p class="mt-3 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)]/70 px-3 py-1 text-xs font-medium text-[var(--text-muted)]">
-                        <CalendarDaysIcon class="h-3.5 w-3.5" /> {{ today }}
-                    </p>
+                    <p class="mt-1.5 text-sm text-[var(--text-muted)] sm:text-base leading-relaxed">{{ t('dashboard.subtitle') }}</p>
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                        <span class="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)]/80 px-3 py-1 text-xs font-medium text-[var(--text-muted)] shadow-xs">
+                            <CalendarDaysIcon class="h-3.5 w-3.5 text-[var(--secondary)]" /> {{ today }}
+                        </span>
+                        <span v-if="myRank" class="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)]/80 px-3 py-1 text-xs font-medium text-[var(--text-muted)] shadow-xs">
+                            <FireIcon class="h-3.5 w-3.5 text-[var(--primary)]" /> #{{ myRank.rank }}
+                        </span>
+                    </div>
                 </div>
 
-                <div class="shrink-0">
-                    <div v-if="activeSubscription" class="rounded-2xl border border-[var(--secondary)]/30 bg-[var(--surface)]/80 px-4 py-3 text-sm backdrop-blur">
-                        <div class="flex items-center gap-2 font-semibold">
-                            <span class="grid h-2 w-2 place-items-center rounded-full bg-[var(--secondary)]"></span>
+                <!-- Col 2: 4 Embedded Metric Stats (2x2 grid) -->
+                <div class="grid grid-cols-2 gap-3 lg:col-span-4">
+                    <div
+                        v-for="card in statCards"
+                        :key="card.label"
+                        class="group rounded-2xl border border-[var(--border)] bg-[var(--surface)]/75 p-3.5 backdrop-blur-md transition-all hover:border-[var(--primary)]/30 hover:bg-[var(--surface)]/95 hover:shadow-sm"
+                    >
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="truncate text-xs font-medium text-[var(--text-muted)]">{{ card.label }}</span>
+                            <span class="grid h-7 w-7 shrink-0 place-items-center rounded-lg" :class="card.tint">
+                                <component :is="card.icon" class="h-3.5 w-3.5" />
+                            </span>
+                        </div>
+                        <div class="mt-2 font-heading text-lg font-extrabold sm:text-xl text-[var(--text)]">{{ card.value }}</div>
+                    </div>
+                </div>
+
+                <!-- Col 3: Plan Status / Upgrade CTA -->
+                <div class="flex flex-col justify-center lg:col-span-3 lg:items-end">
+                    <div v-if="activeSubscription" class="w-full rounded-2xl border border-[var(--secondary)]/30 bg-[var(--surface)]/85 p-4 text-sm backdrop-blur shadow-xs">
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">{{ locale === 'en' ? 'Current Plan' : 'বর্তমান প্ল্যান' }}</div>
+                        <div class="mt-1 flex items-center gap-2 font-heading text-base font-bold text-[var(--text)]">
+                            <span class="grid h-2.5 w-2.5 place-items-center rounded-full bg-[var(--secondary)] ring-4 ring-[var(--secondary)]/20"></span>
                             {{ activeSubscription.plan.name }}
                         </div>
-                        <div class="mt-0.5 text-xs text-[var(--text-muted)]">
-                            {{ locale === 'en' ? 'Active until' : 'সক্রিয় পর্যন্ত' }} {{ new Date(activeSubscription.expires_at).toLocaleDateString() }}
+                        <div class="mt-1 text-xs text-[var(--text-muted)]">
+                            {{ locale === 'en' ? 'Active until' : 'মেয়াদ' }} {{ new Date(activeSubscription.expires_at).toLocaleDateString() }}
                         </div>
+                        <Link href="/plans" class="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[var(--primary)] hover:underline">
+                            {{ locale === 'en' ? 'Manage plan' : 'প্ল্যান পরিবর্তন' }} →
+                        </Link>
                     </div>
-                    <Link v-else href="/plans" class="btn btn-primary">
-                        {{ locale === 'en' ? 'Upgrade to Premium' : 'প্রিমিয়ামে আপগ্রেড করুন' }}
-                        <ArrowRightIcon class="h-4 w-4" />
-                    </Link>
+                    <div v-else class="w-full rounded-2xl border border-dashed border-[var(--primary)]/40 bg-[var(--surface)]/60 p-4 text-center backdrop-blur">
+                        <p class="text-xs text-[var(--text-muted)] mb-2.5">{{ locale === 'en' ? 'Unlock unlimited AI, books & exams' : 'আনলিমিটেড AI, বই ও পরীক্ষা আনলক করুন' }}</p>
+                        <Link href="/plans" class="btn btn-primary w-full justify-center text-xs py-2">
+                            {{ locale === 'en' ? 'Upgrade to Premium' : 'প্রিমিয়ামে আপগ্রেড' }}
+                            <ArrowRightIcon class="h-3.5 w-3.5" />
+                        </Link>
+                    </div>
                 </div>
             </div>
         </section>
@@ -101,19 +133,6 @@ const today = computed(() => new Date().toLocaleDateString(locale.value === 'bn'
                 </div>
             </div>
             <Link href="/access" class="btn btn-outline btn-sm shrink-0">{{ locale === 'en' ? 'View access' : 'অ্যাক্সেস দেখুন' }} →</Link>
-        </div>
-
-        <!-- Stat cards -->
-        <div class="stagger mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <div v-for="card in statCards" :key="card.label" class="card card-hover rounded-2xl p-5">
-                <div class="flex items-start justify-between gap-3">
-                    <div class="text-sm text-[var(--text-muted)]">{{ card.label }}</div>
-                    <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl" :class="card.tint">
-                        <component :is="card.icon" class="h-[1.15rem] w-[1.15rem]" />
-                    </span>
-                </div>
-                <div class="mt-3 font-heading text-2xl font-extrabold">{{ card.value }}</div>
-            </div>
         </div>
 
         <div class="grid gap-6 lg:grid-cols-3">

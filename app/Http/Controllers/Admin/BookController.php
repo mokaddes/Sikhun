@@ -20,10 +20,29 @@ class BookController extends Controller
 {
     public function __construct(private ChunkedUploadService $uploads) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $query = Book::with(['author', 'category']);
+
+        if ($request->filled('search')) {
+            $search = trim($request->input('search'));
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhereHas('author', fn ($aq) => $aq->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'published') {
+                $query->where('is_published', true);
+            } elseif ($request->status === 'draft') {
+                $query->where('is_published', false);
+            }
+        }
+
         return Inertia::render('Admin/Books/Index', [
-            'books' => Book::with(['author', 'category'])->latest()->paginate(15),
+            'books' => $query->latest()->paginate(15)->withQueryString(),
+            'filters' => $request->only(['search', 'status']),
         ]);
     }
 

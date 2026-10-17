@@ -13,6 +13,16 @@ return [
             'root' => storage_path('app/private'),
             'serve' => true,
             'throw' => false,
+            'permissions' => [
+                'file' => [
+                    'public' => 0666,
+                    'private' => 0666,
+                ],
+                'dir' => [
+                    'public' => 0777,
+                    'private' => 0777,
+                ],
+            ],
         ],
 
         // Explicit alias for 'local' — used everywhere in this codebase
@@ -23,6 +33,16 @@ return [
             'root' => storage_path('app/private'),
             'serve' => true,
             'throw' => false,
+            'permissions' => [
+                'file' => [
+                    'public' => 0666,
+                    'private' => 0666,
+                ],
+                'dir' => [
+                    'public' => 0777,
+                    'private' => 0777,
+                ],
+            ],
         ],
 
         'public' => [

@@ -54,6 +54,16 @@ class ProcessMyBookPdf implements ShouldQueue
         ]);
 
         try {
+            $readerService = app(\App\Services\BookReaderService::class);
+            $renderedCount = $readerService->preRenderAllPages($myBook);
+            if ($renderedCount > 0 && $myBook->total_pages !== $renderedCount) {
+                $myBook->update(['total_pages' => $renderedCount]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('ProcessMyBookPdf pre-render warning: '.$e->getMessage(), ['my_book_id' => $myBook->id]);
+        }
+
+        try {
             $doc = $parsers->resolve()->parse($myBook);
 
             $pages = collect($doc->pages)

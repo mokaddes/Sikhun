@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\PdfParsable;
+use App\Models\MyBook;
 use App\Models\Student;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -12,19 +13,9 @@ use Illuminate\Support\Facades\Storage;
  * book content is ever served to a browser. The PDF path itself never
  * appears in any response; callers only ever see rendered page bytes
  * behind a short-lived signed URL (see Student\ReaderController).
- *
- * Requires the PHP Imagick extension + Ghostscript for PDF rasterization.
- * If a book has no pdf_path yet (e.g. fresh demo data before an admin
- * uploads the real file), a clearly-labelled placeholder image is
- * generated instead of a 500 error, so the reader flow stays testable
- * end-to-end without requiring real content first.
  */
 class BookReaderService
 {
-    // Rasterize once per page (not per student) and cache globally; the PDF→JPEG
-    // step is the expensive one (Ghostscript). The per-student watermark is a
-    // cheap annotate pass on top of that shared raster, so every student still
-    // gets their own watermarked bytes without re-running the raster.
     private const RASTER_TTL = 86400 * 7;
     private const WATERMARK_TTL = 86400 * 7;
 
@@ -33,26 +24,63 @@ class BookReaderService
     private const RASTER_DPI = 120;
     private const JPEG_QUALITY = 82;
 
+    private function baseNamespace(PdfParsable $book): string
+    {
+        return ($book instanceof MyBook) ? 'my_books' : 'books';
+    }
+
+    private function renderedRelPath(PdfParsable $book, int $page): string
+    {
+        $ns = $this->baseNamespace($book);
+        $source = $book->pdfSourceId();
+
+        return "{$ns}/rendered/{$source}/{$page}.jpg";
+    }
+
+    private function watermarkedRelPath(PdfParsable $book, int $page, int $studentId): string
+    {
+        $ns = $this->baseNamespace($book);
+        $source = $book->pdfSourceId();
+
+        return "{$ns}/watermarked/{$source}/{$studentId}/{$page}.jpg";
+    }
+
     public function renderPage(PdfParsable $book, int $page, Student $student): string
     {
+        $ns = $this->baseNamespace($book);
         $source = $book->pdfSourceId();
-        $renderedRelPath = "books/rendered/{$source}/{$page}.jpg";
-        $watermarkedRelPath = "books/watermarked/{$source}/{$student->id}/{$page}.jpg";
+        $renderedRelPath = $this->renderedRelPath($book, $page);
+        $watermarkedRelPath = $this->watermarkedRelPath($book, $page, $student->id);
 
         // 1. Ultra-fast path: already watermarked for this student on disk
-        if (Storage::disk('private')->exists($watermarkedRelPath)) {
-            return Storage::disk('private')->get($watermarkedRelPath);
+        try {
+            if (Storage::disk('private')->exists($watermarkedRelPath)) {
+                $cachedWm = Storage::disk('private')->get($watermarkedRelPath);
+                if ($cachedWm !== null && strlen($cachedWm) > 0) {
+                    return $cachedWm;
+                }
+            }
+        } catch (\Throwable) {
+            // Continue if unreadable
         }
 
         // 2. Check if raw raster is already on disk (e.g. pre-rendered)
         $raw = null;
-        if (Storage::disk('private')->exists($renderedRelPath)) {
-            $raw = Storage::disk('private')->get($renderedRelPath);
+        try {
+            if (Storage::disk('private')->exists($renderedRelPath)) {
+                $raw = Storage::disk('private')->get($renderedRelPath);
+            }
+        } catch (\Throwable) {
+            $raw = null;
         }
 
         // 3. Check memory/cache fallback
         if ($raw === null) {
-            $raw = Cache::get("book_page:raw:{$source}:{$page}");
+            try {
+                $raw = Cache::get("book_page:raw:{$ns}:{$source}:{$page}");
+            } catch (\Throwable) {
+                $raw = null;
+            }
         }
 
         // 4. If not available on disk or in cache, render on-demand
@@ -67,8 +95,16 @@ class BookReaderService
 
             if ($raw !== null) {
                 // Permanently persist to disk so this page NEVER needs rasterizing again!
-                Storage::disk('private')->put($renderedRelPath, $raw);
-                Cache::put("book_page:raw:{$source}:{$page}", $raw, self::RASTER_TTL);
+                try {
+                    Storage::disk('private')->put($renderedRelPath, $raw);
+                    @chmod(Storage::disk('private')->path($renderedRelPath), 0666);
+                } catch (\Throwable) {
+                }
+
+                try {
+                    Cache::put("book_page:raw:{$ns}:{$source}:{$page}", $raw, self::RASTER_TTL);
+                } catch (\Throwable) {
+                }
             }
         }
 
@@ -82,11 +118,98 @@ class BookReaderService
         // Cache watermarked version to disk for sub-millisecond future reads
         try {
             Storage::disk('private')->put($watermarkedRelPath, $watermarked);
-        } catch (\Throwable $e) {
+            @chmod(Storage::disk('private')->path($watermarkedRelPath), 0666);
+        } catch (\Throwable) {
             // Ignore write errors to avoid blocking the user
         }
 
         return $watermarked;
+    }
+
+    /**
+     * Pre-render all pages of a PDF book/myBook into JPEGs on disk using pdftoppm.
+     * Returns the number of rendered pages.
+     */
+    public function preRenderAllPages(PdfParsable $book, bool $force = false): int
+    {
+        if (! $book->pdfFilePath() || ! Storage::disk('private')->exists($book->pdfFilePath())) {
+            return 0;
+        }
+
+        $ns = $this->baseNamespace($book);
+        $source = $book->pdfSourceId();
+        $pdfPath = Storage::disk('private')->path($book->pdfFilePath());
+        $renderedDir = Storage::disk('private')->path("{$ns}/rendered/{$source}");
+        $watermarkedDir = Storage::disk('private')->path("{$ns}/watermarked/{$source}");
+
+        if ($force) {
+            Storage::disk('private')->deleteDirectory("{$ns}/rendered/{$source}");
+            Storage::disk('private')->deleteDirectory("{$ns}/watermarked/{$source}");
+        }
+
+        if (! is_dir($renderedDir)) {
+            @mkdir($renderedDir, 0777, true);
+            @chmod($renderedDir, 0777);
+        }
+
+        $existingCount = count(glob("{$renderedDir}/*.jpg") ?: []);
+        $expectedPages = $this->detectPageCount($pdfPath) ?? (int) ($book->total_pages ?? 0);
+
+        if (! $force && $existingCount > 0 && ($expectedPages > 0 && $existingCount >= $expectedPages)) {
+            return $existingCount;
+        }
+
+        if (function_exists('exec')) {
+            $tempPrefix = "{$renderedDir}/page";
+            $cmd = sprintf(
+                'pdftoppm -jpeg -r %d %s %s 2>&1',
+                self::RASTER_DPI,
+                escapeshellarg($pdfPath),
+                escapeshellarg($tempPrefix)
+            );
+
+            $output = [];
+            $code = 0;
+            @exec($cmd, $output, $code);
+
+            if ($code === 0) {
+                $generated = glob("{$renderedDir}/page-*.jpg") ?: [];
+                foreach ($generated as $file) {
+                    if (preg_match('/page-0*([0-9]+)\.jpg$/', $file, $matches)) {
+                        $pageNum = (int) $matches[1];
+                        $target = "{$renderedDir}/{$pageNum}.jpg";
+                        @rename($file, $target);
+                        @chmod($target, 0666);
+                    }
+                }
+            }
+        }
+
+        return count(glob("{$renderedDir}/*.jpg") ?: []);
+    }
+
+    /**
+     * Fast page count detection via poppler pdfinfo.
+     */
+    public function detectPageCount(string $pdfPath): ?int
+    {
+        if (! function_exists('exec') || ! is_file($pdfPath)) {
+            return null;
+        }
+
+        $output = [];
+        $code = 0;
+        @exec('pdfinfo ' . escapeshellarg($pdfPath) . ' 2>/dev/null', $output, $code);
+
+        if ($code === 0) {
+            foreach ($output as $line) {
+                if (preg_match('/^Pages:\s+(\d+)/i', $line, $m)) {
+                    return max(1, (int) $m[1]);
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -98,9 +221,10 @@ class BookReaderService
         if (function_exists('exec')) {
             $tempDir = storage_path('app/temp');
             if (! is_dir($tempDir)) {
-                @mkdir($tempDir, 0775, true);
+                @mkdir($tempDir, 0777, true);
+                @chmod($tempDir, 0777);
             }
-            $tempPrefix = $tempDir . '/page_' . uniqid('', true) . '_' . $page;
+            $tempPrefix = $tempDir . '/page_' . bin2hex(random_bytes(6)) . '_' . $page;
             $cmd = sprintf(
                 'pdftoppm -jpeg -r %d -f %d -l %d %s %s 2>&1',
                 self::RASTER_DPI,
@@ -112,7 +236,7 @@ class BookReaderService
 
             @exec($cmd, $output, $code);
             if ($code === 0) {
-                $matches = glob($tempPrefix . '-*.jpg');
+                $matches = glob($tempPrefix . '-*.jpg') ?: [];
                 if (! empty($matches) && file_exists($matches[0])) {
                     $bytes = file_get_contents($matches[0]);
                     @unlink($matches[0]);
@@ -195,9 +319,7 @@ class BookReaderService
 
     public function isPlaceholder(PdfParsable $book): bool
     {
-        $source = $book->pdfSourceId();
-        // If pre-rendered page exists on disk, it is definitely not a placeholder!
-        if (Storage::disk('private')->exists("books/rendered/{$source}/1.jpg")) {
+        if (Storage::disk('private')->exists($this->renderedRelPath($book, 1))) {
             return false;
         }
 

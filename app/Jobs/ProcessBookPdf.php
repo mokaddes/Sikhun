@@ -82,6 +82,17 @@ class ProcessBookPdf implements ShouldQueue
             'processing_started_at' => now(),
         ])->save();
 
+        // Pre-render reader JPEG pages upfront so students can read immediately at 5ms/page
+        try {
+            $readerService = app(\App\Services\BookReaderService::class);
+            $renderedCount = $readerService->preRenderAllPages($book);
+            if ($renderedCount > 0 && $book->total_pages !== $renderedCount) {
+                $book->forceFill(['total_pages' => $renderedCount])->save();
+            }
+        } catch (\Throwable $e) {
+            Log::warning('ProcessBookPdf pre-render warning: '.$e->getMessage(), ['book_id' => $book->id]);
+        }
+
         try {
             $parser = $parsers->resolve();
             $doc = $parser->parse($book);

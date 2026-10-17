@@ -11,7 +11,9 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // Ensure file cache directories/files are created with 0777 permissions
+        // so CLI commands run as root never block www-data with Permission denied.
+        config(['cache.stores.file.permission' => 0777]);
     }
 
     public function boot(): void

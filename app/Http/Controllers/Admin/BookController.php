@@ -145,8 +145,16 @@ class BookController extends Controller
             Storage::disk('private')->delete($book->pdf_path);
         }
 
+        // Clear any stale rendered/watermarked pages from a previous PDF
+        Storage::disk('private')->deleteDirectory("books/rendered/{$book->id}");
+        Storage::disk('private')->deleteDirectory("books/watermarked/{$book->id}");
+
+        $detectedPages = app(\App\Services\BookReaderService::class)
+            ->detectPageCount(Storage::disk('private')->path($pdfPath));
+
         $book->forceFill([
             'pdf_path' => $pdfPath,
+            'total_pages' => $detectedPages ?: $book->total_pages,
             'pdf_content_hash' => null,
             'processing_status' => 'pending',
             'processing_error' => null,

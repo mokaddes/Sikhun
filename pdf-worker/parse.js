@@ -36,7 +36,7 @@
  * absorbed here and never leaks into Laravel or the database.
  */
 
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { unlinkSync, mkdirSync, writeFileSync, readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { dirname, extname, join } from 'node:path';
@@ -64,36 +64,61 @@ try {
 }
 
 async function run() {
-  verifyJava();
-  const { convert } = await loadOdl();
-
   const outDir = ARGS.output;
   mkdirSync(outDir, { recursive: true });
 
-  // OpenDataLoader converts to JSON (primary, structured) + Markdown
-  // (secondary reference). Each invocation spawns a JVM, so batch one file.
-  await convert([ARGS.input], {
-    outputDir: outDir,
-    format: 'json,markdown',
-    ...(ARGS.ocrLang ? { ocrLang: ARGS.ocrLang } : {}),
-  });
+  // Fast Poppler pre-check: detects page count and selectable text in <0.2s.
+  // Scanned/image-only PDFs contain 0 selectable text and cause OpenDataLoader's
+  // Java verapdf parser to blow up with OutOfMemoryError on large files.
+  const popplerProbe = probeWithPoppler(ARGS.input);
 
-  const odlJsonFile = findOdlJson(outDir);
-  if (!odlJsonFile) {
-    throw new Error('OpenDataLoader produced no JSON output.');
+  let odlVersion = 'poppler-fallback';
+  let pages = [];
+
+  if (popplerProbe && popplerProbe.totalPages > 0 && popplerProbe.pagesWithText === 0) {
+    console.log(
+      `[odl] PDF (${popplerProbe.totalPages} pages) has 0 selectable text (scanned PDF); skipping Java verapdf and proceeding directly to OCR.`,
+    );
+    pages = popplerProbe.pages;
+  } else {
+    try {
+      verifyJava();
+      const { convert } = await loadOdl();
+
+      await convert([ARGS.input], {
+        outputDir: outDir,
+        format: 'json,markdown',
+        ...(ARGS.ocrLang ? { ocrLang: ARGS.ocrLang } : {}),
+      });
+
+      const odlJsonFile = findOdlJson(outDir);
+      if (!odlJsonFile) {
+        throw new Error('OpenDataLoader produced no JSON output.');
+      }
+
+      const odl = JSON.parse(readFileSync(odlJsonFile, 'utf8'));
+      odlVersion = odl.version ?? odl['api version'] ?? 'unknown';
+      pages = extractPages(odl);
+    } catch (odlErr) {
+      if (popplerProbe && popplerProbe.totalPages > 0) {
+        console.warn(
+          `[odl] OpenDataLoader failed (${(odlErr?.message || String(odlErr)).slice(0, 200)}); falling back to Poppler extraction.`,
+        );
+        pages = popplerProbe.pages;
+      } else {
+        throw odlErr;
+      }
+    }
   }
-
-  const odl = JSON.parse(readFileSync(odlJsonFile, 'utf8'));
-  const pages = extractPages(odl);
 
   if (pages.length === 0) {
     throw new Error('OpenDataLoader produced a JSON with no readable pages.');
   }
 
-  // OCR fallback: when OpenDataLoader extracted no text at all (scanned /
-  // image-only PDF), rasterize each page and read it back with tesseract.
+  // OCR fallback: when no text was extracted (scanned / image-only PDF),
+  // rasterize each page and read it back with tesseract concurrently.
   const needsOcr = !pages.some((p) => p.text && p.text.trim().length > 0);
-  const ocr = needsOcr ? runOcrPass(ARGS.input, pages, outDir) : null;
+  const ocr = needsOcr ? await runOcrPass(ARGS.input, pages, outDir) : null;
 
   const imagesDir = join(outDir, 'images');
   mkdirSync(imagesDir, { recursive: true });
@@ -118,7 +143,7 @@ async function run() {
     join(outDir, 'manifest.json'),
     JSON.stringify({
       parser: 'opendataloader',
-      odl_version: odl.version ?? odl['api version'] ?? 'unknown',
+      odl_version: odlVersion,
       sdk_version: odlSdkVersion(),
       pages: pages.length,
       ocr_used: ocr?.used ?? false,
@@ -131,23 +156,79 @@ async function run() {
 }
 
 /**
- * OCR fallback for scanned/image-only PDFs. Tesseract reads every page by
- * rasterizing it first with poppler-utils' pdftoppm (preserves layout
- * better than rendering through the ODL Java engine). Runs only when the
- * structured pass extracted zero text.
- *
- * Missing tools degrade without failing the run — an empty page set is a
- * legitimate signal Laravel turns into its actionable error message.
- *
- * @param {object[]} pages page objects from extractPages() (mutated in place)
- * @returns {{used: boolean, tool: string|null, lang: string|null, pages: number}|null}
+ * Fast Poppler probe using pdfinfo + pdftotext to determine page count,
+ * page dimensions, and any selectable text without loading the whole PDF into JVM heap.
  */
-function runOcrPass(pdfPath, pages, outDir) {
+function probeWithPoppler(pdfPath) {
+  if (!toolAvailable('pdfinfo', ['-v'])) {
+    return null;
+  }
+
+  const infoRes = spawnSync('pdfinfo', [pdfPath], { encoding: 'utf8', timeout: 30_000 });
+  if (infoRes.status !== 0 || !infoRes.stdout) {
+    return null;
+  }
+
+  let totalPages = 0;
+  let size = null;
+
+  for (const line of infoRes.stdout.split('\n')) {
+    const pm = line.match(/^Pages:\s+(\d+)/i);
+    if (pm) totalPages = Number(pm[1]);
+    const sm = line.match(/^Page size:\s+([\d.]+)\s+x\s+([\d.]+)/i);
+    if (sm) {
+      size = { width: Math.round(Number(sm[1])), height: Math.round(Number(sm[2])) };
+    }
+  }
+
+  if (totalPages <= 0) {
+    return null;
+  }
+
+  let pageTexts = [];
+  if (toolAvailable('pdftotext', ['-v'])) {
+    const txtRes = spawnSync('pdftotext', [pdfPath, '-'], {
+      encoding: 'utf8',
+      timeout: 60_000,
+      maxBuffer: 50 * 1024 * 1024,
+    });
+    if (txtRes.status === 0 && typeof txtRes.stdout === 'string') {
+      pageTexts = txtRes.stdout.split('\f');
+    }
+  }
+
+  const pages = [];
+  let pagesWithText = 0;
+
+  for (let p = 1; p <= totalPages; p++) {
+    const rawText = (pageTexts[p - 1] ?? '').replace(/\r\n/g, '\n').trim();
+    const hasText = rawText.length > 0;
+    if (hasText) pagesWithText += 1;
+
+    pages.push({
+      page: p,
+      text: hasText ? rawText : null,
+      size,
+      elements: hasText ? ocrElements(p, rawText, 'pdftotext') : [],
+    });
+  }
+
+  return { totalPages, pagesWithText, pages };
+}
+
+/**
+ * OCR fallback for scanned/image-only PDFs. Runs with bounded concurrency (4 workers)
+ * so multi-hundred-page books finish quickly on multi-core servers.
+ */
+async function runOcrPass(pdfPath, pages, outDir) {
+  const pdftoppm = ARGS.pdftoppm || 'pdftoppm';
+  const tesseract = ARGS.tesseract || 'tesseract';
+
   const ocr = {
     used: false,
     tool: null,
-    lang: ARGS.ocrLang || 'eng',
-    dpi: ARGS.ocrDpi || 200,
+    lang: resolveOcrLang(tesseract, ARGS.ocrLang),
+    dpi: ARGS.ocrDpi || 150,
     pages: 0,
     skipped: 0,
   };
@@ -156,9 +237,6 @@ function runOcrPass(pdfPath, pages, outDir) {
     console.warn('[ocr] disabled via --no-ocr; scanned pages will produce no text.');
     return ocr;
   }
-
-  const pdftoppm = ARGS.pdftoppm || 'pdftoppm';
-  const tesseract = ARGS.tesseract || 'tesseract';
 
   const hasPdftoppm = toolAvailable(pdftoppm, ['-v']);
   const hasTesseract = toolAvailable(tesseract, ['--version']);
@@ -178,25 +256,35 @@ function runOcrPass(pdfPath, pages, outDir) {
   const ocrDir = join(outDir, 'ocr');
   mkdirSync(ocrDir, { recursive: true });
 
-  for (const page of pages) {
-    const rendered = renderPage(pdftoppm, pdfPath, page.page, ocr.dpi, ocrDir);
-    if (!rendered) {
-      ocr.skipped += 1;
-      continue;
+  const concurrency = 4;
+  let index = 0;
+
+  async function worker() {
+    while (index < pages.length) {
+      const page = pages[index++];
+      if (!page) break;
+
+      const rendered = await renderPageAsync(pdftoppm, pdfPath, page.page, ocr.dpi, ocrDir);
+      if (!rendered) {
+        ocr.skipped += 1;
+        continue;
+      }
+
+      const text = await ocrImageAsync(tesseract, rendered.png, rendered.base, ocr.lang);
+      cleanupOcrArtifacts(rendered);
+
+      if (text === null) {
+        ocr.skipped += 1;
+        continue;
+      }
+
+      page.text = text;
+      page.elements = ocrElements(page.page, text, 'ocr');
+      ocr.pages += 1;
     }
-
-    const text = ocrImage(tesseract, rendered.png, rendered.base, ocr.lang);
-    cleanupOcrArtifacts(rendered);
-
-    if (text === null) {
-      ocr.skipped += 1;
-      continue;
-    }
-
-    page.text = text;
-    page.elements = ocrElements(page.page, text);
-    ocr.pages += 1;
   }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, pages.length) }, () => worker()));
 
   ocr.used = ocr.pages > 0;
   ocr.tool = 'tesseract';
@@ -213,22 +301,91 @@ function runOcrPass(pdfPath, pages, outDir) {
   return ocr;
 }
 
+function resolveOcrLang(tesseract, requested) {
+  const res = spawnSync(tesseract, ['--list-langs'], { encoding: 'utf8', timeout: 10_000 });
+  const installed = new Set(
+    ((res.stdout || '') + '\n' + (res.stderr || ''))
+      .split('\n')
+      .map((s) => s.trim())
+      .filter((s) => /^[a-z]{3}(_[a-z]+)?$/i.test(s)),
+  );
+
+  const raw = requested || (installed.has('ben') ? 'ben+eng' : 'eng');
+  const parts = raw
+    .split('+')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (installed.size > 0) {
+    const valid = parts.filter((p) => installed.has(p));
+    if (valid.length > 0) {
+      return valid.join('+');
+    }
+    if (installed.has('ben') && installed.has('eng')) return 'ben+eng';
+    if (installed.has('eng')) return 'eng';
+  }
+
+  return raw;
+}
+
 function toolAvailable(executable, probeArgs = ['--version']) {
   const res = spawnSync(executable, probeArgs, { encoding: 'utf8', timeout: 15_000 });
   return res.status === 0;
 }
 
-/** Render exactly one page to PNG; returns { png, base } or null. */
-function renderPage(pdftoppm, pdfPath, pageNumber, dpi, ocrDir) {
+function spawnPromise(cmd, args, timeoutMs = 180_000) {
+  return new Promise((resolve) => {
+    let stderr = '';
+    let finished = false;
+    const child = spawn(cmd, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+
+    const timer = setTimeout(() => {
+      if (!finished) {
+        finished = true;
+        child.kill('SIGKILL');
+        resolve({ status: -1, stderr: 'Timeout' });
+      }
+    }, timeoutMs);
+
+    child.stderr.on('data', (chunk) => {
+      if (stderr.length < 2000) stderr += chunk.toString();
+    });
+
+    child.on('error', (err) => {
+      if (!finished) {
+        finished = true;
+        clearTimeout(timer);
+        resolve({ status: -1, stderr: err.message });
+      }
+    });
+
+    child.on('close', (code) => {
+      if (!finished) {
+        finished = true;
+        clearTimeout(timer);
+        resolve({ status: code ?? -1, stderr });
+      }
+    });
+  });
+}
+
+/** Render one page to PNG asynchronously; returns { png, base } or null. */
+async function renderPageAsync(pdftoppm, pdfPath, pageNumber, dpi, ocrDir) {
   const base = join(ocrDir, `page-${pageNumber}`);
-  const res = spawnSync(
-    pdftoppm,
-    ['-png', '-r', String(dpi), '-f', String(pageNumber), '-l', String(pageNumber), pdfPath, base],
-    { encoding: 'utf8', timeout: 180_000 },
-  );
+  const res = await spawnPromise(pdftoppm, [
+    '-png',
+    '-r',
+    String(dpi),
+    '-f',
+    String(pageNumber),
+    '-l',
+    String(pageNumber),
+    pdfPath,
+    base,
+  ]);
 
   if (res.status !== 0) {
-    console.error(`[ocr] pdftoppm failed for page ${pageNumber}: ${res.error?.message || (res.stderr || '').trim().slice(0, 300)}`);
+    console.error(`[ocr] pdftoppm failed for page ${pageNumber}: ${(res.stderr || '').trim().slice(0, 300)}`);
     return null;
   }
 
@@ -243,13 +400,10 @@ function renderPage(pdftoppm, pdfPath, pageNumber, dpi, ocrDir) {
   return png ? { png, base } : null;
 }
 
-/** Run tesseract on one rendered page; returns page text or null. */
-function ocrImage(tesseract, png, base, lang) {
+/** Run tesseract on one rendered page asynchronously; returns page text or null. */
+async function ocrImageAsync(tesseract, png, base, lang) {
   const outBase = `${base}-ocr`;
-  const res = spawnSync(tesseract, [png, outBase, '-l', lang, '--psm', '3'], {
-    encoding: 'utf8',
-    timeout: 180_000,
-  });
+  const res = await spawnPromise(tesseract, [png, outBase, '-l', lang, '--psm', '3']);
 
   const txtPath = `${outBase}.txt`;
   const text = existsSync(txtPath) ? readFileSync(txtPath, 'utf8') : null;
@@ -258,7 +412,7 @@ function ocrImage(tesseract, png, base, lang) {
   }
 
   if (res.status !== 0) {
-    console.error(`[ocr] tesseract failed for page: ${res.error?.message || (res.stderr || '').trim().slice(0, 300)}`);
+    console.error(`[ocr] tesseract failed for page: ${(res.stderr || '').trim().slice(0, 300)}`);
     return null;
   }
 
@@ -271,19 +425,19 @@ function cleanupOcrArtifacts({ png, base }) {
   if (existsSync(leftover)) unlinkSync(leftover);
 }
 
-/** OCR text → per-line text elements, keeping page-wise reading order. */
-function ocrElements(pageNumber, text) {
+/** OCR/pdftotext text → per-line text elements, keeping page-wise reading order. */
+function ocrElements(pageNumber, text, source = 'ocr') {
   return text
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line, i) => ({
-      id: `ocr-${pageNumber}-${i + 1}`,
+      id: `${source}-${pageNumber}-${i + 1}`,
       type: 'text',
       text: line,
       bbox: null,
       level: 1,
-      metadata: { source: 'ocr' },
+      metadata: { source },
     }));
 }
 

@@ -35,8 +35,8 @@ return [
     ],
 
     'opendataloader' => [
-        // e.g. 'eng+ben' — handed to the worker's --ocr-lang flag when set.
-        'ocr_lang' => env('OPENDATALOADER_OCR_LANG'),
+        // e.g. 'ben+eng' — handed to the worker's --ocr-lang flag when set.
+        'ocr_lang' => env('OPENDATALOADER_OCR_LANG', 'ben+eng'),
     ],
 
     /*
@@ -54,9 +54,9 @@ return [
         // Absolute binary paths when they are not on the server's PATH.
         'tesseract_path' => env('PDF_TESSERACT_PATH', 'tesseract'),
         'pdftoppm_path' => env('PDF_PDFTOPPM_PATH', 'pdftoppm'),
-        // Rasterization DPI — higher catches smaller text, slower to run.
-        'dpi' => (int) env('PDF_OCR_DPI', 200),
-        'lang' => env('PDF_OCR_LANG') ?: env('OPENDATALOADER_OCR_LANG'),
+        // Rasterization DPI — 150 DPI is fast and accurate for Bengali/English books.
+        'dpi' => (int) env('PDF_OCR_DPI', 150),
+        'lang' => env('PDF_OCR_LANG') ?: env('OPENDATALOADER_OCR_LANG', 'ben+eng'),
     ],
 
     /*

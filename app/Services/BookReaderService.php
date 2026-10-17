@@ -45,6 +45,16 @@ class BookReaderService
         return "{$ns}/watermarked/{$source}/{$studentId}/{$page}.jpg";
     }
 
+    public function clearBookCache(PdfParsable $book): void
+    {
+        $ns = $this->baseNamespace($book);
+        $source = $book->pdfSourceId();
+        $disk = Storage::disk('private');
+
+        $disk->deleteDirectory("{$ns}/rendered/{$source}");
+        $disk->deleteDirectory("{$ns}/watermarked/{$source}");
+    }
+
     /**
      * Returns absolute path to the watermarked page file on disk so Laravel
      * can stream it via zero-copy sendfile() and browser HTTP caching.

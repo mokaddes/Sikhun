@@ -74,28 +74,9 @@ class ReaderController extends Controller
                 ->all();
         }
 
-        $session = ReadingSession::where('student_id', $student->id)
-            ->where('book_id', $book->id)
-            ->whereDate('created_at', today())
-            ->first();
-
-        if (! $session) {
-            $session = ReadingSession::create([
-                'student_id' => $student->id,
-                'book_id' => $book->id,
-                'pages_read' => 0,
-                'ip_address' => $request->ip(),
-            ]);
-            $book->increment('reading_count');
-        }
-
-        // Pre-sign the opening window so the first pages render immediately.
-        $pageUrls = $this->preSignedWindow($book, $student, $accessiblePages);
-
         // Resume where the student last stopped (most recent session for this
-        // book, regardless of day). The frontend snaps to the nearest
-        // accessible page if this one isn't in their purchased set.
-        $lastPage = ReadingSession::where('student_id', $student->id)
+        // book, regardless of day). Supports explicit ?page= parameter as well.
+        $lastPage = $request->query('page') ?: ReadingSession::where('student_id', $student->id)
             ->where('book_id', $book->id)
             ->whereNotNull('last_page')
             ->latest('id')
@@ -104,6 +85,23 @@ class ReaderController extends Controller
         $initialPage = $lastPage
             ? max(1, min((int) $lastPage, (int) ($book->total_pages ?: $lastPage)))
             : 1;
+
+        if (! $session) {
+            $session = ReadingSession::create([
+                'student_id' => $student->id,
+                'book_id' => $book->id,
+                'pages_read' => 0,
+                'last_page' => $initialPage,
+                'last_activity_at' => now(),
+                'ip_address' => $request->ip(),
+            ]);
+            $book->increment('reading_count');
+        } elseif ($initialPage && ! $session->last_page) {
+            $session->update(['last_page' => $initialPage]);
+        }
+
+        // Pre-sign the opening window so the first pages render immediately.
+        $pageUrls = $this->preSignedWindow($book, $student, $accessiblePages);
 
         return Inertia::render('Student/Library/Reader', [
             'book' => $book->only(['id', 'title', 'slug', 'total_pages']),
@@ -178,7 +176,17 @@ class ReaderController extends Controller
         if ($session) {
             $session->update([
                 'last_page' => $page,
+                'pages_read' => max((int) $session->pages_read, $page),
                 'last_activity_at' => now(),
+            ]);
+        } else {
+            ReadingSession::create([
+                'student_id' => $student->id,
+                'book_id' => $book->id,
+                'pages_read' => $page,
+                'last_page' => $page,
+                'last_activity_at' => now(),
+                'ip_address' => $request->ip(),
             ]);
         }
 

@@ -63,6 +63,17 @@ class ProcessMyBookPdf implements ShouldQueue
             Log::warning('ProcessMyBookPdf pre-render warning: '.$e->getMessage(), ['my_book_id' => $myBook->id]);
         }
 
+        if (! $myBook->rag_enabled) {
+            $myBook->update([
+                'processing_status' => 'completed',
+                'processing_error' => null,
+                'pdf_content_hash' => $contentHash,
+            ]);
+
+            Log::info('ProcessMyBookPdf completed (RAG disabled by user)', ['my_book_id' => $myBook->id]);
+            return;
+        }
+
         try {
             $doc = $parsers->resolve()->parse($myBook);
 

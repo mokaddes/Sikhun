@@ -137,6 +137,20 @@ function selectGroup(group) {
     panelOpen.value = group.items.length > 0;  // Dashboard has none -> stays collapsed
 }
 
+let hoverTimer = null;
+function onHoverGroup(group) {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
+    window.clearTimeout(hoverTimer);
+    hoverTimer = window.setTimeout(() => {
+        activeGroupId.value = group.id;
+        panelOpen.value = group.items.length > 0;
+    }, 70);
+}
+
+function cancelHover() {
+    window.clearTimeout(hoverTimer);
+}
+
 // Keep the rail + second level in sync with the current URL.
 watch(url, () => {
     const match = nav.value.find(group => group.items.some(item => isActive(item.href)));
@@ -179,7 +193,7 @@ function logout() {
         >
             <!-- Level one: icon + label rail (menu scrolls, logout pinned at the bottom) -->
             <div class="flex h-full w-[5.5rem] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface2)]/70">
-                <nav class="no-scrollbar flex flex-1 flex-col items-center gap-1.5 overflow-y-auto px-2 py-4">
+                <nav class="no-scrollbar flex flex-1 flex-col items-center gap-1.5 overflow-y-auto px-2 py-4" @mouseleave="cancelHover">
                     <component
                         :is="group.href ? Link : 'button'"
                         v-for="group in nav"
@@ -193,6 +207,7 @@ function logout() {
                                transition-all duration-200 hover:bg-[var(--surface)] hover:text-[var(--text)]"
                         :class="activeGroupId === group.id ? 'bg-[var(--secondary)]/12 font-semibold text-[var(--secondary)] shadow-sm ring-1 ring-[var(--secondary)]/15' : ''"
                         @click="selectGroup(group)"
+                        @mouseenter="onHoverGroup(group)"
                     >
                         <component :is="group.icon" class="h-5 w-5" />
                         <span class="w-full text-center text-[10px] font-semibold leading-tight">{{ group.label }}</span>

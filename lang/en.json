@@ -395,8 +395,12 @@
         "status_processing": "Processing…",
         "status_failed": "Failed",
         "processing_error": "processing error",
-        "delete_confirm": "Delete this book from your shelf?",
-        "ask_ai": "Ask AI"
+        "delete_confirm": "Are you sure you want to delete this book? All associated pages, cache and AI chat data will be permanently deleted.",
+        "ask_ai": "Ask AI",
+        "enable_rag": "Enable AI Q&A & RAG Indexing",
+        "enable_rag_hint": "Extracts and indexes document text so AI can answer questions directly from this book.",
+        "upload_modal_title": "Upload Book or Study Notes",
+        "upload_btn": "Upload Document"
     },
     "wallet": {
         "title": "Wallet",

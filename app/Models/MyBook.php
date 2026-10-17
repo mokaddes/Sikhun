@@ -9,13 +9,14 @@ class MyBook extends Model implements PdfParsable
 {
     protected $fillable = [
         'student_id', 'title', 'description', 'file_path',
-        'total_pages', 'last_page', 'processing_status', 'processing_error', 'pdf_content_hash',
+        'total_pages', 'rag_enabled', 'last_page', 'processing_status', 'processing_error', 'pdf_content_hash',
     ];
 
     protected function casts(): array
     {
         return [
             'total_pages' => 'integer',
+            'rag_enabled' => 'boolean',
             'last_page' => 'integer',
             'student_id' => 'integer',
         ];

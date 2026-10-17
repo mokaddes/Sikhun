@@ -18,6 +18,7 @@ class MyBookController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'pdf' => ['required', 'file', 'mimes:pdf', 'max:51200'],
+            'rag_enabled' => ['nullable', 'boolean'],
         ]);
 
         $student = auth('web')->user();
@@ -32,6 +33,7 @@ class MyBookController extends Controller
             'description' => $validated['description'] ?? null,
             'file_path' => $path,
             'total_pages' => $detectedPages,
+            'rag_enabled' => $request->boolean('rag_enabled', true),
             'processing_status' => 'pending',
         ]);
 
@@ -46,12 +48,23 @@ class MyBookController extends Controller
     {
         abort_unless($myBook->student_id === auth('web')->id(), 403);
 
+        // 1. Clear all rendered & watermarked page images on disk
         $reader->clearBookCache($myBook);
-        if ($myBook->file_path) {
+
+        // 2. Delete original PDF file
+        if ($myBook->file_path && Storage::disk('private')->exists($myBook->file_path)) {
             Storage::disk('private')->delete($myBook->file_path);
         }
+
+        // 3. Delete extracted page text and RAG rows
+        $myBook->pages()->delete();
+
+        // 4. Delete or clean up linked AI chat sessions
+        \App\Models\AiSession::where('source_my_book_id', $myBook->id)->delete();
+
+        // 5. Delete the MyBook record
         $myBook->delete();
 
-        return back()->with('success', 'Book removed from your bookshelf.');
+        return back()->with('success', 'Book and all related data removed from your bookshelf.');
     }
 }

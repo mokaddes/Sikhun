@@ -378,7 +378,10 @@ function createTurn() {
     inflight = new Set();
     buildPages();
 
+    const startPos = Math.max(1, Math.min(currentPos.value || resolveInitialPos(), realPages.value.length));
+
     $el.turn({
+        page: startPos,
         width,
         height: pageH,
         elevation: 50,
@@ -395,8 +398,9 @@ function createTurn() {
         },
     });
 
-    const startPos = Math.max(1, Math.min(currentPos.value || 1, realPages.value.length));
-    $el.turn('page', startPos);
+    if ($el.turn('page') !== startPos) {
+        $el.turn('page', startPos);
+    }
 
     syncFromView($el.turn('view') ?? [startPos]);
 }

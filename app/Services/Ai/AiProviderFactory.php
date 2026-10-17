@@ -39,11 +39,28 @@ class AiProviderFactory
             ->with('provider')
             ->first();
 
-        if (! $mapping) {
-            throw new \RuntimeException("No active default AI provider configured for '{$useCase}'. Set one up in /admin/ai-providers.");
+        if ($mapping && $mapping->provider) {
+            return self::instantiate($mapping->provider);
         }
 
-        return self::instantiate($mapping->provider);
+        // Fallback to book_chat or any active provider so unmapped secondary use-cases
+        // (like book_structure) don't crash background jobs.
+        $fallbackMapping = \App\Models\AiProviderUseCase::whereIn('use_case', ['book_chat', 'book_ocr'])
+            ->where('is_default', true)
+            ->whereHas('provider', fn ($q) => $q->where('is_active', true))
+            ->with('provider')
+            ->first();
+
+        if ($fallbackMapping && $fallbackMapping->provider) {
+            return self::instantiate($fallbackMapping->provider);
+        }
+
+        $activeProvider = AiProvider::where('is_active', true)->orderBy('id')->first();
+        if ($activeProvider) {
+            return self::instantiate($activeProvider);
+        }
+
+        throw new \RuntimeException("No active default AI provider configured for '{$useCase}'. Set one up in /admin/ai-providers.");
     }
 
     private static function instantiate(AiProvider $provider): AiProviderContract

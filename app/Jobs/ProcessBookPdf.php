@@ -110,7 +110,11 @@ class ProcessBookPdf implements ShouldQueue
                 throw new PdfParserException($this->emptyTextFailure($doc));
             }
 
-            $structure->detect($doc);
+            try {
+                $structure->detect($doc);
+            } catch (\Throwable $e) {
+                Log::warning('ProcessBookPdf structure detection warning: '.$e->getMessage(), ['book_id' => $book->id]);
+            }
 
             $stats = $storage->replaceAll($book, $doc);
 

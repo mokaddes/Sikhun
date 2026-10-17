@@ -234,7 +234,7 @@ async function runOcrPass(pdfPath, pages, outDir) {
     used: false,
     tool: null,
     lang: resolveOcrLang(tesseract, ARGS.ocrLang),
-    dpi: Math.min(ARGS.ocrDpi || 115, 120),
+    dpi: Math.min(ARGS.ocrDpi || 110, 115),
     pages: 0,
     skipped: 0,
   };
@@ -262,8 +262,64 @@ async function runOcrPass(pdfPath, pages, outDir) {
   const ocrDir = join(outDir, 'ocr');
   mkdirSync(ocrDir, { recursive: true });
 
-  const targetPages = pages.filter((p) => !p.text || p.text.trim().length < 40);
-  const concurrency = 4;
+  // Persistent per-PDF OCR cache so retries or partial runs never re-OCR pages.
+  let cacheDir = null;
+  try {
+    const stat = statSync(pdfPath);
+    const cacheKey = createHash('sha256')
+      .update(`${pdfPath}:${stat.size}:${stat.mtimeMs}:${ocr.lang}`)
+      .digest('hex')
+      .slice(0, 24);
+    cacheDir = join(dirname(outDir), 'ocr-cache', cacheKey);
+    mkdirSync(cacheDir, { recursive: true });
+  } catch {
+    cacheDir = null;
+  }
+
+  const targetPages = [];
+  for (const page of pages) {
+    if (page.text && page.text.trim().length >= 40) {
+      continue;
+    }
+    if (cacheDir) {
+      const cachedFile = join(cacheDir, `page-${page.page}.txt`);
+      if (existsSync(cachedFile)) {
+        try {
+          const cachedText = readFileSync(cachedFile, 'utf8').trim();
+          if (cachedText.length > 0) {
+            page.text = cachedText;
+            page.elements = ocrElements(page.page, cachedText, 'ocr');
+            ocr.pages += 1;
+            continue;
+          }
+        } catch {
+          // Proceed to OCR if cache read fails
+        }
+      }
+    }
+    targetPages.push(page);
+  }
+
+  // Batch rasterize when many pages need OCR (takes ~2.5s total instead of 140 process spawns)
+  if (targetPages.length > 4) {
+    await spawnPromise(
+      pdftoppm,
+      ['-jpeg', '-gray', '-jpegopt', 'quality=80', '-r', String(ocr.dpi), pdfPath, join(ocrDir, 'batch')],
+      300_000,
+    );
+  }
+
+  const batchFilesByPage = new Map();
+  if (targetPages.length > 4) {
+    for (const entry of readdirSync(ocrDir)) {
+      const m = entry.match(/^batch-0*(\d+)\.jpg$/i);
+      if (m) {
+        batchFilesByPage.set(Number(m[1]), join(ocrDir, entry));
+      }
+    }
+  }
+
+  const concurrency = 6;
   let index = 0;
 
   async function worker() {
@@ -271,7 +327,14 @@ async function runOcrPass(pdfPath, pages, outDir) {
       const page = targetPages[index++];
       if (!page) break;
 
-      const rendered = await renderPageAsync(pdftoppm, pdfPath, page.page, ocr.dpi, ocrDir);
+      let rendered = null;
+      const preRenderedImg = batchFilesByPage.get(page.page);
+      if (preRenderedImg && existsSync(preRenderedImg)) {
+        rendered = { img: preRenderedImg, base: join(ocrDir, `page-${page.page}`) };
+      } else {
+        rendered = await renderPageAsync(pdftoppm, pdfPath, page.page, ocr.dpi, ocrDir);
+      }
+
       if (!rendered) {
         ocr.skipped += 1;
         continue;
@@ -285,19 +348,29 @@ async function runOcrPass(pdfPath, pages, outDir) {
         continue;
       }
 
+      if (cacheDir) {
+        try {
+          writeFileSync(join(cacheDir, `page-${page.page}.txt`), text);
+        } catch {
+          // Ignore cache write errors
+        }
+      }
+
       page.text = text;
       page.elements = ocrElements(page.page, text, 'ocr');
       ocr.pages += 1;
     }
   }
 
-  await Promise.all(Array.from({ length: Math.min(concurrency, targetPages.length) }, () => worker()));
+  if (targetPages.length > 0) {
+    await Promise.all(Array.from({ length: Math.min(concurrency, targetPages.length) }, () => worker()));
+  }
 
   ocr.used = ocr.pages > 0;
   ocr.tool = 'tesseract';
 
   if (ocr.used) {
-    console.log(`[ocr] tesseract OCR extracted text from ${ocr.pages}/${targetPages.length} pages (lang: ${ocr.lang}).`);
+    console.log(`[ocr] tesseract OCR extracted text from ${ocr.pages}/${pages.length} pages (lang: ${ocr.lang}).`);
   } else {
     console.error(
       `[ocr] tesseract OCR produced no usable text (${ocr.skipped}/${targetPages.length} pages skipped, lang: ${ocr.lang}). ` +

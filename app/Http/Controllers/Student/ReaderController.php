@@ -229,17 +229,26 @@ class ReaderController extends Controller
      * `signed` + a 5-per-10-seconds throttle). Never linked to directly —
      * only ever reached via a URL minted by pageUrl() above.
      */
-    public function servePage(Request $request, Book $book, int $page, BookReaderService $reader): HttpResponse
+    public function servePage(Request $request, Book $book, int $page, BookReaderService $reader): \Symfony\Component\HttpFoundation\Response
     {
         abort_unless((int) $request->query('student') === auth('web')->id(), 403);
 
         $student = auth('web')->user();
+        $filePath = $reader->renderPageFile($book, $page, $student);
+
+        if ($filePath && file_exists($filePath)) {
+            return response()->file($filePath, [
+                'Content-Type' => 'image/jpeg',
+                'Cache-Control' => 'public, max-age=604800, immutable',
+            ]);
+        }
+
         $bytes = $reader->renderPage($book, $page, $student);
         $isSvg = str_starts_with(ltrim($bytes), '<svg');
 
         return response($bytes, 200, [
             'Content-Type' => $isSvg ? 'image/svg+xml' : 'image/jpeg',
-            'Cache-Control' => 'private, max-age=86400, immutable',
+            'Cache-Control' => 'public, max-age=604800, immutable',
         ]);
     }
 

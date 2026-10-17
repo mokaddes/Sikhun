@@ -96,18 +96,28 @@ class MyBookReaderController extends Controller
         return response()->json(['saved' => true]);
     }
 
-    public function servePage(Request $request, MyBook $myBook, int $page, BookReaderService $reader): HttpResponse
+    public function servePage(Request $request, MyBook $myBook, int $page, BookReaderService $reader): \Symfony\Component\HttpFoundation\Response
     {
         $this->authorize($myBook);
 
         abort_unless((int) $request->query('student') === auth('web')->id(), 403);
 
-        $bytes = $reader->renderPage($myBook, $page, auth('web')->user());
+        $student = auth('web')->user();
+        $filePath = $reader->renderPageFile($myBook, $page, $student);
+
+        if ($filePath && file_exists($filePath)) {
+            return response()->file($filePath, [
+                'Content-Type' => 'image/jpeg',
+                'Cache-Control' => 'public, max-age=604800, immutable',
+            ]);
+        }
+
+        $bytes = $reader->renderPage($myBook, $page, $student);
         $isSvg = str_starts_with(ltrim($bytes), '<svg');
 
         return response($bytes, 200, [
             'Content-Type' => $isSvg ? 'image/svg+xml' : 'image/jpeg',
-            'Cache-Control' => 'private, max-age=86400, immutable',
+            'Cache-Control' => 'public, max-age=604800, immutable',
         ]);
     }
 

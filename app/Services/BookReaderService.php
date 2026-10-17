@@ -45,6 +45,34 @@ class BookReaderService
         return "{$ns}/watermarked/{$source}/{$studentId}/{$page}.jpg";
     }
 
+    /**
+     * Returns absolute path to the watermarked page file on disk so Laravel
+     * can stream it via zero-copy sendfile() and browser HTTP caching.
+     */
+    public function renderPageFile(PdfParsable $book, int $page, Student $student): ?string
+    {
+        $watermarkedRelPath = $this->watermarkedRelPath($book, $page, $student->id);
+        $disk = Storage::disk('private');
+
+        if ($disk->exists($watermarkedRelPath)) {
+            $path = $disk->path($watermarkedRelPath);
+            if (file_exists($path) && filesize($path) > 0) {
+                return $path;
+            }
+        }
+
+        // Generate and cache to disk
+        $bytes = $this->renderPage($book, $page, $student);
+        if ($disk->exists($watermarkedRelPath)) {
+            $path = $disk->path($watermarkedRelPath);
+            if (file_exists($path) && filesize($path) > 0) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
     public function renderPage(PdfParsable $book, int $page, Student $student): string
     {
         $ns = $this->baseNamespace($book);

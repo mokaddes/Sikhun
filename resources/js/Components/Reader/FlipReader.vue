@@ -48,7 +48,9 @@ let panStart = { x: 0, y: 0 };
 
 const size = ref(computeSize());
 const loaded = {};
+const memoryCache = new Set();
 let inflight = new Set();
+let prewarmTimer = null;
 
 const currentPos = ref(1);
 const currentPage = ref(1);
@@ -169,19 +171,26 @@ function applyPageImage(realPage, url) {
 
     if ($page.attr('data-loaded-url') === url) return;
 
-    // Use Image preloader so background never flashes blank or white
+    // Apply background image immediately so the browser starts progressive painting
+    $page.attr('data-loaded-url', url);
+    $page.css({
+        'background-image': `url("${url}")`,
+        'background-size': '100% 100%',
+        'background-repeat': 'no-repeat',
+        'background-position': 'center',
+    });
+
+    if (memoryCache.has(url)) {
+        $page.children('.turn-page-loader').remove();
+        return;
+    }
+
     const img = new Image();
     img.onload = () => {
-        $page.attr('data-loaded-url', url);
-        $page.css({
-            'background-image': `url("${url}")`,
-            'background-size': '100% 100%',
-            'background-repeat': 'no-repeat',
-            'background-position': 'center',
-        });
+        memoryCache.add(url);
         const loader = $page.children('.turn-page-loader');
         if (loader.length) {
-            loader.fadeOut(120, function () {
+            loader.fadeOut(80, function () {
                 $(this).remove();
             });
         }
@@ -240,33 +249,50 @@ function ensureUrl(realPage) {
         });
 }
 
-// Pre-load neighboring pages into browser cache for instant page flips
+// Low-overhead pre-load of neighboring pages without flooding the network
 function prewarm(realPage) {
     if (loaded[realPage] || inflight.has(realPage)) return;
 
     const direct = props.pageUrls?.[realPage];
-    const via = (url) => {
-        loaded[realPage] = true;
-        applyPageImage(realPage, url);
-        inflight.add(realPage);
-        const img = new Image();
-        img.onload = () => inflight.delete(realPage);
-        img.onerror = () => {
-            loaded[realPage] = false;
-            inflight.delete(realPage);
-        };
-        img.src = url;
-    };
-
     if (direct) {
-        via(direct);
+        if (!memoryCache.has(direct)) {
+            inflight.add(realPage);
+            const img = new Image();
+            img.onload = () => {
+                memoryCache.add(direct);
+                inflight.delete(realPage);
+                loaded[realPage] = true;
+                applyPageImage(realPage, direct);
+            };
+            img.onerror = () => inflight.delete(realPage);
+            img.src = direct;
+        } else {
+            loaded[realPage] = true;
+            applyPageImage(realPage, direct);
+        }
         return;
     }
 
     inflight.add(realPage);
     axios
         .get(pageUrl(realPage))
-        .then(({ data }) => via(data.url))
+        .then(({ data }) => {
+            if (!memoryCache.has(data.url)) {
+                const img = new Image();
+                img.onload = () => {
+                    memoryCache.add(data.url);
+                    inflight.delete(realPage);
+                    loaded[realPage] = true;
+                    applyPageImage(realPage, data.url);
+                };
+                img.onerror = () => inflight.delete(realPage);
+                img.src = data.url;
+            } else {
+                inflight.delete(realPage);
+                loaded[realPage] = true;
+                applyPageImage(realPage, data.url);
+            }
+        })
         .catch(() => {})
         .finally(() => {
             inflight.delete(realPage);
@@ -276,6 +302,8 @@ function prewarm(realPage) {
 function loadView(view, prefetch = true) {
     if (!Array.isArray(view)) return;
     const seen = new Set();
+
+    // 1. Visible spread has absolute priority — load immediately!
     view.forEach((pos) => {
         if (pos > 0) {
             const real = realPages.value[pos - 1];
@@ -286,31 +314,31 @@ function loadView(view, prefetch = true) {
         }
     });
 
+    // 2. Prefetch nearby pages only after the user rests on the page (debounced 250ms)
     if (prefetch) {
-        // Aggressive prefetch: ahead by 1..5 pages and behind by 1..2 pages
-        const activePos = view.filter((p) => p > 0);
-        const maxPos = Math.max(...activePos, 1);
-        const minPos = Math.min(...activePos, 1);
+        window.clearTimeout(prewarmTimer);
+        prewarmTimer = window.setTimeout(() => {
+            const activePos = view.filter((p) => p > 0);
+            const maxPos = Math.max(...activePos, 1);
+            const minPos = Math.min(...activePos, 1);
 
-        const targets = [
-            maxPos + 1,
-            maxPos + 2,
-            maxPos + 3,
-            maxPos + 4,
-            maxPos + 5,
-            minPos - 1,
-            minPos - 2,
-        ];
+            // Light prefetch: next 2 pages and previous 1 page
+            const targets = [
+                maxPos + 1,
+                maxPos + 2,
+                minPos - 1,
+            ];
 
-        targets.forEach((pos) => {
-            if (pos > 0 && pos <= realPages.value.length) {
-                const real = realPages.value[pos - 1];
-                if (real !== undefined && !seen.has(real)) {
-                    seen.add(real);
-                    prewarm(real);
+            targets.forEach((pos) => {
+                if (pos > 0 && pos <= realPages.value.length) {
+                    const real = realPages.value[pos - 1];
+                    if (real !== undefined && !seen.has(real)) {
+                        seen.add(real);
+                        prewarm(real);
+                    }
                 }
-            }
-        });
+            });
+        }, 250);
     }
 }
 
@@ -354,7 +382,7 @@ function createTurn() {
         width,
         height: pageH,
         elevation: 50,
-        duration: 380, // Snappy & super responsive page flip
+        duration: 320, // Snappy, super responsive page flip
         gradients: true,
         autoCenter: true,
         display: double ? 'double' : 'single',
@@ -620,7 +648,7 @@ onBeforeUnmount(() => {
 <template>
     <div
         ref="rootEl"
-        class="flipbook-viewport turn-reader relative select-none rounded-2xl bg-neutral-900 shadow-2xl overflow-hidden flex flex-col justify-center items-center"
+        class="flipbook-viewport turn-reader relative select-none rounded-2xl bg-slate-100 dark:bg-neutral-900 border border-slate-200/90 dark:border-neutral-800 shadow-xl overflow-hidden flex flex-col justify-center items-center transition-colors duration-200"
         :class="{ 'is-zoomed': zoomLevel > 1.0, 'is-fullscreen': isFullscreen }"
         :style="{ height: isFullscreen ? '100vh' : `${size.pageH + 40}px` }"
         @mousedown="onMouseDown"
@@ -634,8 +662,8 @@ onBeforeUnmount(() => {
         @dblclick="toggleZoom"
     >
         <!-- Floating Header Controls (Zoom + Fullscreen) -->
-        <div class="absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-lg">
-            <span v-if="zoomLevel > 1.0" class="text-xs font-semibold text-white/90 mr-1">
+        <div class="absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-white/90 dark:bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-200/90 dark:border-white/10 shadow-md text-slate-700 dark:text-white">
+            <span v-if="zoomLevel > 1.0" class="text-xs font-semibold text-slate-800 dark:text-white/90 mr-1">
                 {{ Math.round(zoomLevel * 100) }}%
             </span>
 
@@ -672,7 +700,7 @@ onBeforeUnmount(() => {
                 <MagnifyingGlassPlusIcon class="w-4 h-4" />
             </button>
 
-            <div class="w-px h-4 bg-white/20 mx-1"></div>
+            <div class="w-px h-4 bg-slate-300 dark:bg-white/20 mx-1"></div>
 
             <button
                 type="button"
@@ -686,21 +714,21 @@ onBeforeUnmount(() => {
             </button>
         </div>
 
-        <div v-if="initError" class="absolute inset-0 z-20 flex flex-col items-center justify-center text-sm text-red-400 gap-2">
+        <div v-if="initError" class="absolute inset-0 z-20 flex flex-col items-center justify-center text-sm text-red-500 gap-2">
             <span>{{ t('reader.load_failed') }}</span>
-            <button type="button" @click="initTurn" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-xs text-white">
+            <button type="button" @click="initTurn" class="px-3 py-1 bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 rounded text-xs text-slate-800 dark:text-white">
                 Retry
             </button>
         </div>
 
-        <div v-else-if="!realPages.length" class="absolute inset-0 z-20 flex items-center justify-center text-sm text-white/60">
+        <div v-else-if="!realPages.length" class="absolute inset-0 z-20 flex items-center justify-center text-sm text-slate-500 dark:text-white/60">
             {{ t('reader.load_failed') }}
         </div>
 
         <template v-else>
             <div
                 v-if="initializing"
-                class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-neutral-900/90 text-sm text-white/80"
+                class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-white/80 dark:bg-neutral-900/90 text-sm text-slate-700 dark:text-white/80"
             >
                 <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                 <span>{{ t('reader.loading') }}</span>
@@ -780,13 +808,13 @@ onBeforeUnmount(() => {
     align-items: center;
     justify-content: center;
     border-radius: 9999px;
-    color: #fff;
+    color: currentColor;
     background: transparent;
     transition: all 0.15s ease;
 }
 .zoom-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.1);
+    background: rgba(100, 116, 139, 0.18);
+    transform: scale(1.08);
 }
 .zoom-btn:disabled {
     opacity: 0.35;
@@ -805,7 +833,7 @@ onBeforeUnmount(() => {
     inset: 0 !important;
     z-index: 9999 !important;
     border-radius: 0 !important;
-    background: #000000 !important;
+    background: #0f172a !important;
 }
 
 .turn-reader .container {
@@ -818,7 +846,7 @@ onBeforeUnmount(() => {
 
 .turn-reader .flipbook {
     position: absolute;
-    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 18px 45px -12px rgba(15, 23, 42, 0.25);
 }
 
 .turn-reader .page {
@@ -826,8 +854,16 @@ onBeforeUnmount(() => {
     background-repeat: no-repeat;
     background-size: 100% 100%;
     background-position: center;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 18px -2px rgba(15, 23, 42, 0.1);
     overflow: hidden;
+}
+
+/* Subtle book spine crease fold shadow in double-page mode */
+.turn-reader .turn-page.odd {
+    box-shadow: inset 16px 0 20px -12px rgba(15, 23, 42, 0.12);
+}
+.turn-reader .turn-page.even {
+    box-shadow: inset -16px 0 20px -12px rgba(15, 23, 42, 0.12);
 }
 
 .turn-reader .page img,

@@ -53,8 +53,9 @@ function onPageChange(pageNumber) {
             @page-change="onPageChange"
         />
 
-        <div class="fixed bottom-5 right-5 z-40 w-80 max-w-[calc(100vw-2.5rem)]">
-            <div v-if="chatOpen" class="mb-3">
+        <!-- Page-context chat — pinned to bottom-right corner -->
+        <div class="fixed bottom-6 right-6 z-40 flex flex-col items-end pointer-events-none">
+            <div v-if="chatOpen" class="mb-3 w-80 sm:w-96 max-w-[calc(100vw-3rem)] pointer-events-auto">
                 <ReaderChatPanel
                     :chat-url="`/my-books/${myBook.id}/read/chat`"
                     :page="currentPage"
@@ -63,7 +64,7 @@ function onPageChange(pageNumber) {
             </div>
             <button
                 v-else
-                class="w-14 h-14 rounded-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xl flex items-center justify-center transition-transform hover:scale-105"
+                class="pointer-events-auto w-14 h-14 rounded-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
                 :aria-label="t('reader.chat_title')"
                 :title="t('reader.chat_title')"
                 @click="chatOpen = true"

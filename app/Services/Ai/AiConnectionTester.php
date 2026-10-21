@@ -9,118 +9,149 @@ use Throwable;
 
 /**
  * Lightweight "is this provider reachable" check used by the admin
- * "Test Connection" button. Deliberately cheap (list-models / health-check
- * endpoints, not a real completion) so it's safe to click repeatedly.
- *
- * Full chat/stream/embed calls go through AiProviderFactory (Phase 4) —
- * this class only answers "is the config valid and the endpoint alive?".
+ * "Test Connection" button.
  */
 class AiConnectionTester
 {
     public function test(AiProvider $provider): array
     {
-        Log::info('Custom provider ready to check response:', [
+        Log::info('Testing AI provider connection:', [
+            'id' => $provider->id,
             'type' => $provider->type,
             'url' => $provider->api_endpoint,
-            'headers' => $provider->custom_headers,
-            'model' => $provider->model_name ?? 'deepseek-v4-flash-free',
+            'model' => $provider->model_name,
         ]);
+
         try {
             return match ($provider->type) {
-                'openai' => $this->checkBearerEndpoint($provider, 'https://api.openai.com/v1/models'),
-                'groq' => $this->checkBearerEndpoint($provider, 'https://api.groq.com/openai/v1/models'),
-                'deepseek' => $this->checkBearerEndpoint($provider, 'https://api.deepseek.com/v1/models'),
-                'gemini' => $this->checkGemini($provider),
-                'claude' => $this->checkAnthropic($provider),
-                'huggingface' => $this->checkBearerEndpoint($provider, 'https://huggingface.co/api/whoami-v2'),
-                'ollama' => $this->checkLocalEndpoint($provider, '/api/tags'),
-                'vllm' => $this->checkLocalEndpoint($provider, '/v1/models'),
+                'openai_compatible', 'openai', 'groq', 'deepseek', 'ollama', 'vllm', 'huggingface' => $this->checkOpenAiCompatible($provider),
+                'anthropic_compatible', 'claude' => $this->checkAnthropic($provider),
+                'google_gemini', 'gemini' => $this->checkGemini($provider),
                 'custom' => $this->checkCustom($provider),
-                default => ['success' => false, 'message' => 'Unknown provider type.'],
+                default => ['success' => false, 'message' => "Unknown provider type: {$provider->type}"],
             };
         } catch (Throwable $e) {
             return ['success' => false, 'message' => 'Connection error: '.$e->getMessage()];
         }
     }
 
-    private function checkBearerEndpoint(AiProvider $provider, string $url): array
+    private function checkOpenAiCompatible(AiProvider $provider): array
     {
-        if (empty($provider->api_key)) {
-            return ['success' => false, 'message' => 'No API key configured.'];
+        $endpoint = trim((string) ($provider->api_endpoint ?: ''));
+
+        // If no endpoint specified, check OpenAI official API
+        if ($endpoint === '') {
+            if (empty($provider->api_key)) {
+                return ['success' => false, 'message' => 'No API key configured for OpenAI.'];
+            }
+            $response = Http::withToken($provider->api_key)->timeout(8)->get('https://api.openai.com/v1/models');
+            return $response->successful()
+                ? ['success' => true, 'message' => 'Connected successfully to OpenAI.']
+                : ['success' => false, 'message' => "OpenAI responded with HTTP status {$response->status()}."];
         }
 
-        $response = Http::withToken($provider->api_key)->timeout(6)->get($url);
+        // Build target URL for completions check
+        $targetUrl = str_ends_with($endpoint, '/chat/completions')
+            ? $endpoint
+            : rtrim($endpoint, '/').'/chat/completions';
 
-        return $response->successful()
-            ? ['success' => true, 'message' => 'Connected successfully.']
-            : ['success' => false, 'message' => "API responded with status {$response->status()}."];
-    }
-
-    private function checkGemini(AiProvider $provider): array
-    {
-        if (empty($provider->api_key)) {
-            return ['success' => false, 'message' => 'No API key configured.'];
+        $headers = [];
+        foreach ((array) $provider->custom_headers as $h) {
+            $name = trim((string) ($h['name'] ?? ''));
+            if ($name !== '') {
+                $headers[$name] = (string) ($h['value'] ?? '');
+            }
         }
 
-        $response = Http::timeout(6)->get('https://generativelanguage.googleapis.com/v1beta/models', [
-            'key' => $provider->api_key,
-        ]);
+        if (! isset($headers['Authorization']) && ! empty($provider->api_key)) {
+            $headers['Authorization'] = 'Bearer '.$provider->api_key;
+        }
 
-        return $response->successful()
-            ? ['success' => true, 'message' => 'Connected successfully.']
-            : ['success' => false, 'message' => "API responded with status {$response->status()}."];
+        $payload = [
+            'model' => $provider->model_name ?: 'gpt-3.5-turbo',
+            'messages' => [['role' => 'user', 'content' => 'ping']],
+            'max_tokens' => 1,
+        ];
+
+        $response = Http::withHeaders($headers)->timeout(12)->post($targetUrl, $payload);
+
+        if ($response->successful()) {
+            return ['success' => true, 'message' => 'Connected successfully to OpenAI-compatible endpoint.'];
+        }
+
+        // If 404 on /chat/completions, try a GET on models/tags endpoint
+        $modelsUrl = str_ends_with($endpoint, '/v1') ? $endpoint.'/models' : rtrim($endpoint, '/').'/models';
+        $fallback = Http::withHeaders($headers)->timeout(6)->get($modelsUrl);
+        if ($fallback->successful()) {
+            return ['success' => true, 'message' => 'Connected to host (models endpoint verified).'];
+        }
+
+        return [
+            'success' => false,
+            'message' => "Endpoint returned HTTP {$response->status()}: ".mb_substr($response->body(), 0, 150),
+        ];
     }
 
     private function checkAnthropic(AiProvider $provider): array
     {
         if (empty($provider->api_key)) {
-            return ['success' => false, 'message' => 'No API key configured.'];
+            return ['success' => false, 'message' => 'No API key configured for Anthropic.'];
         }
 
-        // Anthropic has no unauthenticated "list models" ping; a minimal
-        // 1-token request is the standard way to validate a key cheaply.
-        $response = Http::withHeaders([
+        $endpoint = trim((string) ($provider->api_endpoint ?: ''));
+        $targetUrl = 'https://api.anthropic.com/v1/messages';
+        if ($endpoint !== '') {
+            $targetUrl = str_ends_with($endpoint, '/messages')
+                ? $endpoint
+                : (str_ends_with($endpoint, '/v1') ? $endpoint.'/messages' : rtrim($endpoint, '/').'/v1/messages');
+        }
+
+        $headers = [
             'x-api-key' => $provider->api_key,
             'anthropic-version' => '2023-06-01',
-        ])->timeout(6)->post('https://api.anthropic.com/v1/messages', [
+        ];
+
+        foreach ((array) $provider->custom_headers as $h) {
+            $name = trim((string) ($h['name'] ?? ''));
+            if ($name !== '') {
+                $headers[$name] = (string) ($h['value'] ?? '');
+            }
+        }
+
+        $response = Http::withHeaders($headers)->timeout(10)->post($targetUrl, [
             'model' => $provider->model_name ?: 'claude-3-haiku-20240307',
             'max_tokens' => 1,
             'messages' => [['role' => 'user', 'content' => 'ping']],
         ]);
 
         return $response->successful()
-            ? ['success' => true, 'message' => 'Connected successfully.']
-            : ['success' => false, 'message' => "API responded with status {$response->status()}."];
+            ? ['success' => true, 'message' => 'Connected successfully to Anthropic.']
+            : ['success' => false, 'message' => "Anthropic responded with HTTP {$response->status()}: ".mb_substr($response->body(), 0, 150)];
     }
 
-    private function checkLocalEndpoint(AiProvider $provider, string $path): array
+    private function checkGemini(AiProvider $provider): array
     {
-        $base = rtrim($provider->api_endpoint ?: '', '/');
-
-        if (! $base) {
-            return ['success' => false, 'message' => 'No endpoint URL configured.'];
+        if (empty($provider->api_key)) {
+            return ['success' => false, 'message' => 'No API key configured for Google Gemini.'];
         }
 
-        $response = Http::timeout(4)->get($base.$path);
+        $baseUrl = rtrim($provider->api_endpoint ?: 'https://generativelanguage.googleapis.com', '/');
+
+        $response = Http::timeout(8)->get("{$baseUrl}/v1beta/models", [
+            'key' => $provider->api_key,
+        ]);
 
         return $response->successful()
-            ? ['success' => true, 'message' => 'Local endpoint reachable.']
-            : ['success' => false, 'message' => "Endpoint responded with status {$response->status()}."];
+            ? ['success' => true, 'message' => 'Connected successfully to Google Gemini API.']
+            : ['success' => false, 'message' => "Gemini API responded with HTTP {$response->status()}: ".mb_substr($response->body(), 0, 150)];
     }
 
-    /**
-     * Custom providers expose a full chat/completions URL and any number of
-     * admin-defined request headers. A cheap GET to that URL is enough to
-     * confirm the endpoint is alive and the headers are accepted (an
-     * unauthenticated GET usually returns 401, which still proves the host
-     * is reachable — a real "works" answer needs an actual completion).
-     */
     private function checkCustom(AiProvider $provider): array
     {
-        $url = $provider->api_endpoint ?: '';
+        $url = trim((string) ($provider->api_endpoint ?: ''));
 
-        if (! $url) {
-            return ['success' => false, 'message' => 'No endpoint URL configured.'];
+        if ($url === '') {
+            return ['success' => false, 'message' => 'No custom API endpoint URL configured.'];
         }
 
         $headers = [];
@@ -131,49 +162,20 @@ class AiConnectionTester
             }
         }
 
-        if (! isset($headers['Authorization']) && $provider->api_key) {
+        if (! isset($headers['Authorization']) && ! empty($provider->api_key)) {
             $headers['Authorization'] = 'Bearer '.$provider->api_key;
         }
 
-        // Default payload matching your curl example
         $payload = [
-            'model' => $provider->model_name ?? 'deepseek-v4-flash-free',
-            'messages' => [
-                [
-                    'role' => 'user',
-                    'content' => 'hey',
-                ],
-            ],
+            'model' => $provider->model_name ?: 'default',
+            'messages' => [['role' => 'user', 'content' => 'ping']],
+            'max_tokens' => 1,
         ];
 
-         Log::info('Custom provider ready to check response:', [
-            'url' => $url,
-            'headers' => $headers,
-            'model' => $provider->model_name ?? 'deepseek-v4-flash-free',
-        ]);
-        // Change .get() to .post()
-        $response = Http::withHeaders($headers)
-            ->timeout(10)
-            ->post($url, $payload);
-
-        Log::info('Custom provider check response:', [
-            'url' => $url,
-            'headers' => $headers,
-            'response' => $response->json(),
-            'status' => $response->status(),
-            'body' => $response->body(),
-            'model' => $provider->model_name ?? 'deepseek-v4-flash-free',
-        ]);
+        $response = Http::withHeaders($headers)->timeout(12)->post($url, $payload);
 
         return $response->successful()
-            ? ['success' => true, 'message' => 'Endpoint reachable.']
-            : ['success' => false, 'message' => "Endpoint responded with status {$response->status()}.",
-            'url' => $url,
-            'headers' => $headers,
-            'response' => $response->json(),
-            'status' => $response->status(),
-            'body' => $response->body(),
-            'model' => $provider->model_name ?? 'deepseek-v4-flash-free',
-            ];
+            ? ['success' => true, 'message' => 'Custom API endpoint reachable and response accepted.']
+            : ['success' => false, 'message' => "Endpoint responded with HTTP {$response->status()}: ".mb_substr($response->body(), 0, 150)];
     }
 }

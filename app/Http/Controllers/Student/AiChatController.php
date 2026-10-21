@@ -298,7 +298,10 @@ class AiChatController extends Controller
      */
     private function normalizePayloadForProvider(array $payload, AiProviderContract $provider): array
     {
-        if ($provider instanceof AbstractOpenAiCompatibleProvider) {
+        $isOpenAi = $provider instanceof AbstractOpenAiCompatibleProvider
+            || ($provider instanceof \App\Services\Ai\LoggingAiProviderDecorator && $provider->getInner() instanceof AbstractOpenAiCompatibleProvider);
+
+        if ($isOpenAi) {
             return array_map(function (array $message) {
                 if (is_string($message['content'])) {
                     return $message;

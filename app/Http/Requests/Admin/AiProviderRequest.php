@@ -12,7 +12,7 @@ class AiProviderRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'in:openai,gemini,claude,groq,deepseek,ollama,vllm,huggingface,custom'],
+            'type' => ['required', 'in:openai_compatible,anthropic_compatible,google_gemini,custom,openai,gemini,claude,groq,deepseek,ollama,vllm,huggingface'],
             'api_key' => ['nullable', 'string'],
             'model_name' => ['required', 'string', 'max:200'],
             'api_endpoint' => ['nullable', 'string', 'max:500'],
@@ -22,9 +22,6 @@ class AiProviderRequest extends FormRequest
             'is_active' => ['boolean'],
             'max_tokens' => ['required', 'integer', 'min:1'],
             'temperature' => ['required', 'numeric', 'min:0', 'max:2'],
-            // Multi-select: this one set of credentials can cover any number
-            // of use cases at once — this is the actual fix for "one
-            // credential needs to work for all use cases".
             'use_cases' => ['required', 'array', 'min:1'],
             'use_cases.*' => ['in:book_chat,exam_gen,flashcard_gen,essay_grade,schedule_gen,notification_gen,support_bot,book_ocr,book_retrieval,book_structure,blog_translate,blog_rewrite'],
             'default_use_cases' => ['nullable', 'array'],

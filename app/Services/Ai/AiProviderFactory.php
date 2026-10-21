@@ -4,15 +4,10 @@ namespace App\Services\Ai;
 
 use App\Contracts\AiProviderContract;
 use App\Models\AiProvider;
-use App\Services\Ai\Providers\ClaudeProvider;
+use App\Services\Ai\Providers\AnthropicCompatibleProvider;
 use App\Services\Ai\Providers\CustomProvider;
-use App\Services\Ai\Providers\DeepSeekProvider;
 use App\Services\Ai\Providers\GeminiProvider;
-use App\Services\Ai\Providers\GroqProvider;
-use App\Services\Ai\Providers\HuggingFaceProvider;
-use App\Services\Ai\Providers\OllamaProvider;
-use App\Services\Ai\Providers\OpenAiProvider;
-use App\Services\Ai\Providers\VllmProvider;
+use App\Services\Ai\Providers\OpenAiCompatibleProvider;
 
 /**
  * The ONLY way any code in this app should ever talk to an AI model.
@@ -22,16 +17,24 @@ use App\Services\Ai\Providers\VllmProvider;
  */
 class AiProviderFactory
 {
-    public static function make(int $providerId): AiProviderContract
+    public static function make(int $providerId, ?string $useCase = null, array $context = []): AiProviderContract
     {
-        return self::instantiate(AiProvider::findOrFail($providerId));
+        $provider = AiProvider::findOrFail($providerId);
+        return new LoggingAiProviderDecorator(
+            self::instantiate($provider),
+            $provider,
+            $useCase ?: 'direct_call',
+            $context
+        );
     }
 
     /**
-     * @param string $useCase configured AI feature, including book_chat, book_ocr,
-     *                        book_retrieval, and book_structure
+     * @param string $useCase configured AI feature, including book_chat, exam_gen,
+     *                        flashcard_gen, essay_grade, schedule_gen, notification_gen,
+     *                        support_bot, book_ocr, book_retrieval, book_structure,
+     *                        blog_translate, blog_rewrite
      */
-    public static function default(string $useCase): AiProviderContract
+    public static function default(string $useCase, array $context = []): AiProviderContract
     {
         $mapping = \App\Models\AiProviderUseCase::where('use_case', $useCase)
             ->where('is_default', true)
@@ -40,7 +43,12 @@ class AiProviderFactory
             ->first();
 
         if ($mapping && $mapping->provider) {
-            return self::instantiate($mapping->provider);
+            return new LoggingAiProviderDecorator(
+                self::instantiate($mapping->provider),
+                $mapping->provider,
+                $useCase,
+                $context
+            );
         }
 
         // Fallback to book_chat or any active provider so unmapped secondary use-cases
@@ -52,30 +60,35 @@ class AiProviderFactory
             ->first();
 
         if ($fallbackMapping && $fallbackMapping->provider) {
-            return self::instantiate($fallbackMapping->provider);
+            return new LoggingAiProviderDecorator(
+                self::instantiate($fallbackMapping->provider),
+                $fallbackMapping->provider,
+                $useCase,
+                $context
+            );
         }
 
         $activeProvider = AiProvider::where('is_active', true)->orderBy('id')->first();
         if ($activeProvider) {
-            return self::instantiate($activeProvider);
+            return new LoggingAiProviderDecorator(
+                self::instantiate($activeProvider),
+                $activeProvider,
+                $useCase,
+                $context
+            );
         }
 
         throw new \RuntimeException("No active default AI provider configured for '{$useCase}'. Set one up in /admin/ai-providers.");
     }
 
-    private static function instantiate(AiProvider $provider): AiProviderContract
+    public static function instantiate(AiProvider $provider): AiProviderContract
     {
         return match ($provider->type) {
-            'openai' => new OpenAiProvider($provider),
-            'gemini' => new GeminiProvider($provider),
-            'claude' => new ClaudeProvider($provider),
-            'groq' => new GroqProvider($provider),
-            'deepseek' => new DeepSeekProvider($provider),
-            'ollama' => new OllamaProvider($provider),
-            'vllm' => new VllmProvider($provider),
-            'huggingface' => new HuggingFaceProvider($provider),
+            'openai_compatible', 'openai', 'groq', 'deepseek', 'ollama', 'vllm', 'huggingface' => new OpenAiCompatibleProvider($provider),
+            'anthropic_compatible', 'claude' => new AnthropicCompatibleProvider($provider),
+            'google_gemini', 'gemini' => new GeminiProvider($provider),
             'custom' => new CustomProvider($provider),
-            default => throw new \InvalidArgumentException("Unknown AI provider type: {$provider->type}"),
+            default => new OpenAiCompatibleProvider($provider),
         };
     }
 }

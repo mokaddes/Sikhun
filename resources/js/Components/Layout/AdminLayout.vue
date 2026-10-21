@@ -29,6 +29,7 @@ import {
     Bars3Icon,
     ChevronDoubleLeftIcon,
     MagnifyingGlassIcon,
+    CommandLineIcon,
 } from '@heroicons/vue/24/outline';
 
 const { t } = useI18n();
@@ -127,6 +128,7 @@ const nav = computed(() => [
         items: [
             { label: t('admin.nav.pages'), href: '/admin/pages', icon: ClipboardDocumentCheckIcon },
             { label: t('admin.nav.ai_providers'), href: '/admin/ai-providers', icon: BoltIcon },
+            { label: t('admin.nav.ai_logs'), href: '/admin/ai-logs', icon: CommandLineIcon },
             { label: t('admin.nav.settings'), href: '/admin/settings', icon: Cog6ToothIcon },
         ],
     },

@@ -16,16 +16,55 @@ use Inertia\Response;
 
 class AiProviderController extends Controller
 {
+    public const PROVIDER_TYPES = [
+        'openai_compatible' => [
+            'label' => 'OpenAI Compatible',
+            'recommended' => true,
+            'description' => 'OpenAI, Groq, DeepSeek, Ollama, vLLM, OpenRouter, and other compatible APIs.',
+            'endpoint_hint' => 'Base URL or /chat/completions endpoint (e.g. https://api.openai.com/v1, https://api.deepseek.com/v1, https://openrouter.ai/api/v1). Leave blank to default to https://api.openai.com/v1.',
+            'default_endpoint' => 'https://api.openai.com/v1',
+            'default_model' => 'gpt-4o',
+        ],
+        'anthropic_compatible' => [
+            'label' => 'Anthropic Compatible',
+            'recommended' => false,
+            'description' => 'Anthropic Claude API and providers implementing the Anthropic Messages API.',
+            'endpoint_hint' => 'Anthropic base URL (defaults to https://api.anthropic.com if left blank).',
+            'default_endpoint' => 'https://api.anthropic.com',
+            'default_model' => 'claude-3-5-sonnet-20241022',
+        ],
+        'google_gemini' => [
+            'label' => 'Google Gemini',
+            'recommended' => false,
+            'description' => 'Google Gemini API and its native request/response format.',
+            'endpoint_hint' => 'Gemini API base URL (defaults to https://generativelanguage.googleapis.com if left blank).',
+            'default_endpoint' => 'https://generativelanguage.googleapis.com',
+            'default_model' => 'gemini-1.5-flash',
+        ],
+        'custom' => [
+            'label' => 'Custom API',
+            'recommended' => false,
+            'description' => 'Custom base URL, authentication, headers, and API implementation.',
+            'endpoint_hint' => 'Full URL to the chat/completions endpoint (e.g. https://your-server.com/api/v1/chat/completions).',
+            'default_endpoint' => '',
+            'default_model' => '',
+        ],
+    ];
+
     public function index(): Response
     {
         return Inertia::render('Admin/AiProviders/Index', [
             'providers' => AiProvider::with('useCases')->orderBy('name')->get(),
+            'providerTypes' => self::PROVIDER_TYPES,
         ]);
     }
 
     public function create(): Response
     {
-        return Inertia::render('Admin/AiProviders/Form', ['provider' => null]);
+        return Inertia::render('Admin/AiProviders/Form', [
+            'provider' => null,
+            'providerTypes' => self::PROVIDER_TYPES,
+        ]);
     }
 
     public function store(AiProviderRequest $request): RedirectResponse
@@ -46,6 +85,7 @@ class AiProviderController extends Controller
     {
         return Inertia::render('Admin/AiProviders/Form', [
             'provider' => $aiProvider->load('useCases'),
+            'providerTypes' => self::PROVIDER_TYPES,
         ]);
     }
 
@@ -83,8 +123,9 @@ class AiProviderController extends Controller
             'type' => $aiProvider->type,
             'url' => $aiProvider->api_endpoint,
             'headers' => $aiProvider->custom_headers,
-            'model' => $aiProvider->model_name ?? 'deepseek-v4-flash-free',
+            'model' => $aiProvider->model_name,
         ]);
+
         return response()->json($tester->test($aiProvider));
     }
 
@@ -99,11 +140,7 @@ class AiProviderController extends Controller
 
     /**
      * Replaces this provider's use-case assignments wholesale on every
-     * save — simpler and safer than diffing, and the list is short (max
-     * 7 rows) so there's no performance concern. Marking a use case
-     * default here automatically un-defaults any OTHER provider that was
-     * previously default for that same use case (only one default per
-     * use case, platform-wide).
+     * save — simpler and safer than diffing.
      */
     private function syncUseCases(AiProvider $provider, array $useCases, array $defaultUseCases): void
     {

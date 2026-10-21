@@ -8,10 +8,29 @@ use Illuminate\Support\Facades\Http;
 
 class GeminiProvider implements AiProviderContract
 {
-    public function __construct(private AiProvider $provider) {}
+    public function __construct(protected AiProvider $provider) {}
+
+    protected function baseUrl(): string
+    {
+        return rtrim($this->provider->api_endpoint ?: 'https://generativelanguage.googleapis.com', '/');
+    }
+
+    protected function headers(): array
+    {
+        $headers = [];
+
+        foreach ((array) $this->provider->custom_headers as $header) {
+            $name = trim((string) ($header['name'] ?? ''));
+            if ($name !== '') {
+                $headers[$name] = (string) ($header['value'] ?? '');
+            }
+        }
+
+        return $headers;
+    }
 
     /** Gemini has no separate "system" role — fold it into the first user turn. */
-    private function toGeminiContents(array $messages): array
+    protected function toGeminiContents(array $messages): array
     {
         $contents = [];
         $systemPrefix = '';
@@ -34,12 +53,20 @@ class GeminiProvider implements AiProviderContract
     {
         $model = $this->provider->model_name ?: 'gemini-1.5-flash';
 
-        $response = Http::timeout(60)->withOptions([
-            'query' => ['key' => $this->provider->api_key],
-        ])->post(
-            "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent",
+        $req = Http::withHeaders($this->headers())->timeout(60);
+
+        if (! empty($this->provider->api_key)) {
+            $req = $req->withOptions(['query' => ['key' => $this->provider->api_key]]);
+        }
+
+        $response = $req->post(
+            "{$this->baseUrl()}/v1beta/models/{$model}:generateContent",
             ['contents' => $this->toGeminiContents($messages)]
         );
+
+        if ($response->failed()) {
+            throw new \RuntimeException('Gemini request failed: '.$response->body());
+        }
 
         return data_get($response->json(), 'candidates.0.content.parts.0.text', '');
     }
@@ -48,11 +75,16 @@ class GeminiProvider implements AiProviderContract
     {
         $model = $this->provider->model_name ?: 'gemini-1.5-flash';
 
-        $response = Http::withOptions([
+        $optionsQuery = ['alt' => 'sse'];
+        if (! empty($this->provider->api_key)) {
+            $optionsQuery['key'] = $this->provider->api_key;
+        }
+
+        $response = Http::withHeaders($this->headers())->withOptions([
             'stream' => true,
-            'query' => ['key' => $this->provider->api_key, 'alt' => 'sse'],
+            'query' => $optionsQuery,
         ])->timeout(90)->post(
-            "https://generativelanguage.googleapis.com/v1beta/models/{$model}:streamGenerateContent",
+            "{$this->baseUrl()}/v1beta/models/{$model}:streamGenerateContent",
             ['contents' => $this->toGeminiContents($messages)]
         );
 
@@ -81,6 +113,6 @@ class GeminiProvider implements AiProviderContract
 
     public function isAvailable(): bool
     {
-        return ! empty($this->provider->api_key);
+        return ! empty($this->provider->api_key) || ! empty($this->provider->api_endpoint);
     }
 }

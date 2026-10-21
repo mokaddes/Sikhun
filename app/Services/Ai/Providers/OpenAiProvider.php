@@ -2,10 +2,6 @@
 
 namespace App\Services\Ai\Providers;
 
-class OpenAiProvider extends AbstractOpenAiCompatibleProvider
+class OpenAiProvider extends OpenAiCompatibleProvider
 {
-    protected function baseUrl(): string
-    {
-        return 'https://api.openai.com/v1';
-    }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AiLogController;
 use App\Http\Controllers\Admin\AiProviderController;
 use App\Http\Controllers\Admin\Auth\AdminAuthController;
 use App\Http\Controllers\Admin\AuthorController;
@@ -80,6 +81,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::resource('ai-providers', AiProviderController::class)->except(['show']);
         Route::post('ai-providers/{aiProvider}/test', [AiProviderController::class, 'test'])->name('ai-providers.test');
+
+        Route::get('ai-logs', [AiLogController::class, 'index'])->name('ai-logs.index');
+        Route::get('ai-logs/{aiLog}', [AiLogController::class, 'show'])->name('ai-logs.show');
+        Route::post('ai-logs/clear', [AiLogController::class, 'clear'])->name('ai-logs.clear');
 
         Route::get('students', [StudentController::class, 'index'])->name('students.index');
         Route::get('students/{student}', [StudentController::class, 'show'])->name('students.show');

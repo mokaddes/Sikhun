@@ -32,7 +32,7 @@ class GenerateFlashcards implements ShouldQueue
         }
 
         try {
-            $provider = AiProviderFactory::default('flashcard_gen');
+            $provider = AiProviderFactory::default('flashcard_gen', ['student' => $set->student, 'student_id' => $set->student_id]);
 
             $response = $provider->chat([
                 ['role' => 'system', 'content' => "You create study flashcards for Bangladeshi students. Generate exactly {$this->count} flashcard pairs from the provided content. Cards should be in Bengali unless the content is in English. Return ONLY valid JSON: {\"flashcards\": [{\"front\": \"...\", \"back\": \"...\"}]}"],

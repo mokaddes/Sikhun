@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PlanRequest;
+use App\Models\AiProvider;
 use App\Models\Book;
 use App\Models\Plan;
 use Illuminate\Http\RedirectResponse;
@@ -15,7 +16,7 @@ class PlanController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/Plans/Index', [
-            'plans' => Plan::withCount('subscriptions')->orderBy('price_monthly')->get(),
+            'plans' => Plan::with(['aiProvider:id,name,type,model_name'])->withCount('subscriptions')->orderBy('price_monthly')->get(),
         ]);
     }
 
@@ -24,6 +25,7 @@ class PlanController extends Controller
         return Inertia::render('Admin/Plans/Form', [
             'plan' => null,
             'books' => Book::published()->get(['id', 'title']),
+            'providers' => AiProvider::where('is_active', true)->orderBy('name')->get(['id', 'name', 'type', 'model_name']),
         ]);
     }
 
@@ -41,6 +43,7 @@ class PlanController extends Controller
                 'features' => implode("\n", $plan->features ?? []),
             ]),
             'books' => Book::published()->get(['id', 'title']),
+            'providers' => AiProvider::where('is_active', true)->orderBy('name')->get(['id', 'name', 'type', 'model_name']),
         ]);
     }
 

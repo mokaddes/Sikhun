@@ -10,6 +10,7 @@ import {
     PencilSquareIcon,
     TrashIcon,
     UsersIcon,
+    SparklesIcon,
 } from '@heroicons/vue/24/outline';
 
 defineProps({ plans: Array });
@@ -79,6 +80,20 @@ function getPlanActions(plan) {
                     <div class="my-5 flex items-baseline gap-1 border-b border-[var(--border)] pb-5">
                         <span class="font-heading text-3xl font-extrabold text-[var(--text)]">৳{{ plan.price_monthly }}</span>
                         <span class="text-xs text-[var(--text-muted)] font-medium">/ {{ locale === 'en' ? 'month' : 'মাস' }}</span>
+                    </div>
+
+                    <!-- AI Model Tier Badge -->
+                    <div class="mb-4 flex items-center gap-1.5 rounded-xl bg-[var(--surface2)] px-3 py-1.5 text-xs">
+                        <SparklesIcon class="h-3.5 w-3.5 text-[var(--primary)] shrink-0" />
+                        <span class="text-[var(--text-muted)] text-[11px] font-medium">AI Model:</span>
+                        <span v-if="plan.ai_provider" class="font-semibold text-[var(--text)] text-[11px] truncate">
+                            {{ plan.ai_provider.name }}
+                            <span v-if="plan.ai_model" class="text-[var(--primary)] font-mono ml-1">({{ plan.ai_model }})</span>
+                            <span v-else class="text-[var(--text-muted)] font-mono ml-1">({{ plan.ai_provider.model_name }})</span>
+                        </span>
+                        <span v-else class="text-[11px] text-[var(--text-muted)] italic">
+                            System Default
+                        </span>
                     </div>
 
                     <!-- Features -->

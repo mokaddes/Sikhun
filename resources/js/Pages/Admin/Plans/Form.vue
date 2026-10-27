@@ -3,8 +3,13 @@ import { watch } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import { useI18n } from '@/i18n';
+import { SparklesIcon } from '@heroicons/vue/24/outline';
 
-const props = defineProps({ plan: Object, books: Array });
+const props = defineProps({
+    plan: Object,
+    books: Array,
+    providers: { type: Array, default: () => [] },
+});
 const { t } = useI18n();
 const isEdit = !!props.plan;
 
@@ -18,6 +23,8 @@ const form = useForm({
     trial_ai_minutes: props.plan?.trial_ai_minutes ?? 10,
     features: props.plan?.features ?? '',
     gift_book_ids: props.plan?.gift_book_ids ?? [],
+    ai_provider_id: props.plan?.ai_provider_id ?? null,
+    ai_model: props.plan?.ai_model ?? '',
     is_active: props.plan?.is_active ?? true,
 });
 
@@ -66,6 +73,41 @@ function submit() {
                     <input v-model="form.ai_exam_count" type="number" min="0" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
                 </div>
             </div>
+
+            <!-- AI Model Tier (Plan-Wise AI Model Selection) -->
+            <div class="rounded-xl border border-[var(--border)] bg-[var(--surface2)]/40 p-4 space-y-3">
+                <div class="flex items-center gap-2">
+                    <SparklesIcon class="h-4 w-4 text-[var(--primary)]" />
+                    <h3 class="text-sm font-bold text-[var(--text)]">AI Model Tier (Plan-Wise)</h3>
+                </div>
+                <p class="text-xs text-[var(--text-muted)]">
+                    Assign which AI Provider and model will serve students subscribed to this plan (e.g. Basic Plan uses Gemini 1.5 Flash / GPT-4o-mini, Pro Plan uses Claude 3.5 Sonnet / GPT-4o).
+                </p>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1">Assigned AI Provider</label>
+                    <select v-model="form.ai_provider_id" class="w-full px-3.5 py-2 text-sm rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+                        <option :value="null">System Default (Use task-level default AI provider)</option>
+                        <option v-for="prov in providers" :key="prov.id" :value="prov.id">
+                            {{ prov.name }} — {{ prov.model_name }} ({{ prov.type }})
+                        </option>
+                    </select>
+                </div>
+
+                <div v-if="form.ai_provider_id">
+                    <label class="block text-xs font-semibold mb-1">Custom Model Name (Optional Override)</label>
+                    <input
+                        v-model="form.ai_model"
+                        type="text"
+                        placeholder="Leave empty to use provider's configured model"
+                        class="w-full px-3.5 py-2 text-sm rounded-lg bg-[var(--surface)] border border-[var(--border)] font-mono text-xs"
+                    />
+                    <p class="text-[11px] text-[var(--text-muted)] mt-1">
+                        Optional: Specify a model name if you want this plan to use a different model under this provider.
+                    </p>
+                </div>
+            </div>
+
             <div>
                 <label class="block text-sm font-medium mb-1.5">{{ t('admin.plans.features') }}</label>
                 <textarea v-model="form.features" rows="4" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]"></textarea>

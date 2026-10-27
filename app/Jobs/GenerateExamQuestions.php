@@ -32,7 +32,7 @@ class GenerateExamQuestions implements ShouldQueue
         }
 
         try {
-            $provider = AiProviderFactory::default('exam_gen');
+            $provider = AiProviderFactory::default('exam_gen', ['student' => $session->student, 'student_id' => $session->student_id]);
             $config = $session->config;
 
             $sourceText = $session->source_text

@@ -32,7 +32,7 @@ class GenerateStudySchedule implements ShouldQueue
         }
 
         try {
-            $provider = AiProviderFactory::default('schedule_gen');
+            $provider = AiProviderFactory::default('schedule_gen', ['student' => $schedule->student, 'student_id' => $schedule->student_id]);
             $config = $schedule->config;
             $daysUntilExam = now()->diffInDays($schedule->exam_date);
 

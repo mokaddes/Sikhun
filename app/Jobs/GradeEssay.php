@@ -32,7 +32,7 @@ class GradeEssay implements ShouldQueue
         }
 
         try {
-            $provider = AiProviderFactory::default('essay_grade');
+            $provider = AiProviderFactory::default('essay_grade', ['student' => $submission->student, 'student_id' => $submission->student_id]);
 
             $response = $provider->chat([
                 ['role' => 'system', 'content' => $this->systemPrompt($submission->grading_type)],

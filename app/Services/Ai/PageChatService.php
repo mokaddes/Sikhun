@@ -44,9 +44,9 @@ class PageChatService
             ['role' => 'user', 'content' => $message],
         ];
 
-        return response()->stream(function () use ($payload) {
+        return response()->stream(function () use ($payload, $student) {
             try {
-                $provider = AiProviderFactory::default('book_chat');
+                $provider = AiProviderFactory::default('book_chat', ['student' => $student]);
                 foreach ($provider->stream($payload) as $chunk) {
                     echo 'data: '.json_encode(['content' => $chunk, 'done' => false])."\n\n";
                     ob_flush();

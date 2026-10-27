@@ -40,19 +40,18 @@ function onPageChange(pageNumber) {
         <Link :href="`/library/${book.slug}`" class="text-sm text-[var(--text-muted)] hover:text-[var(--text)] mb-4 inline-block">
             ← {{ t('reader.back_to_book') }}
         </Link>
-        <h1 class="font-heading text-xl font-bold mb-6">{{ book.title }}</h1>
-
-        <nav v-if="chapters.length" class="mb-5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-            <h2 class="font-semibold mb-2">Contents</h2>
-            <div class="flex flex-wrap gap-2">
-                <button v-for="chapter in chapters" :key="chapter.id" @click="flipReader?.goToRealPage(chapter.start_page)"
-                    class="rounded-lg border border-[var(--border)] px-3 py-2 text-left text-sm hover:border-[var(--primary)]">
-                    {{ chapter.chapter_number ? `Chapter ${chapter.chapter_number}: ` : '' }}{{ chapter.title }}
-                    <span class="block text-xs text-[var(--text-muted)]">Pages {{ chapter.start_page ?? '?' }}–{{ chapter.end_page ?? '?' }}</span>
-                </button>
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h1 class="font-heading text-xl font-bold">{{ book.title }}</h1>
+                <p v-if="currentChapter" class="text-xs text-[var(--text-muted)] mt-0.5">
+                    Reading: <span class="text-[var(--primary)] font-medium">{{ currentChapter.chapter_number ? `Chapter ${currentChapter.chapter_number}: ` : '' }}{{ currentChapter.title }}</span>
+                </p>
             </div>
-            <p v-if="currentChapter" class="mt-2 text-xs text-[var(--text-muted)]">Reading: {{ currentChapter.title }}</p>
-        </nav>
+            <div v-if="chapters.length" class="text-xs text-[var(--text-muted)] flex items-center gap-1.5">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>{{ chapters.length }} chapters indexed</span>
+            </div>
+        </div>
 
         <FlipReader
             ref="flipReader"
@@ -62,6 +61,7 @@ function onPageChange(pageNumber) {
             :url-prefix="`/library/${book.id}/read`"
             :page-urls="pageUrls"
             :initial-page="initialPage"
+            :chapters="chapters"
             @page-change="onPageChange"
         />
 

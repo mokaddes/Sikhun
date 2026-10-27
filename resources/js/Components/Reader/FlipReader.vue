@@ -10,6 +10,10 @@ import {
     ArrowsPointingInIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
+    Bars3BottomLeftIcon,
+    BookOpenIcon,
+    XMarkIcon,
+    MagnifyingGlassIcon,
 } from '@heroicons/vue/24/outline';
 import $ from 'jquery';
 
@@ -24,10 +28,41 @@ const props = defineProps({
     pageUrls: { type: Object, default: () => null },
     // Real page number to open on (resume last read page).
     initialPage: { type: Number, default: null },
+    // Book chapters list for sidebar Table of Contents
+    chapters: { type: Array, default: () => [] },
 });
 
 const emit = defineEmits(['page-change']);
 const { t } = useI18n();
+
+// Chapter sidebar drawer state
+const chapterSidebarOpen = ref(false);
+const chapterSearch = ref('');
+const filteredChapters = computed(() => {
+    if (!props.chapters?.length) return [];
+    if (!chapterSearch.value.trim()) return props.chapters;
+    const q = chapterSearch.value.toLowerCase();
+    return props.chapters.filter((c) =>
+        (c.title && c.title.toLowerCase().includes(q)) ||
+        (c.chapter_number && String(c.chapter_number).toLowerCase().includes(q))
+    );
+});
+
+function isCurrentChapter(chapter) {
+    const pageNum = currentPage.value;
+    const start = chapter.start_page || 1;
+    const end = chapter.end_page || props.totalPages;
+    return pageNum >= start && pageNum <= end;
+}
+
+function selectChapter(chapter) {
+    if (chapter.start_page) {
+        goToRealPage(chapter.start_page);
+    }
+    if (window.innerWidth < 768) {
+        chapterSidebarOpen.value = false;
+    }
+}
 
 const PAGE_ASPECT = 1.414; // Standard A4 portrait aspect ratio
 
@@ -592,6 +627,11 @@ function onFullscreenChange() {
 function onKeydown(e) {
     if (e.target.closest('input')) return;
     if (e.key === 'Escape') {
+        if (chapterSidebarOpen.value) {
+            e.preventDefault();
+            chapterSidebarOpen.value = false;
+            return;
+        }
         if (zoomLevel.value > 1.0) {
             e.preventDefault();
             resetZoom();
@@ -665,6 +705,108 @@ onBeforeUnmount(() => {
         @wheel.passive="onWheel"
         @dblclick="toggleZoom"
     >
+        <!-- Floating Chapter Sidebar Toggle Button (Top-Left) -->
+        <div v-if="chapters?.length" class="absolute top-3 left-3 z-30 flex items-center">
+            <button
+                type="button"
+                class="flex items-center gap-2 bg-white/95 dark:bg-black/75 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-slate-200/90 dark:border-white/10 shadow-md text-slate-800 dark:text-white text-xs font-semibold hover:bg-slate-50 dark:hover:bg-neutral-800 transition-all hover:scale-105 active:scale-95"
+                :class="{ 'ring-2 ring-[var(--primary)] text-[var(--primary)]': chapterSidebarOpen }"
+                title="Chapters / সূচিপত্র"
+                aria-label="Toggle Chapter Sidebar"
+                @click.stop="chapterSidebarOpen = !chapterSidebarOpen"
+            >
+                <Bars3BottomLeftIcon class="w-4 h-4 text-[var(--primary)]" />
+                <span>Chapter</span>
+                <span class="rounded-full bg-[var(--primary)]/15 text-[var(--primary)] px-1.5 py-0.2 text-[10px] font-bold">
+                    {{ chapters.length }}
+                </span>
+            </button>
+        </div>
+
+        <!-- Backdrop overlay when Chapter Sidebar is open -->
+        <div
+            v-if="chapterSidebarOpen"
+            class="absolute inset-0 z-35 bg-black/40 backdrop-blur-[2px] transition-opacity"
+            @click.stop="chapterSidebarOpen = false"
+        ></div>
+
+        <!-- Slide-out Chapter Sidebar Drawer -->
+        <aside
+            class="absolute inset-y-0 left-0 z-40 w-72 sm:w-84 max-w-[85vw] bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-r border-slate-200 dark:border-neutral-800 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out text-left"
+            :class="chapterSidebarOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'"
+            @click.stop
+        >
+            <!-- Drawer Header -->
+            <div class="p-4 border-b border-slate-200/80 dark:border-neutral-800 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-[var(--primary)]/15 text-[var(--primary)] flex items-center justify-center font-bold">
+                        <BookOpenIcon class="w-4 h-4" />
+                    </div>
+                    <div>
+                        <h3 class="font-heading font-bold text-sm text-slate-900 dark:text-white">Chapters / সূচিপত্র</h3>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">{{ chapters.length }} chapters found</p>
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    class="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors"
+                    title="Close"
+                    @click="chapterSidebarOpen = false"
+                >
+                    <XMarkIcon class="w-5 h-5" />
+                </button>
+            </div>
+
+            <!-- Chapter Search -->
+            <div v-if="chapters.length > 5" class="p-3 border-b border-slate-200/60 dark:border-neutral-800/60">
+                <div class="relative">
+                    <MagnifyingGlassIcon class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                        v-model="chapterSearch"
+                        type="text"
+                        placeholder="Search chapter..."
+                        class="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-800/80 text-slate-800 dark:text-white focus:outline-none focus:border-[var(--primary)]"
+                    />
+                </div>
+            </div>
+
+            <!-- Chapter List -->
+            <div class="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar">
+                <div
+                    v-for="c in filteredChapters"
+                    :key="c.id || c.start_page"
+                    class="group p-2.5 rounded-xl border transition-all text-left cursor-pointer flex flex-col gap-1"
+                    :class="isCurrentChapter(c)
+                        ? 'border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] shadow-xs'
+                        : 'border-transparent hover:border-slate-200 dark:hover:border-neutral-800 hover:bg-slate-100/70 dark:hover:bg-neutral-800/60 text-slate-700 dark:text-slate-200'"
+                    @click="selectChapter(c)"
+                >
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md"
+                            :class="isCurrentChapter(c) ? 'bg-[var(--primary)] text-white' : 'bg-slate-200/80 dark:bg-neutral-800 text-slate-600 dark:text-slate-400'">
+                            {{ c.chapter_number ? `Chapter ${c.chapter_number}` : 'Section' }}
+                        </span>
+                        <span v-if="isCurrentChapter(c)" class="text-[10px] font-semibold text-[var(--primary)] flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[var(--primary)] animate-pulse"></span>
+                            Reading
+                        </span>
+                    </div>
+
+                    <div class="font-medium text-xs leading-snug line-clamp-2">
+                        {{ c.title }}
+                    </div>
+
+                    <div class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                        Pages {{ c.start_page ?? '?' }}–{{ c.end_page ?? '?' }}
+                    </div>
+                </div>
+
+                <div v-if="!filteredChapters.length" class="text-center py-8 text-xs text-slate-400">
+                    No matching chapters found.
+                </div>
+            </div>
+        </aside>
+
         <!-- Floating Header Controls (Zoom + Fullscreen) -->
         <div class="absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-white/90 dark:bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-200/90 dark:border-white/10 shadow-md text-slate-700 dark:text-white">
             <span v-if="zoomLevel > 1.0" class="text-xs font-semibold text-slate-800 dark:text-white/90 mr-1">

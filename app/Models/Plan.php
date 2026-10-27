@@ -8,7 +8,8 @@ class Plan extends Model
 {
     protected $fillable = [
         'name', 'slug', 'description', 'price_monthly', 'ai_chat_minutes',
-        'ai_exam_count', 'gift_book_ids', 'trial_ai_minutes', 'features', 'is_active',
+        'ai_exam_count', 'gift_book_ids', 'trial_ai_minutes', 'features',
+        'ai_provider_id', 'ai_model', 'is_active',
     ];
 
     protected function casts(): array
@@ -22,4 +23,5 @@ class Plan extends Model
     }
 
     public function subscriptions() { return $this->hasMany(StudentSubscription::class); }
+    public function aiProvider() { return $this->belongsTo(AiProvider::class, 'ai_provider_id'); }
 }

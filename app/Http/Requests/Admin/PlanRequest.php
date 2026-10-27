@@ -24,6 +24,8 @@ class PlanRequest extends FormRequest
             'features' => ['nullable', 'string'], // newline-separated in the form
             'gift_book_ids' => ['nullable', 'array'],
             'gift_book_ids.*' => ['exists:books,id'],
+            'ai_provider_id' => ['nullable', 'integer', 'exists:ai_providers,id'],
+            'ai_model' => ['nullable', 'string', 'max:100'],
             'is_active' => ['boolean'],
         ];
     }

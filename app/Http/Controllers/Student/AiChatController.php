@@ -247,7 +247,7 @@ class AiChatController extends Controller
             $fullReply = '';
 
             try {
-                $provider = AiProviderFactory::default('book_chat');
+                $provider = AiProviderFactory::default('book_chat', ['student' => $student]);
                 $payload = $this->normalizePayloadForProvider($payload, $provider);
 
                 foreach ($provider->stream($payload) as $chunk) {

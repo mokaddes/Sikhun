@@ -272,6 +272,9 @@
             "new": "New Plan",
             "price_monthly": "Monthly Price",
             "ai_chat_minutes": "AI Chat Minutes",
+            "ai_vision_limit": "Vision Image Chat Limit",
+            "upload_book_limit": "Active Book Slots Limit",
+            "monthly_reupload_limit": "Monthly Re-upload Limit",
             "ai_exam_count": "AI Exam Count",
             "trial_minutes": "Trial AI Minutes",
             "features": "Features (one per line)"

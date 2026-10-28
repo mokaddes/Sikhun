@@ -52,6 +52,26 @@ function subscribe(plan, method) {
                 <div class="mb-5 font-heading text-3xl font-extrabold">
                     ৳{{ plan.price_monthly }}<span class="text-sm font-normal text-[var(--text-muted)]">{{ t('plans_page.per_month') }}</span>
                 </div>
+
+                <!-- Plan Highlights / Quotas -->
+                <div class="mb-4 grid grid-cols-2 gap-2 text-xs">
+                    <div class="rounded-xl bg-[var(--surface2)] px-2.5 py-1.5 font-medium">
+                        <span class="block text-[10px] text-[var(--text-muted)] font-bold uppercase">💬 AI Chat</span>
+                        <span class="font-bold text-[var(--text)]">{{ plan.ai_chat_minutes }} {{ locale === 'en' ? 'mins/mo' : 'মিনিট/মাস' }}</span>
+                    </div>
+                    <div class="rounded-xl bg-[var(--surface2)] px-2.5 py-1.5 font-medium">
+                        <span class="block text-[10px] text-[var(--text-muted)] font-bold uppercase">📸 Vision Solver</span>
+                        <span class="font-bold text-[var(--text)]">{{ plan.ai_vision_limit || 0 }} {{ locale === 'en' ? 'images/mo' : 'টি ছবি/মাস' }}</span>
+                    </div>
+                    <div class="rounded-xl bg-[var(--surface2)] px-2.5 py-1.5 font-medium">
+                        <span class="block text-[10px] text-[var(--text-muted)] font-bold uppercase">📚 Book Slots</span>
+                        <span class="font-bold text-[var(--text)]">{{ plan.upload_book_limit || 1 }} {{ locale === 'en' ? 'slots' : 'টি বই' }}</span>
+                    </div>
+                    <div class="rounded-xl bg-[var(--surface2)] px-2.5 py-1.5 font-medium">
+                        <span class="block text-[10px] text-[var(--text-muted)] font-bold uppercase">🔄 Re-uploads</span>
+                        <span class="font-bold text-[var(--text)]">{{ plan.monthly_reupload_limit || 2 }} {{ locale === 'en' ? '/mo' : 'বার/মাস' }}</span>
+                    </div>
+                </div>
                 <ul class="mb-6 flex-1 space-y-2 text-sm text-[var(--text-muted)]">
                     <li v-for="f in plan.features" :key="f" class="flex items-start gap-2">
                         <CheckIcon class="mt-0.5 h-4 w-4 shrink-0 text-[var(--secondary)]" /> {{ f }}

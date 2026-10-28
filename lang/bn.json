@@ -268,13 +268,16 @@
             "no_lessons": "এখনো কোনো লেসন নেই।"
         },
         "plans": {
-            "title": "Plans",
-            "new": "New Plan",
-            "price_monthly": "Monthly Price",
-            "ai_chat_minutes": "AI Chat Minutes",
-            "ai_exam_count": "AI Exam Count",
-            "trial_minutes": "Trial AI Minutes",
-            "features": "Features (one per line)"
+            "title": "সাবস্ক্রিপশন প্ল্যান",
+            "new": "নতুন প্ল্যান",
+            "price_monthly": "মাসিক মূল্য",
+            "ai_chat_minutes": "এআই চ্যাট মিনিট",
+            "ai_vision_limit": "এআই ভিশন / ইমেজ চ্যাট লিমিট",
+            "upload_book_limit": "একসাথে সর্বোচ্চ বই স্লট (আজীবন)",
+            "monthly_reupload_limit": "মাসিক আপলোড/রি-আপলোড লিমিট",
+            "ai_exam_count": "এআই পরীক্ষা সংখ্যা",
+            "trial_minutes": "ট্রায়াল এআই মিনিট",
+            "features": "সুবিধাসমূহ (প্রতি লাইনে একটি)"
         },
         "ai_providers": {
             "title": "এআই প্রোভাইডার",

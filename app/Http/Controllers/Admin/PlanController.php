@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PlanRequest;
 use App\Models\AiProvider;
-use App\Models\Book;
 use App\Models\Plan;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -24,7 +23,6 @@ class PlanController extends Controller
     {
         return Inertia::render('Admin/Plans/Form', [
             'plan' => null,
-            'books' => Book::published()->get(['id', 'title']),
             'providers' => AiProvider::where('is_active', true)->orderBy('name')->get(['id', 'name', 'type', 'model_name']),
         ]);
     }
@@ -42,7 +40,6 @@ class PlanController extends Controller
             'plan' => array_merge($plan->toArray(), [
                 'features' => implode("\n", $plan->features ?? []),
             ]),
-            'books' => Book::published()->get(['id', 'title']),
             'providers' => AiProvider::where('is_active', true)->orderBy('name')->get(['id', 'name', 'type', 'model_name']),
         ]);
     }
@@ -68,7 +65,9 @@ class PlanController extends Controller
         $data['features'] = $data['features']
             ? array_values(array_filter(array_map('trim', explode("\n", $data['features']))))
             : [];
-        $data['gift_book_ids'] = $data['gift_book_ids'] ?? [];
+        $data['ai_vision_limit'] = (int) ($data['ai_vision_limit'] ?? 0);
+        $data['upload_book_limit'] = (int) ($data['upload_book_limit'] ?? 1);
+        $data['monthly_reupload_limit'] = (int) ($data['monthly_reupload_limit'] ?? 2);
 
         return $data;
     }

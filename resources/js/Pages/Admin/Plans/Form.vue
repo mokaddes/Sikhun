@@ -7,7 +7,6 @@ import { SparklesIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     plan: Object,
-    books: Array,
     providers: { type: Array, default: () => [] },
 });
 const { t } = useI18n();
@@ -19,10 +18,12 @@ const form = useForm({
     description: props.plan?.description ?? '',
     price_monthly: props.plan?.price_monthly ?? 0,
     ai_chat_minutes: props.plan?.ai_chat_minutes ?? 60,
+    ai_vision_limit: props.plan?.ai_vision_limit ?? 20,
+    upload_book_limit: props.plan?.upload_book_limit ?? 3,
+    monthly_reupload_limit: props.plan?.monthly_reupload_limit ?? 5,
     ai_exam_count: props.plan?.ai_exam_count ?? 20,
     trial_ai_minutes: props.plan?.trial_ai_minutes ?? 10,
     features: props.plan?.features ?? '',
-    gift_book_ids: props.plan?.gift_book_ids ?? [],
     ai_provider_id: props.plan?.ai_provider_id ?? null,
     ai_model: props.plan?.ai_model ?? '',
     is_active: props.plan?.is_active ?? true,
@@ -55,6 +56,8 @@ function submit() {
                 <label class="block text-sm font-medium mb-1.5">Description</label>
                 <textarea v-model="form.description" rows="2" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]"></textarea>
             </div>
+
+            <!-- Limits & Pricing Grid -->
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium mb-1.5">{{ t('admin.plans.price_monthly') }} (৳)</label>
@@ -69,6 +72,21 @@ function submit() {
                     <input v-model="form.ai_chat_minutes" type="number" min="0" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
                 </div>
                 <div>
+                    <label class="block text-sm font-medium mb-1.5">{{ t('admin.plans.ai_vision_limit') }}</label>
+                    <input v-model="form.ai_vision_limit" type="number" min="0" placeholder="e.g. 50" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+                    <span class="text-[11px] text-[var(--text-muted)]">Image/photo problem solving quota</span>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">{{ t('admin.plans.upload_book_limit') }}</label>
+                    <input v-model="form.upload_book_limit" type="number" min="1" placeholder="e.g. 3" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+                    <span class="text-[11px] text-[var(--text-muted)]">Max active concurrent books on shelf</span>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">{{ t('admin.plans.monthly_reupload_limit') }}</label>
+                    <input v-model="form.monthly_reupload_limit" type="number" min="1" placeholder="e.g. 10" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+                    <span class="text-[11px] text-[var(--text-muted)]">Max uploads / re-uploads per month</span>
+                </div>
+                <div class="col-span-2">
                     <label class="block text-sm font-medium mb-1.5">{{ t('admin.plans.ai_exam_count') }}</label>
                     <input v-model="form.ai_exam_count" type="number" min="0" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
                 </div>
@@ -112,14 +130,7 @@ function submit() {
                 <label class="block text-sm font-medium mb-1.5">{{ t('admin.plans.features') }}</label>
                 <textarea v-model="form.features" rows="4" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]"></textarea>
             </div>
-            <div>
-                <label class="block text-sm font-medium mb-1.5">Gift Books</label>
-                <div class="max-h-40 overflow-y-auto rounded-lg border border-[var(--border)] p-3 space-y-1">
-                    <label v-for="b in books" :key="b.id" class="flex items-center gap-2 text-sm">
-                        <input type="checkbox" :value="b.id" v-model="form.gift_book_ids" class="rounded" /> {{ b.title }}
-                    </label>
-                </div>
-            </div>
+
             <label class="flex items-center gap-2 text-sm"><input v-model="form.is_active" type="checkbox" class="rounded" /> {{ t('common.active') }}</label>
             <button type="submit" :disabled="form.processing" class="px-5 py-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-semibold disabled:opacity-60">
                 {{ form.processing ? t('common.saving') : t('common.save') }}

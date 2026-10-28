@@ -23,6 +23,23 @@ class MyBookController extends Controller
 
         $student = auth('web')->user();
 
+        // 1. Check concurrent uploaded books limit (lifetime active slots)
+        $maxSlots = $student->maxUploadBookSlots();
+        $currentBooksCount = $student->myBooks()->count();
+        if ($currentBooksCount >= $maxSlots) {
+            return back()->withErrors([
+                'pdf' => "You have reached your book upload limit ({$maxSlots} book slots). Remove an existing book to upload a new one, or upgrade your plan.",
+            ]);
+        }
+
+        // 2. Check monthly upload / re-upload quota
+        $reuploadsRemaining = $student->getMonthlyReuploadsRemaining();
+        if ($reuploadsRemaining <= 0) {
+            return back()->withErrors([
+                'pdf' => 'You have reached your monthly upload / re-upload limit. Your limit will reset on your next billing cycle.',
+            ]);
+        }
+
         $path = $request->file('pdf')->store('my-books', 'private');
         @chmod(Storage::disk('private')->path($path), 0666);
 
@@ -36,6 +53,8 @@ class MyBookController extends Controller
             'rag_enabled' => $request->boolean('rag_enabled', true),
             'processing_status' => 'pending',
         ]);
+
+        $student->recordBookUpload();
 
         $reader->clearBookCache($myBook);
 

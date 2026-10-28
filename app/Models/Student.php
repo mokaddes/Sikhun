@@ -15,7 +15,8 @@ class Student extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'type', 'status',
-        'wallet_balance', 'ai_trial_minutes_used', 'referral_code',
+        'wallet_balance', 'ai_trial_minutes_used', 'ai_trial_vision_used',
+        'trial_reuploads_count', 'trial_reuploads_month', 'referral_code',
         'referred_by_student_id', 'avatar', 'theme_mode', 'leaderboard_opt_out',
     ];
 
@@ -27,6 +28,9 @@ class Student extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'wallet_balance' => 'decimal:2',
+            'ai_trial_minutes_used' => 'integer',
+            'ai_trial_vision_used' => 'integer',
+            'trial_reuploads_count' => 'integer',
             'referred_by_student_id' => 'integer',
             'leaderboard_opt_out' => 'boolean',
         ];
@@ -69,5 +73,102 @@ class Student extends Authenticatable
         $trialLimit = Plan::where('is_active', true)->max('trial_ai_minutes') ?: 10;
 
         return $this->ai_trial_minutes_used < $trialLimit;
+    }
+
+    public function maxUploadBookSlots(): int
+    {
+        if (app(AccessGrantService::class)->hasActiveAccess($this)) {
+            return 50;
+        }
+
+        $sub = $this->activeSubscription;
+        if ($sub && $sub->expires_at->isFuture()) {
+            return (int) ($sub->plan->upload_book_limit ?? 1);
+        }
+
+        return 1; // Default for free/trial students: 1 concurrent book
+    }
+
+    public function getMonthlyReuploadsRemaining(): int
+    {
+        if (app(AccessGrantService::class)->hasActiveAccess($this)) {
+            return 999;
+        }
+
+        $sub = $this->activeSubscription;
+        if ($sub && $sub->expires_at->isFuture()) {
+            return (int) ($sub->monthly_reuploads_remaining ?? 0);
+        }
+
+        // Free/trial students: default 2 uploads per calendar month
+        $currentMonth = now()->format('Y-m');
+        if ($this->trial_reuploads_month !== $currentMonth) {
+            return 2;
+        }
+
+        return max(0, 2 - (int) $this->trial_reuploads_count);
+    }
+
+    public function recordBookUpload(): void
+    {
+        if (app(AccessGrantService::class)->hasActiveAccess($this)) {
+            return;
+        }
+
+        $sub = $this->activeSubscription;
+        if ($sub && $sub->expires_at->isFuture()) {
+            if ($sub->monthly_reuploads_remaining > 0) {
+                $sub->decrement('monthly_reuploads_remaining');
+            }
+            return;
+        }
+
+        $currentMonth = now()->format('Y-m');
+        if ($this->trial_reuploads_month !== $currentMonth) {
+            $this->update([
+                'trial_reuploads_month' => $currentMonth,
+                'trial_reuploads_count' => 1,
+            ]);
+        } else {
+            $this->increment('trial_reuploads_count');
+        }
+    }
+
+    public function getVisionRemaining(): int
+    {
+        if (app(AccessGrantService::class)->hasActiveAccess($this)) {
+            return 999;
+        }
+
+        $sub = $this->activeSubscription;
+        if ($sub && $sub->expires_at->isFuture()) {
+            return (int) ($sub->ai_vision_remaining ?? 0);
+        }
+
+        // Free trial vision limit: 3 questions with image
+        $freeLimit = 3;
+        return max(0, $freeLimit - (int) $this->ai_trial_vision_used);
+    }
+
+    public function canUseVision(): bool
+    {
+        return $this->getVisionRemaining() > 0;
+    }
+
+    public function recordVisionUsage(): void
+    {
+        if (app(AccessGrantService::class)->hasActiveAccess($this)) {
+            return;
+        }
+
+        $sub = $this->activeSubscription;
+        if ($sub && $sub->expires_at->isFuture()) {
+            if ($sub->ai_vision_remaining > 0) {
+                $sub->decrement('ai_vision_remaining');
+            }
+            return;
+        }
+
+        $this->increment('ai_trial_vision_used');
     }
 }

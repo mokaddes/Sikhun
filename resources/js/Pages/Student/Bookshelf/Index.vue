@@ -19,6 +19,10 @@ import {
 const props = defineProps({
     shelves: { type: Array, default: () => [] },
     myBooks: { type: Array, default: () => [] },
+    uploadQuota: {
+        type: Object,
+        default: () => ({ currentCount: 0, maxSlots: 1, reuploadsRemaining: 2 }),
+    },
 });
 
 const { t, locale } = useI18n();
@@ -130,14 +134,23 @@ const statusBadge = (status) => {
 
         <!-- SECTION 1: My Uploaded Books & Notes -->
         <section class="mb-10">
-            <div class="mb-4 flex items-center justify-between">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <h2 class="font-heading text-lg font-bold flex items-center gap-2">
                     <DocumentTextIcon class="h-5 w-5 text-[var(--primary)]" />
                     <span>{{ t('my_books.my_notes') }}</span>
-                    <span v-if="myBooks.length" class="text-xs font-semibold text-[var(--text-muted)] bg-[var(--surface2)] px-2 py-0.5 rounded-full border border-[var(--border)]">
-                        {{ myBooks.length }}
+                    <span class="text-xs font-semibold text-[var(--text-muted)] bg-[var(--surface2)] px-2.5 py-0.5 rounded-full border border-[var(--border)]">
+                        {{ uploadQuota?.currentCount ?? myBooks.length }} / {{ uploadQuota?.maxSlots ?? 1 }}
                     </span>
                 </h2>
+                <!-- Quota status badges -->
+                <div class="flex items-center gap-2 text-xs font-medium">
+                    <span class="rounded-xl bg-[var(--surface2)] border border-[var(--border)] px-3 py-1 text-[var(--text-muted)]">
+                        📚 {{ locale === 'en' ? 'Slots' : 'স্লট' }}: <strong class="text-[var(--text)]">{{ uploadQuota?.currentCount ?? myBooks.length }}/{{ uploadQuota?.maxSlots ?? 1 }}</strong>
+                    </span>
+                    <span class="rounded-xl bg-[var(--surface2)] border border-[var(--border)] px-3 py-1 text-[var(--text-muted)]">
+                        🔄 {{ locale === 'en' ? 'Monthly re-uploads' : 'মাসিক রিলোড বাকি' }}: <strong class="text-[var(--text)]">{{ uploadQuota?.reuploadsRemaining ?? 0 }}</strong>
+                    </span>
+                </div>
             </div>
 
             <!-- Uploaded Books Grid -->
@@ -334,7 +347,7 @@ const statusBadge = (status) => {
                     </button>
 
                     <!-- Modal Header -->
-                    <div class="mb-6 flex items-center gap-3">
+                    <div class="mb-5 flex items-center gap-3">
                         <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--primary)]/10 text-[var(--primary)]">
                             <CloudArrowUpIcon class="h-6 w-6" />
                         </span>
@@ -346,6 +359,43 @@ const statusBadge = (status) => {
                                 {{ locale === 'en' ? 'Upload PDF up to 50MB for personal reading & AI study.' : 'ব্যক্তিগত পড়াশোনা ও এআই সহায়তার জন্য ৫০ মেগাবাইট পর্যন্ত পিডিএফ আপলোড করুন।' }}
                             </p>
                         </div>
+                    </div>
+
+                    <!-- Quota Notice / Warning -->
+                    <div
+                        v-if="(uploadQuota?.currentCount ?? myBooks.length) >= (uploadQuota?.maxSlots ?? 1)"
+                        class="mb-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-700 dark:text-amber-300"
+                    >
+                        <p class="font-bold flex items-center gap-1.5">
+                            ⚠️ {{ locale === 'en' ? 'Book Slot Limit Reached' : 'বই আপলোড স্লট পূর্ণ' }}
+                        </p>
+                        <p class="mt-1 leading-relaxed">
+                            {{ locale === 'en'
+                                ? `You have reached your limit of ${uploadQuota?.maxSlots ?? 1} active book(s). You can delete an existing book to free up a slot, or upgrade your subscription plan.`
+                                : `আপনার প্ল্যানে সর্বোচ্চ ${uploadQuota?.maxSlots ?? 1}টি বইয়ের স্লট পূর্ণ হয়ে গেছে। নতুন বই আপলোড করতে আগের কোনো বই ডিলিট করুন অথবা প্ল্যান আপগ্রেড করুন।` }}
+                        </p>
+                    </div>
+
+                    <div
+                        v-else-if="(uploadQuota?.reuploadsRemaining ?? 1) <= 0"
+                        class="mb-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs text-rose-700 dark:text-rose-300"
+                    >
+                        <p class="font-bold flex items-center gap-1.5">
+                            ⚠️ {{ locale === 'en' ? 'Monthly Re-upload Limit Exhausted' : 'মাসিক রিলোড লিমিট শেষ' }}
+                        </p>
+                        <p class="mt-1 leading-relaxed">
+                            {{ locale === 'en'
+                                ? 'You have used all monthly book uploads/re-uploads for this cycle. Your quota will reset on the next cycle.'
+                                : 'এই মাসে আপনার নির্ধারিত আপলোড/রি-আপলোড লিমিট শেষ হয়ে গেছে। পরবর্তী বিলিং সাইকেলে লিমিট আবার রিনিউ হবে।' }}
+                        </p>
+                    </div>
+
+                    <div
+                        v-else
+                        class="mb-4 flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface2)]/50 px-4 py-2.5 text-xs text-[var(--text-muted)]"
+                    >
+                        <span>📚 {{ locale === 'en' ? 'Active Slots' : 'বই স্লট' }}: <strong class="text-[var(--text)]">{{ uploadQuota?.currentCount ?? myBooks.length }}/{{ uploadQuota?.maxSlots ?? 1 }}</strong></span>
+                        <span>🔄 {{ locale === 'en' ? 'Monthly Re-uploads Left' : 'মাসিক রিলোড বাকি' }}: <strong class="text-[var(--text)]">{{ uploadQuota?.reuploadsRemaining ?? 0 }}</strong></span>
                     </div>
 
                     <!-- Upload Form -->
@@ -429,7 +479,7 @@ const statusBadge = (status) => {
                             </button>
                             <button
                                 type="submit"
-                                :disabled="uploading || !title.trim() || !pdfFile"
+                                :disabled="uploading || !title.trim() || !pdfFile || ((uploadQuota?.currentCount ?? myBooks.length) >= (uploadQuota?.maxSlots ?? 1)) || ((uploadQuota?.reuploadsRemaining ?? 1) <= 0)"
                                 class="btn btn-primary text-xs rounded-xl px-5 py-2.5 font-bold shadow-md shadow-[var(--primary)]/20 disabled:opacity-50"
                             >
                                 <CloudArrowUpIcon class="h-4 w-4" />

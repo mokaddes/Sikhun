@@ -172,6 +172,14 @@ class AiChatController extends Controller
             }, 200, ['Content-Type' => 'text/event-stream', 'X-Accel-Buffering' => 'no', 'Cache-Control' => 'no-cache']);
         }
 
+        if ($image && ! $student->canUseVision()) {
+            return response()->stream(function () {
+                echo 'data: '.json_encode(['error' => 'You have reached the photo / vision query limit for your plan. Please upgrade your plan to ask more questions with images.'])."\n\n";
+                ob_flush();
+                flush();
+            }, 200, ['Content-Type' => 'text/event-stream', 'X-Accel-Buffering' => 'no', 'Cache-Control' => 'no-cache']);
+        }
+
         return response()->stream(function () use ($session, $student, $userMessage, $imagePath, $retrieval) {
             $messages = $session->messages ?? [];
 
@@ -277,6 +285,10 @@ class AiChatController extends Controller
                 if ($sub = $student->activeSubscription) {
                     $sub->decrement('ai_chat_minutes_remaining');
                 }
+            }
+
+            if ($imagePath) {
+                $student->recordVisionUsage();
             }
 
             echo 'data: '.json_encode(['content' => '', 'done' => true])."\n\n";

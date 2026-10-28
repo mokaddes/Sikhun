@@ -34,6 +34,11 @@ class BookshelfController extends Controller
         return Inertia::render('Student/Bookshelf/Index', [
             'shelves' => $shelves,
             'myBooks' => $student->myBooks()->latest()->get(),
+            'uploadQuota' => [
+                'currentCount' => $student->myBooks()->count(),
+                'maxSlots' => $student->maxUploadBookSlots(),
+                'reuploadsRemaining' => $student->getMonthlyReuploadsRemaining(),
+            ],
         ]);
     }
 }

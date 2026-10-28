@@ -82,6 +82,26 @@ function getPlanActions(plan) {
                         <span class="text-xs text-[var(--text-muted)] font-medium">/ {{ locale === 'en' ? 'month' : 'মাস' }}</span>
                     </div>
 
+                    <!-- Quota Badges Grid -->
+                    <div class="mb-4 grid grid-cols-2 gap-2 text-[11px]">
+                        <div class="rounded-lg bg-[var(--surface2)] px-2.5 py-1.5 font-medium text-[var(--text-muted)]">
+                            <span class="block text-[10px] uppercase font-bold text-[var(--text)]">💬 AI Chat</span>
+                            {{ plan.ai_chat_minutes }} {{ locale === 'en' ? 'mins' : 'মিনিট' }}
+                        </div>
+                        <div class="rounded-lg bg-[var(--surface2)] px-2.5 py-1.5 font-medium text-[var(--text-muted)]">
+                            <span class="block text-[10px] uppercase font-bold text-[var(--text)]">📸 Vision Chat</span>
+                            {{ plan.ai_vision_limit || 0 }} {{ locale === 'en' ? 'images' : 'টি ছবি' }}
+                        </div>
+                        <div class="rounded-lg bg-[var(--surface2)] px-2.5 py-1.5 font-medium text-[var(--text-muted)]">
+                            <span class="block text-[10px] uppercase font-bold text-[var(--text)]">📚 Upload Slots</span>
+                            {{ plan.upload_book_limit || 1 }} {{ locale === 'en' ? 'books' : 'টি বই' }} ({{ plan.monthly_reupload_limit || 2 }}/mo)
+                        </div>
+                        <div class="rounded-lg bg-[var(--surface2)] px-2.5 py-1.5 font-medium text-[var(--text-muted)]">
+                            <span class="block text-[10px] uppercase font-bold text-[var(--text)]">✍️ AI Exams</span>
+                            {{ plan.ai_exam_count }} {{ locale === 'en' ? 'exams' : 'টি পরীক্ষা' }}
+                        </div>
+                    </div>
+
                     <!-- AI Model Tier Badge -->
                     <div class="mb-4 flex items-center gap-1.5 rounded-xl bg-[var(--surface2)] px-3 py-1.5 text-xs">
                         <SparklesIcon class="h-3.5 w-3.5 text-[var(--primary)] shrink-0" />

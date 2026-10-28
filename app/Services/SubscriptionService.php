@@ -20,24 +20,17 @@ class SubscriptionService
         return DB::transaction(function () use ($student, $plan, $months) {
             $student->subscriptions()->where('status', 'active')->update(['status' => 'expired']);
 
-            $subscription = StudentSubscription::create([
+            return StudentSubscription::create([
                 'student_id' => $student->id,
                 'plan_id' => $plan->id,
                 'status' => 'active',
                 'ai_chat_minutes_remaining' => $plan->ai_chat_minutes,
                 'ai_exam_count_remaining' => $plan->ai_exam_count,
+                'ai_vision_remaining' => $plan->ai_vision_limit ?? 0,
+                'monthly_reuploads_remaining' => $plan->monthly_reupload_limit ?? 0,
                 'started_at' => now(),
                 'expires_at' => now()->addMonths($months),
             ]);
-
-            foreach ($plan->gift_book_ids ?? [] as $bookId) {
-                $student->bookShelf()->firstOrCreate(
-                    ['book_id' => $bookId],
-                    ['source' => 'subscription_gift', 'added_at' => now()]
-                );
-            }
-
-            return $subscription;
         });
     }
 }

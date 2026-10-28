@@ -36,6 +36,7 @@ class StudentAuthController extends Controller
                 'email' => $request->email,
                 'password' => $request->password, // hashed via cast
                 'type' => $request->type,
+                'trial_ends_at' => now()->addDays(7),
                 'referral_code' => 'SIKHU-'.strtoupper(Str::random(5)),
                 'referred_by_student_id' => $this->resolveReferrer($request->query('ref')),
             ]);

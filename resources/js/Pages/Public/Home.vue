@@ -191,11 +191,43 @@ const bookPalette = ['from-[#123858] to-[#0a0e18]', 'from-[#0e513d] to-[#0a0e18]
 
             <!-- Current plan data rendered in the reference's three-tier layout -->
             <section id="pricing" class="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20 scroll-mt-24">
-                <div class="mx-auto mb-10 max-w-2xl text-center"><span class="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-[#ff9a52]">{{ en ? 'Simple, clear plans' : 'সহজ ও স্পষ্ট প্ল্যান' }}</span><h2 class="mt-2 font-heading text-3xl md:text-4xl font-bold tracking-tight">{{ en ? 'Choose the support that fits you' : 'আপনার উপযোগী সহায়তা বেছে নিন' }}</h2><p class="mt-3 text-sm leading-relaxed text-[var(--text-muted)]">{{ en ? 'Compare the available plans and choose what works for your learning goals.' : 'উপলভ্য প্ল্যানগুলো দেখে আপনার শেখার লক্ষ্যের সাথে মানানসইটি বেছে নিন।' }}</p></div>
+                <div class="mx-auto mb-10 max-w-2xl text-center">
+                    <div class="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold text-emerald-400 mb-3">
+                        <span class="material-symbols-outlined !text-sm text-emerald-400">verified</span>
+                        <span>{{ en ? 'Start with a 7-day Free Trial — No card required' : '৭ দিনের সম্পূর্ণ ফ্রি ট্রায়াল দিয়ে শুরু করুন — কোনো কার্ড প্রয়োজন নেই' }}</span>
+                    </div>
+                    <h2 class="mt-2 font-heading text-3xl md:text-4xl font-bold tracking-tight">{{ en ? 'Choose the support that fits you' : 'আপনার উপযোগী সহায়তা বেছে নিন' }}</h2>
+                    <p class="mt-3 text-sm leading-relaxed text-[var(--text-muted)]">{{ en ? 'Compare the available plans and choose what works for your learning goals.' : 'উপলভ্য প্ল্যানগুলো দেখে আপনার শেখার লক্ষ্যের সাথে মানানসইটি বেছে নিন।' }}</p>
+                </div>
                 <div v-if="plans.length" class="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
                     <article v-for="(plan, i) in plans.slice(0, 3)" :key="plan.id" class="relative flex flex-col justify-between rounded-3xl border p-6 md:p-7 shadow-lg transition duration-300 hover:-translate-y-1" :class="i === 1 ? 'border-[#f97316]/40 bg-[#262a35] shadow-[0_24px_60px_rgba(0,0,0,.35)]' : 'border-white/5 bg-[#1c1f2a]/75'">
-                        <div><div class="flex items-center justify-between gap-3"><h3 class="text-lg font-bold">{{ plan.name }}</h3><span class="rounded bg-[#0a0e18] px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-[var(--text-muted)]">{{ i === 0 ? (en ? 'STARTER' : 'শুরু') : i === 1 ? (en ? 'POPULAR' : 'জনপ্রিয়') : (en ? 'FULL ACCESS' : 'সম্পূর্ণ') }}</span></div><p v-if="plan.description" class="mt-2 min-h-10 text-xs leading-relaxed text-[var(--text-muted)]">{{ plan.description }}</p><div class="my-6 flex items-baseline gap-1"><span class="font-heading text-4xl font-extrabold tracking-tight" :class="i === 1 ? 'text-[#ff9a52]' : ''">৳{{ plan.price_monthly }}</span><span class="text-sm text-[var(--text-muted)]">{{ en ? '/ month' : '/ মাস' }}</span></div><div class="flex flex-col gap-3 text-xs text-[var(--text-muted)]"><div v-for="feature in (Array.isArray(plan.features) ? plan.features : [])" :key="feature" class="flex items-start gap-2.5"><span class="material-symbols-outlined !text-base text-[#10b981]">check_circle</span><span>{{ feature }}</span></div></div></div>
-                        <Link href="/register" class="mt-7 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition" :class="i === 1 ? 'bg-gradient-to-r from-[#ff7a00] to-[#f97316] text-white shadow-lg' : 'bg-[#313540] text-[var(--text)] hover:bg-[#3b404d]'">{{ en ? 'Get started' : 'শুরু করুন' }} <span aria-hidden="true">→</span></Link>
+                        <div>
+                            <div class="flex items-center justify-between gap-3">
+                                <h3 class="text-lg font-bold">{{ plan.name }}</h3>
+                                <span class="rounded bg-[#0a0e18] px-2.5 py-1 font-mono text-[9px] font-bold uppercase tracking-wider" :class="i === 1 ? 'text-[#ff9a52]' : 'text-[var(--text-muted)]'">
+                                    {{ i === 0 ? (en ? 'STANDARD' : 'স্ট্যান্ডার্ড') : i === 1 ? (en ? 'POPULAR' : 'জনপ্রিয়') : (en ? 'ELITE' : 'এলিট') }}
+                                </span>
+                            </div>
+                            <p v-if="plan.description" class="mt-2 min-h-10 text-xs leading-relaxed text-[var(--text-muted)]">{{ plan.description }}</p>
+                            <div class="my-5 flex flex-col">
+                                <div class="flex items-baseline gap-1">
+                                    <span class="font-heading text-4xl font-extrabold tracking-tight" :class="i === 1 ? 'text-[#ff9a52]' : ''">৳{{ plan.price_monthly }}</span>
+                                    <span class="text-sm text-[var(--text-muted)]">{{ en ? '/ month' : '/ মাস' }}</span>
+                                </div>
+                                <span class="text-[11px] font-medium text-emerald-400 mt-1">
+                                    ✓ {{ en ? 'Includes 7-day free trial' : '৭ দিনের ফ্রি ট্রায়াল অন্তর্ভুক্ত' }}
+                                </span>
+                            </div>
+                            <div class="flex flex-col gap-3 text-xs text-[var(--text-muted)]">
+                                <div v-for="feature in (Array.isArray(plan.features) ? plan.features : [])" :key="feature" class="flex items-start gap-2.5">
+                                    <span class="material-symbols-outlined !text-base text-[#10b981]">check_circle</span>
+                                    <span>{{ feature }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <Link href="/register" class="mt-7 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition" :class="i === 1 ? 'bg-gradient-to-r from-[#ff7a00] to-[#f97316] text-white shadow-lg shadow-[#f97316]/20' : 'bg-[#313540] text-[var(--text)] hover:bg-[#3b404d]'">
+                            {{ en ? 'Start 7-Day Free Trial' : '৭ দিনের ফ্রি ট্রায়াল শুরু করুন' }} <span aria-hidden="true">→</span>
+                        </Link>
                     </article>
                 </div>
                 <div v-else class="rounded-2xl border border-dashed border-white/10 bg-[#1c1f2a]/60 p-12 text-center text-sm text-[var(--text-muted)]">{{ en ? 'Plans will be available here soon.' : 'প্ল্যান শিগগিরই এখানে যুক্ত হবে।' }}</div>

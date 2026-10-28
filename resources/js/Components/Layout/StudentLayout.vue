@@ -320,6 +320,40 @@ function logout() {
 
             <main class="flex-1 px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-10">
                 <FlashBanner />
+
+                <!-- 7-Day Free Trial Notice Banner -->
+                <div
+                    v-if="student && !student.has_active_subscription && student.is_in_trial"
+                    class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-800 dark:text-emerald-300 shadow-sm"
+                >
+                    <div class="flex items-center gap-2.5">
+                        <SparklesIcon class="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span>
+                            <strong>{{ locale === 'en' ? '7-Day Free Trial Active' : '৭ দিনের ফ্রি ট্রায়াল চালু রয়েছে' }}</strong>
+                            ({{ locale === 'en' ? `${student.trial_days_remaining} day${student.trial_days_remaining === 1 ? '' : 's'} remaining` : `বাকি ${student.trial_days_remaining} দিন` }}).
+                            {{ locale === 'en' ? 'Enjoy full access to AI Chat, practice exams & book study.' : 'বই রিডার, এআই চ্যাট ও পরীক্ষার সম্পূর্ণ সুবিধা বিনামূল্যে ব্যবহার করুন।' }}
+                        </span>
+                    </div>
+                    <Link href="/plans" class="btn btn-sm btn-primary rounded-xl font-bold shadow-sm">
+                        {{ locale === 'en' ? 'Upgrade Plan →' : 'প্ল্যান আপগ্রেড করুন →' }}
+                    </Link>
+                </div>
+                <div
+                    v-else-if="student && !student.has_active_subscription && !student.is_in_trial"
+                    class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-800 dark:text-amber-300 shadow-sm"
+                >
+                    <div class="flex items-center gap-2.5">
+                        <SparklesIcon class="h-4 w-4 text-amber-500 shrink-0" />
+                        <span>
+                            <strong>{{ locale === 'en' ? 'Free Trial Expired' : 'ফ্রি ট্রায়াল শেষ হয়ে গেছে' }}</strong>:
+                            {{ locale === 'en' ? 'Subscribe to an affordable plan to continue unlimited AI study & exam preparation.' : 'সীমাহীন এআই চ্যাট ও পরীক্ষার প্রস্তুতি চালু রাখতে সাশ্রয়ী প্ল্যান বেছে নিন।' }}
+                        </span>
+                    </div>
+                    <Link href="/plans" class="btn btn-sm btn-primary rounded-xl font-bold shadow-sm">
+                        {{ locale === 'en' ? 'Choose a Plan →' : 'প্ল্যান বেছে নিন →' }}
+                    </Link>
+                </div>
+
                 <Transition name="page" mode="out-in">
                     <div :key="url">
                         <slot />

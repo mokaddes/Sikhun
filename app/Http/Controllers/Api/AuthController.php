@@ -21,6 +21,7 @@ class AuthController extends BaseApiController
                 'email' => $request->email,
                 'password' => $request->password,
                 'type' => $request->type,
+                'trial_ends_at' => now()->addDays(7),
                 'referral_code' => 'SIKHU-'.strtoupper(Str::random(5)),
                 'referred_by_student_id' => $request->query('ref')
                     ? Student::where('referral_code', $request->query('ref'))->value('id')

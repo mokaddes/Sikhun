@@ -30,6 +30,13 @@ function subscribe(plan, method) {
             {{ t('plans_page.active_until') }} {{ new Date(activeSubscription.expires_at).toLocaleDateString() }}
         </div>
 
+        <div v-else-if="$page.props.auth?.student?.is_in_trial" class="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-300">
+            <span class="flex items-center gap-2">
+                <SparklesIcon class="h-4 w-4 text-emerald-500 shrink-0" />
+                <span>{{ locale === 'en' ? `You are enjoying a 7-day free trial (${$page.props.auth.student.trial_days_remaining} day${$page.props.auth.student.trial_days_remaining === 1 ? '' : 's'} remaining). Select a plan to continue after your trial!` : `আপনি বর্তমানে ৭ দিনের ফ্রি ট্রায়ালে রয়েছেন (বাকি ${$page.props.auth.student.trial_days_remaining} দিন)। ট্রায়াল শেষে অবিরাম পড়তে এখনই প্ল্যান বেছে নিন!` }}</span>
+            </span>
+        </div>
+
         <div class="mb-6 flex items-center gap-3">
             <label class="text-sm font-medium">{{ t('plans_page.months') }}:</label>
             <select v-model="months" class="input" style="width:auto">

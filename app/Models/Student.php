@@ -14,7 +14,7 @@ class Student extends Authenticatable
     protected $guard = 'web';
 
     protected $fillable = [
-        'name', 'email', 'password', 'type', 'status',
+        'name', 'email', 'password', 'type', 'status', 'trial_ends_at',
         'wallet_balance', 'ai_trial_minutes_used', 'ai_trial_vision_used',
         'trial_reuploads_count', 'trial_reuploads_month', 'referral_code',
         'referred_by_student_id', 'avatar', 'theme_mode', 'leaderboard_opt_out',
@@ -26,6 +26,7 @@ class Student extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'trial_ends_at' => 'datetime',
             'password' => 'hashed',
             'wallet_balance' => 'decimal:2',
             'ai_trial_minutes_used' => 'integer',
@@ -70,9 +71,32 @@ class Student extends Authenticatable
             return true;
         }
 
+        if ($this->isInTrial()) {
+            return true;
+        }
+
         $trialLimit = Plan::where('is_active', true)->max('trial_ai_minutes') ?: 10;
 
         return $this->ai_trial_minutes_used < $trialLimit;
+    }
+
+    public function isInTrial(): bool
+    {
+        if ($this->trial_ends_at) {
+            return now()->lt($this->trial_ends_at);
+        }
+
+        return $this->created_at ? now()->lt($this->created_at->copy()->addDays(7)) : false;
+    }
+
+    public function trialDaysRemaining(): int
+    {
+        $endsAt = $this->trial_ends_at ?? $this->created_at?->copy()->addDays(7);
+        if (! $endsAt || now()->gte($endsAt)) {
+            return 0;
+        }
+
+        return (int) max(1, ceil(now()->floatDiffInDays($endsAt)));
     }
 
     public function maxUploadBookSlots(): int
@@ -145,8 +169,8 @@ class Student extends Authenticatable
             return (int) ($sub->ai_vision_remaining ?? 0);
         }
 
-        // Free trial vision limit: 3 questions with image
-        $freeLimit = 3;
+        // Free trial vision limit: 10 questions with image during trial, otherwise 3
+        $freeLimit = $this->isInTrial() ? 10 : 3;
         return max(0, $freeLimit - (int) $this->ai_trial_vision_used);
     }
 

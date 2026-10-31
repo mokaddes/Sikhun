@@ -1,5 +1,6 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
 import {
@@ -9,10 +10,19 @@ import {
     SparklesIcon,
     ClockIcon,
     AcademicCapIcon,
+    ArrowPathIcon,
 } from '@heroicons/vue/24/outline';
 
 defineProps({ schedules: Array });
 const { t, locale } = useI18n();
+const retryingScheduleId = ref(null);
+
+function retrySchedule(schedule) {
+    retryingScheduleId.value = schedule.id;
+    router.post(`/schedules/${schedule.id}/retry`, {}, {
+        onFinish: () => { retryingScheduleId.value = null; },
+    });
+}
 
 function daysRemaining(dateStr) {
     const diff = Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
@@ -66,9 +76,9 @@ function daysRemaining(dateStr) {
                         </span>
                         <span
                             class="rounded-lg px-2.5 py-0.5 text-[11px] font-semibold"
-                            :class="s.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-[var(--surface2)] text-[var(--text-muted)]'"
+                            :class="s.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : s.status === 'failed' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 'bg-[var(--surface2)] text-[var(--text-muted)]'"
                         >
-                            {{ s.status === 'active' ? (locale === 'en' ? 'Active' : 'সক্রিয়') : s.status }}
+                            {{ s.status === 'active' ? (locale === 'en' ? 'Active' : 'সক্রিয়') : s.status === 'failed' ? (locale === 'en' ? 'Failed' : 'ব্যর্থ') : s.status === 'generating' ? (locale === 'en' ? 'Generating…' : 'তৈরি হচ্ছে…') : s.status }}
                         </span>
                     </div>
 
@@ -101,7 +111,22 @@ function daysRemaining(dateStr) {
 
                 <!-- Card Bottom -->
                 <div class="mt-6 border-t border-[var(--border)]/70 pt-4">
+                    <button
+                        v-if="s.status === 'failed'"
+                        type="button"
+                        :disabled="retryingScheduleId === s.id"
+                        class="btn btn-primary w-full justify-center gap-2 rounded-xl py-2.5 text-xs font-bold disabled:opacity-60"
+                        @click="retrySchedule(s)"
+                    >
+                        <ArrowPathIcon class="h-3.5 w-3.5" :class="retryingScheduleId === s.id ? 'animate-spin' : ''" />
+                        <span>{{ retryingScheduleId === s.id ? (locale === 'en' ? 'Retrying…' : 'আবার চেষ্টা হচ্ছে…') : (locale === 'en' ? 'Retry generation' : 'আবার তৈরি করুন') }}</span>
+                    </button>
+                    <button v-else-if="s.status === 'generating'" type="button" disabled class="btn btn-secondary w-full justify-center gap-2 rounded-xl py-2.5 text-xs font-bold opacity-60">
+                        <ArrowPathIcon class="h-3.5 w-3.5 animate-spin" />
+                        <span>{{ locale === 'en' ? 'Generating…' : 'তৈরি হচ্ছে…' }}</span>
+                    </button>
                     <Link
+                        v-else
                         :href="`/schedules/${s.id}`"
                         class="btn btn-secondary w-full justify-center gap-2 rounded-xl py-2.5 text-xs font-bold"
                     >

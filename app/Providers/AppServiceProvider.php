@@ -54,9 +54,17 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(12)->by($request->user()?->id ?: $request->ip());
         });
 
-        // Public contact form / support widget — cheap but abusable.
+        // The public contact form is deliberately tight, but chat messages and
+        // ticket handoff use separate buckets so normal conversation does not
+        // consume the quota needed to ask a human for help.
         RateLimiter::for('contact', function (Request $request) {
             return Limit::perMinute(3)->by($request->ip());
+        });
+        RateLimiter::for('support-message', function (Request $request) {
+            return Limit::perMinute(12)->by($request->user('web')?->id ?: $request->ip());
+        });
+        RateLimiter::for('support-handoff', function (Request $request) {
+            return Limit::perMinute(5)->by($request->user('web')?->id ?: $request->ip());
         });
 
         // REST API — general vs AI-generation endpoints get different budgets

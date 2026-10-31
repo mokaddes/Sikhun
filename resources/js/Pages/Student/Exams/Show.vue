@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
@@ -13,6 +13,7 @@ import {
     XCircleIcon,
     ClockIcon,
     AcademicCapIcon,
+    ArrowPathIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({ exam: Object });
@@ -22,9 +23,11 @@ const exam = ref(props.exam);
 const answers = ref({});
 const currentIndex = ref(0);
 const revealed = ref(false);
+const retrying = ref(false);
 let pollInterval;
 
 function poll() {
+    if (pollInterval) clearInterval(pollInterval);
     pollInterval = setInterval(async () => {
         try {
             const { data } = await axios.get(`/exams/${exam.value.id}/status`);
@@ -40,6 +43,11 @@ function poll() {
 
 onMounted(() => {
     if (exam.value.status === 'generating') poll();
+});
+watch(() => props.exam, (value) => {
+    exam.value = value;
+    if (value.status === 'generating') poll();
+    else clearInterval(pollInterval);
 });
 onBeforeUnmount(() => clearInterval(pollInterval));
 
@@ -75,6 +83,13 @@ function checkAnswer() {
 
 function submitExam() {
     router.post(`/exams/${exam.value.id}/complete`, { answers: answers.value });
+}
+
+function retryGeneration() {
+    retrying.value = true;
+    router.post(`/exams/${exam.value.id}/retry`, {}, {
+        onFinish: () => { retrying.value = false; },
+    });
 }
 </script>
 
@@ -124,6 +139,19 @@ function submitExam() {
                         ? 'Our AI is crafting balanced questions tailored to your topic. This usually takes 5-10 seconds...'
                         : 'আমাদের এআই আপনার নির্ধারিত বিষয়ে মানসম্মত প্রশ্ন তৈরি করছে। সাধারণত ৫-১০ সেকেন্ড সময় লাগে...' }}
                 </p>
+            </div>
+
+            <div v-else-if="exam.status === 'failed'" class="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-8 text-center">
+                <h2 class="font-heading text-xl font-bold text-rose-600 dark:text-rose-400">
+                    {{ locale === 'en' ? 'Question generation failed' : 'প্রশ্ন তৈরি করা যায়নি' }}
+                </h2>
+                <p class="mt-2 text-sm text-[var(--text-muted)]">
+                    {{ locale === 'en' ? 'Your exam settings are saved. Try generating the questions again.' : 'আপনার পরীক্ষার সেটিংস সংরক্ষিত আছে। আবার প্রশ্ন তৈরির চেষ্টা করুন।' }}
+                </p>
+                <button type="button" :disabled="retrying" class="btn btn-primary mt-5 inline-flex items-center gap-2 disabled:opacity-60" @click="retryGeneration">
+                    <ArrowPathIcon class="h-4 w-4" :class="retrying ? 'animate-spin' : ''" />
+                    {{ retrying ? (locale === 'en' ? 'Retrying...' : 'আবার চেষ্টা হচ্ছে...') : (locale === 'en' ? 'Retry generation' : 'আবার তৈরি করুন') }}
+                </button>
             </div>
 
             <!-- Main Test Area -->

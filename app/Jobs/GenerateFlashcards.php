@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\FlashcardSet;
 use App\Services\Ai\AiProviderFactory;
 use Illuminate\Bus\Queueable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -55,6 +56,7 @@ class GenerateFlashcards implements ShouldQueue
                 throw new \RuntimeException('AI returned an invalid flashcard format.');
             }
 
+            $created = 0;
             foreach (array_slice($data['flashcards'], 0, $this->count) as $card) {
                 if (! is_array($card) || empty($card['front']) || empty($card['back'])) {
                     continue;
@@ -74,9 +76,21 @@ class GenerateFlashcards implements ShouldQueue
                     'back' => $card['back'],
                     'source_ref' => $sourceRef,
                 ]);
+                $created++;
             }
+
+            if ($created === 0) {
+                throw new \RuntimeException('AI returned no usable flashcards.');
+            }
+
+            $set->update(['generation_status' => 'completed']);
         } catch (\Throwable $e) {
-            // Leave the set with zero cards; the UI shows an empty state + retry.
+            $set->flashcards()->delete();
+            $set->update(['generation_status' => 'failed']);
+            Log::warning('Flashcard generation failed.', [
+                'flashcard_set_id' => $set->id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }

@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import ConfirmButton from '@/Components/UI/ConfirmButton.vue';
 import { useI18n } from '@/i18n';
@@ -10,10 +10,15 @@ import {
     PlayIcon,
     ClockIcon,
     ArrowRightIcon,
+    ArrowPathIcon,
 } from '@heroicons/vue/24/outline';
 
 defineProps({ sets: Array });
 const { t, locale } = useI18n();
+
+function retrySet(set) {
+    router.post(`/flashcards/${set.id}/retry`);
+}
 </script>
 
 <template>
@@ -67,16 +72,41 @@ const { t, locale } = useI18n();
                         {{ set.title }}
                     </h3>
 
-                    <!-- Created Date -->
+                    <!-- Created Date and generation status -->
                     <div class="mt-2 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
                         <ClockIcon class="h-3.5 w-3.5" />
                         <span>{{ new Date(set.created_at).toLocaleDateString() }}</span>
                     </div>
+                    <p v-if="set.generation_status === 'failed'" class="mt-2 text-xs font-semibold text-rose-500">
+                        {{ locale === 'en' ? 'Generation failed' : 'তৈরি ব্যর্থ হয়েছে' }}
+                    </p>
+                    <p v-else-if="set.generation_status === 'generating'" class="mt-2 text-xs font-semibold text-[var(--primary)]">
+                        {{ locale === 'en' ? 'Generating…' : 'তৈরি হচ্ছে…' }}
+                    </p>
                 </div>
 
                 <!-- Bottom Actions -->
                 <div class="mt-6 border-t border-[var(--border)]/70 pt-4 flex items-center justify-between gap-3">
+                    <button
+                        v-if="set.generation_status === 'failed'"
+                        type="button"
+                        class="btn btn-primary flex-1 justify-center gap-2 rounded-xl py-2.5 text-xs font-bold shadow-sm"
+                        @click="retrySet(set)"
+                    >
+                        <ArrowPathIcon class="h-4 w-4" />
+                        <span>{{ locale === 'en' ? 'Retry generation' : 'আবার তৈরি করুন' }}</span>
+                    </button>
+                    <button
+                        v-else-if="set.generation_status === 'generating'"
+                        type="button"
+                        disabled
+                        class="btn btn-secondary flex-1 justify-center gap-2 rounded-xl py-2.5 text-xs font-bold opacity-60"
+                    >
+                        <ArrowPathIcon class="h-4 w-4 animate-spin" />
+                        <span>{{ locale === 'en' ? 'Generating…' : 'তৈরি হচ্ছে…' }}</span>
+                    </button>
                     <Link
+                        v-else
                         :href="`/flashcards/${set.id}`"
                         class="btn btn-primary flex-1 justify-center gap-2 rounded-xl py-2.5 text-xs font-bold shadow-sm"
                     >

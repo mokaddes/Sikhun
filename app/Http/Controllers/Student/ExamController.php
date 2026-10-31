@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\CreateExamRequest;
 use App\Http\Requests\Student\SubmitAnswerRequest;
+use App\Jobs\GenerateExamQuestions;
 use App\Models\AiExplanation;
 use App\Models\BookChapter;
 use App\Models\BookChunk;
@@ -115,9 +116,41 @@ class ExamController extends Controller
             'total' => $request->count,
         ]);
 
-        \App\Jobs\GenerateExamQuestions::dispatch($session->id);
+        GenerateExamQuestions::dispatch($session->id);
 
         return redirect()->route('exams.show', $session);
+    }
+
+    public function retry(ExamSession $exam): RedirectResponse
+    {
+        $this->authorizeExam($exam);
+        abort_unless($exam->status === 'failed', 409, 'Only failed exam generation can be retried.');
+        abort_unless(auth('web')->user()->hasActiveAiExamAccess(), 403, 'Your AI exam quota is exhausted.');
+
+        $claimed = ExamSession::query()
+            ->whereKey($exam->id)
+            ->where('status', 'failed')
+            ->update([
+                'status' => 'generating',
+                'questions' => null,
+                'answers' => null,
+                'score' => 0,
+                'percentage' => 0,
+                'started_at' => null,
+                'completed_at' => null,
+                'time_taken_seconds' => null,
+                'total' => (int) ($exam->config['count'] ?? 0),
+            ]);
+        abort_unless($claimed === 1, 409, 'This exam generation has already been retried.');
+
+        try {
+            GenerateExamQuestions::dispatch($exam->id);
+        } catch (\Throwable $exception) {
+            $exam->update(['status' => 'failed']);
+            throw $exception;
+        }
+
+        return redirect()->route('exams.show', $exam);
     }
 
     public function show(ExamSession $exam): Response

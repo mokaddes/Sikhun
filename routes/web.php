@@ -74,10 +74,10 @@ Route::post('/language/{locale}', function (string $locale) {
 
 Route::get('/support/conversation', [\App\Http\Controllers\Public\SupportController::class, 'show'])->name('support.show');
 Route::post('/support/message', [\App\Http\Controllers\Public\SupportController::class, 'send'])
-    ->middleware('throttle:contact')
+    ->middleware('throttle:support-message')
     ->name('support.send');
 Route::post('/support/conversation/ticket', [\App\Http\Controllers\Public\SupportController::class, 'handoff'])
-    ->middleware('throttle:contact')
+    ->middleware('throttle:support-handoff')
     ->name('support.handoff');
 
 /*
@@ -193,6 +193,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/exams/create', [ExamController::class, 'createForm'])->name('exams.create-form');
     Route::get('/exams/{exam}', [ExamController::class, 'show'])->name('exams.show');
     Route::get('/exams/{exam}/status', [ExamController::class, 'status'])->name('exams.status');
+    Route::post('/exams/{exam}/retry', [ExamController::class, 'retry'])->middleware('throttle:ai')->name('exams.retry');
     Route::post('/exams/{exam}/complete', [ExamController::class, 'complete'])->name('exams.complete');
     Route::get('/exams/{exam}/result', [ExamController::class, 'result'])->name('exams.result');
     Route::post('/exams/{exam}/questions/{question}/explanation', [ExamController::class, 'explanation'])
@@ -207,6 +208,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/flashcards', [FlashcardController::class, 'index'])->name('flashcards.index');
     Route::get('/flashcards/create', [FlashcardController::class, 'createForm'])->name('flashcards.create-form');
     Route::get('/flashcards/{set}', [FlashcardController::class, 'show'])->name('flashcards.show');
+    Route::post('/flashcards/{set}/retry', [FlashcardController::class, 'retry'])->middleware('throttle:ai')->name('flashcards.retry');
     Route::delete('/flashcards/{set}', [FlashcardController::class, 'destroy'])->name('flashcards.destroy');
     Route::post('/flashcards/{set}/cards/{flashcard}/review', [FlashcardController::class, 'review'])->name('flashcards.review');
     Route::get('/flashcards/{set}/pdf', [FlashcardController::class, 'pdf'])->name('flashcards.pdf');
@@ -219,6 +221,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/essays/create', [EssayController::class, 'create'])->name('essays.create-form');
     Route::get('/essays/{essay}', [EssayController::class, 'show'])->name('essays.show');
     Route::get('/essays/{essay}/status', [EssayController::class, 'status'])->name('essays.status');
+    Route::post('/essays/{essay}/retry', [EssayController::class, 'retry'])->middleware('throttle:ai')->name('essays.retry');
     Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
         Route::post('/essays', [EssayController::class, 'store'])->name('essays.store');
     });
@@ -228,6 +231,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/schedules/create', [ScheduleController::class, 'create'])->name('schedules.create-form');
     Route::get('/schedules/{schedule}', [ScheduleController::class, 'show'])->name('schedules.show');
     Route::get('/schedules/{schedule}/status', [ScheduleController::class, 'status'])->name('schedules.status');
+    Route::post('/schedules/{schedule}/retry', [ScheduleController::class, 'retry'])->middleware('throttle:ai')->name('schedules.retry');
     Route::post('/schedules/{schedule}/progress', [ScheduleController::class, 'markProgress'])->name('schedules.progress');
     Route::get('/schedules/{schedule}/pdf', [ScheduleController::class, 'pdf'])->name('schedules.pdf');
     Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
@@ -244,6 +248,8 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::put('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::put('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::delete('/notifications', [NotificationController::class, 'destroyAll'])->name('notifications.destroy-all');
 
     // Notification settings (leaderboard opt-out + notification preferences)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -761,6 +761,9 @@
         "handoff_created": "A support ticket has been created with this chat context.",
         "handoff_login_required": "Please log in before requesting human support.",
         "handoff_failed": "We couldn't create the ticket. Please try again.",
+        "handoff_rate_limited": "Please wait a moment before requesting human support again.",
+        "message_rate_limited": "You are sending messages too quickly. Please wait a moment.",
+        "send_failed": "Your message could not be sent. Please try again.",
         "view_ticket": "View support ticket",
         "login": "Log in",
         "tickets": "My support tickets",
@@ -821,6 +824,13 @@
         "reply_sent": "Reply sent.",
         "feedback_submitted": "Feedback submitted.",
         "ai_answer_reported": "AI answer reported."
+    },
+    "notification_bell": {
+        "title": "Notifications",
+        "mark_all_read": "Mark all read",
+        "clear_all": "Clear all",
+        "empty": "No notifications yet.",
+        "dismiss": "Dismiss notification"
     },
     "contact_page": {
         "title": "Contact Us",

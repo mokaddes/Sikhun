@@ -1,5 +1,6 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import Pagination from '@/Components/UI/Pagination.vue';
 import { useI18n } from '@/i18n';
@@ -10,10 +11,19 @@ import {
     SparklesIcon,
     ClockIcon,
     CheckBadgeIcon,
+    ArrowPathIcon,
 } from '@heroicons/vue/24/outline';
 
 defineProps({ essays: Object });
 const { t, locale } = useI18n();
+const retryingEssayId = ref(null);
+
+function retryEssay(essay) {
+    retryingEssayId.value = essay.id;
+    router.post(`/essays/${essay.id}/retry`, {}, {
+        onFinish: () => { retryingEssayId.value = null; },
+    });
+}
 
 const formatRubric = (type) => {
     switch (type) {
@@ -68,9 +78,9 @@ const formatRubric = (type) => {
                         </span>
                         <span
                             class="rounded-lg px-2.5 py-0.5 text-[11px] font-semibold"
-                            :class="e.status === 'graded' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'"
+                            :class="['graded', 'completed'].includes(e.status) ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : e.status === 'failed' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'"
                         >
-                            {{ e.status === 'graded' ? (locale === 'en' ? 'Graded' : 'মূল্যায়িত') : (locale === 'en' ? 'In Review' : 'পর্যালোচনাধীন') }}
+                            {{ ['graded', 'completed'].includes(e.status) ? (locale === 'en' ? 'Graded' : 'মূল্যায়িত') : e.status === 'failed' ? (locale === 'en' ? 'Failed' : 'ব্যর্থ') : (locale === 'en' ? 'In Review' : 'পর্যালোচনাধীন') }}
                         </span>
                     </div>
 
@@ -97,7 +107,18 @@ const formatRubric = (type) => {
                         <span class="text-xs text-[var(--text-muted)] italic">{{ locale === 'en' ? 'Grading...' : 'মূল্যায়ন চলছে...' }}</span>
                     </div>
 
+                    <button
+                        v-if="e.status === 'failed'"
+                        type="button"
+                        :disabled="retryingEssayId === e.id"
+                        class="btn btn-primary inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold disabled:opacity-60"
+                        @click="retryEssay(e)"
+                    >
+                        <ArrowPathIcon class="h-3.5 w-3.5" :class="retryingEssayId === e.id ? 'animate-spin' : ''" />
+                        <span>{{ retryingEssayId === e.id ? (locale === 'en' ? 'Retrying…' : 'আবার চেষ্টা হচ্ছে…') : (locale === 'en' ? 'Retry grading' : 'আবার মূল্যায়ন') }}</span>
+                    </button>
                     <Link
+                        v-else
                         :href="`/essays/${e.id}`"
                         class="btn btn-secondary inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold"
                     >

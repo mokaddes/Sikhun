@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\GenerateScheduleRequest;
+use App\Jobs\GenerateStudySchedule;
 use App\Models\StudySchedule;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -45,10 +46,31 @@ class ScheduleController extends Controller
             'status' => 'generating',
         ]);
 
-        \App\Jobs\GenerateStudySchedule::dispatch($schedule->id);
+        GenerateStudySchedule::dispatch($schedule->id);
 
         if (! app(\App\Services\AccessGrantService::class)->hasActiveAccess($student)) {
             $student->increment('ai_trial_minutes_used');
+        }
+
+        return redirect()->route('schedules.show', $schedule);
+    }
+
+    public function retry(StudySchedule $schedule): RedirectResponse
+    {
+        $this->authorizeSchedule($schedule);
+        abort_unless($schedule->status === 'failed', 409, 'Only failed study plans can be retried.');
+
+        $claimed = StudySchedule::query()
+            ->whereKey($schedule->id)
+            ->where('status', 'failed')
+            ->update(['status' => 'generating', 'schedule_data' => null]);
+        abort_unless($claimed === 1, 409, 'This study plan has already been retried.');
+
+        try {
+            GenerateStudySchedule::dispatch($schedule->id);
+        } catch (\Throwable $exception) {
+            $schedule->update(['status' => 'failed']);
+            throw $exception;
         }
 
         return redirect()->route('schedules.show', $schedule);

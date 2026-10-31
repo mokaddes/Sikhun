@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\SubmitEssayRequest;
+use App\Jobs\GradeEssay;
 use App\Models\EssaySubmission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -37,13 +38,34 @@ class EssayController extends Controller
             'status' => 'grading',
         ]);
 
-        \App\Jobs\GradeEssay::dispatch($submission->id);
+        GradeEssay::dispatch($submission->id);
 
         if (! app(\App\Services\AccessGrantService::class)->hasActiveAccess($student)) {
             $student->increment('ai_trial_minutes_used');
         }
 
         return redirect()->route('essays.show', $submission);
+    }
+
+    public function retry(EssaySubmission $essay): RedirectResponse
+    {
+        $this->authorizeEssay($essay);
+        abort_unless($essay->status === 'failed', 409, 'Only failed essay grading can be retried.');
+
+        $claimed = EssaySubmission::query()
+            ->whereKey($essay->id)
+            ->where('status', 'failed')
+            ->update(['status' => 'grading', 'result' => null]);
+        abort_unless($claimed === 1, 409, 'This essay has already been retried.');
+
+        try {
+            GradeEssay::dispatch($essay->id);
+        } catch (\Throwable $exception) {
+            $essay->update(['status' => 'failed']);
+            throw $exception;
+        }
+
+        return redirect()->route('essays.show', $essay);
     }
 
     public function show(EssaySubmission $essay): Response

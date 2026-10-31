@@ -262,11 +262,13 @@ const scoreGrade = computed(() => {
                             :href="q.book_ref.reader_url"
                             class="font-bold text-[var(--primary)] underline underline-offset-2"
                         >
-                            {{ q.book_ref.chapter || (locale === 'en' ? 'Book' : 'বই') }}
+                            {{ q.book_ref.book || q.book_ref.chapter || (locale === 'en' ? 'Book' : 'বই') }}
+                            <span v-if="q.book_ref.book && q.book_ref.chapter"> · {{ locale === 'en' ? 'Chapter' : 'অধ্যায়' }} {{ q.book_ref.chapter }}</span>
                             <span v-if="q.book_ref.page"> · {{ locale === 'en' ? 'Page' : 'পৃষ্ঠা' }} {{ q.book_ref.page }}</span>
                         </Link>
                         <span v-else>
-                            {{ q.book_ref.chapter || (locale === 'en' ? 'Book' : 'বই') }}
+                            {{ q.book_ref.book || q.book_ref.chapter || (locale === 'en' ? 'Book' : 'বই') }}
+                            <span v-if="q.book_ref.book && q.book_ref.chapter"> · {{ locale === 'en' ? 'Chapter' : 'অধ্যায়' }} {{ q.book_ref.chapter }}</span>
                             <span v-if="q.book_ref.page"> · {{ locale === 'en' ? 'Page' : 'পৃষ্ঠা' }} {{ q.book_ref.page }}</span>
                         </span>
                     </div>

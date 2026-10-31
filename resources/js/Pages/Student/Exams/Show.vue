@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import ExamTimer from '@/Components/Exam/ExamTimer.vue';
@@ -16,10 +16,15 @@ import {
     ArrowPathIcon,
 } from '@heroicons/vue/24/outline';
 
-const props = defineProps({ exam: Object });
+const props = defineProps({ exam: Object, canExplain: Boolean });
 const { t, locale } = useI18n();
+const page = usePage();
+const csrfToken = computed(() => page.props.csrf_token ?? '');
 
 const exam = ref(props.exam);
+const aiExplanations = ref({});
+const explanationLoading = ref({});
+const explanationErrors = ref({});
 const answers = ref({});
 const currentIndex = ref(0);
 const revealed = ref(false);
@@ -79,6 +84,82 @@ function prevQuestion() {
 
 function checkAnswer() {
     revealed.value = true;
+}
+
+async function requestExplanation(question) {
+    if (explanationLoading.value[question.id]) return;
+
+    explanationLoading.value = { ...explanationLoading.value, [question.id]: true };
+    explanationErrors.value = { ...explanationErrors.value, [question.id]: '' };
+    aiExplanations.value = { ...aiExplanations.value, [question.id]: '' };
+
+    try {
+        const response = await fetch(`/exams/${exam.value.id}/questions/${question.id}/explanation`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken.value,
+                'Content-Type': 'application/json',
+                'Accept': 'text/event-stream',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ student_answer: answers.value[question.id] ?? null }),
+        });
+
+        if (!response.ok) {
+            explanationErrors.value = {
+                ...explanationErrors.value,
+                [question.id]: response.status === 403
+                    ? (locale.value === 'en' ? 'AI explanations require a paid plan.' : 'AI ব্যাখ্যার জন্য পেইড প্ল্যান প্রয়োজন।')
+                    : (locale.value === 'en' ? 'Could not load the explanation.' : 'ব্যাখ্যাটি আনা যায়নি।'),
+            };
+            return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let streamError = '';
+        const handleEvent = (event) => {
+            if (event.error) {
+                streamError = event.error;
+                return;
+            }
+            if (event.content) {
+                aiExplanations.value = {
+                    ...aiExplanations.value,
+                    [question.id]: (aiExplanations.value[question.id] || '') + event.content,
+                };
+            }
+        };
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const events = buffer.split('\n\n');
+            buffer = events.pop();
+            for (const eventText of events) {
+                for (const line of eventText.split('\n')) {
+                    if (line.startsWith('data:')) handleEvent(JSON.parse(line.slice(5).trim()));
+                }
+            }
+        }
+        if (buffer.trim()) {
+            for (const line of buffer.split('\n')) {
+                if (line.startsWith('data:')) handleEvent(JSON.parse(line.slice(5).trim()));
+            }
+        }
+        if (streamError) {
+            explanationErrors.value = { ...explanationErrors.value, [question.id]: streamError };
+        }
+    } catch {
+        explanationErrors.value = {
+            ...explanationErrors.value,
+            [question.id]: locale.value === 'en' ? 'Could not load the explanation.' : 'ব্যাখ্যাটি আনা যায়নি।',
+        };
+    } finally {
+        explanationLoading.value = { ...explanationLoading.value, [question.id]: false };
+    }
 }
 
 function submitExam() {
@@ -191,9 +272,26 @@ function retryGeneration() {
                         <div class="text-xs font-bold uppercase tracking-wider text-[var(--primary)] mb-2">
                             {{ locale === 'en' ? 'Question' : 'প্রশ্ন' }} {{ currentIndex + 1 }}
                         </div>
-                        <h2 class="text-base sm:text-lg font-bold leading-relaxed mb-6">
+                        <h2 class="text-base sm:text-lg font-bold leading-relaxed mb-3">
                             {{ currentQuestion.question }}
                         </h2>
+                        <div v-if="currentQuestion.book_ref" class="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-muted)]">
+                            <span class="font-semibold">{{ locale === 'en' ? 'Source:' : 'সূত্র:' }}</span>
+                            <Link
+                                v-if="currentQuestion.book_ref.reader_url"
+                                :href="currentQuestion.book_ref.reader_url"
+                                class="font-bold text-[var(--primary)] underline underline-offset-2"
+                            >
+                                {{ currentQuestion.book_ref.book || (locale === 'en' ? 'Book' : 'বই') }}
+                                <span v-if="currentQuestion.book_ref.chapter"> · {{ locale === 'en' ? 'Chapter' : 'অধ্যায়' }} {{ currentQuestion.book_ref.chapter }}</span>
+                                <span v-if="currentQuestion.book_ref.page"> · {{ locale === 'en' ? 'Page' : 'পৃষ্ঠা' }} {{ currentQuestion.book_ref.page }}</span>
+                            </Link>
+                            <span v-else>
+                                {{ currentQuestion.book_ref.book || (locale === 'en' ? 'Book' : 'বই') }}
+                                <span v-if="currentQuestion.book_ref.chapter"> · {{ locale === 'en' ? 'Chapter' : 'অধ্যায়' }} {{ currentQuestion.book_ref.chapter }}</span>
+                                <span v-if="currentQuestion.book_ref.page"> · {{ locale === 'en' ? 'Page' : 'পৃষ্ঠা' }} {{ currentQuestion.book_ref.page }}</span>
+                            </span>
+                        </div>
 
                         <!-- Options for MCQ / True False -->
                         <div v-if="currentQuestion.options && currentQuestion.options.length" class="space-y-3">
@@ -243,6 +341,24 @@ function retryGeneration() {
                             <p v-if="currentQuestion.explanation" class="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">
                                 {{ currentQuestion.explanation }}
                             </p>
+                            <div v-if="canExplain" class="mt-4 border-t border-[var(--border)]/70 pt-3">
+                                <button
+                                    type="button"
+                                    class="btn btn-secondary rounded-xl px-3.5 py-2 text-xs font-bold"
+                                    :disabled="explanationLoading[currentQuestion.id]"
+                                    @click="requestExplanation(currentQuestion)"
+                                >
+                                    {{ explanationLoading[currentQuestion.id]
+                                        ? (locale === 'en' ? 'Generating…' : 'ব্যাখ্যা তৈরি হচ্ছে…')
+                                        : (locale === 'en' ? 'AI Explanation' : 'AI ব্যাখ্যা') }}
+                                </button>
+                                <p v-if="aiExplanations[currentQuestion.id]" class="mt-3 whitespace-pre-line text-xs leading-relaxed text-[var(--text-muted)]">
+                                    {{ aiExplanations[currentQuestion.id] }}
+                                </p>
+                                <p v-if="explanationErrors[currentQuestion.id]" class="mt-2 text-xs text-rose-600" role="alert">
+                                    {{ explanationErrors[currentQuestion.id] }}
+                                </p>
+                            </div>
                         </div>
 
                         <!-- Practice Nav Buttons -->
@@ -300,9 +416,26 @@ function retryGeneration() {
                             <span>{{ locale === 'en' ? 'Question' : 'প্রশ্ন' }} {{ idx + 1 }}</span>
                             <span v-if="answers[q.id]" class="text-emerald-500 font-semibold">{{ locale === 'en' ? 'Answered' : 'উত্তর দেওয়া হয়েছে' }}</span>
                         </div>
-                        <h2 class="text-base font-bold leading-relaxed mb-4">
+                        <h2 class="text-base font-bold leading-relaxed mb-3">
                             {{ q.question }}
                         </h2>
+                        <div v-if="q.book_ref" class="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-muted)]">
+                            <span class="font-semibold">{{ locale === 'en' ? 'Source:' : 'সূত্র:' }}</span>
+                            <Link
+                                v-if="q.book_ref.reader_url"
+                                :href="q.book_ref.reader_url"
+                                class="font-bold text-[var(--primary)] underline underline-offset-2"
+                            >
+                                {{ q.book_ref.book || (locale === 'en' ? 'Book' : 'বই') }}
+                                <span v-if="q.book_ref.chapter"> · {{ locale === 'en' ? 'Chapter' : 'অধ্যায়' }} {{ q.book_ref.chapter }}</span>
+                                <span v-if="q.book_ref.page"> · {{ locale === 'en' ? 'Page' : 'পৃষ্ঠা' }} {{ q.book_ref.page }}</span>
+                            </Link>
+                            <span v-else>
+                                {{ q.book_ref.book || (locale === 'en' ? 'Book' : 'বই') }}
+                                <span v-if="q.book_ref.chapter"> · {{ locale === 'en' ? 'Chapter' : 'অধ্যায়' }} {{ q.book_ref.chapter }}</span>
+                                <span v-if="q.book_ref.page"> · {{ locale === 'en' ? 'Page' : 'পৃষ্ঠা' }} {{ q.book_ref.page }}</span>
+                            </span>
+                        </div>
 
                         <!-- Options for MCQ -->
                         <div v-if="q.options && q.options.length" class="space-y-2.5">

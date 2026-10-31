@@ -153,20 +153,25 @@ class ExamController extends Controller
         return redirect()->route('exams.show', $exam);
     }
 
-    public function show(ExamSession $exam): Response
+    public function show(ExamSession $exam, BookAccessService $access): Response
     {
         $this->authorizeExam($exam);
+        $data = $this->sanitized($exam);
+        $data['questions'] = $this->withBookReferences($exam, $data['questions'] ?? [], $access);
 
         return Inertia::render('Student/Exams/Show', [
-            'exam' => $this->sanitized($exam),
+            'exam' => $data,
+            'canExplain' => auth('web')->user()->canUseAiExplain(),
         ]);
     }
 
-    public function status(ExamSession $exam): JsonResponse
+    public function status(ExamSession $exam, BookAccessService $access): JsonResponse
     {
         $this->authorizeExam($exam);
+        $data = $this->sanitized($exam);
+        $data['questions'] = $this->withBookReferences($exam, $data['questions'] ?? [], $access);
 
-        return response()->json(['status' => $exam->status, 'exam' => $this->sanitized($exam)]);
+        return response()->json(['status' => $exam->status, 'exam' => $data]);
     }
 
     public function complete(SubmitAnswerRequest $request, ExamSession $exam): RedirectResponse
@@ -230,45 +235,7 @@ class ExamController extends Controller
         $this->authorizeExam($exam);
         abort_unless($exam->status === 'completed', 404);
 
-        $book = $exam->book;
-        $questions = collect($exam->questions ?? [])->map(function (array $question) use ($book, $access) {
-            $bookRef = $question['book_ref'] ?? null;
-            $chunkId = filter_var($bookRef['chunk_id'] ?? null, FILTER_VALIDATE_INT);
-
-            if (! $book || ! is_array($bookRef) || $chunkId === false) {
-                return $question;
-            }
-
-            $chunk = $book->chunks()->with('chapter')->find($chunkId);
-            if (! $chunk) {
-                return $question;
-            }
-
-            $chapter = $chunk->chapter;
-            $page = $chunk->page_number;
-            $question['book_ref'] = [
-                'chunk_id' => $chunk->id,
-                'chapter_id' => $chunk->chapter_id,
-                'chapter' => $chapter?->title ?? ($bookRef['chapter'] ?? null),
-                'page' => $page,
-            ];
-
-            if ($page && $access->canAccessPage(auth('web')->user(), $book, (int) $page)) {
-                $question['book_ref']['reader_url'] = route('reader.show', [
-                    'book' => $book->id,
-                    'page' => $page,
-                ]);
-            } elseif (! $page && $chapter && $chapter->start_page
-                && $access->canAccessChapter(auth('web')->user(), $chapter)) {
-                $question['book_ref']['page'] = $chapter->start_page;
-                $question['book_ref']['reader_url'] = route('reader.show', [
-                    'book' => $book->id,
-                    'page' => $chapter->start_page,
-                ]);
-            }
-
-            return $question;
-        })->all();
+        $questions = $this->withBookReferences($exam, $exam->questions ?? [], $access);
 
         return Inertia::render('Student/Exams/Result', [
             'exam' => array_merge($exam->toArray(), ['questions' => $questions]),
@@ -279,7 +246,12 @@ class ExamController extends Controller
     public function explanation(Request $request, ExamSession $exam, int $question, BookAccessService $access): StreamedResponse
     {
         $this->authorizeExam($exam);
-        abort_unless($exam->status === 'completed', 404);
+        $isPracticeInProgress = $exam->status === 'in_progress' && $exam->mode === 'practice';
+        abort_unless($exam->status === 'completed' || $isPracticeInProgress, 404);
+
+        $validated = $request->validate([
+            'student_answer' => ['nullable', 'string', 'max:4000'],
+        ]);
 
         $student = auth('web')->user();
         abort_unless($student->canUseAiExplain(), 403, 'AI explanations require a paid plan.');
@@ -289,7 +261,9 @@ class ExamController extends Controller
         );
         abort_unless($item, 404);
 
-        $studentAnswer = $exam->answers[$question] ?? $exam->answers[(string) $question] ?? null;
+        $studentAnswer = $isPracticeInProgress
+            ? ($validated['student_answer'] ?? null)
+            : ($exam->answers[$question] ?? $exam->answers[(string) $question] ?? null);
         $correctAnswer = (string) ($item['correct_answer'] ?? '');
         $sourceContext = trim((string) $exam->source_text);
 
@@ -404,6 +378,51 @@ class ExamController extends Controller
         $pdf = Pdf::loadView('pdf.exam-answer-sheet', ['exam' => $exam, 'student' => auth('web')->user()]);
 
         return $pdf->download("exam-{$exam->id}-answer-sheet.pdf");
+    }
+
+    private function withBookReferences(ExamSession $exam, array $questions, BookAccessService $access): array
+    {
+        $book = $exam->book;
+
+        return collect($questions)->map(function (array $question) use ($book, $access) {
+            $bookRef = $question['book_ref'] ?? null;
+            $chunkId = filter_var(is_array($bookRef) ? ($bookRef['chunk_id'] ?? null) : null, FILTER_VALIDATE_INT);
+
+            if (! $book || ! is_array($bookRef) || $chunkId === false) {
+                return $question;
+            }
+
+            $chunk = $book->chunks()->with('chapter')->find($chunkId);
+            if (! $chunk) {
+                return $question;
+            }
+
+            $chapter = $chunk->chapter;
+            $page = $chunk->page_number;
+            $question['book_ref'] = [
+                'chunk_id' => $chunk->id,
+                'chapter_id' => $chunk->chapter_id,
+                'book' => $book->title,
+                'chapter' => $chapter?->title ?? ($bookRef['chapter'] ?? null),
+                'page' => $page,
+            ];
+
+            if ($page && $access->canAccessPage(auth('web')->user(), $book, (int) $page)) {
+                $question['book_ref']['reader_url'] = route('reader.show', [
+                    'book' => $book->id,
+                    'page' => $page,
+                ]);
+            } elseif (! $page && $chapter && $chapter->start_page
+                && $access->canAccessChapter(auth('web')->user(), $chapter)) {
+                $question['book_ref']['page'] = $chapter->start_page;
+                $question['book_ref']['reader_url'] = route('reader.show', [
+                    'book' => $book->id,
+                    'page' => $chapter->start_page,
+                ]);
+            }
+
+            return $question;
+        })->all();
     }
 
     /**

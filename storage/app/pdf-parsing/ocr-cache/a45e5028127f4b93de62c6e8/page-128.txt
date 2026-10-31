@@ -1,0 +1,41 @@
+২০২৫-২০২৬
+
+ওয়েব ডিজাইন পরিচিতি এবং HTML ১২৩
+
+এখন ফাইলটি সেভ করে ব্রাউজারে পেজটি রিফ্রেশ করলে দেখা যাবে এবারে দুই লাইনে আলাদা করে
+লেখাটি দেখাচ্ছে।
+
++
+
+© File | C/Users/rafit/De:
+
+Hello World!
+This is an HTML document.
+
+আবার অনুচ্ছেদ (প্যারাশ্রাফ) লিখতে হলে p এলিমেন্ট ব্যবহার করতে হবে।
+
+<!DOCTYPE h
+<html>
+<head>
+<title>This is my first HTML page</title>
+</nead>
+<body>
+ello W
+<p>This is an html page. This is paragraph one.</p> <p>This
+is paragraph
+</body>
+</html>
+
+কোডটি সেভ করে ব্রাউজারে ওপেন করলে নিচের মতো দেখাবে_
+
+my first HTML page
+
+Hello World!
+
+This is an html page. This is paragraph one
+
+This is paragraph two.
+
+এখানে প্রথম ও দ্বিতীয় প্যারাগ্রাফ-এর মধ্যে কিন্তু আলাদা করে লাইন ব্রেক (<br>) দিতে হয়নি। p এলিমেন্ট
+নিজেই একটি ফাঁকা জায়গা তৈরি করে নিয়েছে। তবে চাইলে কোনো প্যারাগ্রাফের মধ্যেও লাইন ব্রেক
+দেওয়া যায়।

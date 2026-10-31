@@ -1,0 +1,60 @@
+২০২৫-২০২৬
+
+ডেটাবেজ ম্যানেজমেন্ট সিস্টেম ২১
+
+INSERT INTO result (roll,
+‘english’, 70.0);
+INSE! NTO result (roll,
+'Mathematics', 98.0);
+INSERT INTO result (roll,
+‘Bangla’, 75.0);
+
+INSERT ‘© result (roll,
+'English', 80.0);
+
+INSERT INTO result (roll,
+'Mathematics', 100.0);
+
+mazks) VALUES (10,
+
+marks) V)
+
+UES (10,
+
+marks) VALUES (2,
+
+marks) VALUES (2,
+
+marks) VALUES (2,
+
+রোল নম্বর যে শিক্ষার্থীর, তার পরীক্ষার ফল জানতে নিচের কুয়েরিটি চালাতে হবে_
+
+SELECT roll, subject, marks FROM result WHERE roll = 1;
+sqlite> SELECT roll, subject, marks FROM result WHERE roll =
+
+roll subject marks
+রঃ 79.0
+1 76.0
+1 Mathematics 74.0
+
+এখন, রোল নম্বরের পাশাপাশি শিক্ষার্থীর নামও যদি দেখানোর প্রয়োজন হয়, তখন student_info
+টেবিলেও কুয়েরি করতে হবে, কারণ result টেবিলে তো শিক্ষার্থীর নাম নেই। কুয়েরিটি হবে এমন_
+
+sqlite> SELECT name, result.roll, subject, marks FROM
+
+ult, student_info WHERE result.roll = 1 AND result.roll =
+student_info.roll;
+
+name roll subject marks
+
+Mizanur Rahman 1 Bangla 79.0
+Rahman 1 English 76.0
+Rahman. Ee Mathematics 74.0
+
+লক্ষ করতে হবে, কুয়েরিতে roll না লিখে result.roll লেখা হয়েছে, কারণ roll নামের কলাম দুটি
+টেবিলেই আছে। আর কুয়েরির result.roll = student_info.roll অংশ দিয়ে টেবিল দুটি যুক্ত Goin)
+করা হয়েছে। সব শিক্ষার্থীর তথ্য চাইলে result.roll = 1 শর্তটি বাদ দিতে wal তখন কুয়েরিটি হবে
+এমন_
+
+SELECT name, result.roll, subject, marks FROM result,
+student_info WHERE result.roll = student_info.roll;

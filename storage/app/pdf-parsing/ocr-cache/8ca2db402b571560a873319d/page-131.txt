@@ -1,0 +1,57 @@
+১২৬ তথ্য ও যোগাযোগ প্রযুক্তি
+
+ব্যবহারিক সমস্যা % ৮ : ইংরেজি ছোটো হাতের কোনো অক্ষর vowel না consonant তা জানার জন্য একটি
+প্রোথাম লেখো।
+
+সমাধান: ইনপুট হিসাবে ইংরেজি ছোটো হাতের কোনো অক্ষর টাইপ করা হবে। নিচে প্রোথামটির কোড দেওয়া
+হলো।
+
+char = input('Enter the letter: 1)
+match cha’
+case "a" :
+print (char, ' is a vowel ')
+case "eo":
+print (char, ' is a vowel ')
+case "i" :
+print (char, ' is a vowel ')
+case "o" :
+print(char, ' is a vowel ')
+case "u" :
+print(char, ' is a vowel ')
+case
+print (char, ' is a
+প্রোথামটি রান করে প্রাপ্ত নমুনা ফলাফল-
+Enter the letter: a
+ais a vowel
+
+Enter the letter: d
+dis a consonants
+
+বিকল্প পদ্ধতির সমাধান: উপরের ধ্োথামটিকে ইনপুট হিসেবে শুধুমাত্র ইংরেজি ছোটো হাতের কোনো অক্ষর টাইপ করা
+হলে ফলাফল দেখাবে | নিচের প্রোগ্রামটিতে ইংরেজি ছোটো হাতের বা বড়ো হাতের যে কোনো অক্ষর টাইপ করা হলে
+ফলাফল দেখাবে। নিচে প্রোথামটির কোড দেওয়া হলো |
+
+the letter: ')
+
+ডি tat, igh, ভীত বর দি
+
+* is a ৮০৪৪৫)
+
+print(char, ' is a consonant')
+
+ব্যবহারিক সমস্যা ৯ : তিনটি পূর্ণ সংখ্যার মধ্য থেকে বড় সংখ্যাটি বের করার জন্য একটি প্রোগ্াম লেখো।
+সমাধান : নিচে প্রোশ্রামটির কোড দেওয়া হলো |
+
+হস] = int (input ("Ent
+num2 = int (input
+num3 = int (input (‘Enter integer number 3:
+if (numl >= num2) and (numl >= num3):
+print (numl, ‘is the la: numbe:
+elif (num2 >= numi) and
+
+print (num2, the
+else :
+
+print (num3, ‘is the largest number")
+
+২০২৬

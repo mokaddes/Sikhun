@@ -1,0 +1,45 @@
+ওয়েব ডিজাইন পরিচিতি এবং HTML ১২১
+
+যথাক্রমে h1, h2, 113,174, 175 ও 116 দিয়ে প্রকাশ করা BW এর মধ্যে ।1-এর আকার সবচেয়ে বড়,
+116- এর আকার সবচেয়ে ছোট। কোনটির আকার কেমন তা জানার জন্য একটি কোড দেখানো হলো।
+
+<!DOCTYPE html>
+
+<html>
+<head>
+< le>HTML Heading</title>
+</head>
+<body>
+<hi> heading 1</h1>
+
+<h2>This
+
+heading 2</h2>
+<h3>Th s heading 3</h3>
+<h4>This is heading 4</h4>
+
+<h5>This is heading 5</h5>
+<h6>This is heading 6</h6>
+</body>
+
+</ntml>
+
+কোডটি সেভ করে ব্রাউজারে ওপেন করলে এ রকম দেখা যাবে_
+
+@ HTML Heading x শী
+
+9
+9 heading 1
+
+Th
+
+This is heading 2
+This is heading 3
+
+This is heading 4
+
+This is heading $
+
+This is heading 6
+
+ফর্মা-১৬, তথ্য ও যোগাযোগ aS, একাদশ-দাদশ শ্রেণি

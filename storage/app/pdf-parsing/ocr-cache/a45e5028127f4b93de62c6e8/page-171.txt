@@ -1,0 +1,33 @@
+১৬৬ তথ্য ও যোগাযোগ প্রযুক্তি
+
+এখন একটি প্রোগ্রাম লেখা হবে, যেটি দুটি সংখ্যার মধ্যে তুলনা করে বের করবে তারা সমান কি না।
+
+প্রোগ্রামটি রান করলে আমরা আউটপুটে কিছুই দেখতে পাব AT! কেননা, 7-এর ভেতরে ব্যবহৃত কন্ডিশনাল
+এক্সপ্রেশনটির মান মিথ্যা। তাই ।ঁ-ব্রকের ভেতরের কোড এক্সিকিউট হয়নি।
+
+if-else স্টেটমেন্ট : Conditional expression সঠিক হলে এক ধরনের কাজ এবং conditional
+expression সঠিক না হলে অন্য ধরনের কাজ সম্পাদন করতে হয় সেক্ষেত্রে if 9159 স্টেটমেন্ট ব্যবহৃত হয়।
+
+if (conditinal expression)
+
+{
+statement, if condition is true;
+else
+
+statement, if condition is false;
+
+#include <stdio.h>
+
+ntf ("Numbers are equal.");
+
+printf ("Numbers are not equal.");
+
+}
+
+return 0;
+
+এই প্রোগ্রামটি রান করলে আমরা এরকম আউটপুট দেখতে পাব-
+
+[Numbers are not equal
+
+২০২৫-২০২৬

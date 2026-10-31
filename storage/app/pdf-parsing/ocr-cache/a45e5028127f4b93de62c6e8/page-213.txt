@@ -1,0 +1,46 @@
+২০৮ তথ্য ও যোগাযোগ প্রযুক্তি
+
+আবার যেসব শিক্ষার্থী morning শাখার, তাদের তথ্য দেখতে হলে লিখতে হবে।
+
+SELECT * FROM student WE
+
+E section = 'morning';
+
+নোট : টেক্সট টাইপের ডেটা নিয়ে কাজ করার সময় শুরুতে ও শেষে কোটেশন চিহ্ন (' চিহ্ন) ব্যবহার করতে
+হবে। অর্থাৎ নিচের মতো কুয়েরি লিখলে হবে না।
+
+T * FROM stud
+h column: mor
+
+t WHERE section = morning;
+gs
+
+একাধিক শর্ত একসঞ্ো জুড়ে দিতে চাইলে AND অথবা OR ব্যবহার করে কাজটি করা যায়।
+নবম শ্রেণি এবং morning শাখার শিক্ষার্থীদের তথ্য পেতে চাইলে লিখতে হবে_
+
+SELECT * FROM student WHE
+'morning';
+
+class = 9 AND section =
+
+নবম শ্রেণি অথবা morning শাখার শিক্ষার্থীদের তথ্য পেতে চাইলে লিখতে হবে_
+
+LECT * FROM student WHERE class
+
+9 OR section ='morning';
+
+নবম শ্রেণিতে পড়ে না এবং morning শাখার শিক্ষার্থীদের তথ্য দেখার জন্য নিচের কুয়েরি লিখতে হবে_
+
+ECT * FROM student WHERE class <> 9 AND section =
+jorning';
+
+অষ্টম, নবম কিংবা দশম শ্রেণির শিক্ষার্থীদের তথ্য পাওয়ার জন্য কুয়েরি লিখতে হবে_
+
+(CT * FROM student WHERE class = 8 OR class = 9 OR class
+= 10;
+
+উপরের কুয়েরিটি অন্যভাবেও লেখা যায়_
+
+T * PROM student WHERE class IN (8, 9, 10);
+
+২০২৫-২০২৬

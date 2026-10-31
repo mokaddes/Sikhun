@@ -1,0 +1,46 @@
+২০২৫-২০২৬
+
+প্রোথামিং ভাষা ১৬৭
+
+12িএর সঙ্গে ব্যবহৃত কন্ডিশনাল এক্সপ্রেশনটি (11 == n2) মিথ্যা হওয়ায় if কের কোড এক্সিকিউট হয়নি,
+else ব্লকের কোডগুলো এক্সিকিউট হয়েছে। আবার যদি, 71, এবং 12 দুটি ভ্যারিয়েবলের মান সমান হতো,
+তাহলে if ব্লকের কোড এক্সিকিউট হতো, fey else ব্লকের কোড এক্সিকিউট হতো না। তখন আমরা
+আউটপুট দেখতাম_
+
+Numbers are equal,
+আবার আরেকটি বক আছে, else if. কখনো যদি এমন প্রোগ্রাম লেখা হয় যে একটি শর্তের পরে অন্য একটি
+
+শর্ত পরীক্ষা করা হবে, তখন এর সঙ্গে এক বা একাধিক else if TF ব্যবহার করা হয়। যেমন-_-
+else if chain স্টেটমেন্ট : conditional expression যদি একাধিক হয় তাহলে 81591 স্টেটমেন্ট ব্যবহৃত হয়
+
+if (conditional expression 1)
+
+: statement, if conditional expression-1 is true ;
+‘nee if (conditional expression-2)
+সরি if conditional expression-2 is true,
+}
+else.
+{
+
+statement, if both conditions are false ;
+
+intynl = (5,02) — 97;
+if (ml == n2)
+
+printf ("Numbers are equal");
+
+189 if (n1 > n2)
+
+ao
+
+printf ("nl is greater than n2");
+
+192.
+
+০
+
+printf("n1 is smaller than n2");
+
+return 0;
+
+এক্ষেত্রে যে ব্লকের কন্ডিশনাল এক্সপ্রেশনটি সত্য শুধু সেই ্লকটির কোড এক্সিকিউট হবে, অন্য কোনো ব্লকের

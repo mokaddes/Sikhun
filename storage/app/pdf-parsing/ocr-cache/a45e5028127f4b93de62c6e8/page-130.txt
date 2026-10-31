@@ -1,0 +1,43 @@
+২০২৫-২০২৬
+
+ওয়েব ডিজাইন পরিচিতি এবং HTML ১২৫
+
+<!DOCTYPE htm1>
+
+<html>
+
+<head>
+<title>Text Formating</title>
+
+</head>
+
+<body>
+<p>This is normal text</p>
+<p><b>This is bold text</b></p>
+<p><i>This is italic text</i></p>
+<p><u>This is unde: ned text</u></p>
+
+</body>
+
+</html>
+
+@ Text Formating x +
+
+€ CO File | C/Users/rafit/ we Bos @ 1০০95
+
+This is normal text
+This is bold text
+This is italic text
+
+This is underlined
+
+আরো কিছু সাধারণ ফরম্যাটিংয়ের মধ্যে আছে সুপারক্কিপ্ট (লেখাকে উপরে উঠানো), সাবক্ষিপ্ট (নিচে
+নামানো) ইত্যাদি।
+
+9১171511775 contains a <sup>super</sup>script and a
+<sub> sub</sub>script.</p>
+
+<p>(a + b)<sup>2</sup> = a<sup>2</sup> + 2ab +
+b<sup>2</sup></p>
+
+<p> £<sub>n</sub> = f<sub>n-1</sub> + £<sub>n-2</sub></p>

@@ -1,0 +1,46 @@
+২০২৫-২০২৬
+
+ওয়েব ডিজাইন পরিচিতি এবং HTML
+
+১২৭
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>HTML List Demo</title>
+</head>
+<body>
+<ul>
+<li>Dhaka</1i>
+<li>Rajshahi</1i>
+<l am</1i>
+<li>Khulna</1i>
+<li>Rangpur</1i>
+<li>Barishal</li>
+<li>sylhet</1i>
+<li>Mymensingh</1i>
+</ul>
+</body>
+</ptml>
+
+উপরের কোডের আউটপুট দেখাবে নিচের মতো।
+
+3 HIML ust
+
+Dhaka
+Rajshahi
+Chattogram
+Khulna
+Rangpur
+Barishal
+sythet
+Mymensingh
+
+এখানে লিস্টের জন্য দুটি এলিমেন্ট ব্যবহার করা হয়েছে, ul এবং lil ul মানে আনঅর্ভারড লিস্ট
+(unordered list) এবং li মানে লিস্ট আইটেম (list item)! SARA তালিকা তৈরি করতে ul
+
+এলিমেন্ট ব্যবহার করা হয়। || এলিমেন্ট ব্যবহার করা হয় তালিকার উপাদানগুলো রাখতে।
+
+আর ক্রমসহ তালিকা তৈরি করতে এ-এর পরিবর্তে ol ব্যবহার করতে হবে। এখানে ol মানে অর্ডারড fers
+
+(ordered list)!

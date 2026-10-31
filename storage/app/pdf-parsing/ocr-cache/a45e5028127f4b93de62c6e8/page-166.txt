@@ -1,0 +1,37 @@
+প্রোথামিং ভাষা ১৬১
+
+আউটপুট
+
+number1 + number2 - 16
+numberl - number2 = 8
+number1 * number2 48
+number1 / number2 = 3
+
+ইন্টিজার টাইপের ডেটা প্রিন্ট করার জন্য %এ ব্যবহার করা হয়। আর গুণচিহ্ন ও ভাগচিহ্ত হচ্ছে, যথাক্রমে *
+ও /। উপরের প্রোগ্রামটিতে চাইলে আরেকটি ভ্যারিয়েবল তৈরি করা যায়, যেখানে বিভিন্ন গাণিতিক
+অপারেশনের ফলাফল রাখা হবে।
+
+#include <stdio.h>
+int main()
+
+int number1, number2, result;
+number1 = 12;
+number2 = 4;
+result = number1 + numbe:
+
+sd\n", result);
+
+I tf ("number1 - number2 d\n", result);
+result = number1 * number
+printf ("number1 * number2 = $d\n", result);
+result = number1 / numbe:
+printf ("number1 / number2 = %d\n", result);
+return 0;
+
+উল্লেখ্য যে, numberl + number2 হচ্ছে একটি এক্সপ্রেশন (expression)! সি প্রোগ্রামিংয়ে এক্সপ্রেশন
+বলতে বোঝানো হয় কিছু কোড যা একটি মান প্রকাশ করে। আবার number2 = 4; হচ্ছে একটি স্টেটমেন্ট
+(statement)| একটি স্টেটমেন্ট দিয়ে একটি কাজ বোঝানো হয়। এখানে কাজটি হচ্ছে number2 নামক
+ভ্যারিয়েবলে 4 রাখা। আবার, result = number + number2; একটি স্টেটমেন্ট। এটি দ্বারা বোঝানো
+হচ্ছে numberl + number2 এক্সপ্রেশনটি এক্সিকিউট করে যে মান পাওয়া যাবে, সেটি result নামক
+ভ্যারিয়েবলে রাখা। printf("number1 / number2 = %d\n", result); - এটিও একটি স্টেটমেন্ট
+প্রতিটি স্টেটমেন্টের শেষে একটি সেমিকোলন চিহ্ন দেওয়া হয়।

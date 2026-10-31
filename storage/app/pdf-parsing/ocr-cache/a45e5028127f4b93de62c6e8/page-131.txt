@@ -1,0 +1,38 @@
+১২৬ তথ্য ও যোগাযোগ প্রযুক্তি
+
+তি TexFormating x +
+
+© File | C/Users/rafi/Desktop... te ছু 0 ৯ E Mncoonito
+
+This line contains a "script and a aypseript.
+
+(a+b? 2ab +b?
+
+mnt 2
+
+এছাড়াও কোনো টেক্সটকে সাধারণের চেয়ে বড় বা ছোট করার জন্য big ও small নামের দুটি এলিমেন্ট
+আছে।
+
+কখনো কখনো পেজের কোনো নির্দিষ্ট অংশকে বিশেষভাবে দৃষ্টিগোচর (emphasize) করানোর প্রয়োজন
+হয়। আবার কখনো কখনো বক্তব্যের কোনো নির্দিষ্ট অংশকে বিশেষ জোর দিয়ে বলার (লেখার) প্রয়োজন
+হয়। এই দুটি কাজের জন্য রয়েছে em ও strong নামের দুটি এলিমেন্ট।
+
+<p>The word <em>Emphasize</em> means giving special value to
+something.
+he word
+
+trong>Strong</strong> is something stronger than
+shasizing. </p>
+
+@ Tee Formating a
+
+€ © File BB & @ Mreomnito
+
+The word Emphasize means giving special value to sth. The word Strong is sth stronger
+than emphasizing,
+
+তালিকা বা লিল্ট (List)
+এইচটিএমএল-এ তালিকা তৈরির জন্য আছে ul, ol এবং ॥ ট্যাগ!
+নিচে বাংলাদেশের বিভাগগুলোর তালিকা তৈরির কোড দেখানো হলো।
+
+২০২৫-২০২৬

@@ -1,0 +1,50 @@
+১২২ তথ্য ও যোগাযোগ প্রযুক্তি
+
+প্রয়োজনীয় কিছু এলিমেন্ট
+এখন mypage.html ফাইলটিতে আরো কিছু কোড যোগ করা হলো।
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>This is my first HTML page</title>
+</head>
+<body>
+Hello world!
+This is an html document
+</body>
+</html>
+
+এখন ফাইলটি সেভ করে ব্রাউজারে পেজটি রিফ্রেশ করতে হবে। ব্রাউজারের রিফ্রেশ বা রিলোড বাটন চেপে
+কিংবা কিবোর্ডে FS বাটন চেপে পেজ রিফ্রেশ করা যায়। তাহলে দেখা যাবে উপরের বডির ভেতরের দুটি
+লাইন ব্রাউজারে এক লাইনে দেখাচ্ছে। কোডে যদিও আলাদা আলাদা লাইনে লেখা হয়েছে।
+
+@ 7055 my first HTML page x +
+
+<€ CO File | CyUsers/rafit/Desktop.. vy HB % GE icoonito
+
+Hello World! This is an teal document.
+
+তাহলে লেখাটি দুই লাইনে দেখানোর উপায় কী? সেক্ষেত্রে একটি নতুন এলিমেন্ট ব্যবহার করতে হবে যার
+নাম bri এটি একটি ফাঁকা বা এম্পটি এলিমেন্ট। এর কোনো ক্লোজিং বা শেষ ট্যাগ নেই।
+
+<!DOCTYPE htm1>
+
+<html>
+
+<head>
+<title>This
+
+</head>
+
+<body>
+
+Hello World! <br>
+
+i an HTML document
+
+is my first HTML page</title>
+
+</body>
+</html>
+
+২০২৫-২০২৬

@@ -1,0 +1,62 @@
+১৩০ তথ্য ও যোগাযোগ প্রযুক্তি
+
+পূর্বের কোডটি লিখলে লিস্ট আইটেমে বর্গাকৃতি চিহ্ন ব্যবহৃত হবে। একইভাবে <ul type="circle"> বসালে
+বৃস্তাকৃতি foe ব্যবহৃত হবে।
+
+এইচটিএমএল কোড আউটপুট
+
+<ul type [972৯ * Item 1
+<li>Item 1</1i> = Item 2
+<li>Item 2</1i>
+
+</ul>
+
+<ul_type="circle"> o item 1
+<li>Item 1</1i> o Item 2
+<1lidit 2</li>
+
+</ul>
+
+<ul_type="dise"> ° Item 1
+<li>Item 1</1i> © Item 2
+
+<li>Item 2</1i>
+</ul>
+
+অর্ডার লিস্টের ক্ষেত্রেও বিভিন্ন পদ্ধতি অনুসরণ করা যায়। যেমন-- ছোট হাতের বা বড় হাতের রোমান
+হরফ (i, ii, iii বা।, |, 10) অথবা ইংরেজি হরফ (a, ০, ০; A, ৪, 0) ইত্যাদি। এখানেও type ত্যাট্রিবিউট
+ব্যবহার করতে হবে।
+
+এইচটিএমএল কোড আউটপুট
+
+<ol type="i"> i Item 1
+<li>Item 1</1i> di Item 2
+<li>Item 2</1i>
+
+</ol>
+
+<ol type="I"> = Ttem 1
+<li>Item 1</1i> II Item 2
+<li>Item 2</1i>
+
+</ol>
+
+<ol type="a"> a. item 1
+<1idTtem 1</1i> b. Item 2
+চপ ৯
+
+</ol>
+
+<ol type="A"> A. Item 1
+<li>Item 1</1i> B. Item 2
+<li>Ttem 2</1i>
+
+</ol>
+
+Sol itype="2"> Item 1
+<li>Item 1</1i> 2. Item 2
+<li>iItem 2</1i>
+
+</ol>
+
+২০২৫-২০২৬

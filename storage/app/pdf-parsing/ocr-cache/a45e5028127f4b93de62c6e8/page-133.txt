@@ -1,0 +1,40 @@
+১২৮ তথ্য ও যোগাযোগ প্রযুক্তি
+
+HTML তালিকার ভেতরেও তালিকা তৈরি করা যায়। যেমন সিলেট বিভাগের জেলাগুলো যদি
+তালিকায় থাকে,
+
+*  Barishal
+
+© Sylhet
+© Sunamganj
+o Sylhet
+o Habiganj
+
+© Moulvibazar
+© Mymensingh
+
+এরকম তালিকার ভেতরে তালিকা বা নেন্টেড তালিকা (nested list) তৈরি করার জন্য লিস্টের ভেতরে
+আরেকটি fers ঢুকিয়ে দিতে হবে।
+
+<body>
+<ul>
+<li>Dhaka</1i>
+Rajshahi</
+Chattogram
+<1i>Khulna</1i>
+<1i>Rangpur</1i>
+<li>Barishal</li>
+<li>Sylhet</1i>
+<ul>
+<1i>Sunamganj</1i>
+<1i>sylhet</1i>
+<1i>Habiganj</1li>
+<li>Moulvibazar</1i>
+</ul>
+<1i>Mymensingh</1i>
+</ul>
+</body>
+
+উপরের কোডটি একটি HTML ডকুমেন্টে রাখলে নিচের ছবির মতো আউটপুট দেখা যাবে।
+
+২০২৫-২০২৬

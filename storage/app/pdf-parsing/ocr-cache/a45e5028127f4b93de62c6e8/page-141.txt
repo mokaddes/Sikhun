@@ -1,0 +1,38 @@
+১৩৬ তথ্য ও যোগাযোগ প্রযুক্তি
+
+@ Gill Summary KX o+
+
+[em © File | C:/Users/rafit/Desktop/ahtml
+
+Bill Summary
+
+Bills
+Month
+Electricity | Water | Gas
+January 1909 600 1850
+February |955 720 [700
+March 1113 812 [775
+উপরের টেবিলে লক্ষণীয় বিষয়গুলো হচ্ছে :
+
+* টেবিলের উপরে একটি ক্যাপশন রয়েছে।
+©) Month সেলটি দুটি রো জুড়ে রয়েছে৷
+* Bills সেলটি তিনটি কলাম জুড়ে রয়েছে।
+* বাকি সেলগুলো সাধারণভাবে আছে।
+
+টেবিলের ক্যাপশন দিতে caption নামে একটি এলিমেন্ট ব্যবহার করতে হবে। কয়েকটি রো জুড়ে একটি
+সেল তৈরি করতে ব্যবহার করতে হয় rowspan ত্যাট্রিবিউট, আর কয়েকটি কলাম জুড়ে একটি সেল তৈরি
+করতে ব্যবহার করতে হয় colspan ত্যার্ট্রিবিউট। ছবির টেবিলটির এইচটিএমএল কোড নিচে দেওয়া হলো।
+
+<!DOCTYPE htm1>
+
+HTML Table Example</title>
+
+</head>
+<body>
+<table border="1" cellspacing="0" cellpadding="2">
+<caption>Bill Summery</caption>
+<thead>
+
+Sec:
+
+২০২৫-২০২৬

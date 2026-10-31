@@ -1,0 +1,53 @@
+২০২৫-২০২৬
+
+প্রোথামিং ভাষা ১৮৯
+
+নিজে করি ১৩ : একটি প্রোগ্রাম তৈরি করতে হবে যেটি একটি Fac ইনপুট দিলে সেই স্ট্িংটি প্রিন্ট করবে,
+তবে quit ইনপুট দিলে প্রোগ্রামটি বন্ধ হয়ে যাবে। যেমন নিচের ছবিতে দেখা যাচ্ছে যে quit ইনপুট দেওয়ার
+আগ পর্যন্ত যা ইনপুট দেওয়া হচ্ছে, তা-ই প্রিন্ট হচ্ছে।
+
+h:
+
+i
+
+hello
+
+hello
+
+good
+
+good
+
+bad
+
+bad
+
+quit
+
+এতক্ষণ বিভিন্ন লাইব্রেরি ফাংশনের ব্যবহার দেখানো হলো। সি প্রোগ্রামিং ভাষায় এরকম শত শত লাইব্রেরি
+ফাংশন আছে। কম্পাইলারের সঙ্গে দেওয়া ডকুমেন্টেশন কিংবা ইন্টারনেট ঘেটে সেই লাইব্রেরি ফাংশনগুলো
+সম্পর্কে জানা যাবে।
+
+এখন দেখানো হবে কীভাবে নতুন ফাংশন তৈরি করতে হয়।
+
+#include <stdio.h>
+float celsius_to fahrenheit (float celsius) ;
+
+nt main()
+
+{
+
+float celsius, fahrenheit;
+scanf ("%f", &celsius) ;
+fahrenheit = celsius_to_fahrenheit (celsius) ;
+
+printf ("Fahrenheit = %f\n", fahrenheit);
+
+return 0;
+}
+
+float celsius _to fahrenheit (float celsius)
+{
+return (celsius * 9 / 5) + 32;
+
+}

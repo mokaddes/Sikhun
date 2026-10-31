@@ -1,0 +1,59 @@
+২০২৫-২০২৬
+
+ডেটাবেজ ম্যানেজমেন্ট সিস্টেম ২০৭
+
+আবার যদি শুধু নাম আর শ্রেণি দেখতে চাই, তাহলে লিখতে হবে_
+
+sqlite> Ss)
+
+T name, class FROM student;
+
+পরবর্তী কিছু কাজের সুবিধার জন্য student টেবিলে আরো কিছু ডেটা রাখতে হবে।
+
+INSERT INTO 56996] (name, class, roll, section) VALUES
+("‘Mosharraf Hossain', 9, 4, 'morning');
+
+INSERT INTO student (name, class, roll, section) VAL
+avid Pandey', 9, 2, 'morning');
+
+ISERT INTO student (name, class, roll, section) VALUES
+("Promila Gosh', 8, 2, 'day');
+
+INSERT INTO student (name, class
+(‘Bazlur Rahman', 8, 1, 'day');
+INSERT INTO student (name, class, roll, section) VALUES
+("Sourav Das', 9, 1, 'day');
+
+INSERT INTO student (name, class, roll, section) VALUES
+(‘Tamanna Nishat', 10, 1, 'morning') ;
+
+INSERT ITO student (name, class, roll, section) VALUES
+
+("Maysha', 10, 1, 'day');
+
+roll, section) VALUES
+
+এরকম কিছু ডেটা টেবিলে রাখার পরে আবার SELECT কুয়েরি ব্যবহার করে দেখতে হবে যে টেবিলে ডেটা
+আছে কি না। টার্মিনালে অনেক সময় কোনো ফিল্ডের নাম বেশি বড় হলে পুরোটা নাও দেখাতে পারে।
+
+টেবিল থেকে ডেটা পড়া বা দেখার জন্য SELECT কুয়েরিতে বিভিন্ন শর্তও জুড়ে দেওয়া যায়। সেজন্য
+WHERE face তারপরে শর্ত লিখতে হবে। নিচে বিভিন্ন উদাহরণ দেখানো হলো।
+কেবল নবম শ্রেণির শিক্ষার্থীদের তথ্য দেখতে হলে লিখতে হবে_
+
+(CT * FROM student WHERE class = 9;
+
+এখানে শর্ত লেখা হয়েছে class = 9, অর্থাৎ class কলামের মান হতে হবে 91 SQL-4 দুটি মান তুলনা
+করার জন্য নিচের অপারেটরগুলো ব্যবহার করা BI
+
+অপারেটর বর্ণনা
+
+= সমান
+
+<> সমান নয়
+
+৯ বড় (বামপক্ষ ডানপক্ষের চেয়ে বড়)
+
+>= বড় কিংবা সমান (বোমপক্ষ ডানপক্ষের চেয়ে বড় বা সমান)
+< ছোট বোমপক্ষ ভানপক্ষের চেয়ে ছোট)
+
+<= ছোট কিংবা সমান বোমপক্ষ ডানপক্ষের চেয়ে ছোট বা সমান)

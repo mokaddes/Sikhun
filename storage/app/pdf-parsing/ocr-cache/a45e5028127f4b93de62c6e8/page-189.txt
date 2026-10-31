@@ -1,0 +1,25 @@
+১৮৪
+
+তথ্য ও যোগাযোগ প্রযুক্তি
+
+141
+
+কোড-
+
+#tinclude <stdio.h>
+
+int main()
+: intsarelie= tle 2, 3,55) 08,013,021 senso)
+int key, i, n;
+n= 9;
+scanf("$d", &key);
+07 1% aL 28
+
+£ (arali] == key)
+
+printf("%d is found in the array.\n",
+break;
+
+key);
+
+২০২৫-২০২৬

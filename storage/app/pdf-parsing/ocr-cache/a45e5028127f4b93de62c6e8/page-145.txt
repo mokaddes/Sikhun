@@ -1,0 +1,56 @@
+১৪০ তথ্য ও যোগাযোগ প্রযুক্তি
+
+@ Syyle Atwibute Experiment
+
+id CO File | C/Users/t BB স 6919০
+
+Hello There! How are you
+
+আবার একই স্টাইল একাধিক এলিমেন্টে ব্যবহার করতে চাইলে, <head>...</head> অংশের ভিতরে
+আলাদাভাবে style ট্যাগ দিয়ে সেগুলো বলে দেওয়া যায়। নিচের উদাহরণটিতে সেটি দেখানো হলো--
+
+<!DOCTYPE ht
+<html>
+<head>
+<title>style Attribu
+<style type="text
+div {
+width: 100px;
+height: 100px;
+
+Experiment</title>
+
+ficat: J
+
+margin: 10px;
+
+paddi 10px;
+font-family: sans-seri
+
+fon
+
+size:
+
+border: 2px
+
+rgba(0, 0, 0, 0.2);
+border -radi 5px;
+text-align: center
+
+}
+
+</style>
+</head>
+<body>
+
+<div style="background-color: pink; color: darkred; ">Hello
+!</div>
+iv style-"background-color: paleturquoise; color:
+tgreen;">How are এ! </div>
+
+<div style-"background-color: lightskyblue; color:
+royalblue;">Nice to meet you!</div>
+</body>
+</html>
+
+২০২৫-২০২৬

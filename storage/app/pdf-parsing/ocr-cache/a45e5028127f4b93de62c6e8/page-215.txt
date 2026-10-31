@@ -1,0 +1,49 @@
+২১০ তথ্য ও যোগাযোগ প্রযুক্তি
+
+INTO student (mame, class, roll, section) VALUES
+jeem Munir', 1, 1, ‘day');
+
+তারপর দেখা গেল, Fardeem Munir আসলে দশম শ্রেণির শিক্ষার্থী এবং তার রোল নম্বর 3) তখন
+রেকর্ডটি মুছে না ফেলে আপডেট করা AWA!
+
+UPDATE student SET class
+'Fardeem Munir’;
+
+0, roll = 3 WHERE name =
+
+একাধিক টেবিল জয়েন করা
+
+রিলেশনাল ডেটাবেজে ডেটা বিভিন্ন টেবিলে রাখা হয় এবং প্রয়োজন হলে একটি কুয়েরিতে একাধিক টেবিল
+থেকে ডেটা পড়া যায়। এই বিষয়টিকে বলে জয়েন (join) করা, যা রিলেশনাল ডেটাবেজের একটি গুরুত্বপূর্ণ
+বৈশিষ্ট্য।
+
+ধরা যাক, student_info ও result নামে দুটি টেবিল তৈরি করা হলো।
+
+CREATE TABLE student_info (roll INTEGER, name TEXT;
+CREATE TABLE result (roll INTEGER, subject TEXT, marks REAL;
+
+এই টেবিল দুটির মধ্যে roll কলাম দিয়ে একটি রিলেশন দেখা যাচ্ছে। student_info টেবিলে প্রতিটি
+শিক্ষার্থীর roll ও name রয়েছে। আবার result টেবিলে, শিক্ষার্থীর রোল নম্বর ও বিভিন্ন বিষয়ে পরীক্ষায়
+প্রাপ্ত নম্বর (marks) রয়েছে। student_info টেবিলের সঙ্গে result টেবিলের রিলেশন হচ্ছে ওয়ান টু
+মেনি রিলেশন।
+
+এখন টেবিলে কিছু ডেটা ইনসার্ট করা হবে_
+
+INSERT INTO student_info
+Rahman') ;
+
+name) VALUES (1, 'Mizanur
+
+student_- (roll, name) VALUES (10, 'Mosharraf
+student_info (roll, name) VALUES (2, ‘'Maysha');
+result (roll, subject, marks) VALUES (1,
+
+79.0);
+INTO result (roll, subject, marks) VALUES (1,
+ht, 76.0);
+TO result (roll, subject, marks) VALUES (1,
+lathematics', 74.0);
+INTO result (roll, subject, marks) V.
+‘Bangla’, 82.0);
+
+২০২৫-২০২৬

@@ -1,0 +1,47 @@
+২০২৬
+
+অধ্যায় ৯. শ্রিকোণমিতিক অনুপাত ১৮৩
+
+[(—sin A)(1— sin A)
+\ (1 +sin A)(1 — sin A)
+/@=sin A)?
+
+[লব ও হরকে VI — sin A দ্বারা গুণ করো]
+
+=sin A
+আছ
+ঢায
+= Vesta
+1—sin A
+cos A
+L sin A
+
+~ cos A cos A
+=sec A—tan A = ডানপক্ষ (প্রমাণিত)
+
+উদাহরণ ১১. tan A+sin A =a এবং tar A—sin A=b হলে, প্রমাণ করো যে, a? — 0? = Avab
+
+সমাধান: এখানে প্রদত্ত, tan A+ sin A =a এবং tan A~sin A=b
+বামপক্ষ = ৫2 — 02
+
+= (tan A+ sin A)? ~ (tan A ~ sin A)?
+
+= 4tan A.sin A [:." (a + 6)? — (a = b)? = dab]
+
+= 4vitan?A.sin?A
+
+= 4y/tan®A(I — cos?A)
+
+= 4yvtan? A — tan? A.cos*A
+
+=4Vtan?A— sin [tan A= SA
+
+cos A
+(fan A+ sin A)(tan A— sin A)
+
+=4Vab
+= ডানপক্ষ (প্রমাণিত)
+
+কাজ:
+ক) ০০০ _ ০০4 = 1 হলে, প্রমাণ করো যে, ০০544 + ০০55 = 1
+খ) 91244457724. = 1 হলে, প্রমাণ করো যে, 844 _ tan2A = 1

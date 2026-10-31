@@ -1,0 +1,38 @@
+১২৪ তথ্য ও যোগাযোগ প্রযুক্তি
+
+<p>This is an html page. This is <br> paragraph ০.
+<p>This is paragraph two. </p>
+
+@ This is my first HTML page x +
+
+€ SO File | CyUsers/rafit/Desktop.. 4 BH €) ০০৭০
+
+This is an hunl page. This is
+paragraph one
+
+This is paragraph two
+
+লাইন ব্রেকের তুলনায় প্যারাগ্রাফ ব্রেকে ক্ষেত্রে একটু বেশি পরিমাণে ফাঁকা জায়গা থাকে।
+
+এছাড়া আনুভূমিক রেখা (horizontal line) আকার জন্য রয়েছে হরাইজন্টাল রুল এলিমেন্ট। একে । দিয়ে
+প্রকাশ করা হয়। এটিও একটি ফীকা এলিমেন্ট।
+
+is an html page. This is 0859521217০;
+is paragraph two.</p>
+
+০৯৭
+
+@ This is my first HTML page x +
+
+€ © File | C/Users/rafit/Desktop.
+
+This is an html page. This is paragraph one.
+
+This is paragraph two.
+
+টেজট ফরম্যাটিং (Text Formating)
+
+টেক্সটের সাধারণ ফরস্যাটিংয়ের মধ্যে আছে বোল্ড করা, ইটালিক করা, আন্ডারলাইন করা ইত্যাদি।
+HTML -এ এগুলো করার জন্য যথাক্রমে ০,1 ও u এলিমেন্ট ব্যবহার করা হয়।
+
+২০২৫-২০২৬

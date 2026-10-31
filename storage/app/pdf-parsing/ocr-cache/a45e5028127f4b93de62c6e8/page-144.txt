@@ -1,0 +1,44 @@
+২০২৫-২০২৬
+
+ওয়েব ডিজাইন পরিচিতি এবং HTML ১৩৯
+
+span এলিমেন্টের কাজ হচ্ছে একটি এলিমেন্টের নির্দিষ্ট একটি অংশ নির্বাচন করা। ধরা যাক, একটি
+প্যারাগ্রাফ কালো রঙে দেখানো আছে। মধ্যে তিনটি শব্দ লাল রং করতে হবে তখন ওই তিনটি শব্দের দুই
+পাশে span এলিমেন্টের ট্যাগ বসিয়ে 91০ ত্যাট্রিবিউট ব্যবহার করে রং নির্ধারিত করে দেওয়া যায়।
+
+“This
+
+<p>This is a black text, But <span style="color:r
+is red</span></p>
+
+BST ONGAIEE (style attribute)
+
+স্টাইল ত্যাট্রিবিউট ব্যবহার করে ওয়েব পেজের PASH এলিমেন্টের রং, ফন্টসহ বিভিন্ন বৈশিষ্ট্য বা প্রোপার্টি
+(property) উল্লেখ করে দেওয়া যায়। স্টাইল ত্যাট্রিবিউটের ভেতরে বিভিন্ন স্টাইলিং নির্দেশনা দেওয়া যায়।
+যেমন- এর আগের অংশে দেখানো হয়েছে কীভাবে স্টাইল ত্যাট্রিবিউট ব্যবহার করে লাল রঙে লেখা যায়।
+এজন্য color প্রোপার্টি ব্যবহার করা হয়েছে। বিভিন্ন এইচটিএমএল এলিমেন্টের বিভিন্ন প্রোপার্টি আছে।
+একাধিক প্রোপার্টির মান বলে দিতে চাইলে তাদের মধ্যে সেমিকোলন HB ব্যবহার করতে হয়।
+
+<!DOCTYPE htm1>
+<html>
+<head>
+<title>Style Attribute Expe:
+
+lent </title>
+
+<div style=-"width:100px; height:100px; background-col
+pink; color: darkred; float: left; mar: Spx; padding:
+5px;">Hello There! </div>
+
+<div style="width:100px; height:100px; background-color:
+paleturquoise; color: forestgreen; float: left; margin: Spx;
+padding: 5px;">How are you!</div>
+
+<div style="width:100px; height:100px; background-color:
+lightskyblue; color: royalblue; oat: left; marg Spx;
+padding: 5px;">Nice to meet you! </div>
+
+</body>
+</html>
+
+উপরের কোডটি ছবির মতো আউটপুট তৈরি করবে।

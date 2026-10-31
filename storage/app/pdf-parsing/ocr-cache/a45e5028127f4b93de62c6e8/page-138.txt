@@ -1,0 +1,43 @@
+২০২৫-২০২৬
+
+ওয়েব ডিজাইন পরিচিতি এবং HTML ১৩৩
+
+<a href="https://www.google.com" target="_blank">
+<img src="image.jpg">
+</a>
+
+অর্থাৎ <a> .. </a> ট্যাগের মধ্যে কিছু না লিখে একটি ছবি ব্যবহার করা হলো।
+
+সারণি বা টোবিল (Table)
+
+এইচটিএমএল ব্যবহার করে সারণি বা টেবিল তৈরি করা যায়। টেবিলের আনুভূমিক ঘরগুলোকে বলা হয়
+সারি বা রো (row), আর উল্লম্ব ঘরগুলোকে বলা BY VS বা কলাম (column)! টেবিলের একেকটি ঘরকে
+বলা হয় সেল (cell)! টেবিলের একেবারে উপরের সারিকে বলা হয় UTA সারি (header) আর একেবারে
+নিচের সারিকে বলা হয় ফুটার (footer) সারি। তবে হেডার ও ফুটার সারি টেবিলের গ্রচ্ছিক উপাদান,
+অর্থাৎ, সব টেবিলে এ দুটি অংশ নাও থাকতে পারে।
+
+<!DOCTYPE ৮2৯
+<html>
+<head>
+<title>HTML Table Example</title>
+</head>
+<body>
+<table>
+<thead>
+<tr> <th>Serial</th> <th>Subject</th> <th>GPA</th>
+</tr>
+</thead>
+<tbody>
+<tr> <td>01</td> <td>Bangla</td> <td>5.00</td> </tr>
+<tr> <td>02</td> <td>English</td> <td>5.00</td> </tr>
+<tr> <td>03</td> <td>Science</td> <td>5.00</td> </tr>
+<tr> <td>04</td> <td>Math</td> <td>5.00</td> </tr>
+</tbody>
+<tfoot>
+<tr> <td></td> <td>cGPA</td> <td>5.00</td> </tr>
+</tf£oot>
+</table>
+</body>
+</html>
+
+কোডটি সেভ করে ব্রাউজারে খুললে নিচের ছবির মতো আউটপুট দেখা যাবে।

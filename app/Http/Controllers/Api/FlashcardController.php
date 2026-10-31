@@ -39,7 +39,18 @@ class FlashcardController extends BaseApiController
             $sourceReferences = $source['references'];
         }
 
-        $set = $student->flashcardSets()->create(['title' => $request->title, 'source_label' => $sourceLabel]);
+        $set = $student->flashcardSets()->create([
+            'title' => $request->title,
+            'source_label' => $sourceLabel,
+            'generation_status' => 'generating',
+            'generation_data' => [
+                'source_type' => $request->source_book_id ? 'book' : 'text',
+                'source_book_id' => $request->source_book_id,
+                'chapter_ids' => $request->input('chapter_ids', []),
+                'source_text' => $request->source_book_id ? null : $sourceText,
+                'count' => (int) $request->count,
+            ],
+        ]);
         GenerateFlashcards::dispatch($set->id, $sourceText, (int) $request->count, $sourceReferences);
 
         if (! app(AccessGrantService::class)->hasActiveAccess($student)) {

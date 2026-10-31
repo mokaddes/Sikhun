@@ -32,4 +32,19 @@ class NotificationController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function destroy(Notification $notification): JsonResponse
+    {
+        abort_unless((int) $notification->student_id === (int) auth('web')->id(), 404);
+        $notification->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function destroyAll(): JsonResponse
+    {
+        auth('web')->user()->notifications()->delete();
+
+        return response()->json(['success' => true]);
+    }
 }

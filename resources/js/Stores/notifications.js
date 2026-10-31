@@ -47,5 +47,18 @@ export const useNotificationStore = defineStore('notifications', {
             this.items.forEach((n) => (n.read_at = n.read_at ?? new Date().toISOString()));
             this.unreadCount = 0;
         },
+
+        async dismiss(id) {
+            await axios.delete(`/notifications/${id}`);
+            const item = this.items.find((notification) => notification.id === id);
+            if (item && !item.read_at) this.unreadCount = Math.max(0, this.unreadCount - 1);
+            this.items = this.items.filter((notification) => notification.id !== id);
+        },
+
+        async clearAll() {
+            await axios.delete('/notifications');
+            this.items = [];
+            this.unreadCount = 0;
+        },
     },
 });

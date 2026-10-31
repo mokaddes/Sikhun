@@ -34,17 +34,20 @@ class SupportController extends Controller
 
     public function send(Request $request): JsonResponse
     {
-        $request->validate(['message' => 'required|string|max:2000']);
+        $data = $request->validate([
+            'message' => ['required', 'string', 'max:2000'],
+            'locale' => ['nullable', 'in:bn,en'],
+        ]);
 
         $conversation = $this->findOrCreateConversation($request);
 
         $conversation->messages()->create([
             'sender_type' => 'student',
-            'message' => $request->message,
+            'message' => $data['message'],
         ]);
 
         if ($conversation->bot_enabled) {
-            $this->bot->reply($conversation);
+            $this->bot->reply($conversation, $data['locale'] ?? app()->getLocale());
         }
 
         return response()->json(['messages' => $conversation->messages()->orderBy('id')->get()]);

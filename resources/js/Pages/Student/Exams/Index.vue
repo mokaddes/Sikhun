@@ -17,6 +17,7 @@ import {
     SparklesIcon,
     BookOpenIcon,
     TagIcon,
+    ArrowPathIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -35,6 +36,7 @@ const { t, locale } = useI18n();
 
 const search = ref(props.filters.search || '');
 const activeStatus = ref(props.filters.status || 'all');
+const retryingExamId = ref(null);
 
 const filterTabs = computed(() => [
     { id: 'all', label: locale.value === 'en' ? 'All Exams' : 'সকল পরীক্ষা' },
@@ -61,6 +63,13 @@ function clearSearch() {
     applyFilters();
 }
 
+function retryExam(exam) {
+    retryingExamId.value = exam.id;
+    router.post(`/exams/${exam.id}/retry`, {}, {
+        onFinish: () => { retryingExamId.value = null; },
+    });
+}
+
 const statusBadge = (status) => {
     switch (status) {
         case 'completed':
@@ -77,6 +86,11 @@ const statusBadge = (status) => {
             return {
                 bg: 'bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 animate-pulse',
                 label: locale.value === 'en' ? 'Generating...' : 'তৈরি হচ্ছে...',
+            };
+        case 'failed':
+            return {
+                bg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20',
+                label: locale.value === 'en' ? 'Generation failed' : 'তৈরি ব্যর্থ',
             };
         default:
             return {
@@ -301,6 +315,16 @@ const scoreColor = (pct) => {
                         <span>{{ t('exams.view_result') }}</span>
                         <ArrowRightIcon class="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                     </Link>
+                    <button
+                        v-if="exam.status === 'failed'"
+                        type="button"
+                        :disabled="retryingExamId === exam.id"
+                        class="btn btn-primary w-full justify-center gap-2 rounded-xl py-2.5 text-xs font-bold shadow-sm disabled:opacity-60"
+                        @click="retryExam(exam)"
+                    >
+                        <ArrowPathIcon class="h-3.5 w-3.5" :class="retryingExamId === exam.id ? 'animate-spin' : ''" />
+                        <span>{{ retryingExamId === exam.id ? (locale === 'en' ? 'Retrying...' : 'আবার চেষ্টা হচ্ছে...') : (locale === 'en' ? 'Retry generation' : 'আবার তৈরি করুন') }}</span>
+                    </button>
                     <Link
                         v-else
                         :href="`/exams/${exam.id}`"

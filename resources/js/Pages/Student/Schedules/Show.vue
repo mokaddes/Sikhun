@@ -1,16 +1,19 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
+import { ArrowPathIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({ schedule: Object });
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const schedule = ref(props.schedule);
+const retrying = ref(false);
 let pollInterval;
 
 function poll() {
+    if (pollInterval) clearInterval(pollInterval);
     pollInterval = setInterval(async () => {
         const { data } = await axios.get(`/schedules/${schedule.value.id}/status`);
         if (data.status !== 'generating') {
@@ -21,10 +24,22 @@ function poll() {
 }
 
 onMounted(() => { if (schedule.value.status === 'generating') poll(); });
+watch(() => props.schedule, (value) => {
+    schedule.value = value;
+    if (value.status === 'generating') poll();
+    else clearInterval(pollInterval);
+});
 onBeforeUnmount(() => clearInterval(pollInterval));
 
 function toggleDone(day) {
     router.post(`/schedules/${schedule.value.id}/progress`, { date: day.date }, { preserveScroll: true });
+}
+
+function retryGeneration() {
+    retrying.value = true;
+    router.post(`/schedules/${schedule.value.id}/retry`, {}, {
+        onFinish: () => { retrying.value = false; },
+    });
 }
 </script>
 
@@ -34,8 +49,13 @@ function toggleDone(day) {
         <div v-if="schedule.status === 'generating'" class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-12 text-center text-[var(--text-muted)]">
             {{ t('schedules.generating') }}
         </div>
-        <div v-else-if="schedule.status === 'failed'" class="rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/10 p-6 text-[var(--accent)]">
-            Schedule generation failed — please try again.
+        <div v-else-if="schedule.status === 'failed'" class="mx-auto max-w-lg rounded-xl border border-rose-500/30 bg-rose-500/10 p-6 text-center">
+            <p class="font-semibold text-rose-600 dark:text-rose-400">{{ locale === 'en' ? 'Study plan generation failed' : 'স্টাডি রুটিন তৈরি করা যায়নি' }}</p>
+            <p class="mt-2 text-sm text-[var(--text-muted)]">{{ locale === 'en' ? 'Your schedule settings are saved. Try generating the plan again.' : 'আপনার রুটিনের সেটিংস সংরক্ষিত আছে। আবার তৈরির চেষ্টা করুন।' }}</p>
+            <button type="button" :disabled="retrying" class="btn btn-primary mt-5 inline-flex items-center gap-2 disabled:opacity-60" @click="retryGeneration">
+                <ArrowPathIcon class="h-4 w-4" :class="retrying ? 'animate-spin' : ''" />
+                {{ retrying ? (locale === 'en' ? 'Retrying…' : 'আবার চেষ্টা হচ্ছে…') : (locale === 'en' ? 'Retry generation' : 'আবার তৈরি করুন') }}
+            </button>
         </div>
         <div v-else>
             <div class="flex items-center justify-between mb-6">

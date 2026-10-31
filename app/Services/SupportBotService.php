@@ -71,7 +71,9 @@ class SupportBotService
           the relevant process; a human team member must handle actions requiring access.
         - Never invent features, prices, or policies. If you do not know, say a team member
           will follow up.
-        - Reply in the language the student wrote in (Bengali or English), briefly and plainly.
+        - Use the active interface language as the default response language.
+        - If the latest message explicitly requests another language (for example, “explain in Bengali”), use the requested language instead.
+        - Keep replies brief, plain, and readable; use Markdown links when pointing to a site page.
         PROMPT;
 
     public function __construct(private SiteSettingService $settings) {}
@@ -80,8 +82,10 @@ class SupportBotService
      * Generate and persist the bot's reply to the latest student message.
      * Returns null when the provider fails — the caller stores the fallback.
      */
-    public function reply(SupportConversation $conversation): ?string
+    public function reply(SupportConversation $conversation, string $activeLocale = 'en'): ?string
     {
+        $activeLocale = $activeLocale === 'bn' ? 'bn' : 'en';
+
         try {
             $provider = AiProviderFactory::default('support_bot');
 
@@ -91,10 +95,11 @@ class SupportBotService
                     'content' => $m->message,
                 ]);
 
-            $reply = $provider->chat(array_merge(
-                [['role' => 'system', 'content' => $this->systemPrompt()]],
-                $history->all()
-            ), ['max_tokens' => 400]);
+            $messages = array_merge(
+                [['role' => 'system', 'content' => $this->systemPrompt($activeLocale)]],
+                $history->all(),
+            );
+            $reply = $provider->chat($messages, ['max_tokens' => 400]);
 
             $conversation->messages()->create(['sender_type' => 'bot', 'message' => $reply]);
 
@@ -104,7 +109,9 @@ class SupportBotService
 
             $conversation->messages()->create([
                 'sender_type' => 'bot',
-                'message' => 'Sorry, I\'m having trouble right now — a team member will follow up soon.',
+                'message' => $activeLocale === 'bn'
+                    ? 'দুঃখিত, এই মুহূর্তে উত্তর তৈরি করা যাচ্ছে না। অনুগ্রহ করে আবার চেষ্টা করুন বা মানব সহায়তা নিন।'
+                    : 'Sorry, I could not prepare a reply right now. Please try again or contact our support team.',
             ]);
 
             return null;
@@ -116,9 +123,14 @@ class SupportBotService
      * the admin's persona prompt. Order matters: the admin text is framed as
      * tone-only so it cannot widen the scope defined above it.
      */
-    public function systemPrompt(): string
+    public function systemPrompt(string $activeLocale = 'en'): string
     {
-        $sections = [self::SCOPE_CONTRACT, $this->platformFacts()];
+        $language = $activeLocale === 'bn' ? 'Bengali (বাংলা)' : 'English';
+        $sections = [
+            self::SCOPE_CONTRACT,
+            "## Response language\nThe active interface language is {$language}. Use it unless the latest user message explicitly asks for another language. Follow requests such as “বাংলায় বলুন” or “explain in Bengali” even when the request itself is written in a different language.",
+            $this->platformFacts(),
+        ];
 
         $adminPrompt = trim((string) $this->settings->get('support_bot_system_prompt', ''));
 

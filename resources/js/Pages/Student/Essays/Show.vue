@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
@@ -10,14 +10,17 @@ import {
     CheckCircleIcon,
     PencilSquareIcon,
     TrophyIcon,
+    ArrowPathIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({ essay: Object });
 const { t, locale } = useI18n();
 const essay = ref(props.essay);
+const retrying = ref(false);
 let pollInterval;
 
 function poll() {
+    if (pollInterval) clearInterval(pollInterval);
     pollInterval = setInterval(async () => {
         try {
             const { data } = await axios.get(`/essays/${essay.value.id}/status`);
@@ -32,7 +35,19 @@ function poll() {
 }
 
 onMounted(() => { if (essay.value.status === 'grading') poll(); });
+watch(() => props.essay, (value) => {
+    essay.value = value;
+    if (value.status === 'grading') poll();
+    else clearInterval(pollInterval);
+});
 onBeforeUnmount(() => clearInterval(pollInterval));
+
+function retryGrading() {
+    retrying.value = true;
+    router.post(`/essays/${essay.value.id}/retry`, {}, {
+        onFinish: () => { retrying.value = false; },
+    });
+}
 </script>
 
 <template>
@@ -75,10 +90,11 @@ onBeforeUnmount(() => clearInterval(pollInterval));
                 class="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-rose-600 dark:text-rose-400"
             >
                 <p class="font-bold">{{ locale === 'en' ? 'Grading failed' : 'মূল্যায়ন ব্যর্থ হয়েছে' }}</p>
-                <p class="mt-1 text-sm text-[var(--text-muted)]">{{ locale === 'en' ? 'Please submit your essay again.' : 'অনুগ্রহ করে পুনরায় লেখাটি সাবমিট করুন।' }}</p>
-                <Link href="/essays/create" class="btn btn-primary mt-4 inline-flex items-center gap-2">
-                    {{ t('essays.new_essay') }}
-                </Link>
+                <p class="mt-1 text-sm text-[var(--text-muted)]">{{ locale === 'en' ? 'Your essay is saved. Retry grading without submitting it again.' : 'আপনার লেখাটি সংরক্ষিত আছে। আবার জমা না দিয়েই মূল্যায়ন পুনরায় চেষ্টা করুন।' }}</p>
+                <button type="button" :disabled="retrying" class="btn btn-primary mt-4 inline-flex items-center gap-2 disabled:opacity-60" @click="retryGrading">
+                    <ArrowPathIcon class="h-4 w-4" :class="retrying ? 'animate-spin' : ''" />
+                    {{ retrying ? (locale === 'en' ? 'Retrying…' : 'আবার চেষ্টা হচ্ছে…') : (locale === 'en' ? 'Retry grading' : 'আবার মূল্যায়ন') }}
+                </button>
             </div>
 
             <!-- Assessment Results -->

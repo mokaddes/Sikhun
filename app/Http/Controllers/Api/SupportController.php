@@ -20,13 +20,16 @@ class SupportController extends BaseApiController
 
     public function send(Request $request): JsonResponse
     {
-        $request->validate(['message' => 'required|string|max:2000']);
+        $data = $request->validate([
+            'message' => ['required', 'string', 'max:2000'],
+            'locale' => ['nullable', 'in:bn,en'],
+        ]);
         $conversation = $this->conversation();
 
-        $conversation->messages()->create(['sender_type' => 'student', 'message' => $request->message]);
+        $conversation->messages()->create(['sender_type' => 'student', 'message' => $data['message']]);
 
         if ($conversation->bot_enabled) {
-            $this->bot->reply($conversation);
+            $this->bot->reply($conversation, $data['locale'] ?? app()->getLocale());
         }
 
         return $this->success(['messages' => $conversation->messages()->orderBy('id')->get()]);

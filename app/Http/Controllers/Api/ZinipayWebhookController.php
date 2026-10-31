@@ -44,8 +44,10 @@ class ZinipayWebhookController extends BaseApiController
             return $this->error('Unauthorized Action', [], 403);
         }
 
+        $body = $request->all() ?: (json_decode(trim($request->getContent()), true) ?: []);
+
         $invoiceId = $request->input('invoice_id')
-            ?? json_decode(trim($request->getContent()), true)['invoice_id']
+            ?? $body['invoice_id']
             ?? null;
 
         if (! $invoiceId) {

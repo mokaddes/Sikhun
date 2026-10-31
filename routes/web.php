@@ -31,7 +31,9 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/contact', [\App\Http\Controllers\Public\ContactController::class, 'show'])->name('contact.show');
-Route::post('/contact', [\App\Http\Controllers\Public\ContactController::class, 'submit'])->name('contact.submit');
+Route::post('/contact', [\App\Http\Controllers\Public\ContactController::class, 'submit'])
+    ->middleware('throttle:contact')
+    ->name('contact.submit');
 
 // Public Blog (accessible without login)
 Route::prefix('blog')->name('blog.')->group(function () {
@@ -62,7 +64,9 @@ Route::post('/language/{locale}', function (string $locale) {
 })->name('language.switch');
 
 Route::get('/support/conversation', [\App\Http\Controllers\Public\SupportController::class, 'show'])->name('support.show');
-Route::post('/support/message', [\App\Http\Controllers\Public\SupportController::class, 'send'])->name('support.send');
+Route::post('/support/message', [\App\Http\Controllers\Public\SupportController::class, 'send'])
+    ->middleware('throttle:contact')
+    ->name('support.send');
 
 /*
 |--------------------------------------------------------------------------
@@ -71,9 +75,9 @@ Route::post('/support/message', [\App\Http\Controllers\Public\SupportController:
 */
 Route::middleware('guest:web')->group(function () {
     Route::get('/register', [StudentAuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [StudentAuthController::class, 'register']);
+    Route::post('/register', [StudentAuthController::class, 'register'])->middleware('throttle:register');
     Route::get('/login', [StudentAuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [StudentAuthController::class, 'login']);
+    Route::post('/login', [StudentAuthController::class, 'login'])->middleware('throttle:auth');
 });
 
 /*
@@ -105,13 +109,13 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/library/{book}/read', [ReaderController::class, 'show'])->name('reader.show');
     Route::get('/library/{book}/read/page/{page}/url', [ReaderController::class, 'pageUrl'])->name('reader.page-url');
     Route::post('/library/{book}/read/progress', [ReaderController::class, 'saveProgress'])->name('reader.progress');
-    Route::post('/library/{book}/read/chat', [ReaderController::class, 'chat'])->name('reader.chat');
+    Route::post('/library/{book}/read/chat', [ReaderController::class, 'chat'])->middleware('throttle:ai')->name('reader.chat');
 
     // My Book reader (own uploads)
     Route::get('/my-books/{myBook}/read', [MyBookReaderController::class, 'show'])->name('my-books.reader.show');
     Route::get('/my-books/{myBook}/read/page/{page}/url', [MyBookReaderController::class, 'pageUrl'])->name('my-books.reader.page-url');
     Route::post('/my-books/{myBook}/read/progress', [MyBookReaderController::class, 'saveProgress'])->name('my-books.reader.progress');
-    Route::post('/my-books/{myBook}/read/chat', [MyBookReaderController::class, 'chat'])->name('my-books.reader.chat');
+    Route::post('/my-books/{myBook}/read/chat', [MyBookReaderController::class, 'chat'])->middleware('throttle:ai')->name('my-books.reader.chat');
 
     // Wallet
     Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
@@ -127,8 +131,8 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::delete('/ai/chat/{session}', [AiChatController::class, 'destroy'])->name('ai-chat.destroy');
     Route::patch('/ai/chat/{session}', [AiChatController::class, 'rename'])->name('ai-chat.rename');
     Route::patch('/ai/chat/{session}/book', [AiChatController::class, 'attachBook'])->name('ai-chat.attach-book');
-    Route::post('/ai/chat/{session}/stream', [AiChatController::class, 'stream'])->name('ai-chat.stream');
-    Route::middleware('ai.access')->group(function () {
+    Route::post('/ai/chat/{session}/stream', [AiChatController::class, 'stream'])->middleware('throttle:ai')->name('ai-chat.stream');
+    Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
         Route::post('/ai/chat', [AiChatController::class, 'create'])->name('ai-chat.create');
     });
 
@@ -140,7 +144,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::post('/exams/{exam}/complete', [ExamController::class, 'complete'])->name('exams.complete');
     Route::get('/exams/{exam}/result', [ExamController::class, 'result'])->name('exams.result');
     Route::get('/exams/{exam}/pdf', [ExamController::class, 'pdf'])->name('exams.pdf');
-    Route::middleware('ai.access')->group(function () {
+    Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
         Route::post('/exams', [ExamController::class, 'create'])->name('exams.create');
     });
 
@@ -151,7 +155,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::delete('/flashcards/{set}', [FlashcardController::class, 'destroy'])->name('flashcards.destroy');
     Route::post('/flashcards/{set}/cards/{flashcard}/review', [FlashcardController::class, 'review'])->name('flashcards.review');
     Route::get('/flashcards/{set}/pdf', [FlashcardController::class, 'pdf'])->name('flashcards.pdf');
-    Route::middleware('ai.access')->group(function () {
+    Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
         Route::post('/flashcards', [FlashcardController::class, 'create'])->name('flashcards.create');
     });
 
@@ -160,7 +164,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/essays/create', [EssayController::class, 'create'])->name('essays.create-form');
     Route::get('/essays/{essay}', [EssayController::class, 'show'])->name('essays.show');
     Route::get('/essays/{essay}/status', [EssayController::class, 'status'])->name('essays.status');
-    Route::middleware('ai.access')->group(function () {
+    Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
         Route::post('/essays', [EssayController::class, 'store'])->name('essays.store');
     });
 
@@ -171,7 +175,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/schedules/{schedule}/status', [ScheduleController::class, 'status'])->name('schedules.status');
     Route::post('/schedules/{schedule}/progress', [ScheduleController::class, 'markProgress'])->name('schedules.progress');
     Route::get('/schedules/{schedule}/pdf', [ScheduleController::class, 'pdf'])->name('schedules.pdf');
-    Route::middleware('ai.access')->group(function () {
+    Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
         Route::post('/schedules', [ScheduleController::class, 'store'])->name('schedules.store');
     });
 

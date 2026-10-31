@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -18,10 +20,43 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Catch N+1 queries and silently-discarded attributes while
+        // developing. Off by default because enabling it on an old codebase
+        // throws on the first missing eager load; turn it on per-machine
+        // with APP_STRICT_MODELS=true once the known offenders are fixed.
+        if (config('performance.strict_models') && ! app()->isProduction()) {
+            Model::preventLazyLoading();
+            Model::preventSilentlyDiscardingAttributes();
+        }
+
         // Book reader page images — 180 requests per minute per student
         // allows smooth flipping, prefetching and zooming without 429 errors.
         RateLimiter::for('reader-pages', function ($request) {
             return Limit::perMinute(180)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Login / register / password reset. Keyed by email+IP so one
+        // attacker cannot lock out every account, and a single IP cannot
+        // spray passwords across many accounts.
+        RateLimiter::for('auth', function (Request $request) {
+            return Limit::perMinute(5)->by(
+                mb_strtolower((string) $request->input('email')).'|'.$request->ip()
+            );
+        });
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perMinute(3)->by($request->ip());
+        });
+
+        // Student-facing AI generation on the web guard (the API has its
+        // own 'api-ai' bucket). Each AI action costs real money, so this is
+        // intentionally tighter than the general web traffic.
+        RateLimiter::for('ai', function (Request $request) {
+            return Limit::perMinute(12)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Public contact form / support widget — cheap but abusable.
+        RateLimiter::for('contact', function (Request $request) {
+            return Limit::perMinute(3)->by($request->ip());
         });
 
         // REST API — general vs AI-generation endpoints get different budgets

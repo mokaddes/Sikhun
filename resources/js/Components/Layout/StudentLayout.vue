@@ -33,7 +33,7 @@ import {
 } from '@heroicons/vue/24/outline';
 
 const theme = useThemeStore();
-const { t, locale } = useI18n();
+const { t, locale, money, digits } = useI18n();
 const page = usePage();
 const student = page.props.auth?.student;
 const site = page.props.site;
@@ -303,7 +303,7 @@ function logout() {
                 <div class="flex items-center gap-2 sm:gap-2.5">
                     <div class="hidden items-center gap-1.5 rounded-full border border-[var(--secondary)]/20 bg-[var(--secondary)]/10 px-3.5 py-1.5 text-sm font-medium sm:flex">
                         <span class="text-[var(--text-muted)]">{{ t('dashboard.wallet_balance') }}:</span>
-                        <span class="font-semibold">৳{{ student?.wallet_balance ?? 0 }}</span>
+                        <span class="font-semibold">৳{{ money(student?.wallet_balance ?? 0, 2) }}</span>
                     </div>
                     <LanguageSwitcher />
                     <ThemeToggle />
@@ -330,7 +330,7 @@ function logout() {
                         <SparklesIcon class="h-4 w-4 text-emerald-500 shrink-0" />
                         <span>
                             <strong>{{ locale === 'en' ? '7-Day Free Trial Active' : '৭ দিনের ফ্রি ট্রায়াল চালু রয়েছে' }}</strong>
-                            ({{ locale === 'en' ? `${student.trial_days_remaining} day${student.trial_days_remaining === 1 ? '' : 's'} remaining` : `বাকি ${student.trial_days_remaining} দিন` }}).
+                            ({{ locale === 'en' ? `${student.trial_days_remaining} day${student.trial_days_remaining === 1 ? '' : 's'} remaining` : `বাকি ${digits(student.trial_days_remaining)} দিন` }}).
                             {{ locale === 'en' ? 'Enjoy full access to AI Chat, practice exams & book study.' : 'বই রিডার, এআই চ্যাট ও পরীক্ষার সম্পূর্ণ সুবিধা বিনামূল্যে ব্যবহার করুন।' }}
                         </span>
                     </div>

@@ -32,7 +32,7 @@ const props = defineProps({
     seo: Object,
 });
 
-const { t, locale } = useI18n();
+const { t, locale, money } = useI18n();
 const page = usePage();
 const isLoggedIn = computed(() => !!page.props.auth?.student);
 const flashSuccess = computed(() => page.props.flash?.success);
@@ -338,7 +338,7 @@ const firstAccessibleLessonUrl = computed(() => {
                                     </span>
                                     <div class="mt-0.5 font-heading text-3xl font-extrabold">
                                         <span v-if="+course.price === 0" class="text-emerald-500">{{ t('common.free') }}</span>
-                                        <span v-else>৳{{ course.price }}</span>
+                                        <span v-else>৳{{ money(course.price) }}</span>
                                     </div>
                                 </div>
 
@@ -401,7 +401,7 @@ const firstAccessibleLessonUrl = computed(() => {
                                         class="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:bg-[var(--primary-hover)]"
                                     >
                                         <CreditCardIcon class="h-5 w-5" />
-                                        <span>{{ t('book_show.pay_with_gateway') }} (৳{{ course.price }})</span>
+                                        <span>{{ t('book_show.pay_with_gateway') }} (৳{{ money(course.price) }})</span>
                                     </button>
 
                                     <button
@@ -410,7 +410,7 @@ const firstAccessibleLessonUrl = computed(() => {
                                         class="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface2)]/70 px-6 py-3 text-sm font-semibold transition hover:border-[var(--primary)]"
                                     >
                                         <WalletIcon class="h-5 w-5 text-[var(--secondary)]" />
-                                        <span>{{ t('book_show.pay_with_wallet') }} ({{ locale === 'en' ? 'Bal' : 'ব্যালেন্স' }}: ৳{{ walletBalance.toFixed(0) }})</span>
+                                        <span>{{ t('book_show.pay_with_wallet') }} ({{ locale === 'en' ? 'Bal' : 'ব্যালেন্স' }}: ৳{{ money(walletBalance) }})</span>
                                     </button>
                                 </template>
                             </div>
@@ -502,7 +502,7 @@ const firstAccessibleLessonUrl = computed(() => {
                                         <span>
                                             {{ +course.price === 0
                                                 ? (locale === 'en' ? 'Instant Free Enroll' : 'গেস্ট হিসেবে ফ্রি এনরোল করুন')
-                                                : (locale === 'en' ? `Proceed to Payment (৳${course.price})` : `সরাসরি পেমেন্ট ও এনরোল (৳${course.price})`) }}
+                                                : (locale === 'en' ? `Proceed to Payment (৳${money(course.price)})` : `সরাসরি পেমেন্ট ও এনরোল (৳${money(course.price)})`) }}
                                         </span>
                                     </button>
                                 </form>
@@ -564,7 +564,7 @@ const firstAccessibleLessonUrl = computed(() => {
                             <p v-if="rel.mentor?.name" class="mt-1 text-xs text-[var(--text-muted)]">{{ rel.mentor.name }}</p>
                             <div class="mt-3 flex items-center justify-between">
                                 <span class="font-heading font-extrabold" :class="+rel.price === 0 ? 'text-emerald-500' : ''">
-                                    {{ +rel.price === 0 ? t('common.free') : `৳${rel.price}` }}
+                                    {{ +rel.price === 0 ? t('common.free') : `৳${money(rel.price)}` }}
                                 </span>
                                 <span class="text-xs text-[var(--text-muted)]">{{ rel.enrollments_count ?? 0 }} {{ locale === 'en' ? 'enrolled' : 'জন ভর্তি' }}</span>
                             </div>

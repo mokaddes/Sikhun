@@ -6,7 +6,7 @@ import { useI18n } from '@/i18n';
 import { ClipboardDocumentIcon, CheckIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({ referralCode: String, referralLink: String, stats: Object, referrals: Array });
-const { t, locale } = useI18n();
+const { t, locale, money, n } = useI18n();
 const copied = ref(false);
 
 function copyLink() {
@@ -39,15 +39,15 @@ function copyLink() {
         <div class="stagger mb-6 grid grid-cols-3 gap-4">
             <div class="card rounded-2xl p-5">
                 <div class="text-sm text-[var(--text-muted)]">{{ t('referral_page.total_referred') }}</div>
-                <div class="mt-2 font-heading text-2xl font-extrabold">{{ stats.total_referred }}</div>
+                <div class="mt-2 font-heading text-2xl font-extrabold">{{ n(stats.total_referred) }}</div>
             </div>
             <div class="card rounded-2xl p-5">
                 <div class="text-sm text-[var(--text-muted)]">{{ t('referral_page.total_converted') }}</div>
-                <div class="mt-2 font-heading text-2xl font-extrabold">{{ stats.total_converted }}</div>
+                <div class="mt-2 font-heading text-2xl font-extrabold">{{ n(stats.total_converted) }}</div>
             </div>
             <div class="card rounded-2xl p-5">
                 <div class="text-sm text-[var(--text-muted)]">{{ t('referral_page.total_earned') }}</div>
-                <div class="mt-2 font-heading text-2xl font-extrabold text-[var(--secondary)]">৳{{ stats.total_earned }}</div>
+                <div class="mt-2 font-heading text-2xl font-extrabold text-[var(--secondary)]">৳{{ money(stats.total_earned) }}</div>
             </div>
         </div>
 

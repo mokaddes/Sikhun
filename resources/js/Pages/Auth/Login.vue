@@ -25,14 +25,16 @@ function submit() {
 
             <form @submit.prevent="submit" class="space-y-5">
                 <div>
-                    <label class="block text-sm font-medium mb-1.5">{{ t('common.email') }}</label>
-                    <input v-model="form.email" type="email" required autofocus
+                    <label for="login-email" class="block text-sm font-medium mb-1.5">{{ t('common.email') }}</label>
+                    <input id="login-email" name="email" v-model="form.email" type="email" required autofocus
+                        autocomplete="username" :aria-invalid="!!form.errors.email"
                         class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" />
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium mb-1.5">{{ t('auth.password') }}</label>
-                    <input v-model="form.password" type="password" required
+                    <label for="login-password" class="block text-sm font-medium mb-1.5">{{ t('auth.password') }}</label>
+                    <input id="login-password" name="password" v-model="form.password" type="password" required
+                        autocomplete="current-password"
                         class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" />
                 </div>
 

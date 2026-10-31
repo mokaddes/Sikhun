@@ -26,7 +26,7 @@ const props = defineProps({
     activeSubscription: Object,
     access: Object,
 });
-const { t, locale } = useI18n();
+const { t, locale, money, n } = useI18n();
 const student = usePage().props.auth?.student;
 
 function badge(rank) {
@@ -37,10 +37,10 @@ function badge(rank) {
 }
 
 const statCards = computed(() => [
-    { label: t('dashboard.wallet_balance'), value: `৳${props.stats?.wallet_balance ?? 0}`, icon: BanknotesIcon, tint: 'bg-[var(--primary)]/10 text-[var(--primary)]' },
-    { label: t('dashboard.books_owned'), value: props.stats?.books_owned ?? 0, icon: BookOpenIcon, tint: 'bg-[var(--secondary)]/10 text-[var(--secondary)]' },
-    { label: t('dashboard.exams_taken'), value: props.stats?.exams_taken ?? 0, icon: ClipboardDocumentCheckIcon, tint: 'bg-[var(--tertiary)]/10 text-[var(--tertiary)]' },
-    { label: t('dashboard.courses_enrolled'), value: props.stats?.courses_enrolled ?? 0, icon: AcademicCapIcon, tint: 'bg-[var(--accent)]/10 text-[var(--accent)]' },
+    { label: t('dashboard.wallet_balance'), value: `৳${money(props.stats?.wallet_balance ?? 0, 2)}`, icon: BanknotesIcon, tint: 'bg-[var(--primary)]/10 text-[var(--primary)]' },
+    { label: t('dashboard.books_owned'), value: n(props.stats?.books_owned ?? 0), icon: BookOpenIcon, tint: 'bg-[var(--secondary)]/10 text-[var(--secondary)]' },
+    { label: t('dashboard.exams_taken'), value: n(props.stats?.exams_taken ?? 0), icon: ClipboardDocumentCheckIcon, tint: 'bg-[var(--tertiary)]/10 text-[var(--tertiary)]' },
+    { label: t('dashboard.courses_enrolled'), value: n(props.stats?.courses_enrolled ?? 0), icon: AcademicCapIcon, tint: 'bg-[var(--accent)]/10 text-[var(--accent)]' },
 ]);
 
 const quickActions = [

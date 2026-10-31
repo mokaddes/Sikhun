@@ -6,7 +6,7 @@ import { useI18n } from '@/i18n';
 import { CreditCardIcon, CheckIcon, SparklesIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({ plans: Array, activeSubscription: Object });
-const { t, locale } = useI18n();
+const { t, locale, money, digits } = useI18n();
 
 const months = ref(1);
 
@@ -30,17 +30,10 @@ function subscribe(plan, method) {
             {{ t('plans_page.active_until') }} {{ new Date(activeSubscription.expires_at).toLocaleDateString() }}
         </div>
 
-        <div v-else-if="$page.props.auth?.student?.is_in_trial" class="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-300">
-            <span class="flex items-center gap-2">
-                <SparklesIcon class="h-4 w-4 text-emerald-500 shrink-0" />
-                <span>{{ locale === 'en' ? `You are enjoying a 7-day free trial (${$page.props.auth.student.trial_days_remaining} day${$page.props.auth.student.trial_days_remaining === 1 ? '' : 's'} remaining). Select a plan to continue after your trial!` : `আপনি বর্তমানে ৭ দিনের ফ্রি ট্রায়ালে রয়েছেন (বাকি ${$page.props.auth.student.trial_days_remaining} দিন)। ট্রায়াল শেষে অবিরাম পড়তে এখনই প্ল্যান বেছে নিন!` }}</span>
-            </span>
-        </div>
-
         <div class="mb-6 flex items-center gap-3">
             <label class="text-sm font-medium">{{ t('plans_page.months') }}:</label>
             <select v-model="months" class="input" style="width:auto">
-                <option v-for="m in [1, 3, 6, 12]" :key="m" :value="m">{{ m }}</option>
+                <option v-for="m in [1, 3, 6, 12]" :key="m" :value="m">{{ digits(m) }}</option>
             </select>
         </div>
 
@@ -57,7 +50,7 @@ function subscribe(plan, method) {
                 <div class="font-heading text-lg font-bold">{{ plan.name }}</div>
                 <p class="mb-4 mt-1 text-sm text-[var(--text-muted)]">{{ plan.description }}</p>
                 <div class="mb-5 font-heading text-3xl font-extrabold">
-                    ৳{{ plan.price_monthly }}<span class="text-sm font-normal text-[var(--text-muted)]">{{ t('plans_page.per_month') }}</span>
+                    ৳{{ money(plan.price_monthly) }}<span class="text-sm font-normal text-[var(--text-muted)]">{{ t('plans_page.per_month') }}</span>
                 </div>
 
                 <!-- Plan Highlights / Quotas -->
@@ -81,14 +74,14 @@ function subscribe(plan, method) {
                 </div>
                 <ul class="mb-6 flex-1 space-y-2 text-sm text-[var(--text-muted)]">
                     <li v-for="f in plan.features" :key="f" class="flex items-start gap-2">
-                        <CheckIcon class="mt-0.5 h-4 w-4 shrink-0 text-[var(--secondary)]" /> {{ f }}
+                        <CheckIcon class="mt-0.5 h-4 w-4 shrink-0 text-[var(--secondary)]" /> {{ digits(f) }}
                     </li>
                 </ul>
                 <div class="space-y-2">
-                    <button @click="subscribe(plan, 'wallet')" class="btn btn-primary w-full">
+                    <button @click="subscribe(plan, 'wallet')" class="btn btn-primary w-full whitespace-normal text-center leading-snug">
                         {{ t('plans_page.subscribe') }} — {{ t('book_show.pay_with_wallet') }}
                     </button>
-                    <button @click="subscribe(plan, 'zinipay')" class="btn btn-outline w-full">
+                    <button @click="subscribe(plan, 'zinipay')" class="btn btn-outline w-full whitespace-normal text-center leading-snug">
                         {{ t('book_show.pay_with_gateway') }}
                     </button>
                 </div>

@@ -1,5 +1,6 @@
 import { computed } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
+import { formatMoney, formatNumber, toBnDigits } from './utils/format';
 
 /**
  * Lightweight EN/BN translation composable — no external i18n library
@@ -45,5 +46,10 @@ export function useI18n() {
         router.post(`/language/${newLocale}`, {}, { preserveScroll: true, preserveState: false });
     }
 
-    return { t, locale, switchLocale };
+    // Number helpers bound to the active locale: n(1234) -> ১,২৩৪ (bn)
+    const n = (value) => formatNumber(value, locale.value);
+    const money = (value, decimals = null) => formatMoney(value, locale.value, decimals);
+    const digits = (value) => (locale.value === 'bn' ? toBnDigits(value) : String(value ?? ''));
+
+    return { t, locale, switchLocale, n, money, digits };
 }

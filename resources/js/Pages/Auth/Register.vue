@@ -35,15 +35,17 @@ function submit() {
 
             <form @submit.prevent="submit" class="space-y-5">
                 <div>
-                    <label class="block text-sm font-medium mb-1.5">{{ t('auth.full_name') }}</label>
-                    <input v-model="form.name" type="text" required
+                    <label for="register-name" class="block text-sm font-medium mb-1.5">{{ t('auth.full_name') }}</label>
+                    <input id="register-name" name="name" v-model="form.name" type="text" required
+                        autocomplete="name" :aria-invalid="!!form.errors.name"
                         class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" />
                     <p v-if="form.errors.name" class="text-[var(--accent)] text-xs mt-1">{{ form.errors.name }}</p>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium mb-1.5">{{ t('common.email') }}</label>
-                    <input v-model="form.email" type="email" required
+                    <label for="register-email" class="block text-sm font-medium mb-1.5">{{ t('common.email') }}</label>
+                    <input id="register-email" name="email" v-model="form.email" type="email" required
+                        autocomplete="email" :aria-invalid="!!form.errors.email"
                         class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" />
                     <p v-if="form.errors.email" class="text-[var(--accent)] text-xs mt-1">{{ form.errors.email }}</p>
                 </div>
@@ -65,15 +67,17 @@ function submit() {
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium mb-1.5">{{ t('auth.password') }}</label>
-                    <input v-model="form.password" type="password" required
+                    <label for="register-password" class="block text-sm font-medium mb-1.5">{{ t('auth.password') }}</label>
+                    <input id="register-password" name="password" v-model="form.password" type="password" required minlength="8"
+                        autocomplete="new-password" :aria-invalid="!!form.errors.password"
                         class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" />
                     <p v-if="form.errors.password" class="text-[var(--accent)] text-xs mt-1">{{ form.errors.password }}</p>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium mb-1.5">{{ t('auth.confirm_password') }}</label>
-                    <input v-model="form.password_confirmation" type="password" required
+                    <label for="register-password-confirmation" class="block text-sm font-medium mb-1.5">{{ t('auth.confirm_password') }}</label>
+                    <input id="register-password-confirmation" name="password_confirmation" v-model="form.password_confirmation" type="password" required
+                        autocomplete="new-password"
                         class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" />
                 </div>
 

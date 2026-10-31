@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
@@ -28,12 +28,15 @@ const form = useForm({
     title: '',
     source_type: 'topic',
     source_book_id: props.books.length > 0 ? props.books[0].id : null,
+    chapter_ids: [],
     source_text: '',
     type: 'mcq',
     count: 10,
     duration: 20,
     mode: 'practice',
 });
+
+const selectedBook = computed(() => props.books.find(book => book.id === form.source_book_id));
 
 const questionTypes = [
     { id: 'mcq', label: 'MCQ', descEn: 'Multiple choice with 4 options', descBn: 'বহুনির্বাচনী প্রশ্ন (৪ অপশন)' },
@@ -162,6 +165,7 @@ function submit() {
                         <div v-if="form.source_type === 'book'">
                             <select
                                 v-model="form.source_book_id"
+                                @change="form.chapter_ids = []"
                                 class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-3 text-sm font-medium focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
                             >
                                 <option :value="null" disabled>{{ t('exams.select_book') }}</option>
@@ -170,6 +174,26 @@ function submit() {
                                 </option>
                             </select>
                             <p v-if="form.errors.source_book_id" class="mt-1 text-xs text-rose-500">{{ form.errors.source_book_id }}</p>
+                            <div v-if="selectedBook?.chapters?.length" class="mt-3">
+                                <label class="mb-1 block text-sm font-bold text-[var(--text)]">
+                                    {{ locale === 'en' ? 'Chapters (optional)' : 'অধ্যায় (ঐচ্ছিক)' }}
+                                </label>
+                                <select
+                                    v-model="form.chapter_ids"
+                                    multiple
+                                    size="5"
+                                    class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-3 text-sm focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
+                                >
+                                    <option v-for="chapter in selectedBook.chapters" :key="chapter.id" :value="chapter.id">
+                                        {{ chapter.chapter_number ? `${chapter.chapter_number}. ` : '' }}{{ chapter.title }}
+                                    </option>
+                                </select>
+                                <p class="mt-1 text-xs text-[var(--text-muted)]">
+                                    {{ locale === 'en' ? 'Leave unselected to sample across the whole book you can access.' : 'কিছু নির্বাচন না করলে আপনার অ্যাক্সেসযোগ্য পুরো বই থেকে নমুনা নেওয়া হবে।' }}
+                                </p>
+                                <p v-if="form.errors.chapter_ids" class="mt-1 text-xs text-rose-500">{{ form.errors.chapter_ids }}</p>
+                                <p v-if="form.errors['chapter_ids.0']" class="mt-1 text-xs text-rose-500">{{ form.errors['chapter_ids.0'] }}</p>
+                            </div>
                         </div>
 
                         <!-- Topic input -->

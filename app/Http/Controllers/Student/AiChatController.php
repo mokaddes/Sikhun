@@ -164,7 +164,7 @@ class AiChatController extends Controller
             $imagePath = $image->store('ai-chat-images', 'public');
         }
 
-        if (! $student->hasActiveAiAccess()) {
+        if (! $student->hasActiveAiChatAccess()) {
             return response()->stream(function () {
                 echo 'data: '.json_encode(['error' => 'Your free AI trial is used up. Subscribe to a plan to continue.'])."\n\n";
                 ob_flush();
@@ -278,13 +278,18 @@ class AiChatController extends Controller
                 'tokens_used' => $session->tokens_used + (int) (strlen($userMessage.$fullReply) / 4),
             ]);
 
-            // Free campaign/coupon access is unlimited — never consume paid
+            // Free campaign/coupon access is unlimited — never consume plan
             // quota while a grant is active.
             if (! app(AccessGrantService::class)->hasActiveAccess($student)) {
-                $student->increment('ai_trial_minutes_used');
                 if ($sub = $student->activeSubscription) {
                     $sub->decrement('ai_chat_minutes_remaining');
+                } else {
+                    $student->increment('ai_trial_minutes_used');
                 }
+            }
+
+            if ($fullReply !== '') {
+                $student->recordSuccessfulAiChat();
             }
 
             if ($imagePath) {

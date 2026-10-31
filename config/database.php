@@ -59,7 +59,9 @@ return [
             'engine' => null,
             'timezone' => env('DB_TIMEZONE', '+06:00'),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                // Resolve dynamically so PHP 8.5 does not emit a deprecation
+                // just by compiling the fallback for older PHP runtimes.
+                (defined('Pdo\Mysql::ATTR_SSL_CA') ? constant('Pdo\\Mysql::ATTR_SSL_CA') : constant('PDO::MYSQL_ATTR_SSL_CA')) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
@@ -80,7 +82,7 @@ return [
             'engine' => null,
             'timezone' => env('DB_TIMEZONE', '+06:00'),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                (defined('Pdo\\Mysql::ATTR_SSL_CA') ? constant('Pdo\\Mysql::ATTR_SSL_CA') : constant('PDO::MYSQL_ATTR_SSL_CA')) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 

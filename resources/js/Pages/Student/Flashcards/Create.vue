@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
@@ -16,9 +17,12 @@ const { t, locale } = useI18n();
 const form = useForm({
     title: '',
     source_book_id: null,
+    chapter_ids: [],
     source_text: '',
     count: 15,
 });
+
+const selectedBook = computed(() => props.books?.find(book => book.id === form.source_book_id));
 
 const countPresets = [5, 10, 15, 20, 25, 30];
 
@@ -90,11 +94,35 @@ function submit() {
                     </label>
                     <select
                         v-model="form.source_book_id"
+                        @change="form.chapter_ids = []"
                         class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-3 text-sm font-medium focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
                     >
                         <option :value="null">— {{ locale === 'en' ? 'None (use text notes below)' : 'কোনোটি নয় (নিচের নোট ব্যবহার করুন)' }} —</option>
                         <option v-for="b in books" :key="b.id" :value="b.id">{{ b.title }}</option>
                     </select>
+                    <p v-if="form.errors.source_book_id" class="mt-1 text-xs text-rose-500">{{ form.errors.source_book_id }}</p>
+
+                    <div v-if="selectedBook?.chapters?.length" class="mt-3">
+                        <label class="mb-1 block text-sm font-bold text-[var(--text)]">
+                            {{ locale === 'en' ? 'Coverage' : 'কভারেজ' }}
+                        </label>
+                        <select
+                            v-model="form.chapter_ids"
+                            multiple
+                            size="5"
+                            class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-3 text-sm focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
+                        >
+                            <option v-for="chapter in selectedBook.chapters" :key="chapter.id" :value="chapter.id">
+                                {{ chapter.chapter_number ? `${chapter.chapter_number}. ` : '' }}{{ chapter.title }}
+                            </option>
+                        </select>
+                        <p class="mt-1 text-xs text-[var(--text-muted)]">
+                            {{ locale === 'en' ? 'Select chapter(s), or leave empty to cover the whole book you can access.' : 'অধ্যায় নির্বাচন করুন, অথবা আপনার অ্যাক্সেসযোগ্য পুরো বই থেকে নমুনা নিতে খালি রাখুন।' }}
+                        </p>
+                        <p v-if="form.errors.chapter_ids || form.errors['chapter_ids.0']" class="mt-1 text-xs text-rose-500">
+                            {{ form.errors.chapter_ids || form.errors['chapter_ids.0'] }}
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Source text notes if no book selected -->

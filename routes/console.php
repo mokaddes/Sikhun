@@ -18,6 +18,12 @@ Schedule::command('subscriptions:expiry-check')->dailyAt('09:00');
 Schedule::command('subscriptions:expire-lapsed')->dailyAt('00:30');
 Schedule::command('blog:scrape')->dailyAt('03:00');
 
+// Invoicing: renewal invoices a week ahead, overdue sweep, then reminders.
+Schedule::command('invoices:generate-recurring')->dailyAt('06:00');
+Schedule::command('invoices:mark-overdue')->dailyAt('06:15');
+Schedule::command('invoices:send-reminders')->dailyAt('06:30');
+Schedule::command('orders:fail-stale-zinipay --hours=24')->hourlyAt(10);
+
 // Remove abandoned chunked-upload staging folders every 30 minutes.
 // Each folder is small while uploading, but left behind uploads waste disk
 // space — and an abandoned lesson video can be gigabytes.

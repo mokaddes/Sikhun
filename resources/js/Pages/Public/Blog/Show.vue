@@ -64,6 +64,18 @@ function copyShareLink() {
                     {{ post.title }}
                 </h1>
 
+                <div v-if="post.tags?.length" class="mt-4 flex flex-wrap items-center gap-2">
+                    <span class="sr-only">{{ t('blog_page.tags') }}</span>
+                    <Link
+                        v-for="tag in post.tags"
+                        :key="tag.id"
+                        :href="`/blog?tag=${encodeURIComponent(tag.slug)}`"
+                        class="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-xs font-medium text-[var(--text-muted)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                    >
+                        {{ tag.name }}
+                    </Link>
+                </div>
+
                 <p v-if="post.excerpt" class="mt-4 text-base md:text-lg text-[var(--text-muted)] leading-relaxed border-l-4 border-[var(--primary)] pl-4">
                     {{ post.excerpt }}
                 </p>
@@ -155,6 +167,11 @@ function copyShareLink() {
                         <span v-if="item.category" class="text-[11px] font-semibold text-[var(--primary)]">
                             {{ item.category.name }}
                         </span>
+                        <div v-if="item.tags?.length" class="mt-2 flex flex-wrap gap-1.5">
+                            <span v-for="tag in item.tags" :key="tag.id" class="rounded-full bg-[var(--surface2)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">
+                                {{ tag.name }}
+                            </span>
+                        </div>
                         <h3 class="mt-1 font-heading font-bold text-base line-clamp-2 group-hover:text-[var(--primary)]">
                             {{ item.title }}
                         </h3>

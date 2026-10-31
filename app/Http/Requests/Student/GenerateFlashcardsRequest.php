@@ -13,6 +13,8 @@ class GenerateFlashcardsRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'source_book_id' => ['nullable', 'exists:books,id'],
+            'chapter_ids' => ['nullable', 'array'],
+            'chapter_ids.*' => ['integer', 'distinct'],
             'source_text' => ['required_without:source_book_id', 'nullable', 'string', 'min:10', 'max:5000'],
             'count' => ['required', 'integer', 'min:5', 'max:30'],
         ];

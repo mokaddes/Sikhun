@@ -11,7 +11,26 @@ class PlanSeeder extends Seeder
     {
         $plans = [
             [
-                'id' => 1,
+                'name' => 'ফ্রি / Free',
+                'slug' => 'free',
+                'description' => 'প্রয়োজনীয় পড়াশোনার টুলসহ বিনামূল্যের পরিকল্পনা / A free starting plan with essential study tools.',
+                'price_monthly' => 0,
+                'ai_chat_minutes' => 20,
+                'ai_vision_limit' => 3,
+                'upload_book_limit' => 1,
+                'monthly_reupload_limit' => 1,
+                'ai_exam_count' => 2,
+                'trial_ai_minutes' => 0,
+                'features' => [
+                    'লাইব্রেরির সব ফ্রি বই / Free library books',
+                    'মাসে ২০টি AI চ্যাট / 20 AI chats per month',
+                    '১টি নিজস্ব বই / 1 personal book slot',
+                    'মাসে ২টি AI পরীক্ষা / 2 AI exams per month',
+                ],
+                'is_active' => true,
+                'is_free' => true,
+            ],
+            [
                 'name' => 'স্ট্যান্ডার্ড লার্নার',
                 'slug' => 'standard',
                 'description' => 'নিয়মিত স্টাডি এবং নির্ভুল পাঠ্যবই সহায়তার জন্য',
@@ -31,9 +50,10 @@ class PlanSeeder extends Seeder
                     'সাধারণ সাপোর্ট',
                 ],
                 'is_active' => true,
+                'is_free' => false,
             ],
             [
-                'id' => 2,
+
                 'name' => 'প্রো স্কলার',
                 'slug' => 'pro',
                 'description' => 'SSC, HSC এবং বোর্ড পরীক্ষার পূর্ণাঙ্গ প্রস্তুতির সেরা পছন্দ',
@@ -53,9 +73,10 @@ class PlanSeeder extends Seeder
                     'প্রায়োরিটি সাপোর্ট ও দ্রুত রেসপন্স',
                 ],
                 'is_active' => true,
+                'is_free' => false,
             ],
             [
-                'id' => 3,
+
                 'name' => 'এলিট এচিভার',
                 'slug' => 'elite',
                 'description' => 'বিশ্ববিদ্যালয় ভর্তি (BUET, Medical, DU) ও বিসিএস প্রস্তুতিতে সর্বোচ্চ নির্ভুলতা',
@@ -75,18 +96,12 @@ class PlanSeeder extends Seeder
                     'ভিআইপি প্রায়োরিটি সাপোর্ট',
                 ],
                 'is_active' => true,
+                'is_free' => false,
             ],
         ];
 
         foreach ($plans as $plan) {
-            $id = $plan['id'];
-            unset($plan['id']);
-            $existing = Plan::find($id);
-            if ($existing) {
-                $existing->update($plan);
-            } else {
-                Plan::updateOrCreate(['slug' => $plan['slug']], $plan);
-            }
+            Plan::updateOrCreate(['slug' => $plan['slug']], $plan);
         }
     }
 }

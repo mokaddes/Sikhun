@@ -6,7 +6,7 @@ import { useI18n } from '@/i18n';
 import { BanknotesIcon, ArrowDownLeftIcon, ArrowUpRightIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({ balance: [String, Number], transactions: Object });
-const { t, locale } = useI18n();
+const { t, locale, money, n } = useI18n();
 
 const form = useForm({ amount: 500, method: 'zinipay', transaction_reference: '' });
 
@@ -29,7 +29,7 @@ function submit() {
             </span>
             <div>
                 <div class="text-sm text-[var(--text-muted)]">{{ t('wallet.current_balance') }}</div>
-                <div class="font-heading text-3xl font-extrabold">৳{{ balance }}</div>
+                <div class="font-heading text-3xl font-extrabold">৳{{ money(balance, 2) }}</div>
             </div>
         </div>
 
@@ -74,7 +74,7 @@ function submit() {
                             </div>
                         </div>
                         <div class="shrink-0 font-semibold" :class="tx.type === 'credit' ? 'text-[var(--secondary)]' : 'text-[var(--accent)]'">
-                            {{ tx.type === 'credit' ? '+' : '-' }}৳{{ tx.amount }}
+                            {{ tx.type === 'credit' ? '+' : '-' }}৳{{ money(tx.amount, 2) }}
                         </div>
                     </li>
                 </ul>

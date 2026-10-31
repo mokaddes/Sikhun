@@ -62,6 +62,7 @@ class PlanController extends Controller
     {
         $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
+        $data['is_free'] = $request->boolean('is_free');
         $data['features'] = $data['features']
             ? array_values(array_filter(array_map('trim', explode("\n", $data['features']))))
             : [];

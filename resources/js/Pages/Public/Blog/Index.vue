@@ -10,6 +10,8 @@ const props = defineProps({
     posts: Object,
     categories: Array,
     activeCategory: Object,
+    tags: Array,
+    activeTag: Object,
     filters: Object,
     seo: Object,
 });
@@ -25,6 +27,16 @@ const cardPalettes = [
     'from-[#40336e] to-[#0a0e18]',
 ];
 
+function filterUrl(tag = null) {
+    const baseUrl = props.activeCategory
+        ? `/blog/category/${props.activeCategory.slug}`
+        : '/blog';
+    const params = new URLSearchParams();
+    if (tag) params.set('tag', tag.slug);
+    const query = params.toString();
+    return query ? `${baseUrl}?${query}` : baseUrl;
+}
+
 function submitSearch() {
     const baseUrl = props.activeCategory
         ? `/blog/category/${props.activeCategory.slug}`
@@ -32,6 +44,7 @@ function submitSearch() {
 
     router.get(baseUrl, {
         search: search.value || undefined,
+        tag: props.activeTag?.slug || undefined,
     }, { preserveState: true, replace: true });
 }
 </script>
@@ -89,6 +102,29 @@ function submitSearch() {
                 >
                     {{ cat.name }} <span v-if="cat.posts_count" class="opacity-70">({{ cat.posts_count }})</span>
                 </Link>
+            </div>
+
+            <!-- Tag filters -->
+            <div v-if="tags?.length" class="mb-8">
+                <p class="mb-2 text-xs font-semibold text-[var(--text-muted)]">{{ t('blog_page.filter_by_tag') }}</p>
+                <div class="flex flex-wrap items-center gap-2">
+                    <Link
+                        :href="filterUrl()"
+                        class="px-3.5 py-2 rounded-full text-xs font-semibold transition border"
+                        :class="!activeTag ? 'bg-[var(--primary)] text-white border-[var(--primary)]' : 'bg-[var(--surface)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text)]'"
+                    >
+                        {{ t('blog_page.all_tags') }}
+                    </Link>
+                    <Link
+                        v-for="tag in tags"
+                        :key="tag.id"
+                        :href="filterUrl(tag)"
+                        class="px-3.5 py-2 rounded-full text-xs font-semibold transition border"
+                        :class="activeTag?.id === tag.id ? 'bg-[var(--primary)] text-white border-[var(--primary)]' : 'bg-[var(--surface)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text)]'"
+                    >
+                        {{ tag.name }} <span class="opacity-70">({{ tag.posts_count }})</span>
+                    </Link>
+                </div>
             </div>
 
             <!-- Blog Posts Grid -->

@@ -23,7 +23,7 @@ const props = defineProps({
     filters: { type: Object, default: () => ({}) },
 });
 
-const { t, locale } = useI18n();
+const { t, locale, money, n } = useI18n();
 
 const search = ref(props.filters.search ?? '');
 const level = ref(props.filters.level ?? '');
@@ -331,7 +331,7 @@ function formatLevel(lvl) {
                                         v-else
                                         class="rounded-full bg-[var(--primary)] px-2.5 py-1 text-[11px] font-bold text-white shadow"
                                     >
-                                        ৳{{ book.price }}
+                                        ৳{{ money(book.price) }}
                                     </span>
                                 </div>
 
@@ -360,13 +360,13 @@ function formatLevel(lvl) {
 
                                 <div class="mt-3 flex items-center justify-between border-t border-[var(--border)] pt-2.5 text-xs">
                                     <span class="font-heading text-sm font-extrabold" :class="book.is_free ? 'text-emerald-500' : 'text-[var(--text)]'">
-                                        {{ book.is_free ? t('common.free') : `৳${book.price}` }}
+                                        {{ book.is_free ? t('common.free') : `৳${money(book.price)}` }}
                                     </span>
                                     <span v-if="book.total_pages" class="text-[var(--text-muted)]">
-                                        {{ book.total_pages }} {{ locale === 'en' ? 'pages' : 'পৃষ্ঠা' }}
+                                        {{ n(book.total_pages) }} {{ locale === 'en' ? 'pages' : 'পৃষ্ঠা' }}
                                     </span>
                                     <span v-else-if="book.reading_count" class="inline-flex items-center gap-1 text-[var(--text-muted)]">
-                                        <EyeIcon class="h-3.5 w-3.5" /> {{ book.reading_count }}
+                                        <EyeIcon class="h-3.5 w-3.5" /> {{ n(book.reading_count) }}
                                     </span>
                                 </div>
                             </div>

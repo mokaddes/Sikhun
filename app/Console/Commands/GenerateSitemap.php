@@ -20,8 +20,15 @@ class GenerateSitemap extends Command
     public function handle(): int
     {
         // Always emit the public production URL even when generated on a
-        // dev machine whose APP_URL points at localhost.
-        config(['app.url' => rtrim(env('SEO_SITEMAP_BASE_URL', 'https://sikhun.com'), '/')]);
+        // dev machine whose APP_URL points at localhost. forceRootUrl() is
+        // required in addition to the config change: the URL generator is
+        // already resolved by the time an artisan command runs, so it keeps
+        // the boot-time root unless we force it.
+        $base = rtrim(env('SEO_SITEMAP_BASE_URL', 'https://sikhun.com'), '/');
+
+        config(['app.url' => $base]);
+        \Illuminate\Support\Facades\URL::forceRootUrl($base);
+        \Illuminate\Support\Facades\URL::forceScheme('https');
 
         $sitemap = Sitemap::create()
             ->add(Url::create('/')->setPriority(1.0))

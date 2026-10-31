@@ -26,6 +26,7 @@ class SubscriptionController extends Controller
     {
         $student = auth('web')->user();
         $plan = Plan::findOrFail($request->plan_id);
+        abort_unless(! $plan->is_free, 422);
 
         $result = $purchases->purchaseSubscription(
             $student,

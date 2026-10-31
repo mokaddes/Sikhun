@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, nextTick, onMounted } from 'vue';
-import { Head, usePage, router } from '@inertiajs/vue3';
+import { Head, usePage, router, useForm } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
 import ChatSidebar from './Partials/ChatSidebar.vue';
@@ -33,6 +33,8 @@ const attachingBook = ref(false);
 const selectedImage = ref(null);
 const imagePreview = ref(null);
 const fileInput = ref(null);
+const selectedReportIndex = ref(null);
+const feedbackForm = useForm({ type: 'answer_report', target_type: 'ai_answer', target_id: props.session.id, target_key: '', message: '' });
 
 const attachedBook = computed(() => {
     if (props.session.source_type === 'upload') return props.session.myBook ?? null;
@@ -40,18 +42,29 @@ const attachedBook = computed(() => {
 });
 
 const renderMessages = computed(() =>
-    messages.value.map((m) => {
+    messages.value.map((m, index) => {
         if (Array.isArray(m.content)) {
             const text = m.content.filter((p) => p.type === 'text').map((p) => p.text).join('\n');
             const images = m.content
                 .filter((p) => p.type === 'image')
                 .map((p) => (p.path ? `/storage/${p.path}` : p.url))
                 .filter(Boolean);
-            return { role: m.role, text, images, imageOnly: !text };
+            return { role: m.role, text, images, imageOnly: !text, index };
         }
-        return { role: m.role, text: m.content, images: [], imageOnly: false };
+        return { role: m.role, text: m.content, images: [], imageOnly: false, index };
     }),
 );
+
+function submitAnswerReport(index) {
+    feedbackForm.target_key = String(index);
+    feedbackForm.post('/feedback', {
+        preserveScroll: true,
+        onSuccess: () => {
+            selectedReportIndex.value = null;
+            feedbackForm.reset('message');
+        },
+    });
+}
 
 function scrollToBottom() {
     nextTick(() => {
@@ -245,6 +258,18 @@ onMounted(scrollToBottom);
                             <img v-for="(img, j) in m.images" :key="j" :src="img" alt="uploaded" class="rounded-lg max-h-56 w-auto object-contain bg-[var(--surface2)]" />
                             <div v-if="m.text" class="text-sm whitespace-pre-wrap break-words">{{ m.text }}</div>
                             <div v-else-if="m.imageOnly && !m.images.length" class="text-xs text-[var(--text-muted)]">{{ t('ai_chat.image') }}</div>
+                            <template v-if="m.role === 'assistant' && m.text">
+                                <button v-if="selectedReportIndex !== m.index" type="button" class="text-xs text-[var(--text-muted)] underline underline-offset-2" @click="selectedReportIndex = m.index">{{ t('support.report_ai_answer') }}</button>
+                                <form v-else @submit.prevent="submitAnswerReport(m.index)" class="space-y-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
+                                    <label class="block text-xs font-medium">{{ t('support.report_reason') }}
+                                        <textarea v-model="feedbackForm.message" rows="2" maxlength="5000" class="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2 py-1.5 text-sm text-[var(--text)]" />
+                                    </label>
+                                    <div class="flex gap-2">
+                                        <button :disabled="feedbackForm.processing" class="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">{{ t('support.submit_report') }}</button>
+                                        <button type="button" class="px-2 py-1.5 text-xs text-[var(--text-muted)]" @click="selectedReportIndex = null">{{ t('common.cancel') }}</button>
+                                    </div>
+                                </form>
+                            </template>
                         </div>
                     </div>
 

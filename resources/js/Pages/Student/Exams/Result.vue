@@ -1,6 +1,6 @@
 <script setup>
-import { computed } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
 import {
@@ -14,11 +14,90 @@ import {
     ListBulletIcon,
 } from '@heroicons/vue/24/outline';
 
-const props = defineProps({ exam: Object });
+const props = defineProps({ exam: Object, canExplain: Boolean });
 const { t, locale } = useI18n();
+const page = usePage();
+const csrfToken = computed(() => page.props.csrf_token ?? '');
 
 const exam = computed(() => props.exam);
 const questions = computed(() => exam.value.questions || []);
+const aiExplanations = ref({});
+const explanationLoading = ref({});
+const explanationErrors = ref({});
+
+async function requestExplanation(question) {
+    if (explanationLoading.value[question.id]) return;
+
+    explanationLoading.value = { ...explanationLoading.value, [question.id]: true };
+    explanationErrors.value = { ...explanationErrors.value, [question.id]: '' };
+    aiExplanations.value = { ...aiExplanations.value, [question.id]: '' };
+
+    try {
+        const response = await fetch(`/exams/${exam.value.id}/questions/${question.id}/explanation`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken.value,
+                'Accept': 'text/event-stream',
+            },
+            credentials: 'same-origin',
+        });
+
+        if (!response.ok) {
+            explanationErrors.value = {
+                ...explanationErrors.value,
+                [question.id]: response.status === 403
+                    ? (locale.value === 'en' ? 'AI explanations require a paid plan.' : 'AI ব্যাখ্যার জন্য পেইড প্ল্যান প্রয়োজন।')
+                    : (locale.value === 'en' ? 'Could not load the explanation.' : 'ব্যাখ্যাটি আনা যায়নি।'),
+            };
+            return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let streamError = '';
+        const handleEvent = (event) => {
+            if (event.error) {
+                streamError = event.error;
+                return;
+            }
+            if (event.content) {
+                aiExplanations.value = {
+                    ...aiExplanations.value,
+                    [question.id]: (aiExplanations.value[question.id] || '') + event.content,
+                };
+            }
+        };
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const events = buffer.split('\n\n');
+            buffer = events.pop();
+            for (const eventText of events) {
+                for (const line of eventText.split('\n')) {
+                    if (line.startsWith('data:')) handleEvent(JSON.parse(line.slice(5).trim()));
+                }
+            }
+        }
+        if (buffer.trim()) {
+            for (const line of buffer.split('\n')) {
+                if (line.startsWith('data:')) handleEvent(JSON.parse(line.slice(5).trim()));
+            }
+        }
+        if (streamError) {
+            explanationErrors.value = { ...explanationErrors.value, [question.id]: streamError };
+        }
+    } catch {
+        explanationErrors.value = {
+            ...explanationErrors.value,
+            [question.id]: locale.value === 'en' ? 'Could not load the explanation.' : 'ব্যাখ্যাটি আনা যায়নি।',
+        };
+    } finally {
+        explanationLoading.value = { ...explanationLoading.value, [question.id]: false };
+    }
+}
 
 function isCorrect(q) {
     const given = exam.value.answers?.[q.id];
@@ -174,6 +253,41 @@ const scoreGrade = computed(() => {
                             <span class="font-bold text-[var(--text)]">{{ locale === 'en' ? 'Explanation:' : 'ব্যাখ্যা:' }}</span>
                             {{ q.explanation }}
                         </div>
+                    </div>
+
+                    <div v-if="q.book_ref" class="mt-4 flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
+                        <span class="font-semibold">{{ locale === 'en' ? 'Book reference:' : 'বইয়ের সূত্র:' }}</span>
+                        <Link
+                            v-if="q.book_ref.reader_url"
+                            :href="q.book_ref.reader_url"
+                            class="font-bold text-[var(--primary)] underline underline-offset-2"
+                        >
+                            {{ q.book_ref.chapter || (locale === 'en' ? 'Book' : 'বই') }}
+                            <span v-if="q.book_ref.page"> · {{ locale === 'en' ? 'Page' : 'পৃষ্ঠা' }} {{ q.book_ref.page }}</span>
+                        </Link>
+                        <span v-else>
+                            {{ q.book_ref.chapter || (locale === 'en' ? 'Book' : 'বই') }}
+                            <span v-if="q.book_ref.page"> · {{ locale === 'en' ? 'Page' : 'পৃষ্ঠা' }} {{ q.book_ref.page }}</span>
+                        </span>
+                    </div>
+
+                    <div v-if="canExplain" class="mt-4">
+                        <button
+                            type="button"
+                            class="btn btn-secondary rounded-xl px-3.5 py-2 text-xs font-bold"
+                            :disabled="explanationLoading[q.id]"
+                            @click="requestExplanation(q)"
+                        >
+                            {{ explanationLoading[q.id]
+                                ? (locale === 'en' ? 'Generating…' : 'ব্যাখ্যা তৈরি হচ্ছে…')
+                                : (locale === 'en' ? 'AI Explanation' : 'AI ব্যাখ্যা') }}
+                        </button>
+                        <p v-if="aiExplanations[q.id]" class="mt-3 whitespace-pre-line rounded-xl bg-[var(--surface2)] p-4 text-sm leading-relaxed text-[var(--text-muted)]">
+                            {{ aiExplanations[q.id] }}
+                        </p>
+                        <p v-if="explanationErrors[q.id]" class="mt-2 text-xs text-rose-600" role="alert">
+                            {{ explanationErrors[q.id] }}
+                        </p>
                     </div>
                 </div>
             </div>

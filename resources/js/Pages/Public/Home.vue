@@ -6,7 +6,7 @@ import SeoHead from '@/Components/Seo/SeoHead.vue';
 import { useI18n } from '@/i18n';
 
 const props = defineProps({ stats: Object, categories: Array, topCourses: Array, popularBooks: Array, latestBlogs: Array, plans: Array, testimonials: Array, seo: Object });
-const { locale } = useI18n();
+const { locale, money, n, digits } = useI18n();
 const en = computed(() => locale.value === 'en');
 
 const steps = computed(() => en.value ? [
@@ -55,18 +55,18 @@ const bookPalette = ['from-[#123858] to-[#0a0e18]', 'from-[#0e513d] to-[#0a0e18]
                     <div class="lg:col-span-7 flex flex-col items-start">
                         <div class="inline-flex items-center gap-2.5 rounded-full border border-white/5 bg-[#1c1f2a]/80 px-4 py-2 shadow-sm backdrop-blur">
                             <span class="relative flex h-2.5 w-2.5"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff7a00] opacity-60"></span><span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#ff7a00]"></span></span>
-                            <span class="font-mono text-[10px] md:text-[11px] font-semibold uppercase tracking-[.11em] text-[var(--primary)]">{{ en ? 'Learning tools for every next step' : 'আপনার শেখার প্রতিটি পরবর্তী ধাপে' }}</span>
-                            <span class="hidden sm:inline rounded bg-[#0a0e18] px-2 py-0.5 font-mono text-[9px] text-[var(--text-muted)]">SSC · HSC · MORE</span>
+                            <span class="font-mono text-[10px] md:text-[11px] font-semibold uppercase tracking-[.11em] text-[var(--primary)]">{{ en ? 'HSC · SSC · Admission · Job prep' : 'HSC · SSC · ভর্তি · চাকরির প্রস্তুতি' }}</span>
+                            <span class="hidden sm:inline rounded bg-[#0a0e18] px-2 py-0.5 font-mono text-[9px] text-[var(--text-muted)]">7-DAY FREE</span>
                         </div>
                         <h1 class="mt-6 font-heading text-[2.7rem] sm:text-5xl xl:text-[3.55rem] font-extrabold leading-[1.08] tracking-[-.04em]">
-                            {{ en ? 'Learn Anything.' : 'শিখুন যেকোনো কিছু।' }}<br>
-                            <span class="bg-gradient-to-r from-[#ff7a00] via-[#ffb690] to-[#00f2fe] bg-clip-text text-transparent">{{ en ? 'Grow Everywhere.' : 'এগিয়ে যান সবখানে।' }}</span>
+                            {{ en ? 'Ace your HSC.' : 'HSC-তে A+।' }}<br>
+                            <span class="bg-gradient-to-r from-[#ff7a00] via-[#ffb690] to-[#00f2fe] bg-clip-text text-transparent">{{ en ? 'Admission and job prep, sorted.' : 'ভর্তি আর চাকরির প্রস্তুতিও।' }}</span>
                         </h1>
-                        <p class="mt-5 max-w-2xl text-base md:text-lg leading-8 text-[var(--text-muted)]">{{ en ? 'Books, mentor-led courses, bilingual AI study tools, and focused practice come together in one learning space. Prepare for exams, build your skills, and keep learning at your own pace.' : 'বই, মেন্টর পরিচালিত কোর্স, দ্বিভাষিক AI স্টাডি টুল এবং মনোযোগী অনুশীলন—সব এক শেখার পরিবেশে। পরীক্ষার প্রস্তুতি নিন, দক্ষতা গড়ুন এবং নিজের গতিতে শিখে চলুন।' }}</p>
+                        <p class="mt-5 max-w-2xl text-base md:text-lg leading-8 text-[var(--text-muted)]">{{ en ? 'Board books, past-year questions, AI explanations, and model tests in one place. A complete Bangla-first platform for SSC, HSC, university admission, and job preparation — 7 days free, no card needed.' : 'বোর্ড বই, বিগত বছরের প্রশ্ন, AI ব্যাখ্যা আর মডেল টেস্ট—সব এক জায়গায়। SSC, HSC, বিশ্ববিদ্যালয় ভর্তি ও চাকরির প্রস্তুতির জন্য বাংলায় তৈরি পূর্ণাঙ্গ প্ল্যাটফর্ম। ৭ দিন ফ্রি, কার্ড লাগবে না।' }}</p>
                         <div class="mt-7 flex flex-wrap items-center gap-3">
-                            <Link href="/register" class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff7a00] to-[#f97316] px-6 py-3.5 text-sm font-bold text-white shadow-[0_10px_30px_rgba(249,115,22,.25)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_34px_rgba(249,115,22,.4)]">{{ en ? 'Start learning' : 'শেখা শুরু করুন' }} <span class="material-symbols-outlined">arrow_forward</span></Link>
-                            <a href="#courses" class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#262a35]/80 px-5 py-3.5 text-sm font-semibold text-[var(--text)] shadow-sm transition hover:bg-[#313540]">{{ en ? 'Explore courses' : 'কোর্স ঘুরে দেখুন' }}</a>
-                            <span class="inline-flex items-center gap-2 rounded-lg bg-[#171b26] px-3 py-2 text-xs text-[var(--text-muted)]"><span class="h-2 w-2 rounded-full bg-emerald-400"></span>{{ en ? 'Learn in English and Bangla' : 'বাংলা ও ইংরেজিতে শিখুন' }}</span>
+                            <Link href="/register" class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff7a00] to-[#f97316] px-6 py-3.5 text-sm font-bold text-white shadow-[0_10px_30px_rgba(249,115,22,.25)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_34px_rgba(249,115,22,.4)]">{{ en ? 'Start free for 7 days' : '৭ দিন ফ্রি শুরু করুন' }} <span class="material-symbols-outlined">arrow_forward</span></Link>
+                            <a href="#courses" class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#262a35]/80 px-5 py-3.5 text-sm font-semibold text-[var(--text)] shadow-sm transition hover:bg-[#313540]">{{ en ? 'See what you get' : 'কী কী পাবেন দেখুন' }}</a>
+                            <span class="inline-flex items-center gap-2 rounded-lg bg-[#171b26] px-3 py-2 text-xs text-[var(--text-muted)]"><span class="h-2 w-2 rounded-full bg-emerald-400"></span>{{ en ? 'No card needed to start' : 'শুরু করতে কার্ড লাগবে না' }}</span>
                         </div>
                         <div class="mt-9 grid w-full max-w-2xl grid-cols-2 sm:grid-cols-4 gap-3">
                             <div v-for="metric in [
@@ -75,7 +75,7 @@ const bookPalette = ['from-[#123858] to-[#0a0e18]', 'from-[#0e513d] to-[#0a0e18]
                                 [stats.students, en ? 'Learners' : 'শিক্ষার্থী', en ? 'Learning on Sikhun' : 'Sikhun-এ শিখছেন'],
                                 [stats.mentors, en ? 'Mentors' : 'মেন্টর', en ? 'Guidance and lessons' : 'পাঠ ও দিকনির্দেশনা'],
                             ]" :key="metric[1]" class="rounded-xl border border-white/5 bg-[#1c1f2a]/80 px-3.5 py-4 shadow-sm">
-                                <span class="font-heading text-2xl font-extrabold tracking-tight" :class="['text-[#ff9a52]','text-[#ffb690]','text-[#4cd7f6]','text-[#10b981]'][[en?'Courses':'কোর্স',en?'Digital books':'ডিজিটাল বই',en?'Learners':'শিক্ষার্থী',en?'Mentors':'মেন্টর'].indexOf(metric[1])]">{{ metric[0] }}</span>
+                                <span class="font-heading text-2xl font-extrabold tracking-tight" :class="['text-[#ff9a52]','text-[#ffb690]','text-[#4cd7f6]','text-[#10b981]'][[en?'Courses':'কোর্স',en?'Digital books':'ডিজিটাল বই',en?'Learners':'শিক্ষার্থী',en?'Mentors':'মেন্টর'].indexOf(metric[1])]">{{ n(metric[0]) }}</span>
                                 <span class="mt-1 block text-[10px] font-bold uppercase tracking-wider text-[var(--text)]">{{ metric[1] }}</span>
                                 <span class="mt-1 block text-[10px] leading-4 text-[var(--text-muted)]">{{ metric[2] }}</span>
                             </div>
@@ -134,7 +134,7 @@ const bookPalette = ['from-[#123858] to-[#0a0e18]', 'from-[#0e513d] to-[#0a0e18]
                         </div>
                         <div class="flex flex-1 flex-col justify-between gap-5 p-5">
                             <div><div class="mb-2 flex items-center gap-2 text-[10px] text-[var(--text-muted)]"><span class="material-symbols-outlined text-[#ff9a52]">person</span>{{ course.mentor?.name || (en ? 'Sikhun mentor' : 'Sikhun মেন্টর') }}</div><h3 class="line-clamp-2 text-lg font-bold leading-snug transition group-hover:text-[var(--primary)]">{{ course.title }}</h3><p v-if="course.description" class="mt-2 line-clamp-2 text-xs leading-relaxed text-[var(--text-muted)]">{{ course.description }}</p></div>
-                            <div class="flex items-center justify-between border-t border-white/[.06] pt-4"><span class="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)]"><span class="material-symbols-outlined">group</span>{{ course.enrollments_count || 0 }} {{ en ? 'learners' : 'জন শিক্ষার্থী' }}</span><span class="rounded-lg bg-[#262a35] px-3 py-2 text-xs font-bold transition group-hover:bg-[#f97316] group-hover:text-white">{{ en ? 'Explore course' : 'কোর্স দেখুন' }} <span aria-hidden="true">→</span></span></div>
+                            <div class="flex items-center justify-between border-t border-white/[.06] pt-4"><span class="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)]"><span class="material-symbols-outlined">group</span>{{ n(course.enrollments_count || 0) }} {{ en ? 'learners' : 'জন শিক্ষার্থী' }}</span><span class="rounded-lg bg-[#262a35] px-3 py-2 text-xs font-bold transition group-hover:bg-[#f97316] group-hover:text-white">{{ en ? 'Explore course' : 'কোর্স দেখুন' }} <span aria-hidden="true">→</span></span></div>
                         </div>
                     </Link>
                 </div>
@@ -211,7 +211,7 @@ const bookPalette = ['from-[#123858] to-[#0a0e18]', 'from-[#0e513d] to-[#0a0e18]
                             <p v-if="plan.description" class="mt-2 min-h-10 text-xs leading-relaxed text-[var(--text-muted)]">{{ plan.description }}</p>
                             <div class="my-5 flex flex-col">
                                 <div class="flex items-baseline gap-1">
-                                    <span class="font-heading text-4xl font-extrabold tracking-tight" :class="i === 1 ? 'text-[#ff9a52]' : ''">৳{{ plan.price_monthly }}</span>
+                                    <span class="font-heading text-4xl font-extrabold tracking-tight" :class="i === 1 ? 'text-[#ff9a52]' : ''">৳{{ money(plan.price_monthly) }}</span>
                                     <span class="text-sm text-[var(--text-muted)]">{{ en ? '/ month' : '/ মাস' }}</span>
                                 </div>
                                 <span class="text-[11px] font-medium text-emerald-400 mt-1">
@@ -221,7 +221,7 @@ const bookPalette = ['from-[#123858] to-[#0a0e18]', 'from-[#0e513d] to-[#0a0e18]
                             <div class="flex flex-col gap-3 text-xs text-[var(--text-muted)]">
                                 <div v-for="feature in (Array.isArray(plan.features) ? plan.features : [])" :key="feature" class="flex items-start gap-2.5">
                                     <span class="material-symbols-outlined !text-base text-[#10b981]">check_circle</span>
-                                    <span>{{ feature }}</span>
+                                    <span>{{ digits(feature) }}</span>
                                 </div>
                             </div>
                         </div>

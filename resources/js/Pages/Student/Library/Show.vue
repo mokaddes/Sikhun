@@ -30,7 +30,7 @@ const props = defineProps({
     seo: Object,
 });
 
-const { t, locale } = useI18n();
+const { t, locale, money } = useI18n();
 const page = usePage();
 const isLoggedIn = computed(() => !!page.props.auth?.student);
 const flashSuccess = computed(() => page.props.flash?.success);
@@ -213,13 +213,13 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
                                     </div>
                                     <div class="mt-1 font-heading text-3xl font-extrabold">
                                         <span v-if="book.is_free" class="text-emerald-500">{{ t('common.free') }}</span>
-                                        <span v-else>৳{{ book.price }}</span>
+                                        <span v-else>৳{{ money(book.price) }}</span>
                                     </div>
                                 </div>
 
                                 <div v-if="isLoggedIn && !book.is_free && !hasFullReadAccess" class="text-right text-xs text-[var(--text-muted)]">
                                     {{ locale === 'en' ? 'Your Wallet Balance:' : 'আপনার ওয়ালেট ব্যালেন্স:' }}
-                                    <strong class="ml-1 text-sm text-[var(--text)]">৳{{ walletBalance.toFixed(2) }}</strong>
+                                    <strong class="ml-1 text-sm text-[var(--text)]">৳{{ money(walletBalance, 2) }}</strong>
                                 </div>
                             </div>
 
@@ -245,7 +245,7 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
                                             class="inline-flex items-center gap-2 rounded-xl border border-[var(--primary)]/40 bg-[var(--primary)]/10 px-6 py-3.5 text-sm font-bold text-[var(--primary)] transition hover:bg-[var(--primary)]/20"
                                         >
                                             <ShoppingBagIcon class="h-5 w-5" />
-                                            <span>{{ locale === 'en' ? `Buy Book (৳${book.price})` : `বইটি কিনুন (৳${book.price})` }}</span>
+                                            <span>{{ locale === 'en' ? `Buy Book (৳${money(book.price)})` : `বইটি কিনুন (৳${money(book.price)})` }}</span>
                                         </button>
 
                                         <button
@@ -317,7 +317,7 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
                                         class="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-[var(--primary-hover)]"
                                     >
                                         <WalletIcon class="h-5 w-5" />
-                                        <span>{{ t('book_show.pay_with_wallet') }} (৳{{ book.price }})</span>
+                                        <span>{{ t('book_show.pay_with_wallet') }} (৳{{ money(book.price) }})</span>
                                     </button>
                                     <button
                                         type="button"
@@ -341,7 +341,7 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
                                             class="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-[var(--primary-hover)]"
                                         >
                                             <CreditCardIcon class="h-5 w-5" />
-                                            <span>{{ t('book_show.pay_with_gateway') }} (৳{{ book.price }})</span>
+                                            <span>{{ t('book_show.pay_with_gateway') }} (৳{{ money(book.price) }})</span>
                                         </button>
                                         <Link
                                             href="/wallet"
@@ -430,7 +430,7 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
                                     </div>
 
                                     <div v-else-if="chapter.purchasable" class="flex items-center gap-2">
-                                        <span class="text-sm font-bold text-[var(--text)]">৳{{ chapter.price }}</span>
+                                        <span class="text-sm font-bold text-[var(--text)]">৳{{ money(chapter.price) }}</span>
                                         <button
                                             type="button"
                                             @click="handlePurchaseChapter(chapter, 'wallet')"
@@ -490,7 +490,7 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
                             <h3 class="line-clamp-2 font-heading text-sm font-bold group-hover:text-[var(--primary)]">{{ rel.title }}</h3>
                             <p v-if="rel.author" class="mt-1 truncate text-xs text-[var(--text-muted)]">{{ rel.author.name }}</p>
                             <div class="mt-2 font-heading text-sm font-extrabold" :class="rel.is_free ? 'text-emerald-500' : ''">
-                                {{ rel.is_free ? t('common.free') : `৳${rel.price}` }}
+                                {{ rel.is_free ? t('common.free') : `৳${money(rel.price)}` }}
                             </div>
                         </div>
                     </Link>

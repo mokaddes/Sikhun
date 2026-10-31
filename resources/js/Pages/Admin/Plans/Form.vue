@@ -27,6 +27,7 @@ const form = useForm({
     ai_provider_id: props.plan?.ai_provider_id ?? null,
     ai_model: props.plan?.ai_model ?? '',
     is_active: props.plan?.is_active ?? true,
+    is_free: props.plan?.is_free ?? false,
 });
 
 let slugTouched = isEdit;
@@ -132,6 +133,7 @@ function submit() {
             </div>
 
             <label class="flex items-center gap-2 text-sm"><input v-model="form.is_active" type="checkbox" class="rounded" /> {{ t('common.active') }}</label>
+            <label class="flex items-center gap-2 text-sm"><input v-model="form.is_free" type="checkbox" class="rounded" /> {{ t('admin.plans.is_free') }}</label>
             <button type="submit" :disabled="form.processing" class="px-5 py-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-semibold disabled:opacity-60">
                 {{ form.processing ? t('common.saving') : t('common.save') }}
             </button>

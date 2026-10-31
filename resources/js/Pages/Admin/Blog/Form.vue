@@ -8,6 +8,7 @@ import { useI18n } from '@/i18n';
 const props = defineProps({
     post: Object,
     categories: Array,
+    tags: Array,
 });
 
 const { t } = useI18n();
@@ -17,6 +18,7 @@ const form = useForm({
     title: props.post?.title ?? '',
     slug: props.post?.slug ?? '',
     blog_category_id: props.post?.blog_category_id ?? '',
+    tags: props.post?.tags?.map((tag) => tag.id) ?? [],
     excerpt: props.post?.excerpt ?? '',
     content: props.post?.content ?? '',
     featured_image: null,
@@ -111,6 +113,18 @@ function submit() {
                         </select>
                     </div>
                 </div>
+
+                <fieldset v-if="tags?.length" class="space-y-2">
+                    <legend class="block text-sm font-medium mb-1.5">{{ t('admin.blog.tags') }}</legend>
+                    <p class="text-xs text-[var(--text-muted)]">{{ t('admin.blog.tags_help') }}</p>
+                    <div class="flex flex-wrap gap-2">
+                        <label v-for="tag in tags" :key="tag.id" class="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface2)] px-3 py-1.5 text-xs">
+                            <input v-model="form.tags" type="checkbox" :value="tag.id" class="rounded" />
+                            <span>{{ tag.name }}</span>
+                        </label>
+                    </div>
+                    <p v-if="form.errors.tags || form.errors['tags.0']" class="text-xs text-[var(--accent)]">{{ form.errors.tags || form.errors['tags.0'] }}</p>
+                </fieldset>
 
                 <div>
                     <label class="block text-sm font-medium mb-1.5">{{ t('admin.blog.excerpt') }}</label>

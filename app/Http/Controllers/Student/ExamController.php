@@ -5,15 +5,21 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\CreateExamRequest;
 use App\Http\Requests\Student\SubmitAnswerRequest;
+use App\Models\AiExplanation;
+use App\Models\BookChapter;
+use App\Models\BookChunk;
 use App\Models\ExamSession;
 use App\Models\LeaderboardEntry;
+use App\Services\Ai\AiProviderFactory;
 use App\Services\BookAccessService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExamController extends Controller
 {
@@ -55,22 +61,40 @@ class ExamController extends Controller
         ]);
     }
 
-    public function createForm(): Response
+    public function createForm(BookAccessService $access): Response
     {
         $student = auth('web')->user();
+        $books = \App\Models\Book::query()
+            ->where(function ($query) use ($student) {
+                $query->whereIn('id', $student->books()->select('books.id'))
+                    ->orWhereIn('id', $student->ownedChapters()->select('book_id'));
+            })
+            ->get(['id', 'title'])
+            ->map(function ($book) use ($student, $access) {
+                $accessibleIds = $access->accessibleChapterIds($student, $book) ?? [];
+                $book->setAttribute('chapters', $book->chapters()
+                    ->whereIn('id', $accessibleIds)
+                    ->get(['id', 'title', 'chapter_number']));
 
-        return Inertia::render('Student/Exams/Create', [
-            'books' => $student->books()->get(['books.id', 'books.title']),
-        ]);
+                return $book;
+            });
+
+        return Inertia::render('Student/Exams/Create', ['books' => $books]);
     }
 
     public function create(CreateExamRequest $request, BookAccessService $access): RedirectResponse
     {
         $student = auth('web')->user();
+        abort_unless($student->hasActiveAiExamAccess(), 403, 'Your AI exam quota is exhausted.');
 
+        $chapterIds = [];
         if ($request->source_type === 'book') {
             $book = \App\Models\Book::findOrFail($request->source_book_id);
-            abort_unless($access->hasAccess($student, $book), 403);
+            $accessibleIds = $access->accessibleChapterIds($student, $book);
+            abort_unless($accessibleIds !== null, 403);
+
+            $chapterIds = array_values(array_unique(array_map('intval', $request->input('chapter_ids', []))));
+            abort_if(array_diff($chapterIds, $accessibleIds), 403);
         }
 
         $session = $student->examSessions()->create([
@@ -84,6 +108,7 @@ class ExamController extends Controller
                 'count' => $request->count,
                 'duration' => $request->duration,
                 'mode' => $request->mode,
+                'chapter_ids' => $chapterIds,
             ],
             'mode' => $request->mode,
             'status' => 'generating',
@@ -167,12 +192,175 @@ class ExamController extends Controller
         return redirect()->route('exams.result', $exam);
     }
 
-    public function result(ExamSession $exam): Response
+    public function result(ExamSession $exam, BookAccessService $access): Response
     {
         $this->authorizeExam($exam);
         abort_unless($exam->status === 'completed', 404);
 
-        return Inertia::render('Student/Exams/Result', ['exam' => $exam]);
+        $book = $exam->book;
+        $questions = collect($exam->questions ?? [])->map(function (array $question) use ($book, $access) {
+            $bookRef = $question['book_ref'] ?? null;
+            $chunkId = filter_var($bookRef['chunk_id'] ?? null, FILTER_VALIDATE_INT);
+
+            if (! $book || ! is_array($bookRef) || $chunkId === false) {
+                return $question;
+            }
+
+            $chunk = $book->chunks()->with('chapter')->find($chunkId);
+            if (! $chunk) {
+                return $question;
+            }
+
+            $chapter = $chunk->chapter;
+            $page = $chunk->page_number;
+            $question['book_ref'] = [
+                'chunk_id' => $chunk->id,
+                'chapter_id' => $chunk->chapter_id,
+                'chapter' => $chapter?->title ?? ($bookRef['chapter'] ?? null),
+                'page' => $page,
+            ];
+
+            if ($page && $access->canAccessPage(auth('web')->user(), $book, (int) $page)) {
+                $question['book_ref']['reader_url'] = route('reader.show', [
+                    'book' => $book->id,
+                    'page' => $page,
+                ]);
+            } elseif (! $page && $chapter && $chapter->start_page
+                && $access->canAccessChapter(auth('web')->user(), $chapter)) {
+                $question['book_ref']['page'] = $chapter->start_page;
+                $question['book_ref']['reader_url'] = route('reader.show', [
+                    'book' => $book->id,
+                    'page' => $chapter->start_page,
+                ]);
+            }
+
+            return $question;
+        })->all();
+
+        return Inertia::render('Student/Exams/Result', [
+            'exam' => array_merge($exam->toArray(), ['questions' => $questions]),
+            'canExplain' => auth('web')->user()->canUseAiExplain(),
+        ]);
+    }
+
+    public function explanation(Request $request, ExamSession $exam, int $question, BookAccessService $access): StreamedResponse
+    {
+        $this->authorizeExam($exam);
+        abort_unless($exam->status === 'completed', 404);
+
+        $student = auth('web')->user();
+        abort_unless($student->canUseAiExplain(), 403, 'AI explanations require a paid plan.');
+
+        $item = collect($exam->questions ?? [])->first(
+            fn (array $item) => (string) ($item['id'] ?? '') === (string) $question
+        );
+        abort_unless($item, 404);
+
+        $studentAnswer = $exam->answers[$question] ?? $exam->answers[(string) $question] ?? null;
+        $correctAnswer = (string) ($item['correct_answer'] ?? '');
+        $sourceContext = trim((string) $exam->source_text);
+
+        if ($exam->source_type === 'book') {
+            $sourceContext = '';
+            $chunkId = filter_var($item['book_ref']['chunk_id'] ?? null, FILTER_VALIDATE_INT);
+            $chunk = $chunkId !== false
+                ? BookChunk::query()->where('book_id', $exam->source_book_id)->find($chunkId)
+                : null;
+
+            if ($chunk) {
+                if ($chunk->page_number) {
+                    abort_unless($access->canAccessPage($student, $exam->book, (int) $chunk->page_number), 403);
+                } elseif ($chunk->chapter_id) {
+                    $chapter = BookChapter::query()
+                        ->where('book_id', $exam->source_book_id)
+                        ->find($chunk->chapter_id);
+                    abort_unless($chapter && $access->canAccessChapter($student, $chapter), 403);
+                }
+
+                $chapterName = $chunk->chapter?->title;
+                $sourceContext = '[Book: '.($exam->book?->title ?? 'Source book')
+                    .($chapterName ? ' | Chapter: '.$chapterName : '')
+                    .($chunk->page_number ? ' | Page: '.$chunk->page_number : '')
+                    ."]\n".mb_substr(trim((string) $chunk->content), 0, 6000);
+            }
+        } else {
+            $sourceContext = mb_substr($sourceContext, 0, 6000);
+        }
+
+        $sourceHash = hash('sha256', $sourceContext);
+        $cacheKey = hash('sha256', json_encode([
+            'question' => (string) ($item['question'] ?? ''),
+            'correct_answer' => $correctAnswer,
+            'student_answer' => $studentAnswer,
+            'source_hash' => $sourceHash,
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        $cached = AiExplanation::query()
+            ->where('cache_key', $cacheKey)
+            ->where('created_at', '>=', now()->subDay())
+            ->value('explanation');
+
+        return response()->stream(function () use ($cached, $cacheKey, $sourceHash, $item, $correctAnswer, $studentAnswer, $sourceContext, $student) {
+            $send = static function (array $event): void {
+                echo 'data: '.json_encode($event, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\n";
+                if (ob_get_level() > 0) {
+                    @ob_flush();
+                }
+                flush();
+            };
+
+            if ($cached !== null) {
+                $send(['content' => $cached, 'done' => true]);
+
+                return;
+            }
+
+            $answerLabel = $studentAnswer === null || $studentAnswer === ''
+                ? 'No answer provided'
+                : (string) $studentAnswer;
+            $messages = [
+                ['role' => 'system', 'content' => 'You are a clear, supportive exam tutor. Explain why the correct answer is right, assess the student answer as correct or incorrect, and address a likely misconception when useful. Use the supplied source as evidence and do not invent citations. Reply in the language used by the question.'],
+                ['role' => 'user', 'content' => "Question:\n".($item['question'] ?? '')."\n\nStudent answer:\n{$answerLabel}\n\nCorrect answer:\n{$correctAnswer}\n\nSource material:\n".($sourceContext !== '' ? $sourceContext : 'No source excerpt is available.')],
+            ];
+
+            $explanation = '';
+            try {
+                $provider = AiProviderFactory::default('exam_gen', [
+                    'student' => $student,
+                    'student_id' => $student->id,
+                ]);
+
+                foreach ($provider->stream($messages, ['temperature' => 0.3, 'max_tokens' => 800]) as $chunk) {
+                    $explanation .= $chunk;
+                    $send(['content' => $chunk, 'done' => false]);
+                }
+
+                if (trim($explanation) === '') {
+                    $send(['error' => 'AI explanation is temporarily unavailable.', 'done' => true]);
+
+                    return;
+                }
+
+                AiExplanation::query()->updateOrCreate(
+                    ['cache_key' => $cacheKey],
+                    [
+                        'question' => (string) ($item['question'] ?? ''),
+                        'correct_answer' => $correctAnswer,
+                        'student_answer' => $studentAnswer,
+                        'source_hash' => $sourceHash,
+                        'explanation' => $explanation,
+                        'created_at' => now(),
+                    ]
+                );
+                $send(['content' => '', 'done' => true]);
+            } catch (\Throwable $exception) {
+                report($exception);
+                $send(['error' => 'AI explanation is temporarily unavailable.', 'done' => true]);
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+        ]);
     }
 
     public function pdf(ExamSession $exam)

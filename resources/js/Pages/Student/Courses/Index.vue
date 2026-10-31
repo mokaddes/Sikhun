@@ -24,7 +24,7 @@ const props = defineProps({
     filters: { type: Object, default: () => ({}) },
 });
 
-const { t, locale } = useI18n();
+const { t, locale, money } = useI18n();
 
 const search = ref(props.filters.search ?? '');
 const level = ref(props.filters.level ?? '');
@@ -359,7 +359,7 @@ function formatLevel(lvl) {
                                     <div class="flex items-center justify-between">
                                         <div class="font-heading text-lg font-extrabold">
                                             <span v-if="+course.price === 0" class="text-emerald-500">{{ t('common.free') }}</span>
-                                            <span v-else>৳{{ course.price }}</span>
+                                            <span v-else>৳{{ money(course.price) }}</span>
                                         </div>
 
                                         <span class="inline-flex items-center gap-1 rounded-xl bg-[var(--primary)]/10 px-3 py-1.5 text-xs font-bold text-[var(--primary)] transition group-hover:bg-[var(--primary)] group-hover:text-white">

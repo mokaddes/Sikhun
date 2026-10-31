@@ -212,6 +212,54 @@ class ChapterAccessTest extends TestCase
         $this->assertStringContainsString('Newton', $chunks[0]['content']);
     }
 
+    public function test_exam_coverage_samples_across_accessible_chapters_with_provenance(): void
+    {
+        $book = $this->makeBookWithChapters(['chapter one seed', 'chapter two seed']);
+        $student = $this->student();
+        $student->bookShelf()->create(['book_id' => $book->id, 'source' => 'purchased']);
+
+        foreach ($book->chapters as $chapterOffset => $chapter) {
+            for ($i = 0; $i < 8; $i++) {
+                $book->chunks()->create([
+                    'chapter_id' => $chapter->id,
+                    'chunk_index' => 10 + ($chapterOffset * 8) + $i,
+                    'page_number' => 20 + $chapterOffset,
+                    'content' => "Chapter {$chapterOffset} body {$i}",
+                ]);
+            }
+        }
+
+        $chunks = $this->retrievalWithMockedEmbeddings()->coverageChunks($book, $student, [], 6);
+
+        $this->assertCount(6, $chunks);
+        $this->assertSame(3, collect($chunks)->where('chapter_id', $book->chapters[0]->id)->count());
+        $this->assertSame(3, collect($chunks)->where('chapter_id', $book->chapters[1]->id)->count());
+        $this->assertSame('Chapter 1', $chunks[0]['chapter']);
+        $this->assertSame(1, $chunks[0]['page']);
+        $this->assertArrayHasKey('chunk_id', $chunks[0]);
+    }
+
+    public function test_exam_coverage_never_includes_unowned_chapters_or_selected_ids(): void
+    {
+        $book = $this->makeBookWithChapters(['owned text', 'private text']);
+        $student = $this->student();
+        $student->ownedChapters()->create([
+            'book_id' => $book->id,
+            'chapter_id' => $book->chapters[0]->id,
+            'source' => 'purchased',
+            'price' => 50,
+            'purchased_at' => now(),
+        ]);
+
+        $retrieval = $this->retrievalWithMockedEmbeddings();
+        $wholeAccessibleBook = $retrieval->coverageChunks($book, $student);
+        $unauthorizedSelection = $retrieval->coverageChunks($book, $student, [$book->chapters[1]->id]);
+
+        $this->assertCount(1, $wholeAccessibleBook);
+        $this->assertSame($book->chapters[0]->id, $wholeAccessibleBook[0]['chapter_id']);
+        $this->assertSame([], $unauthorizedSelection);
+    }
+
     public function test_rag_returns_nothing_for_non_owner(): void
     {
         $book = $this->makeBookWithChapters(['gravity text', 'thermodynamics text']);

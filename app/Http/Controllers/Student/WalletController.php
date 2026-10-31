@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\RechargeRequest;
+use App\Models\Book;
+use App\Models\Course;
 use App\Models\Order;
 use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
@@ -51,8 +53,18 @@ class WalletController extends Controller
      */
     public function gatewaySuccess(Request $request, PurchaseService $purchases, ZinipayService $zinipay): RedirectResponse
     {
-        $order = Order::where('order_number', $request->input('order_number'))
-            ->orWhere('gateway_invoice_id', $request->input('invoice_id'))
+        $orderNumber = $request->input('order_number');
+        $invoiceId = $request->input('invoice_id');
+
+        // Never run a where() with a null value: `gateway_invoice_id = null`
+        // would match the first pending order that has no invoice yet.
+        if (! $orderNumber && ! $invoiceId) {
+            return redirect()->route('home')->with('error', 'Payment could not be verified.');
+        }
+
+        $order = Order::query()
+            ->when($orderNumber, fn ($query) => $query->where('order_number', $orderNumber))
+            ->when($invoiceId, fn ($query) => $query->where('gateway_invoice_id', $invoiceId))
             ->first();
 
         if (! $order || ! $order->gateway_invoice_id) {
@@ -90,15 +102,40 @@ class WalletController extends Controller
 
     private function redirectAfterGateway(?Order $order, string $flashKey, string $message): RedirectResponse
     {
-        if ($order && $order->orderable_type === 'course') {
-            $course = \App\Models\Course::find($order->orderable_id);
-            if ($course) {
-                return redirect()->route('courses.show', $course->slug)->with($flashKey, $message);
+        if ($order) {
+            // Send the student back to the thing they actually bought.
+            // Previously every non-course order landed on the wallet page,
+            // which made a successful book purchase look like a wallet top-up.
+            if ($order->orderable_type === 'course') {
+                $course = Course::find($order->orderable_id);
+                if ($course) {
+                    return redirect()->route('courses.show', $course->slug)->with($flashKey, $message);
+                }
+            }
+
+            if (in_array($order->orderable_type, ['book', 'book_chapter'], true)) {
+                $bookId = $order->orderable_type === 'book'
+                    ? $order->orderable_id
+                    : ($order->meta['book_id'] ?? null);
+
+                $book = $bookId ? Book::find($bookId) : null;
+
+                if ($book) {
+                    return redirect()->route('library.show', $book->slug)->with($flashKey, $message);
+                }
+            }
+
+            if ($order->orderable_type === 'subscription') {
+                return redirect()->route('dashboard')->with($flashKey, $message);
+            }
+
+            if ($order->orderable_type === 'wallet_recharge' && auth('web')->check()) {
+                return redirect()->route('wallet.index')->with($flashKey, $message);
             }
         }
 
         if (auth('web')->check()) {
-            return redirect()->route('wallet.index')->with($flashKey, $message);
+            return redirect()->route('dashboard')->with($flashKey, $message);
         }
 
         return redirect()->route('courses.index')->with($flashKey, $message);

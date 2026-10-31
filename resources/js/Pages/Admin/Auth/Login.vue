@@ -1,5 +1,5 @@
 <script setup>
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import BrandLogo from '@/Components/BrandLogo.vue';
 
 const form = useForm({ email: '', password: '' });
@@ -21,14 +21,17 @@ function submit() {
 
             <form @submit.prevent="submit" class="space-y-5 bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-8 shadow-[var(--shadow-lg)]">
                 <div>
-                    <label class="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">Email</label>
-                    <input v-model="form.email" type="email" required autofocus class="input" />
+                    <label for="admin-email" class="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">Email</label>
+                    <input id="admin-email" name="email" v-model="form.email" type="email" required autofocus autocomplete="username" class="input" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">Password</label>
-                    <input v-model="form.password" type="password" required class="input" />
+                    <label for="admin-password" class="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">Password</label>
+                    <input id="admin-password" name="password" v-model="form.password" type="password" required autocomplete="current-password" class="input" />
                 </div>
                 <p v-if="form.errors.email" class="text-[var(--accent)] text-sm">{{ form.errors.email }}</p>
+                <div class="-mt-2 text-right">
+                    <Link href="/admin/forgot-password" class="text-xs font-medium text-[var(--primary)] hover:underline">Forgot password?</Link>
+                </div>
                 <button type="submit" :disabled="form.processing" class="btn btn-primary w-full py-3">
                     {{ form.processing ? 'Signing in...' : 'Sign In' }}
                 </button>

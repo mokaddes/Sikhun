@@ -2,25 +2,31 @@
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
 use App\Services\AccessGrantService;
+use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\URL;
 use Laravel\Sanctum\HasApiTokens;
 
-class Student extends Authenticatable
+class Student extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, Notifiable;
+    use HasApiTokens, MustVerifyEmailTrait, Notifiable;
 
     protected $guard = 'web';
 
     protected $fillable = [
-        'name', 'email', 'password', 'type', 'status', 'trial_ends_at',
+        'name', 'email', 'phone_hash', 'password', 'type', 'status', 'trial_ends_at',
         'wallet_balance', 'ai_trial_minutes_used', 'ai_trial_vision_used',
         'trial_reuploads_count', 'trial_reuploads_month', 'referral_code',
         'referred_by_student_id', 'avatar', 'theme_mode', 'leaderboard_opt_out',
+        'onboarding_progress', 'onboarding_completed_at', 'first_ai_chat_at', 'activated_at',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = ['password', 'remember_token', 'phone_hash'];
 
     protected function casts(): array
     {
@@ -34,6 +40,10 @@ class Student extends Authenticatable
             'trial_reuploads_count' => 'integer',
             'referred_by_student_id' => 'integer',
             'leaderboard_opt_out' => 'boolean',
+            'onboarding_progress' => 'array',
+            'onboarding_completed_at' => 'datetime',
+            'first_ai_chat_at' => 'datetime',
+            'activated_at' => 'datetime',
         ];
     }
 
@@ -68,16 +78,87 @@ class Student extends Authenticatable
 
         $sub = $this->activeSubscription;
         if ($sub && $sub->expires_at->isFuture()) {
-            return true;
+            return $sub->plan->is_free
+                ? $sub->ai_chat_minutes_remaining > 0 || $sub->ai_exam_count_remaining > 0
+                : true;
         }
 
         if ($this->isInTrial()) {
             return true;
         }
 
+        if (Plan::where('is_free', true)->exists()) {
+            return false;
+        }
+
         $trialLimit = Plan::where('is_active', true)->max('trial_ai_minutes') ?: 10;
 
         return $this->ai_trial_minutes_used < $trialLimit;
+    }
+
+    public function hasActiveAiChatAccess(): bool
+    {
+        if (app(AccessGrantService::class)->hasActiveAccess($this)) {
+            return true;
+        }
+
+        $sub = $this->activeSubscription;
+        if ($sub && $sub->expires_at->isFuture()) {
+            return $sub->plan->is_free
+                ? $sub->ai_chat_minutes_remaining > 0
+                : true;
+        }
+
+        return $this->isInTrial() || ! Plan::where('is_free', true)->exists()
+            && $this->hasActiveAiAccess();
+    }
+
+    public function hasActiveAiExamAccess(): bool
+    {
+        if (app(AccessGrantService::class)->hasActiveAccess($this)) {
+            return true;
+        }
+
+        $sub = $this->activeSubscription;
+        if ($sub && $sub->expires_at->isFuture()) {
+            return $sub->plan->is_free
+                ? $sub->ai_exam_count_remaining > 0
+                : true;
+        }
+
+        return $this->isInTrial() || ! Plan::where('is_free', true)->exists()
+            && $this->hasActiveAiAccess();
+    }
+
+    public function canUseAiExplain(): bool
+    {
+        $subscription = $this->activeSubscription;
+
+        return $subscription !== null
+            && $subscription->expires_at?->isFuture()
+            && $subscription->plan !== null
+            && ! $subscription->plan->is_free;
+    }
+
+    public function recordSuccessfulAiChat(): void
+    {
+        $progress = $this->onboarding_progress ?? [];
+        $completedSteps = $progress['completed_steps'] ?? [];
+        $completedSteps[] = 4;
+        $progress['completed_steps'] = array_values(array_unique(array_map('intval', $completedSteps)));
+        $progress['first_question_completed'] = true;
+        $this->onboarding_progress = $progress;
+        $this->first_ai_chat_at ??= now();
+
+        if ($this->created_at && $this->first_ai_chat_at->lessThanOrEqualTo($this->created_at->copy()->addHours(24))) {
+            $this->activated_at ??= $this->first_ai_chat_at;
+        }
+
+        if (count(array_intersect([1, 2, 3, 4], $progress['completed_steps'])) === 4) {
+            $this->onboarding_completed_at ??= now();
+        }
+
+        $this->save();
     }
 
     public function isInTrial(): bool
@@ -194,5 +275,24 @@ class Student extends Authenticatable
         }
 
         $this->increment('ai_trial_vision_used');
+    }
+
+    /**
+     * Overrides the default Laravel mail so verification copy follows the
+     * student's locale and the link points at Sikhun's own verify route.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification(
+            URL::temporarySignedRoute('verification.verify', now()->addMinutes(60), [
+                'id' => $this->getKey(),
+                'hash' => sha1($this->getEmailForVerification()),
+            ])
+        ));
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token, $this->getEmailForVerification()));
     }
 }

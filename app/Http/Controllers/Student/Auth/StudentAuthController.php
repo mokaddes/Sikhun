@@ -7,6 +7,7 @@ use App\Http\Requests\Student\LoginRequest;
 use App\Http\Requests\Student\RegisterRequest;
 use App\Mail\WelcomeMail;
 use App\Models\Student;
+use App\Services\ReferralService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -44,16 +45,20 @@ class StudentAuthController extends Controller
             return $student;
         });
 
+        app(ReferralService::class)->recordRegistration($student, $request);
+
         Auth::guard('web')->login($student);
         $request->session()->regenerate();
 
         try {
             Mail::to($student->email)->send(new WelcomeMail($student));
+            $student->sendEmailVerificationNotification();
         } catch (\Throwable) {
-            // Do not block registration if mail transport is not configured
+            // Do not block registration if mail transport is not configured.
+            // The student can request a new verification link from the banner.
         }
 
-        return redirect()->intended(route('dashboard'))->with('success', 'Welcome to Sikhun.com!');
+        return redirect()->intended(route('onboarding.show'))->with('success', 'Welcome to Sikhun.com!');
     }
 
     public function showLogin(\Illuminate\Http\Request $request): Response

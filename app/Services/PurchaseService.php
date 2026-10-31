@@ -11,6 +11,7 @@ use App\Models\Plan;
 use App\Models\Student;
 use App\Services\Payment\PaymentGatewayContract;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
@@ -28,6 +29,7 @@ class PurchaseService
         private ReferralService $referrals,
         private BookAccessService $access,
         private CourseDeliveryService $courseDelivery,
+        private InvoiceService $invoices,
     ) {}
 
     /**
@@ -206,6 +208,18 @@ class PurchaseService
         if ($order->orderable_type !== 'wallet_recharge') {
             $this->referrals->rewardIfEligible($order->student);
             Mail::to($order->student->email)->send(new OrderConfirmationMail($order));
+        }
+
+        // Invoicing must never break fulfilment: a mail/DB hiccup while
+        // writing the receipt is logged, not surfaced to the buyer.
+        try {
+            $this->invoices->createForOrder($order->refresh());
+        } catch (\Throwable $e) {
+            Log::error('Invoice creation failed', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

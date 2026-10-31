@@ -8,6 +8,7 @@ use App\Models\BlogBlocklist;
 use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use App\Models\BlogSource;
+use App\Models\BlogTag;
 use App\Services\Blog\BlogBlockService;
 use App\Services\Blog\BlogDeduplicator;
 use Illuminate\Http\RedirectResponse;
@@ -72,12 +73,14 @@ class BlogPostController extends Controller
         return Inertia::render('Admin/Blog/Form', [
             'post' => null,
             'categories' => BlogCategory::orderBy('sort_order')->orderBy('name_bn')->get(['id', 'name_bn', 'name_en']),
+            'tags' => BlogTag::orderBy('name_bn')->get(['id', 'name_bn', 'name_en', 'slug']),
         ]);
     }
 
     public function store(BlogPostRequest $request): RedirectResponse
     {
-        $data = $request->safe()->except(['featured_image', 'remove_featured_image']);
+        $data = $request->safe()->except(['featured_image', 'remove_featured_image', 'tags']);
+        $tagIds = $request->validated('tags', []) ?? [];
 
         if ($request->hasFile('featured_image')) {
             $data['featured_image'] = $request->file('featured_image')->store('blog/covers', 'public');
@@ -96,7 +99,8 @@ class BlogPostController extends Controller
             $data['published_at'] = now();
         }
 
-        BlogPost::create($data);
+        $post = BlogPost::create($data);
+        $post->tags()->sync($tagIds);
 
         return redirect()->route('admin.blog.index')->with('success', 'Blog post created.');
     }
@@ -104,14 +108,16 @@ class BlogPostController extends Controller
     public function edit(BlogPost $blog): Response
     {
         return Inertia::render('Admin/Blog/Form', [
-            'post' => $blog->load(['source:id,name']),
+            'post' => $blog->load(['source:id,name', 'tags:id,name_bn,name_en,slug']),
             'categories' => BlogCategory::orderBy('sort_order')->orderBy('name_bn')->get(['id', 'name_bn', 'name_en']),
+            'tags' => BlogTag::orderBy('name_bn')->get(['id', 'name_bn', 'name_en', 'slug']),
         ]);
     }
 
     public function update(BlogPostRequest $request, BlogPost $blog): RedirectResponse
     {
-        $data = $request->safe()->except(['featured_image', 'remove_featured_image']);
+        $data = $request->safe()->except(['featured_image', 'remove_featured_image', 'tags']);
+        $tagIds = $request->validated('tags', []) ?? [];
 
         if ($request->boolean('remove_featured_image') && $blog->featured_image) {
             Storage::disk('public')->delete($blog->featured_image);
@@ -134,6 +140,7 @@ class BlogPostController extends Controller
         }
 
         $blog->update($data);
+        $blog->tags()->sync($tagIds);
 
         return redirect()->route('admin.blog.index')->with('success', 'Blog post updated.');
     }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AiLogController;
 use App\Http\Controllers\Admin\AiProviderController;
 use App\Http\Controllers\Admin\Auth\AdminAuthController;
+use App\Http\Controllers\Admin\Auth\AdminPasswordResetController;
 use App\Http\Controllers\Admin\AuthorController;
 use App\Http\Controllers\Admin\BlogBlocklistController;
 use App\Http\Controllers\Admin\BlogCategoryController;
@@ -43,6 +44,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware('guest:admin')->group(function () {
         Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
         Route::post('/login', [AdminAuthController::class, 'login']);
+
+        // Admin password reset uses the separate `admins` broker and table.
+        Route::get('/forgot-password', [AdminPasswordResetController::class, 'showRequestForm'])->name('password.request');
+        Route::post('/forgot-password', [AdminPasswordResetController::class, 'sendResetLink'])
+            ->middleware('throttle:auth')->name('password.email');
+        Route::get('/reset-password/{token}', [AdminPasswordResetController::class, 'showResetForm'])->name('password.reset');
+        Route::post('/reset-password', [AdminPasswordResetController::class, 'reset'])
+            ->middleware('throttle:auth')->name('password.store');
     });
 
     Route::middleware('auth:admin')->group(function () {

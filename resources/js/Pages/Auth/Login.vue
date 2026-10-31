@@ -40,6 +40,12 @@ function submit() {
 
                 <p v-if="form.errors.email" class="text-[var(--accent)] text-sm">{{ form.errors.email }}</p>
 
+                <div class="-mt-2 text-right">
+                    <Link href="/forgot-password" class="text-xs font-medium text-[var(--primary)] hover:underline">
+                        {{ t('auth.forgot_password') }}
+                    </Link>
+                </div>
+
                 <label class="flex items-center gap-2 text-sm text-[var(--text-muted)]">
                     <input v-model="form.remember" type="checkbox" class="rounded" />
                     {{ t('auth.remember_me') }}

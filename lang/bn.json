@@ -97,7 +97,22 @@
         "sign_in": "লগইন করুন",
         "sign_up": "রেজিস্ট্রেশন করুন",
         "submitting": "অপেক্ষা করুন...",
-        "welcome_flash": "Sikhun.com-এ স্বাগতম!"
+        "welcome_flash": "Sikhun.com-এ স্বাগতম!",
+        "forgot_password": "পাসওয়ার্ড ভুলে গেছেন?",
+        "forgot_title": "পাসওয়ার্ড রিসেট",
+        "forgot_subtitle": "আপনার অ্যাকাউন্টের ইমেইল দিন — একটি রিসেট লিংক পাঠাব।",
+        "send_reset_link": "রিসেট লিংক পাঠান",
+        "back_to_login": "লগইনে ফিরুন",
+        "reset_title": "নতুন পাসওয়ার্ড দিন",
+        "reset_subtitle": "কমপক্ষে ৮ অক্ষরের একটি শক্ত পাসওয়ার্ড দিন।",
+        "new_password": "নতুন পাসওয়ার্ড",
+        "reset_password": "পাসওয়ার্ড বদলান",
+        "verify_title": "ইমেইল যাচাই করুন",
+        "verify_subtitle": "আমরা আপনার ইমেইলে একটি যাচাই লিংক পাঠিয়েছি। লিংকে ক্লিক করলেই অ্যাকাউন্ট নিরাপদ হবে।",
+        "resend_verification": "আবার লিংক পাঠান",
+        "skip_for_now": "পরে করব, ড্যাশবোর্ডে যাই",
+        "email_unverified_banner": "আপনার ইমেইল এখনো যাচাই করা হয়নি।",
+        "verify_now": "যাচাই করুন"
     },
     "home": {
         "eyebrow": "HSC · SSC · বিশ্ববিদ্যালয় · চাকরির প্রস্তুতি",

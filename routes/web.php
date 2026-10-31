@@ -4,6 +4,8 @@ use App\Http\Controllers\Public\BlogController;
 use App\Http\Controllers\Public\PageController;
 use App\Http\Controllers\Student\AccessController;
 use App\Http\Controllers\Student\AiChatController;
+use App\Http\Controllers\Student\Auth\EmailVerificationController;
+use App\Http\Controllers\Student\Auth\PasswordResetController;
 use App\Http\Controllers\Student\Auth\StudentAuthController;
 use App\Http\Controllers\Student\BookshelfController;
 use App\Http\Controllers\Student\CourseController;
@@ -78,6 +80,30 @@ Route::middleware('guest:web')->group(function () {
     Route::post('/register', [StudentAuthController::class, 'register'])->middleware('throttle:register');
     Route::get('/login', [StudentAuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [StudentAuthController::class, 'login'])->middleware('throttle:auth');
+
+    // Password reset (email link). Always rate-limited so the endpoint
+    // cannot be used to spam a student's inbox or enumerate accounts.
+    Route::get('/forgot-password', [PasswordResetController::class, 'showRequestForm'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])
+        ->middleware('throttle:auth')->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])
+        ->middleware('throttle:auth')->name('password.store');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Email verification (web guard)
+|--------------------------------------------------------------------------
+| Deliberately outside the student.active group: a deactivated account must
+| still be able to verify, and the signed link may land after a logout.
+*/
+Route::middleware('auth:web')->group(function () {
+    Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+    Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
+        ->middleware('throttle:6,1')->name('verification.send');
 });
 
 /*

@@ -2,14 +2,19 @@
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
 use App\Services\AccessGrantService;
+use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\URL;
 use Laravel\Sanctum\HasApiTokens;
 
-class Student extends Authenticatable
+class Student extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, Notifiable;
+    use HasApiTokens, MustVerifyEmailTrait, Notifiable;
 
     protected $guard = 'web';
 
@@ -194,5 +199,24 @@ class Student extends Authenticatable
         }
 
         $this->increment('ai_trial_vision_used');
+    }
+
+    /**
+     * Overrides the default Laravel mail so verification copy follows the
+     * student's locale and the link points at Sikhun's own verify route.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification(
+            URL::temporarySignedRoute('verification.verify', now()->addMinutes(60), [
+                'id' => $this->getKey(),
+                'hash' => sha1($this->getEmailForVerification()),
+            ])
+        ));
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token, $this->getEmailForVerification()));
     }
 }

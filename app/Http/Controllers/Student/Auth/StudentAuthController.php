@@ -49,8 +49,10 @@ class StudentAuthController extends Controller
 
         try {
             Mail::to($student->email)->send(new WelcomeMail($student));
+            $student->sendEmailVerificationNotification();
         } catch (\Throwable) {
-            // Do not block registration if mail transport is not configured
+            // Do not block registration if mail transport is not configured.
+            // The student can request a new verification link from the banner.
         }
 
         return redirect()->intended(route('dashboard'))->with('success', 'Welcome to Sikhun.com!');

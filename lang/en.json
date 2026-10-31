@@ -97,7 +97,22 @@
         "sign_in": "Sign in",
         "sign_up": "Sign up",
         "submitting": "Please wait...",
-        "welcome_flash": "Welcome to Sikhun.com!"
+        "welcome_flash": "Welcome to Sikhun.com!",
+        "forgot_password": "Forgot your password?",
+        "forgot_title": "Reset your password",
+        "forgot_subtitle": "Enter the email on your account and we'll send a reset link.",
+        "send_reset_link": "Send reset link",
+        "back_to_login": "Back to sign in",
+        "reset_title": "Choose a new password",
+        "reset_subtitle": "Use a strong password of at least 8 characters.",
+        "new_password": "New password",
+        "reset_password": "Update password",
+        "verify_title": "Verify your email",
+        "verify_subtitle": "We sent a verification link to your email. Click it to secure your account.",
+        "resend_verification": "Resend link",
+        "skip_for_now": "Skip for now, go to dashboard",
+        "email_unverified_banner": "Your email is not verified yet.",
+        "verify_now": "Verify now"
     },
     "home": {
         "eyebrow": "HSC · SSC · University · Job Preparation",

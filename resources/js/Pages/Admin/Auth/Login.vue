@@ -1,5 +1,5 @@
 <script setup>
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import BrandLogo from '@/Components/BrandLogo.vue';
 
 const form = useForm({ email: '', password: '' });
@@ -29,6 +29,9 @@ function submit() {
                     <input id="admin-password" name="password" v-model="form.password" type="password" required autocomplete="current-password" class="input" />
                 </div>
                 <p v-if="form.errors.email" class="text-[var(--accent)] text-sm">{{ form.errors.email }}</p>
+                <div class="-mt-2 text-right">
+                    <Link href="/admin/forgot-password" class="text-xs font-medium text-[var(--primary)] hover:underline">Forgot password?</Link>
+                </div>
                 <button type="submit" :disabled="form.processing" class="btn btn-primary w-full py-3">
                     {{ form.processing ? 'Signing in...' : 'Sign In' }}
                 </button>

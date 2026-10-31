@@ -30,6 +30,7 @@ import {
     ChevronDoubleLeftIcon,
     MagnifyingGlassIcon,
     BellIcon,
+    EnvelopeIcon,
 } from '@heroicons/vue/24/outline';
 
 const theme = useThemeStore();
@@ -351,6 +352,25 @@ function logout() {
                     </div>
                     <Link href="/plans" class="btn btn-sm btn-primary rounded-xl font-bold shadow-sm">
                         {{ locale === 'en' ? 'Choose a Plan →' : 'প্ল্যান বেছে নিন →' }}
+                    </Link>
+                </div>
+
+                <!-- Email verification nudge. Non-blocking by design: students
+                     can keep learning, but password reset and receipts work best
+                     with a confirmed address. -->
+                <div
+                    v-if="student && student.email_verified === false"
+                    class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-xs text-sky-800 shadow-sm dark:text-sky-300"
+                >
+                    <div class="flex items-center gap-2.5">
+                        <EnvelopeIcon class="h-4 w-4 shrink-0 text-sky-500" />
+                        <span>
+                            {{ t('auth.email_unverified_banner') }}
+                            {{ locale === 'en' ? 'Verify it so password resets and receipts reach you.' : 'পাসওয়ার্ড রিসেট ও রিসিট নিরাপদে পেতে যাচাই করুন।' }}
+                        </span>
+                    </div>
+                    <Link href="/email/verify" class="rounded-xl border border-sky-500/40 px-3 py-1.5 font-bold transition hover:bg-sky-500/10">
+                        {{ t('auth.verify_now') }}
                     </Link>
                 </div>
 

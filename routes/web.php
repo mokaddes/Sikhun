@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Public\BlogController;
 use App\Http\Controllers\Public\PageController;
+use App\Http\Controllers\Public\ReferralController as PublicReferralController;
 use App\Http\Controllers\Student\AccessController;
 use App\Http\Controllers\Student\AiChatController;
 use App\Http\Controllers\Student\Auth\EmailVerificationController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Student\Auth\StudentAuthController;
 use App\Http\Controllers\Student\BookshelfController;
 use App\Http\Controllers\Student\CourseController;
 use App\Http\Controllers\Student\DashboardController;
+use App\Http\Controllers\Student\FeedbackController as StudentFeedbackController;
 use App\Http\Controllers\Student\EssayController;
 use App\Http\Controllers\Student\ExamController;
 use App\Http\Controllers\Student\FlashcardController;
@@ -17,12 +19,14 @@ use App\Http\Controllers\Student\LeaderboardController;
 use App\Http\Controllers\Student\LibraryController;
 use App\Http\Controllers\Student\MyBookController;
 use App\Http\Controllers\Student\MyBookReaderController;
+use App\Http\Controllers\Student\OnboardingController;
 use App\Http\Controllers\Student\NotificationController;
 use App\Http\Controllers\Student\ProfileController;
 use App\Http\Controllers\Student\ReaderController;
 use App\Http\Controllers\Student\ReferralController;
 use App\Http\Controllers\Student\ScheduleController;
 use App\Http\Controllers\Student\SubscriptionController;
+use App\Http\Controllers\Student\TicketController as StudentTicketController;
 use App\Http\Controllers\Student\WalletController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +40,9 @@ Route::get('/contact', [\App\Http\Controllers\Public\ContactController::class, '
 Route::post('/contact', [\App\Http\Controllers\Public\ContactController::class, 'submit'])
     ->middleware('throttle:contact')
     ->name('contact.submit');
+Route::get('/r/{code}', [PublicReferralController::class, 'trackClick'])
+    ->where('code', '[A-Za-z0-9-]+')
+    ->name('referrals.track');
 
 // Public Blog (accessible without login)
 Route::prefix('blog')->name('blog.')->group(function () {
@@ -69,6 +76,9 @@ Route::get('/support/conversation', [\App\Http\Controllers\Public\SupportControl
 Route::post('/support/message', [\App\Http\Controllers\Public\SupportController::class, 'send'])
     ->middleware('throttle:contact')
     ->name('support.send');
+Route::post('/support/conversation/ticket', [\App\Http\Controllers\Public\SupportController::class, 'handoff'])
+    ->middleware('throttle:contact')
+    ->name('support.handoff');
 
 /*
 |--------------------------------------------------------------------------
@@ -114,6 +124,9 @@ Route::middleware('auth:web')->group(function () {
 Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/onboarding', [OnboardingController::class, 'show'])->name('onboarding.show');
+    Route::post('/onboarding/step', [OnboardingController::class, 'saveStep'])->name('onboarding.step');
+    Route::post('/onboarding/skip', [OnboardingController::class, 'skip'])->name('onboarding.skip');
 
     // Library actions (read, purchase, chapter purchase, add to shelf MUST require auth)
     Route::post('/library/{book}/purchase', [LibraryController::class, 'purchase'])->name('library.purchase');
@@ -147,6 +160,19 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
     Route::post('/wallet/recharge', [WalletController::class, 'recharge'])->name('wallet.recharge');
 
+    // Support tickets and feedback
+    Route::get('/support/tickets', [StudentTicketController::class, 'index'])->name('support.tickets.index');
+    Route::post('/support/tickets', [StudentTicketController::class, 'store'])->name('support.tickets.store');
+    Route::get('/support/tickets/{ticket}', [StudentTicketController::class, 'show'])->name('support.tickets.show');
+    Route::post('/support/tickets/{ticket}/messages', [StudentTicketController::class, 'reply'])->name('support.tickets.reply');
+    Route::get('/feedback', [StudentFeedbackController::class, 'index'])->name('feedback.index');
+    Route::post('/feedback', [StudentFeedbackController::class, 'store'])->name('feedback.store');
+
+    // Invoices / receipts
+    Route::get('/invoices', [\App\Http\Controllers\Student\InvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('/invoices/{invoice}', [\App\Http\Controllers\Student\InvoiceController::class, 'show'])->name('invoices.show');
+    Route::get('/invoices/{invoice}/print', [\App\Http\Controllers\Student\InvoiceController::class, 'print'])->name('invoices.print');
+
     // Subscription
     Route::get('/plans', [SubscriptionController::class, 'plans'])->name('subscription.plans');
     Route::post('/plans/purchase', [SubscriptionController::class, 'purchase'])->name('subscription.purchase');
@@ -169,6 +195,9 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/exams/{exam}/status', [ExamController::class, 'status'])->name('exams.status');
     Route::post('/exams/{exam}/complete', [ExamController::class, 'complete'])->name('exams.complete');
     Route::get('/exams/{exam}/result', [ExamController::class, 'result'])->name('exams.result');
+    Route::post('/exams/{exam}/questions/{question}/explanation', [ExamController::class, 'explanation'])
+        ->middleware('throttle:ai')
+        ->name('exams.questions.explanation');
     Route::get('/exams/{exam}/pdf', [ExamController::class, 'pdf'])->name('exams.pdf');
     Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
         Route::post('/exams', [ExamController::class, 'create'])->name('exams.create');

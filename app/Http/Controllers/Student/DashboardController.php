@@ -47,6 +47,10 @@ class DashboardController extends Controller
             'myRank' => $leaderboard->getStudentRank($student, 'weekly', ['type' => $student->type]),
             'activeSubscription' => $student->activeSubscription()->with('plan')->first(),
             'access' => $grants->accessSummary($student),
+                        'onboarding' => [
+                            'completed' => (bool) $student->onboarding_completed_at,
+                            'progress' => $student->onboarding_progress ?? [],
+                        ],
         ]);
     }
 }

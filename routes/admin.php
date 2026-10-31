@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\CourseVideoUploadController;
 use App\Http\Controllers\Admin\CustomPageController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FreeCampaignController;
+use App\Http\Controllers\Admin\FeedbackController;
 use App\Http\Controllers\Admin\LeaderboardController;
 use App\Http\Controllers\Admin\MentorController;
 use App\Http\Controllers\Admin\NotificationBroadcastController;
@@ -31,6 +32,8 @@ use App\Http\Controllers\Admin\ReferralController;
 use App\Http\Controllers\Admin\SiteSettingController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Admin\SupportController;
+use App\Http\Controllers\Admin\TestimonialController;
+use App\Http\Controllers\Admin\TicketController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -105,6 +108,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
         Route::post('orders/{order}/approve', [OrderController::class, 'approve'])->name('orders.approve');
 
+        // Invoices: list, create, inspect, edit totals/items, print
+        Route::get('invoices', [\App\Http\Controllers\Admin\InvoiceController::class, 'index'])->name('invoices.index');
+        Route::get('invoices/create', [\App\Http\Controllers\Admin\InvoiceController::class, 'create'])->name('invoices.create');
+        Route::post('invoices', [\App\Http\Controllers\Admin\InvoiceController::class, 'store'])->name('invoices.store');
+        Route::get('invoices/{invoice}', [\App\Http\Controllers\Admin\InvoiceController::class, 'show'])->name('invoices.show');
+        Route::get('invoices/{invoice}/edit', [\App\Http\Controllers\Admin\InvoiceController::class, 'edit'])->name('invoices.edit');
+        Route::put('invoices/{invoice}', [\App\Http\Controllers\Admin\InvoiceController::class, 'update'])->name('invoices.update');
+        Route::get('invoices/{invoice}/print', [\App\Http\Controllers\Admin\InvoiceController::class, 'print'])->name('invoices.print');
+
         Route::get('settings', [SiteSettingController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [SiteSettingController::class, 'update'])->name('settings.update');
 
@@ -131,6 +143,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->parameters(['blog-blocklist' => 'blocklist']);
 
         Route::get('referrals', [ReferralController::class, 'index'])->name('referrals.index');
+        Route::post('referrals/{referral}/review', [ReferralController::class, 'review'])->name('referrals.review');
 
         Route::get('leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard.index');
         Route::delete('leaderboard/{entry}', [LeaderboardController::class, 'destroy'])->name('leaderboard.destroy');
@@ -138,6 +151,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('notifications', [NotificationBroadcastController::class, 'index'])->name('notifications.index');
         Route::get('notifications/create', [NotificationBroadcastController::class, 'create'])->name('notifications.create-form');
         Route::post('notifications', [NotificationBroadcastController::class, 'store'])->name('notifications.store');
+
+        Route::get('tickets', [TicketController::class, 'index'])->name('tickets.index');
+        Route::get('tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+        Route::post('tickets/{ticket}/messages', [TicketController::class, 'reply'])->name('tickets.reply');
+        Route::patch('tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
+        Route::get('feedback', [FeedbackController::class, 'index'])->name('feedback.index');
+        Route::patch('feedback/{feedback}', [FeedbackController::class, 'update'])->name('feedback.update');
 
         Route::get('support', [SupportController::class, 'index'])->name('support.index');
         Route::get('support/{conversation}', [SupportController::class, 'show'])->name('support.show');

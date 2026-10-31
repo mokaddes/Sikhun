@@ -8,6 +8,7 @@ use App\Models\AiProvider;
 use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use App\Models\BlogSource;
+use App\Models\BlogTag;
 use App\Models\SiteSetting;
 use App\Services\Blog\BlogDeduplicator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -280,5 +281,95 @@ HTML;
 
         $this->assertEquals(1, BlogPost::count());
         Mail::assertNothingSent();
+    }
+
+    public function test_public_blog_index_filters_by_tag_and_detail_prioritizes_shared_tag_posts(): void
+    {
+        $tag = BlogTag::create([
+            'name_bn' => 'জীববিজ্ঞান',
+            'name_en' => 'Biology',
+            'slug' => 'biology',
+        ]);
+
+        $post = BlogPost::create([
+            'title' => 'জীববিজ্ঞানের মূল ধারণা',
+            'slug' => 'biology-basics',
+            'content' => '<p>জীববিজ্ঞান বিষয়ক লেখা।</p>',
+            'status' => 'published',
+            'origin' => 'manual',
+            'published_at' => now()->subDays(3),
+        ]);
+        $sharedTagPost = BlogPost::create([
+            'title' => 'কোষ ও জীবনের গঠন',
+            'slug' => 'cells-and-life',
+            'content' => '<p>কোষ জীবনের গঠনমূলক একক।</p>',
+            'status' => 'published',
+            'origin' => 'manual',
+            'published_at' => now()->subDays(2),
+        ]);
+        BlogPost::create([
+            'title' => 'প্রযুক্তির অগ্রগতি',
+            'slug' => 'technology-progress',
+            'content' => '<p>প্রযুক্তি বিষয়ক লেখা।</p>',
+            'status' => 'published',
+            'origin' => 'manual',
+            'published_at' => now()->subDay(),
+        ]);
+        $post->tags()->attach($tag);
+        $sharedTagPost->tags()->attach($tag);
+
+        $this->withHeaders([
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => hash_file('xxh128', public_path('build/manifest.json')),
+            'X-Requested-With' => 'XMLHttpRequest',
+        ])->get('/blog?tag=biology')
+            ->assertOk()
+            ->assertJsonPath('component', 'Public/Blog/Index')
+            ->assertJsonPath('props.activeTag.slug', 'biology')
+            ->assertJsonPath('props.posts.data.0.slug', 'cells-and-life')
+            ->assertJsonCount(2, 'props.posts.data');
+
+        $this->withHeaders([
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => hash_file('xxh128', public_path('build/manifest.json')),
+            'X-Requested-With' => 'XMLHttpRequest',
+        ])->get('/blog/biology-basics')
+            ->assertOk()
+            ->assertJsonPath('component', 'Public/Blog/Show')
+            ->assertJsonPath('props.post.tags.0.slug', 'biology')
+            ->assertJsonPath('props.related.0.slug', 'cells-and-life');
+
+    }
+
+    public function test_admin_can_assign_and_replace_blog_post_tags(): void
+    {
+        $admin = $this->createAdmin();
+        $firstTag = BlogTag::create(['name_bn' => 'পদার্থবিজ্ঞান', 'name_en' => 'Physics', 'slug' => 'physics']);
+        $secondTag = BlogTag::create(['name_bn' => 'রসায়ন', 'name_en' => 'Chemistry', 'slug' => 'chemistry']);
+
+        $payload = [
+            'title' => 'পদার্থবিজ্ঞানের পরিচিতি',
+            'slug' => 'physics-introduction',
+            'content' => '<p>বিষয়টির পরিচিতি।</p>',
+            'status' => 'draft',
+            'tags' => [$firstTag->id],
+        ];
+
+        $this->actingAs($admin, 'admin')
+            ->post(route('admin.blog.store'), $payload)
+            ->assertRedirect(route('admin.blog.index'));
+
+        $post = BlogPost::where('slug', 'physics-introduction')->firstOrFail();
+        $this->assertSame([$firstTag->id], $post->tags()->pluck('blog_tags.id')->all());
+
+        $this->actingAs($admin, 'admin')
+            ->put(route('admin.blog.update', $post), [
+                ...$payload,
+                'slug' => $post->slug,
+                'tags' => [$secondTag->id],
+            ])
+            ->assertRedirect(route('admin.blog.index'));
+
+        $this->assertSame([$secondTag->id], $post->fresh()->tags()->pluck('blog_tags.id')->all());
     }
 }

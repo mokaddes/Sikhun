@@ -88,6 +88,130 @@ class BookChunkRetrievalService
     }
 
     /**
+     * Coverage-oriented retrieval for generated exams. Unlike relevantChunks,
+     * this samples evenly from each selected or accessible chapter rather
+     * than ranking toward a query, so a book-level exam covers the whole book.
+     *
+     * @return array<int, array{chunk_id: int, chapter_id: ?int, chapter: ?string, page: ?int, content: string}>
+     */
+    public function coverageChunks(Book $book, ?Student $student = null, array $selectedChapterIds = [], int $limit = 48): array
+    {
+        $accessibleChapterIds = $this->access->accessibleChapterIds($student, $book);
+
+        if ($accessibleChapterIds === null || $limit < 1) {
+            return [];
+        }
+
+        $selectedChapterIds = array_values(array_unique(array_map('intval', $selectedChapterIds)));
+        $hasSelection = $selectedChapterIds !== [];
+
+        if ($hasSelection && array_diff($selectedChapterIds, $accessibleChapterIds)) {
+            return [];
+        }
+
+        $chapters = $book->chapters()->get(['id', 'parent_id', 'title', 'sort_order'])->keyBy('id');
+
+        if ($hasSelection) {
+            // Selecting a chapter includes its accessible descendant sections.
+            $chapterIds = $selectedChapterIds;
+            do {
+                $children = $chapters
+                    ->filter(fn ($chapter) => $chapter->parent_id !== null && in_array((int) $chapter->parent_id, $chapterIds, true))
+                    ->pluck('id')
+                    ->all();
+                $newIds = array_diff($children, $chapterIds);
+                $chapterIds = array_merge($chapterIds, $newIds);
+            } while ($newIds);
+
+            $chapterIds = array_values(array_intersect($chapterIds, $accessibleChapterIds));
+            if (! $chapterIds) {
+                return [];
+            }
+        } else {
+            $chapterIds = $accessibleChapterIds;
+        }
+
+        // Keep every chapter/null-chapter alternative inside the book-scoped
+        // relationship query so an OR can never escape the requested book.
+        $includeLegacyChunks = ! $hasSelection && $chapterIds && $this->access->hasAccess($student, $book);
+        $query = $book->chunks()->where(function ($q) use ($chapterIds, $includeLegacyChunks) {
+            if ($chapterIds) {
+                $q->whereIn('chapter_id', $chapterIds);
+                if ($includeLegacyChunks) {
+                    $q->orWhereNull('chapter_id');
+                }
+            } else {
+                $q->whereNull('chapter_id');
+            }
+        });
+
+        $groups = $query->orderBy('chunk_index')->get(['id', 'chapter_id', 'page_number', 'chunk_index'])
+            ->groupBy(fn (BookChunk $chunk) => $chunk->chapter_id ?? 0)
+            ->map(fn ($chunks) => $chunks->pluck('id')->all())
+            ->all();
+
+        if (! $groups) {
+            return [];
+        }
+
+        $groupKeys = array_keys($groups);
+        $quotas = array_fill_keys($groupKeys, 0);
+        $remaining = min($limit, array_sum(array_map('count', $groups)));
+
+        while ($remaining > 0) {
+            $madeProgress = false;
+            foreach ($groupKeys as $key) {
+                if ($quotas[$key] >= count($groups[$key]) || $remaining === 0) {
+                    continue;
+                }
+                $quotas[$key]++;
+                $remaining--;
+                $madeProgress = true;
+            }
+            if (! $madeProgress) {
+                break;
+            }
+        }
+
+        $sampledIds = [];
+        foreach ($groups as $key => $ids) {
+            $sampledIds = array_merge($sampledIds, $this->spreadSample($ids, $quotas[$key]));
+        }
+
+        $chunks = $book->chunks()->whereIn('id', $sampledIds)
+            ->where(function ($q) use ($chapterIds, $includeLegacyChunks) {
+                if ($chapterIds) {
+                    $q->whereIn('chapter_id', $chapterIds);
+                    if ($includeLegacyChunks) {
+                        $q->orWhereNull('chapter_id');
+                    }
+                } else {
+                    $q->whereNull('chapter_id');
+                }
+            })
+            ->get(['id', 'chapter_id', 'page_number', 'chunk_index', 'content'])
+            ->sortBy(fn (BookChunk $chunk) => [$chunk->chunk_index, $chunk->id])
+            ->values();
+
+        return $chunks->map(function (BookChunk $chunk) use ($chapters) {
+            $trail = [];
+            $node = $chunk->chapter_id ? ($chapters[$chunk->chapter_id] ?? null) : null;
+            while ($node) {
+                array_unshift($trail, $node->title);
+                $node = $node->parent_id ? ($chapters[$node->parent_id] ?? null) : null;
+            }
+
+            return [
+                'chunk_id' => (int) $chunk->id,
+                'chapter_id' => $chunk->chapter_id ? (int) $chunk->chapter_id : null,
+                'chapter' => $trail ? implode(' / ', $trail) : null,
+                'page' => $chunk->page_number,
+                'content' => $chunk->content,
+            ];
+        })->all();
+    }
+
+    /**
      * Structured RAG context for the LLM: chunk text plus provenance plus
      * related tables/images/formulas (only ones from accessible chapters).
      *

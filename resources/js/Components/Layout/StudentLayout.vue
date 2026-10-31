@@ -31,6 +31,7 @@ import {
     MagnifyingGlassIcon,
     BellIcon,
     EnvelopeIcon,
+    DocumentTextIcon,
 } from '@heroicons/vue/24/outline';
 
 const theme = useThemeStore();
@@ -112,6 +113,9 @@ const nav = computed(() => [
         items: [
             { label: t('nav.plans'), href: '/plans', icon: CreditCardIcon },
             { label: t('nav.wallet'), href: '/wallet', icon: WalletIcon },
+            { label: t('nav.invoices'), href: '/invoices', icon: DocumentTextIcon },
+            { label: t('nav.tickets'), href: '/support/tickets', icon: ShieldCheckIcon },
+            { label: t('nav.feedback'), href: '/feedback', icon: PencilSquareIcon },
             { label: t('nav.access'), href: '/access', icon: ShieldCheckIcon },
         ],
     },

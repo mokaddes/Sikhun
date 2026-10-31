@@ -23,9 +23,17 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    recommendations: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const { t, locale } = useI18n();
+const recommendedTasks = Object.entries(props.recommendations).map(([useCase, details]) => ({
+    useCase,
+    ...details,
+}));
 
 const testState = reactive({});
 
@@ -125,6 +133,26 @@ function getProviderActions(p) {
             </div>
         </div>
 
+        <!-- Recommended provider/model choices by task -->
+        <section v-if="recommendedTasks.length" class="mb-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-xs">
+            <div class="mb-3 flex items-center gap-2">
+                <SparklesIcon class="h-4 w-4 text-emerald-500" />
+                <h2 class="font-heading text-sm font-bold text-[var(--text)]">
+                    {{ locale === 'en' ? 'Recommended provider and model by task' : 'কাজ অনুযায়ী প্রস্তাবিত প্রোভাইডার ও মডেল' }}
+                </h2>
+            </div>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                <div v-for="item in recommendedTasks" :key="item.useCase" class="rounded-xl bg-[var(--surface2)]/70 p-3">
+                    <div class="mb-1 flex flex-wrap items-center gap-1.5">
+                        <span class="text-xs font-bold text-[var(--text)]">{{ item.useCase.replace(/_/g, ' ') }}</span>
+                        <span class="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Recommended</span>
+                    </div>
+                    <div class="text-xs font-medium text-[var(--primary)]">{{ item.models.join(' / ') }}</div>
+                    <p class="mt-1 text-[11px] text-[var(--text-muted)]">{{ item.reason }}</p>
+                </div>
+            </div>
+        </section>
+
         <!-- Provider Cards Grid -->
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div
@@ -191,6 +219,7 @@ function getProviderActions(p) {
                             >
                                 <SparklesIcon v-if="uc.is_default" class="h-3 w-3 text-[var(--primary)]" />
                                 <span>{{ uc.use_case.replace(/_/g, ' ') }}</span>
+                                <span v-if="recommendations[uc.use_case]" class="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300" :title="recommendations[uc.use_case].models.join(' / ')">Recommended</span>
                                 <span v-if="uc.is_default" class="text-[10px] opacity-80">(default)</span>
                             </span>
                             <span v-if="!p.use_cases?.length" class="text-xs text-[var(--text-muted)] italic">

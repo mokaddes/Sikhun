@@ -36,7 +36,19 @@ function copyLink() {
             </div>
         </div>
 
-        <div class="stagger mb-6 grid grid-cols-3 gap-4">
+        <div class="stagger mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
+            <div class="card rounded-2xl p-5">
+                <div class="text-sm text-[var(--text-muted)]">{{ t('referral_page.clicks') }}</div>
+                <div class="mt-2 font-heading text-2xl font-extrabold">{{ n(stats.clicks) }}</div>
+            </div>
+            <div class="card rounded-2xl p-5">
+                <div class="text-sm text-[var(--text-muted)]">{{ t('referral_page.registrations') }}</div>
+                <div class="mt-2 font-heading text-2xl font-extrabold">{{ n(stats.registrations) }}</div>
+            </div>
+            <div class="card rounded-2xl p-5">
+                <div class="text-sm text-[var(--text-muted)]">{{ t('referral_page.paid') }}</div>
+                <div class="mt-2 font-heading text-2xl font-extrabold">{{ n(stats.paid) }}</div>
+            </div>
             <div class="card rounded-2xl p-5">
                 <div class="text-sm text-[var(--text-muted)]">{{ t('referral_page.total_referred') }}</div>
                 <div class="mt-2 font-heading text-2xl font-extrabold">{{ n(stats.total_referred) }}</div>
@@ -61,7 +73,7 @@ function copyLink() {
                             <td class="px-5 py-3.5 text-[var(--text-muted)]">{{ new Date(r.referee.created_at).toLocaleDateString() }}</td>
                             <td class="px-5 py-3.5 text-right">
                                 <span class="badge" :class="r.status === 'rewarded' ? 'bg-[var(--secondary)]/15 text-[var(--secondary)]' : 'bg-[var(--text-muted)]/15 text-[var(--text-muted)]'">
-                                    {{ r.status === 'rewarded' ? t('referral_page.status_rewarded') : t('referral_page.status_pending') }}
+                                    {{ r.status === 'rewarded' ? t('referral_page.status_rewarded') : r.fraud_status === 'held' ? t('referral_page.status_held') : r.fraud_status === 'approved' ? t('referral_page.status_approved') : r.fraud_status === 'rejected' ? t('referral_page.status_rejected') : t('referral_page.status_pending') }}
                                 </span>
                             </td>
                         </tr>

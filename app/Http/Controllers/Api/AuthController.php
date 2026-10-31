@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Requests\Student\LoginRequest;
 use App\Http\Requests\Student\RegisterRequest;
 use App\Models\Student;
+use App\Services\ReferralService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +29,8 @@ class AuthController extends BaseApiController
                     : null,
             ]);
         });
+
+        app(ReferralService::class)->recordRegistration($student, $request);
 
         $token = $student->createToken('sikhun_mobile_app')->plainTextToken;
 

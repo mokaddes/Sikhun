@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\BlogCategory;
 use App\Models\BlogSource;
+use App\Models\BlogTag;
 use App\Models\SiteSetting;
 use Illuminate\Database\Seeder;
 
@@ -31,6 +32,33 @@ class BlogSeeder extends Seeder
                 ]
             );
             $catMap[$cat['slug']] = $model->id;
+        }
+
+        $tags = [
+            ['slug' => 'hsc', 'name_bn' => 'এইচএসসি', 'name_en' => 'HSC'],
+            ['slug' => 'ssc', 'name_bn' => 'এসএসসি', 'name_en' => 'SSC'],
+            ['slug' => 'admission', 'name_bn' => 'ভর্তি প্রস্তুতি', 'name_en' => 'Admission Prep'],
+            ['slug' => 'career', 'name_bn' => 'ক্যারিয়ার', 'name_en' => 'Career'],
+            ['slug' => 'study-tips', 'name_bn' => 'পড়াশোনার কৌশল', 'name_en' => 'Study Tips'],
+            ['slug' => 'exam-preparation', 'name_bn' => 'পরীক্ষার প্রস্তুতি', 'name_en' => 'Exam Preparation'],
+            ['slug' => 'mathematics', 'name_bn' => 'গণিত', 'name_en' => 'Mathematics'],
+            ['slug' => 'physics', 'name_bn' => 'পদার্থবিজ্ঞান', 'name_en' => 'Physics'],
+            ['slug' => 'chemistry', 'name_bn' => 'রসায়ন', 'name_en' => 'Chemistry'],
+            ['slug' => 'biology', 'name_bn' => 'জীববিজ্ঞান', 'name_en' => 'Biology'],
+            ['slug' => 'english', 'name_bn' => 'ইংরেজি', 'name_en' => 'English'],
+            ['slug' => 'bangladesh', 'name_bn' => 'বাংলাদেশ', 'name_en' => 'Bangladesh'],
+            ['slug' => 'artificial-intelligence', 'name_bn' => 'কৃত্রিম বুদ্ধিমত্তা', 'name_en' => 'Artificial Intelligence'],
+            ['slug' => 'technology', 'name_bn' => 'প্রযুক্তি', 'name_en' => 'Technology'],
+            ['slug' => 'programming', 'name_bn' => 'প্রোগ্রামিং', 'name_en' => 'Programming'],
+            ['slug' => 'science', 'name_bn' => 'বিজ্ঞান', 'name_en' => 'Science'],
+            ['slug' => 'space', 'name_bn' => 'মহাকাশ', 'name_en' => 'Space'],
+            ['slug' => 'research', 'name_bn' => 'গবেষণা', 'name_en' => 'Research'],
+            ['slug' => 'innovation', 'name_bn' => 'উদ্ভাবন', 'name_en' => 'Innovation'],
+            ['slug' => 'digital-learning', 'name_bn' => 'ডিজিটাল শিক্ষা', 'name_en' => 'Digital Learning'],
+        ];
+
+        foreach ($tags as $tag) {
+            BlogTag::updateOrCreate(['slug' => $tag['slug']], $tag);
         }
 
         $sources = [

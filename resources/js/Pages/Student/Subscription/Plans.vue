@@ -57,7 +57,7 @@ function subscribe(plan, method) {
                 <div class="mb-4 grid grid-cols-2 gap-2 text-xs">
                     <div class="rounded-xl bg-[var(--surface2)] px-2.5 py-1.5 font-medium">
                         <span class="block text-[10px] text-[var(--text-muted)] font-bold uppercase">💬 AI Chat</span>
-                        <span class="font-bold text-[var(--text)]">{{ plan.ai_chat_minutes }} {{ locale === 'en' ? 'mins/mo' : 'মিনিট/মাস' }}</span>
+                        <span class="font-bold text-[var(--text)]">{{ plan.ai_chat_minutes }} {{ plan.is_free ? (locale === 'en' ? 'messages/mo' : 'বার্তা/মাস') : (locale === 'en' ? 'mins/mo' : 'মিনিট/মাস') }}</span>
                     </div>
                     <div class="rounded-xl bg-[var(--surface2)] px-2.5 py-1.5 font-medium">
                         <span class="block text-[10px] text-[var(--text-muted)] font-bold uppercase">📸 Vision Solver</span>
@@ -77,12 +77,15 @@ function subscribe(plan, method) {
                         <CheckIcon class="mt-0.5 h-4 w-4 shrink-0 text-[var(--secondary)]" /> {{ digits(f) }}
                     </li>
                 </ul>
-                <div class="space-y-2">
+                <div v-if="plan.is_free" class="rounded-xl bg-[var(--surface2)] px-3 py-2 text-center text-sm font-semibold text-[var(--secondary)]">
+                    {{ t('plans_page.free_plan') }}
+                </div>
+                <div v-else class="space-y-2">
                     <button @click="subscribe(plan, 'wallet')" class="btn btn-primary w-full whitespace-normal text-center leading-snug">
                         {{ t('plans_page.subscribe') }} — {{ t('book_show.pay_with_wallet') }}
                     </button>
                     <button @click="subscribe(plan, 'zinipay')" class="btn btn-outline w-full whitespace-normal text-center leading-snug">
-                        {{ t('book_show.pay_with_gateway') }}
+                        {{ t('plans_page.subscribe') }} — {{ t('book_show.pay_with_gateway') }}
                     </button>
                 </div>
             </div>

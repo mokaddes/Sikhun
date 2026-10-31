@@ -10,7 +10,7 @@ class Plan extends Model
         'name', 'slug', 'description', 'price_monthly', 'ai_chat_minutes',
         'ai_vision_limit', 'upload_book_limit', 'monthly_reupload_limit',
         'ai_exam_count', 'gift_book_ids', 'trial_ai_minutes', 'features',
-        'ai_provider_id', 'ai_model', 'is_active',
+        'ai_provider_id', 'ai_model', 'is_active', 'is_free',
     ];
 
     protected function casts(): array
@@ -23,6 +23,7 @@ class Plan extends Model
             'gift_book_ids' => 'array',
             'features' => 'array',
             'is_active' => 'boolean',
+            'is_free' => 'boolean',
         ];
     }
 

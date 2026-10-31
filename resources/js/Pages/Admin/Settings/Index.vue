@@ -23,6 +23,7 @@ const form = useForm({
     referrer_reward_amount: props.settings.referrer_reward_amount ?? 20,
     referee_reward_amount: props.settings.referee_reward_amount ?? 20,
     max_referral_per_month: props.settings.max_referral_per_month ?? 10,
+    referral_reward_tiers: props.settings.referral_reward_tiers ?? '',
     support_bot_system_prompt: props.settings.support_bot_system_prompt ?? '',
     blog_digest_email: props.settings.blog_digest_email ?? props.settings.site_email ?? '',
     blog_credit_enabled: props.settings.blog_credit_enabled === undefined ? true : Boolean(Number(props.settings.blog_credit_enabled) || props.settings.blog_credit_enabled === 'true' || props.settings.blog_credit_enabled === true),
@@ -158,6 +159,12 @@ function submit() {
             <div>
                 <label class="block text-sm font-medium mb-1.5">Max Rewarded Referrals / Student / Month</label>
                 <input v-model="form.max_referral_per_month" type="number" min="0" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1.5">{{ t('admin.settings.referral_reward_tiers') }}</label>
+                <textarea v-model="form.referral_reward_tiers" rows="4" placeholder='[{"milestone":5,"referrer_reward":30,"referee_reward":20}]'
+                    class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]"></textarea>
+                <p class="text-xs text-[var(--text-muted)] mt-1">{{ t('admin.settings.referral_reward_tiers_hint') }}</p>
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1.5">Support Bot Tone / Persona</label>

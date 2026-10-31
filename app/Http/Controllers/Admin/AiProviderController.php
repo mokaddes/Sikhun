@@ -16,6 +16,41 @@ use Inertia\Response;
 
 class AiProviderController extends Controller
 {
+    public const USE_CASE_RECOMMENDATIONS = [
+        'book_chat' => [
+            'models' => ['Groq — Llama 3.3 70B', 'Google — Gemini 2.0 Flash'],
+            'reason' => 'Fast first-token response.',
+        ],
+        'exam_gen' => [
+            'models' => ['OpenAI — GPT-4o-mini', 'DeepSeek — V3'],
+            'reason' => 'Reliable structured JSON output.',
+        ],
+        'flashcard_gen' => [
+            'models' => ['Google — Gemini Flash', 'Groq — Llama'],
+            'reason' => 'Low cost and fast generation.',
+        ],
+        'essay_grade' => [
+            'models' => ['Anthropic — Claude Sonnet', 'OpenAI — GPT-4o'],
+            'reason' => 'Strong rubric-based evaluation.',
+        ],
+        'schedule_gen' => [
+            'models' => ['OpenAI — GPT-4o-mini'],
+            'reason' => 'Good structured output at low cost.',
+        ],
+        'support_bot' => [
+            'models' => ['Groq — Llama', 'Google — Gemini Flash'],
+            'reason' => 'Low-cost support responses.',
+        ],
+        'book_ocr' => [
+            'models' => ['Google — Gemini Vision', 'OpenAI — GPT-4o Vision'],
+            'reason' => 'Multimodal document recognition.',
+        ],
+        'blog_rewrite' => [
+            'models' => ['DeepSeek', 'OpenAI — GPT-4o-mini'],
+            'reason' => 'Cost-effective with strong Bengali writing.',
+        ],
+    ];
+
     public const PROVIDER_TYPES = [
         'openai_compatible' => [
             'label' => 'OpenAI Compatible',
@@ -56,6 +91,7 @@ class AiProviderController extends Controller
         return Inertia::render('Admin/AiProviders/Index', [
             'providers' => AiProvider::with('useCases')->orderBy('name')->get(),
             'providerTypes' => self::PROVIDER_TYPES,
+            'recommendations' => self::USE_CASE_RECOMMENDATIONS,
         ]);
     }
 

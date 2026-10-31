@@ -62,6 +62,36 @@ class SiteSettingController extends Controller
             'referrer_reward_amount' => ['required', 'numeric', 'min:0'],
             'referee_reward_amount' => ['required', 'numeric', 'min:0'],
             'max_referral_per_month' => ['required', 'integer', 'min:0'],
+            'referral_reward_tiers' => ['nullable', 'string', 'max:5000', function ($attribute, $value, $fail) {
+                if ($value === null || trim($value) === '') {
+                    return;
+                }
+
+                $tiers = json_decode($value, true);
+                if (! is_array($tiers) || ! array_is_list($tiers)) {
+                    $fail('Reward tiers must be a JSON array.');
+                    return;
+                }
+
+                $milestones = [];
+                foreach ($tiers as $tier) {
+                    if (! is_array($tier)
+                        || ! isset($tier['milestone'], $tier['referrer_reward'], $tier['referee_reward'])
+                        || filter_var($tier['milestone'], FILTER_VALIDATE_INT) === false
+                        || (int) $tier['milestone'] < 1
+                        || ! is_numeric($tier['referrer_reward']) || (float) $tier['referrer_reward'] < 0
+                        || ! is_numeric($tier['referee_reward']) || (float) $tier['referee_reward'] < 0) {
+                        $fail('Each tier needs a positive milestone and non-negative reward amounts.');
+                        return;
+                    }
+
+                    if (in_array((int) $tier['milestone'], $milestones, true)) {
+                        $fail('Reward tier milestones must be unique.');
+                        return;
+                    }
+                    $milestones[] = (int) $tier['milestone'];
+                }
+            }],
             'support_bot_system_prompt' => ['nullable', 'string', 'max:2000'],
             'blog_digest_email' => ['nullable', 'email', 'max:255'],
             'blog_credit_enabled' => ['nullable', 'boolean'],
@@ -69,6 +99,10 @@ class SiteSettingController extends Controller
         ]);
 
         foreach ($validated as $key => $value) {
+            if ($key === 'referral_reward_tiers') {
+                $value = $value ? json_decode($value, true) : null;
+            }
+
             // An untouched image field arrives as an empty string or null;
             // never let that clobber an already-stored image path.
             if (in_array($key, self::IMAGE_KEYS) && in_array($value, ['', null], true)) {

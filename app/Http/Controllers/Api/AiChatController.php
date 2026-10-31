@@ -60,7 +60,7 @@ class AiChatController extends BaseApiController
         $student = auth('sanctum')->user();
         $userMessage = trim((string) $request->input('message', ''));
         abort_if($userMessage === '', 400);
-        abort_unless($student->hasActiveAiAccess(), 403, 'AI trial exhausted — subscribe to continue.');
+        abort_unless($student->hasActiveAiChatAccess(), 403, 'AI trial exhausted — subscribe to continue.');
 
         return response()->stream(function () use ($session, $student, $userMessage, $retrieval) {
             $messages = $session->messages ?? [];
@@ -102,7 +102,15 @@ class AiChatController extends BaseApiController
             $session->update(['messages' => $messages]);
 
             if (! app(AccessGrantService::class)->hasActiveAccess($student)) {
-                $student->increment('ai_trial_minutes_used');
+                if ($sub = $student->activeSubscription) {
+                    $sub->decrement('ai_chat_minutes_remaining');
+                } else {
+                    $student->increment('ai_trial_minutes_used');
+                }
+            }
+
+            if ($fullReply !== '') {
+                $student->recordSuccessfulAiChat();
             }
 
             echo 'data: '.json_encode(['content' => '', 'done' => true])."\n\n";

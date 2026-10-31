@@ -9,6 +9,7 @@ const { t } = useI18n();
 const form = useForm({
     name: '',
     email: '',
+    phone: '',
     password: '',
     password_confirmation: '',
     type: 'hsc',
@@ -48,6 +49,14 @@ function submit() {
                         autocomplete="email" :aria-invalid="!!form.errors.email"
                         class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" />
                     <p v-if="form.errors.email" class="text-[var(--accent)] text-xs mt-1">{{ form.errors.email }}</p>
+                </div>
+
+                <div>
+                    <label for="register-phone" class="block text-sm font-medium mb-1.5">{{ t('auth.phone_optional') }}</label>
+                    <input id="register-phone" name="phone" v-model="form.phone" type="tel"
+                        autocomplete="tel" :aria-invalid="!!form.errors.phone"
+                        class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" />
+                    <p v-if="form.errors.phone" class="text-[var(--accent)] text-xs mt-1">{{ form.errors.phone }}</p>
                 </div>
 
                 <div>

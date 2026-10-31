@@ -28,6 +28,7 @@ class PlanRequest extends FormRequest
             'ai_provider_id' => ['nullable', 'integer', 'exists:ai_providers,id'],
             'ai_model' => ['nullable', 'string', 'max:100'],
             'is_active' => ['boolean'],
+                        'is_free' => ['boolean'],
         ];
     }
 }

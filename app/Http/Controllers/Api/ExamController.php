@@ -22,17 +22,23 @@ class ExamController extends BaseApiController
     public function store(CreateExamRequest $request, BookAccessService $access): JsonResponse
     {
         $student = auth('sanctum')->user();
-        abort_unless($student->hasActiveAiAccess(), 403, 'AI trial exhausted.');
+        abort_unless($student->hasActiveAiExamAccess(), 403, 'AI exam quota exhausted.');
 
+        $chapterIds = [];
         if ($request->source_type === 'book') {
-            abort_unless($access->hasAccess($student, Book::findOrFail($request->source_book_id)), 403);
+            $book = Book::findOrFail($request->source_book_id);
+            $accessibleIds = $access->accessibleChapterIds($student, $book);
+            abort_unless($accessibleIds !== null, 403);
+
+            $chapterIds = array_values(array_unique(array_map('intval', $request->input('chapter_ids', []))));
+            abort_if(array_diff($chapterIds, $accessibleIds), 403);
         }
 
         $session = $student->examSessions()->create([
             'source_type' => $request->source_type,
             'source_book_id' => $request->source_book_id,
             'source_text' => $request->source_text,
-            'config' => ['type' => $request->type, 'count' => $request->count, 'duration' => $request->duration, 'mode' => $request->mode],
+            'config' => ['type' => $request->type, 'count' => $request->count, 'duration' => $request->duration, 'mode' => $request->mode, 'chapter_ids' => $chapterIds],
             'mode' => $request->mode,
             'status' => 'generating',
             'total' => $request->count,

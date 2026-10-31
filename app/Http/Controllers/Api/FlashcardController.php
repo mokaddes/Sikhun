@@ -8,7 +8,7 @@ use App\Models\Book;
 use App\Models\Flashcard;
 use App\Models\FlashcardSet;
 use App\Services\AccessGrantService;
-use App\Services\BookAccessService;
+use App\Services\Ai\FlashcardSourceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,23 +19,28 @@ class FlashcardController extends BaseApiController
         return $this->success(auth('sanctum')->user()->flashcardSets()->withCount('flashcards')->latest()->get());
     }
 
-    public function store(GenerateFlashcardsRequest $request, BookAccessService $access): JsonResponse
+    public function store(GenerateFlashcardsRequest $request, FlashcardSourceService $sources): JsonResponse
     {
         $student = auth('sanctum')->user();
         abort_unless($student->hasActiveAiAccess(), 403, 'AI trial exhausted.');
 
-        $sourceText = $request->source_text;
+        $sourceText = (string) $request->source_text;
         $sourceLabel = null;
+        $sourceReferences = [];
 
         if ($request->source_book_id) {
-            $book = Book::findOrFail($request->source_book_id);
-            abort_unless($access->hasAccess($student, $book), 403);
-            $sourceText = $book->chunks()->orderBy('chunk_index')->limit(6)->pluck('content')->implode("\n");
-            $sourceLabel = $book->title;
+            $source = $sources->fromBook(
+                Book::findOrFail($request->source_book_id),
+                $student,
+                $request->input('chapter_ids', []),
+            );
+            $sourceText = $source['content'];
+            $sourceLabel = $source['source_label'];
+            $sourceReferences = $source['references'];
         }
 
         $set = $student->flashcardSets()->create(['title' => $request->title, 'source_label' => $sourceLabel]);
-        GenerateFlashcards::dispatch($set->id, $sourceText, (int) $request->count);
+        GenerateFlashcards::dispatch($set->id, $sourceText, (int) $request->count, $sourceReferences);
 
         if (! app(AccessGrantService::class)->hasActiveAccess($student)) {
             $student->increment('ai_trial_minutes_used');

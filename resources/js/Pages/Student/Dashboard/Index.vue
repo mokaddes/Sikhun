@@ -25,6 +25,7 @@ const props = defineProps({
     myRank: Object,
     activeSubscription: Object,
     access: Object,
+    onboarding: Object,
 });
 const { t, locale, money, n } = useI18n();
 const student = usePage().props.auth?.student;
@@ -41,6 +42,13 @@ const statCards = computed(() => [
     { label: t('dashboard.books_owned'), value: n(props.stats?.books_owned ?? 0), icon: BookOpenIcon, tint: 'bg-[var(--secondary)]/10 text-[var(--secondary)]' },
     { label: t('dashboard.exams_taken'), value: n(props.stats?.exams_taken ?? 0), icon: ClipboardDocumentCheckIcon, tint: 'bg-[var(--tertiary)]/10 text-[var(--tertiary)]' },
     { label: t('dashboard.courses_enrolled'), value: n(props.stats?.courses_enrolled ?? 0), icon: AcademicCapIcon, tint: 'bg-[var(--accent)]/10 text-[var(--accent)]' },
+]);
+
+const onboardingSteps = computed(() => [
+    t('onboarding.steps.goal'),
+    t('onboarding.steps.class'),
+    t('onboarding.steps.book'),
+    t('onboarding.steps.question'),
 ]);
 
 const quickActions = [
@@ -120,6 +128,22 @@ const today = computed(() => new Date().toLocaleDateString(locale.value === 'bn'
                     </div>
                 </div>
             </div>
+        </section>
+
+        <section v-if="!onboarding?.completed" class="anim-rise mb-6 rounded-2xl border border-[var(--primary)]/25 bg-[var(--primary)]/5 p-5">
+            <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                <div>
+                    <h2 class="font-heading font-bold">{{ t('onboarding.checklist_title') }}</h2>
+                    <p class="mt-1 text-sm text-[var(--text-muted)]">{{ t('onboarding.checklist_hint') }}</p>
+                </div>
+                <Link href="/onboarding" class="btn btn-primary shrink-0">{{ t('onboarding.resume') }} <ArrowRightIcon class="h-4 w-4" /></Link>
+            </div>
+            <ol class="mt-4 grid gap-2 sm:grid-cols-2">
+                <li v-for="(step, index) in onboardingSteps" :key="step" class="flex items-center gap-2 text-sm" :class="(onboarding?.progress?.completed_steps ?? []).includes(index + 1) ? 'text-[var(--secondary)]' : 'text-[var(--text-muted)]'">
+                    <span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--surface)] text-xs font-bold">{{ (onboarding?.progress?.completed_steps ?? []).includes(index + 1) ? '✓' : index + 1 }}</span>
+                    {{ step }}
+                </li>
+            </ol>
         </section>
 
         <!-- Free access banner -->

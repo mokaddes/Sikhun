@@ -4,7 +4,7 @@ import { useI18n } from '@/i18n';
 
 const props = defineProps({ card: Object });
 const emit = defineEmits(['review']);
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const flipped = ref(false);
 
@@ -26,7 +26,14 @@ function review(result) {
                 </div>
                 <div class="absolute inset-0 rounded-xl border border-[var(--primary)] bg-[var(--primary)]/5 flex items-center justify-center p-6 text-center"
                     style="backface-visibility: hidden; transform: rotateY(180deg)">
-                    <div class="font-medium">{{ card.back }}</div>
+                    <div>
+                        <div class="font-medium">{{ card.back }}</div>
+                        <div v-if="card.source_ref" class="mt-3 text-xs text-[var(--text-muted)]">
+                            <span v-if="card.source_ref.chapter">{{ card.source_ref.chapter }}</span>
+                            <span v-if="card.source_ref.page">{{ card.source_ref.chapter ? ' · ' : '' }}{{ locale === 'en' ? 'Page' : 'পৃষ্ঠা' }} {{ card.source_ref.page }}</span>
+                            <span v-if="!card.source_ref.chapter && !card.source_ref.page">Chunk {{ card.source_ref.chunk_id }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

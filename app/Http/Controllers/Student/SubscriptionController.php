@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\SubscriptionPurchaseRequest;
 use App\Models\Plan;
+use App\Services\Payment\PaymentGatewayResolver;
 use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Inertia\Inertia;
@@ -22,18 +23,20 @@ class SubscriptionController extends Controller
         ]);
     }
 
-    public function purchase(SubscriptionPurchaseRequest $request, PurchaseService $purchases, ZinipayService $zinipay): \Symfony\Component\HttpFoundation\Response
+    public function purchase(SubscriptionPurchaseRequest $request, PurchaseService $purchases, PaymentGatewayResolver $resolver): \Symfony\Component\HttpFoundation\Response
     {
         $student = auth('web')->user();
         $plan = Plan::findOrFail($request->plan_id);
-        abort_unless(! $plan->is_free, 422);
+
+        $isFree = $plan->is_free || (float) $plan->price_monthly <= 0 || $request->payment_method === 'free';
+        $gateway = $isFree ? null : $resolver->resolve($request->payment_method);
 
         $result = $purchases->purchaseSubscription(
             $student,
             $plan,
             (int) $request->months,
             $request->payment_method,
-            $request->payment_method === 'zinipay' ? $zinipay : null
+            $gateway
         );
 
         if ($result['redirect_url']) {

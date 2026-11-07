@@ -11,7 +11,6 @@ use App\Models\Plan;
 use App\Models\Student;
 use App\Services\Payment\PaymentGatewayContract;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
@@ -29,7 +28,6 @@ class PurchaseService
         private ReferralService $referrals,
         private BookAccessService $access,
         private CourseDeliveryService $courseDelivery,
-        private InvoiceService $invoices,
     ) {}
 
     /**
@@ -112,7 +110,16 @@ class PurchaseService
 
     public function purchaseSubscription(Student $student, Plan $plan, int $months, string $method, ?PaymentGatewayContract $gateway = null): array
     {
-        $amount = $plan->price_monthly * $months;
+        $amount = (float) $plan->price_monthly * $months;
+
+        // Instant fulfillment for Free Plan (0 Tk)
+        if ($amount <= 0 || $plan->is_free || $method === 'free') {
+            $order = $this->createOrder($student, 'subscription', $plan->id, 0.0, 'free', ['months' => $months]);
+            $order->update(['status' => 'completed']);
+            $this->fulfill($order);
+
+            return ['redirect_url' => null, 'order' => $order];
+        }
         $order = $this->createOrder($student, 'subscription', $plan->id, $amount, $method, ['months' => $months]);
 
         if ($method === 'wallet') {
@@ -207,19 +214,7 @@ class PurchaseService
 
         if ($order->orderable_type !== 'wallet_recharge') {
             $this->referrals->rewardIfEligible($order->student);
-            Mail::to($order->student->email)->send(new OrderConfirmationMail($order));
-        }
-
-        // Invoicing must never break fulfilment: a mail/DB hiccup while
-        // writing the receipt is logged, not surfaced to the buyer.
-        try {
-            $this->invoices->createForOrder($order->refresh());
-        } catch (\Throwable $e) {
-            Log::error('Invoice creation failed', [
-                'order_id' => $order->id,
-                'order_number' => $order->order_number,
-                'error' => $e->getMessage(),
-            ]);
+            try { Mail::to($order->student->email)->send(new OrderConfirmationMail($order)); } catch (\Throwable $e) { \Illuminate\Support\Facades\Log::warning("Order confirmation mail delivery failed: " . $e->getMessage()); }
         }
     }
 

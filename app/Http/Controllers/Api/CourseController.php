@@ -11,6 +11,7 @@ use App\Models\LessonProgress;
 use App\Services\AccessGrantService;
 use App\Services\CertificateService;
 use App\Services\CourseDeliveryService;
+use App\Services\Payment\PaymentGatewayResolver;
 use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\JsonResponse;
@@ -50,7 +51,7 @@ class CourseController extends BaseApiController
         ]);
     }
 
-    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, ZinipayService $zinipay, AccessGrantService $grants, CourseDeliveryService $delivery): JsonResponse
+    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, PaymentGatewayResolver $resolver, AccessGrantService $grants, CourseDeliveryService $delivery): JsonResponse
     {
         $student = auth('sanctum')->user();
 
@@ -66,7 +67,8 @@ class CourseController extends BaseApiController
         }
 
         try {
-            $result = $purchases->purchaseCourse($student, $course, $request->payment_method, $request->payment_method === 'zinipay' ? $zinipay : null);
+            $gateway = $resolver->resolve($request->payment_method);
+            $result = $purchases->purchaseCourse($student, $course, $request->payment_method, $gateway);
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage());
         }

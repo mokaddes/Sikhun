@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Course;
 use App\Services\CertificateService;
 use App\Services\CourseDeliveryService;
+use App\Services\Payment\PaymentGatewayResolver;
 use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
@@ -90,7 +91,7 @@ class CourseController extends Controller
         ]);
     }
 
-    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, ZinipayService $zinipay, \App\Services\AccessGrantService $grants, CourseDeliveryService $delivery): \Symfony\Component\HttpFoundation\Response
+    public function enroll(PurchaseRequest $request, Course $course, PurchaseService $purchases, PaymentGatewayResolver $resolver, \App\Services\AccessGrantService $grants, CourseDeliveryService $delivery): \Symfony\Component\HttpFoundation\Response
     {
         abort_unless($course->is_active, 404);
         $student = auth('web')->user();
@@ -109,9 +110,9 @@ class CourseController extends Controller
         }
 
         try {
+            $gateway = $resolver->resolve($request->payment_method);
             $result = $purchases->purchaseCourse(
-                $student, $course, $request->payment_method,
-                $request->payment_method === 'zinipay' ? $zinipay : null
+                $student, $course, $request->payment_method, $gateway
             );
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
@@ -137,7 +138,7 @@ class CourseController extends Controller
         Request $request,
         Course $course,
         PurchaseService $purchases,
-        ZinipayService $zinipay,
+        PaymentGatewayResolver $resolver,
         CourseDeliveryService $delivery
     ): \Symfony\Component\HttpFoundation\Response {
         abort_unless($course->is_active, 404);
@@ -147,6 +148,7 @@ class CourseController extends Controller
             'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
             'type' => ['nullable', 'in:ssc,hsc,university,job'],
+            'payment_method' => ['nullable', 'in:mhpay,zinipay'],
         ]);
 
         $student = auth('web')->user();
@@ -199,12 +201,15 @@ class CourseController extends Controller
             return redirect()->route('courses.show', $course)->with('success', 'Enrolled successfully!');
         }
 
+        $chosenMethod = $validated['payment_method'] ?? 'mhpay';
+        $gateway = $resolver->resolve($chosenMethod);
+
         try {
             $result = $purchases->purchaseCourse(
                 $student,
                 $course,
-                'zinipay',
-                $zinipay,
+                $chosenMethod,
+                $gateway,
                 [
                     'guest_checkout' => true,
                     'guest_name' => $validated['name'],

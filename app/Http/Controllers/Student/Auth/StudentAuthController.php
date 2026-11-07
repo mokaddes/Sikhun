@@ -6,8 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\LoginRequest;
 use App\Http\Requests\Student\RegisterRequest;
 use App\Mail\WelcomeMail;
+use App\Models\Plan;
 use App\Models\Student;
-use App\Services\ReferralService;
+use App\Services\SubscriptionService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -26,7 +27,10 @@ class StudentAuthController extends Controller
             }
         }
 
-        return Inertia::render('Auth/Register');
+        return Inertia::render('Auth/Register', [
+            'plans' => Plan::where('is_active', true)->orderBy('price_monthly')->get(),
+            'defaultPlanId' => $request->query('plan_id'),
+        ]);
     }
 
     public function register(RegisterRequest $request)
@@ -37,28 +41,38 @@ class StudentAuthController extends Controller
                 'email' => $request->email,
                 'password' => $request->password, // hashed via cast
                 'type' => $request->type,
-                'trial_ends_at' => now()->addDays(7),
+                'trial_ends_at' => null, // No more 7-day trial limit
                 'referral_code' => 'SIKHU-'.strtoupper(Str::random(5)),
                 'referred_by_student_id' => $this->resolveReferrer($request->query('ref')),
             ]);
 
+            // Default to Free Plan
+            $freePlan = Plan::where('is_free', true)->orWhere('price_monthly', 0)->first();
+            if ($freePlan) {
+                app(SubscriptionService::class)->assign($student, $freePlan, 12);
+            }
+
             return $student;
         });
-
-        app(ReferralService::class)->recordRegistration($student, $request);
 
         Auth::guard('web')->login($student);
         $request->session()->regenerate();
 
         try {
             Mail::to($student->email)->send(new WelcomeMail($student));
-            $student->sendEmailVerificationNotification();
         } catch (\Throwable) {
-            // Do not block registration if mail transport is not configured.
-            // The student can request a new verification link from the banner.
+            // Do not block registration if mail transport is not configured
         }
 
-        return redirect()->intended(route('onboarding.show'))->with('success', 'Welcome to Sikhun.com!');
+        $planId = $request->input('plan_id');
+        if ($planId) {
+            $chosenPlan = Plan::find($planId);
+            if ($chosenPlan && (float) $chosenPlan->price_monthly > 0) {
+                return redirect()->route('subscription.plans', ['selected' => $chosenPlan->id]);
+            }
+        }
+
+        return redirect()->intended(route('dashboard'))->with('success', 'স্বাগতম! আপনি ফ্রি প্ল্যানে সফলভাবে যুক্ত হয়েছেন।');
     }
 
     public function showLogin(\Illuminate\Http\Request $request): Response

@@ -131,9 +131,12 @@ class BookChunkRetrievalService
             $chapterIds = $accessibleChapterIds;
         }
 
-        // Keep every chapter/null-chapter alternative inside the book-scoped
-        // relationship query so an OR can never escape the requested book.
-        $includeLegacyChunks = ! $hasSelection && $chapterIds && $this->access->hasAccess($student, $book);
+        // Older processed books may have valid chunks but no chapter_id. A
+        // full-book owner can safely use those legacy chunks even when the UI
+        // selected a chapter, because the purchase grants access to the whole
+        // book. Partial chapter owners must never receive unscoped legacy
+        // content because its chapter cannot be proven.
+        $includeLegacyChunks = $chapterIds && $this->access->hasAccess($student, $book);
         $query = $book->chunks()->where(function ($q) use ($chapterIds, $includeLegacyChunks) {
             if ($chapterIds) {
                 $q->whereIn('chapter_id', $chapterIds);

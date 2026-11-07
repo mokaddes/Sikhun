@@ -33,4 +33,25 @@ class SubscriptionService
             ]);
         });
     }
+
+    public function assignCustom(Student $student, array $config, int $months = 1): StudentSubscription
+    {
+        return DB::transaction(function () use ($student, $config, $months) {
+            $student->subscriptions()->where('status', 'active')->update(['status' => 'expired']);
+
+            $basePlan = Plan::where('slug', 'pro')->first() ?? Plan::first();
+
+            return StudentSubscription::create([
+                'student_id' => $student->id,
+                'plan_id' => $basePlan->id,
+                'status' => 'active',
+                'ai_chat_minutes_remaining' => (int) ($config['minutes'] ?? 300),
+                'ai_exam_count_remaining' => (int) ($config['quizzes'] ?? 20),
+                'ai_vision_remaining' => (int) ($config['images'] ?? 50),
+                'monthly_reuploads_remaining' => (int) ($config['reuploads'] ?? 5),
+                'started_at' => now(),
+                'expires_at' => now()->addMonths($months),
+            ]);
+        });
+    }
 }

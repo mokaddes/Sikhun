@@ -30,7 +30,8 @@ import {
     ChevronDoubleLeftIcon,
     MagnifyingGlassIcon,
     CommandLineIcon,
-    DocumentTextIcon,
+    BriefcaseIcon,
+    PlusCircleIcon,
 } from '@heroicons/vue/24/outline';
 
 const { t } = useI18n();
@@ -91,7 +92,6 @@ const nav = computed(() => [
             { label: t('admin.nav.coupons'), href: '/admin/coupons', icon: TicketIcon },
             { label: t('admin.nav.free_campaigns'), href: '/admin/free-campaigns', icon: MegaphoneIcon },
             { label: t('admin.nav.orders'), href: '/admin/orders', icon: InboxIcon },
-            { label: t('admin.nav.invoices'), href: '/admin/invoices', icon: DocumentTextIcon },
         ],
     },
     {
@@ -110,8 +110,16 @@ const nav = computed(() => [
         items: [
             { label: t('admin.nav.notifications'), href: '/admin/notifications', icon: MegaphoneIcon },
             { label: t('admin.nav.support'), href: '/admin/support', icon: ShieldCheckIcon },
-            { label: t('admin.nav.tickets'), href: '/admin/tickets', icon: TicketIcon },
-            { label: t('admin.nav.feedback'), href: '/admin/feedback', icon: ClipboardDocumentCheckIcon },
+        ],
+    },
+    {
+        id: 'jobs',
+        label: 'চাকরির সার্কুলার',
+        icon: BriefcaseIcon,
+        items: [
+            { label: 'সকল সার্কুলার', href: '/admin/jobs', icon: BriefcaseIcon },
+            { label: 'নতুন সার্কুলার যুক্ত করুন', href: '/admin/jobs/create', icon: PlusCircleIcon },
+            { label: 'স্ক্র্যাপিং সোর্স সমূহ', href: '/admin/job-sources', icon: BoltIcon },
         ],
     },
     {

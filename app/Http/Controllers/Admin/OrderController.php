@@ -49,6 +49,17 @@ class OrderController extends Controller
         $order->update(['status' => 'completed']);
         $purchases->fulfill($order);
 
+        // Auto-approve corresponding MHPay invoice if payment was via MHPay
+        if ($order->payment_method === 'mhpay' && $order->gateway_invoice_id) {
+            try {
+                \Illuminate\Support\Facades\Http::withToken(config('mhpay.api_key'))
+                    ->timeout(6)
+                    ->post(rtrim(config('mhpay.api_url', 'https://mhpay.sikhun.com'), '/') . '/api/v1/invoices/' . $order->gateway_invoice_id . '/approve');
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Could not notify MHPay of admin order approval: ' . $e->getMessage());
+            }
+        }
+
         return back()->with('success', 'Order approved and fulfilled.');
     }
 }

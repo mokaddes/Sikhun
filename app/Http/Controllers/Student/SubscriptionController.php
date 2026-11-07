@@ -26,6 +26,23 @@ class SubscriptionController extends Controller
     public function purchase(SubscriptionPurchaseRequest $request, PurchaseService $purchases, PaymentGatewayResolver $resolver): \Symfony\Component\HttpFoundation\Response
     {
         $student = auth('web')->user();
+        if ($request->boolean('is_custom')) {
+            $gateway = $resolver->resolve($request->payment_method);
+            $result = $purchases->purchaseCustomSubscription(
+                $student,
+                (array) $request->input('custom_config', []),
+                (int) ($request->months ?: 1),
+                $request->payment_method,
+                $gateway
+            );
+
+            if ($result['redirect_url']) {
+                return Inertia::location($result['redirect_url']);
+            }
+
+            return redirect()->route('subscription.plans')->with('success', 'কাস্টম সাবস্ক্রিপশন সফলভাবে সক্রিয় হয়েছে!');
+        }
+
         $plan = Plan::findOrFail($request->plan_id);
 
         $isFree = $plan->is_free || (float) $plan->price_monthly <= 0 || $request->payment_method === 'free';

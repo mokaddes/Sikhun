@@ -1,0 +1,49 @@
+2025-2026
+
+Education and Life 7
+
+Lesson 2
+Education and Technology
+
+A. Think about the following questions:
+
+1. Do you use the internet or computer while studying?
+
+2. To what extent do you take help from the internet to know about a new study
+term or word?
+
+3. Do you think digital technology should be incorporated into classrooms?
+
+B, Now read the following article and try to find the answers to the above
+questions.
+AL in The Classroom: Pros, Cons and The Role Of EdTech Companies
+By Olufemi Shonubi
+Artificial intelligence has the potential to revolutionise the way we learn and teach.
+
+As a tool in the classroom, AI can provide students with personalised learning
+
+experiences, automate repetitive tasks and provide instant feedback, However, it
+
+also has its limitations. Let us explore the pros and cons of AI as a tool in the
+classroom, address the concern that AI could be a threat to teachers’ and instructors’
+jobs and discuss the role of edtech companies in advancing this AI use case.
+
+Advantages of AI in the Classroom
+One of the main advantages I see of Al in the classroom is personalised learning.
+Al-powered educational tools can analyse data on student performance and
+provide tailored support to improve their grades.
+
+Al can also provide instant feedback. For example, Al-powered educational tools
+can provide students with immediate feedback on their work, allowing them to
+identify and correct mistakes quickly.
+
+Another advantage of AI is its ability to automate repetitive tasks. It can grade
+assignments and quizzes, which can free up teachers’ time for other tasks, such as
+lesson planning and providing more one-on-one attention to students.
+
+There are already a few AI tools that support learning in classroom or workplace
+contexts, For example, Ahura is an Al-powered learning a
+
+ant that tracks
+learning habits by observing attention and engagement. Knewton offers an
+adaptive learning platform that provides personalized learning experiences for

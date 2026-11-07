@@ -2,16 +2,12 @@
 
 use App\Http\Controllers\Public\BlogController;
 use App\Http\Controllers\Public\PageController;
-use App\Http\Controllers\Public\ReferralController as PublicReferralController;
 use App\Http\Controllers\Student\AccessController;
 use App\Http\Controllers\Student\AiChatController;
-use App\Http\Controllers\Student\Auth\EmailVerificationController;
-use App\Http\Controllers\Student\Auth\PasswordResetController;
 use App\Http\Controllers\Student\Auth\StudentAuthController;
 use App\Http\Controllers\Student\BookshelfController;
 use App\Http\Controllers\Student\CourseController;
 use App\Http\Controllers\Student\DashboardController;
-use App\Http\Controllers\Student\FeedbackController as StudentFeedbackController;
 use App\Http\Controllers\Student\EssayController;
 use App\Http\Controllers\Student\ExamController;
 use App\Http\Controllers\Student\FlashcardController;
@@ -19,14 +15,12 @@ use App\Http\Controllers\Student\LeaderboardController;
 use App\Http\Controllers\Student\LibraryController;
 use App\Http\Controllers\Student\MyBookController;
 use App\Http\Controllers\Student\MyBookReaderController;
-use App\Http\Controllers\Student\OnboardingController;
 use App\Http\Controllers\Student\NotificationController;
 use App\Http\Controllers\Student\ProfileController;
 use App\Http\Controllers\Student\ReaderController;
 use App\Http\Controllers\Student\ReferralController;
 use App\Http\Controllers\Student\ScheduleController;
 use App\Http\Controllers\Student\SubscriptionController;
-use App\Http\Controllers\Student\TicketController as StudentTicketController;
 use App\Http\Controllers\Student\WalletController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,12 +31,7 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/contact', [\App\Http\Controllers\Public\ContactController::class, 'show'])->name('contact.show');
-Route::post('/contact', [\App\Http\Controllers\Public\ContactController::class, 'submit'])
-    ->middleware('throttle:contact')
-    ->name('contact.submit');
-Route::get('/r/{code}', [PublicReferralController::class, 'trackClick'])
-    ->where('code', '[A-Za-z0-9-]+')
-    ->name('referrals.track');
+Route::post('/contact', [\App\Http\Controllers\Public\ContactController::class, 'submit'])->name('contact.submit');
 
 // Public Blog (accessible without login)
 Route::prefix('blog')->name('blog.')->group(function () {
@@ -54,6 +43,15 @@ Route::prefix('blog')->name('blog.')->group(function () {
 // Public Library (browse & detail are public; read, buy, and add-to-shelf require auth)
 Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
 Route::get('/library/{book:slug}', [LibraryController::class, 'show'])->name('library.show');
+
+// Public Job Circulars (accessible without login)
+Route::get('/jobs', [\App\Http\Controllers\Public\JobController::class, 'index'])->name('jobs.index');
+Route::get('/jobs/{slug}', [\App\Http\Controllers\Public\JobController::class, 'show'])->name('jobs.show');
+
+// Public Student Tools Hub & Result Checker (accessible without login)
+Route::get('/tools', [\App\Http\Controllers\Public\ToolController::class, 'tools'])->name('tools.index');
+Route::redirect('/calculators', '/tools', 301);
+Route::get('/results', [\App\Http\Controllers\Public\ToolController::class, 'results'])->name('tools.results');
 
 // Public Courses (browse, detail, free-preview lessons & guest checkout are public)
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
@@ -73,12 +71,7 @@ Route::post('/language/{locale}', function (string $locale) {
 })->name('language.switch');
 
 Route::get('/support/conversation', [\App\Http\Controllers\Public\SupportController::class, 'show'])->name('support.show');
-Route::post('/support/message', [\App\Http\Controllers\Public\SupportController::class, 'send'])
-    ->middleware('throttle:support-message')
-    ->name('support.send');
-Route::post('/support/conversation/ticket', [\App\Http\Controllers\Public\SupportController::class, 'handoff'])
-    ->middleware('throttle:support-handoff')
-    ->name('support.handoff');
+Route::post('/support/message', [\App\Http\Controllers\Public\SupportController::class, 'send'])->name('support.send');
 
 /*
 |--------------------------------------------------------------------------
@@ -87,33 +80,9 @@ Route::post('/support/conversation/ticket', [\App\Http\Controllers\Public\Suppor
 */
 Route::middleware('guest:web')->group(function () {
     Route::get('/register', [StudentAuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [StudentAuthController::class, 'register'])->middleware('throttle:register');
+    Route::post('/register', [StudentAuthController::class, 'register']);
     Route::get('/login', [StudentAuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [StudentAuthController::class, 'login'])->middleware('throttle:auth');
-
-    // Password reset (email link). Always rate-limited so the endpoint
-    // cannot be used to spam a student's inbox or enumerate accounts.
-    Route::get('/forgot-password', [PasswordResetController::class, 'showRequestForm'])->name('password.request');
-    Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])
-        ->middleware('throttle:auth')->name('password.email');
-    Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
-    Route::post('/reset-password', [PasswordResetController::class, 'reset'])
-        ->middleware('throttle:auth')->name('password.store');
-});
-
-/*
-|--------------------------------------------------------------------------
-| Email verification (web guard)
-|--------------------------------------------------------------------------
-| Deliberately outside the student.active group: a deactivated account must
-| still be able to verify, and the signed link may land after a logout.
-*/
-Route::middleware('auth:web')->group(function () {
-    Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
-    Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
-        ->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
-    Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
-        ->middleware('throttle:6,1')->name('verification.send');
+    Route::post('/login', [StudentAuthController::class, 'login']);
 });
 
 /*
@@ -124,9 +93,6 @@ Route::middleware('auth:web')->group(function () {
 Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::post('/logout', [StudentAuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/onboarding', [OnboardingController::class, 'show'])->name('onboarding.show');
-    Route::post('/onboarding/step', [OnboardingController::class, 'saveStep'])->name('onboarding.step');
-    Route::post('/onboarding/skip', [OnboardingController::class, 'skip'])->name('onboarding.skip');
 
     // Library actions (read, purchase, chapter purchase, add to shelf MUST require auth)
     Route::post('/library/{book}/purchase', [LibraryController::class, 'purchase'])->name('library.purchase');
@@ -148,30 +114,17 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/library/{book}/read', [ReaderController::class, 'show'])->name('reader.show');
     Route::get('/library/{book}/read/page/{page}/url', [ReaderController::class, 'pageUrl'])->name('reader.page-url');
     Route::post('/library/{book}/read/progress', [ReaderController::class, 'saveProgress'])->name('reader.progress');
-    Route::post('/library/{book}/read/chat', [ReaderController::class, 'chat'])->middleware('throttle:ai')->name('reader.chat');
+    Route::post('/library/{book}/read/chat', [ReaderController::class, 'chat'])->name('reader.chat');
 
     // My Book reader (own uploads)
     Route::get('/my-books/{myBook}/read', [MyBookReaderController::class, 'show'])->name('my-books.reader.show');
     Route::get('/my-books/{myBook}/read/page/{page}/url', [MyBookReaderController::class, 'pageUrl'])->name('my-books.reader.page-url');
     Route::post('/my-books/{myBook}/read/progress', [MyBookReaderController::class, 'saveProgress'])->name('my-books.reader.progress');
-    Route::post('/my-books/{myBook}/read/chat', [MyBookReaderController::class, 'chat'])->middleware('throttle:ai')->name('my-books.reader.chat');
+    Route::post('/my-books/{myBook}/read/chat', [MyBookReaderController::class, 'chat'])->name('my-books.reader.chat');
 
     // Wallet
     Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
     Route::post('/wallet/recharge', [WalletController::class, 'recharge'])->name('wallet.recharge');
-
-    // Support tickets and feedback
-    Route::get('/support/tickets', [StudentTicketController::class, 'index'])->name('support.tickets.index');
-    Route::post('/support/tickets', [StudentTicketController::class, 'store'])->name('support.tickets.store');
-    Route::get('/support/tickets/{ticket}', [StudentTicketController::class, 'show'])->name('support.tickets.show');
-    Route::post('/support/tickets/{ticket}/messages', [StudentTicketController::class, 'reply'])->name('support.tickets.reply');
-    Route::get('/feedback', [StudentFeedbackController::class, 'index'])->name('feedback.index');
-    Route::post('/feedback', [StudentFeedbackController::class, 'store'])->name('feedback.store');
-
-    // Invoices / receipts
-    Route::get('/invoices', [\App\Http\Controllers\Student\InvoiceController::class, 'index'])->name('invoices.index');
-    Route::get('/invoices/{invoice}', [\App\Http\Controllers\Student\InvoiceController::class, 'show'])->name('invoices.show');
-    Route::get('/invoices/{invoice}/print', [\App\Http\Controllers\Student\InvoiceController::class, 'print'])->name('invoices.print');
 
     // Subscription
     Route::get('/plans', [SubscriptionController::class, 'plans'])->name('subscription.plans');
@@ -183,8 +136,8 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::delete('/ai/chat/{session}', [AiChatController::class, 'destroy'])->name('ai-chat.destroy');
     Route::patch('/ai/chat/{session}', [AiChatController::class, 'rename'])->name('ai-chat.rename');
     Route::patch('/ai/chat/{session}/book', [AiChatController::class, 'attachBook'])->name('ai-chat.attach-book');
-    Route::post('/ai/chat/{session}/stream', [AiChatController::class, 'stream'])->middleware('throttle:ai')->name('ai-chat.stream');
-    Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
+    Route::post('/ai/chat/{session}/stream', [AiChatController::class, 'stream'])->name('ai-chat.stream');
+    Route::middleware('ai.access')->group(function () {
         Route::post('/ai/chat', [AiChatController::class, 'create'])->name('ai-chat.create');
     });
 
@@ -193,14 +146,10 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/exams/create', [ExamController::class, 'createForm'])->name('exams.create-form');
     Route::get('/exams/{exam}', [ExamController::class, 'show'])->name('exams.show');
     Route::get('/exams/{exam}/status', [ExamController::class, 'status'])->name('exams.status');
-    Route::post('/exams/{exam}/retry', [ExamController::class, 'retry'])->middleware('throttle:ai')->name('exams.retry');
     Route::post('/exams/{exam}/complete', [ExamController::class, 'complete'])->name('exams.complete');
     Route::get('/exams/{exam}/result', [ExamController::class, 'result'])->name('exams.result');
-    Route::post('/exams/{exam}/questions/{question}/explanation', [ExamController::class, 'explanation'])
-        ->middleware('throttle:ai')
-        ->name('exams.questions.explanation');
     Route::get('/exams/{exam}/pdf', [ExamController::class, 'pdf'])->name('exams.pdf');
-    Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
+    Route::middleware('ai.access')->group(function () {
         Route::post('/exams', [ExamController::class, 'create'])->name('exams.create');
     });
 
@@ -208,11 +157,10 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/flashcards', [FlashcardController::class, 'index'])->name('flashcards.index');
     Route::get('/flashcards/create', [FlashcardController::class, 'createForm'])->name('flashcards.create-form');
     Route::get('/flashcards/{set}', [FlashcardController::class, 'show'])->name('flashcards.show');
-    Route::post('/flashcards/{set}/retry', [FlashcardController::class, 'retry'])->middleware('throttle:ai')->name('flashcards.retry');
     Route::delete('/flashcards/{set}', [FlashcardController::class, 'destroy'])->name('flashcards.destroy');
     Route::post('/flashcards/{set}/cards/{flashcard}/review', [FlashcardController::class, 'review'])->name('flashcards.review');
     Route::get('/flashcards/{set}/pdf', [FlashcardController::class, 'pdf'])->name('flashcards.pdf');
-    Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
+    Route::middleware('ai.access')->group(function () {
         Route::post('/flashcards', [FlashcardController::class, 'create'])->name('flashcards.create');
     });
 
@@ -221,8 +169,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/essays/create', [EssayController::class, 'create'])->name('essays.create-form');
     Route::get('/essays/{essay}', [EssayController::class, 'show'])->name('essays.show');
     Route::get('/essays/{essay}/status', [EssayController::class, 'status'])->name('essays.status');
-    Route::post('/essays/{essay}/retry', [EssayController::class, 'retry'])->middleware('throttle:ai')->name('essays.retry');
-    Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
+    Route::middleware('ai.access')->group(function () {
         Route::post('/essays', [EssayController::class, 'store'])->name('essays.store');
     });
 
@@ -231,10 +178,9 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/schedules/create', [ScheduleController::class, 'create'])->name('schedules.create-form');
     Route::get('/schedules/{schedule}', [ScheduleController::class, 'show'])->name('schedules.show');
     Route::get('/schedules/{schedule}/status', [ScheduleController::class, 'status'])->name('schedules.status');
-    Route::post('/schedules/{schedule}/retry', [ScheduleController::class, 'retry'])->middleware('throttle:ai')->name('schedules.retry');
     Route::post('/schedules/{schedule}/progress', [ScheduleController::class, 'markProgress'])->name('schedules.progress');
     Route::get('/schedules/{schedule}/pdf', [ScheduleController::class, 'pdf'])->name('schedules.pdf');
-    Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
+    Route::middleware('ai.access')->group(function () {
         Route::post('/schedules', [ScheduleController::class, 'store'])->name('schedules.store');
     });
 
@@ -248,8 +194,6 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::put('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::put('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
-    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
-    Route::delete('/notifications', [NotificationController::class, 'destroyAll'])->name('notifications.destroy-all');
 
     // Notification settings (leaderboard opt-out + notification preferences)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

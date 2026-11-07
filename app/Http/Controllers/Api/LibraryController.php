@@ -6,6 +6,7 @@ use App\Http\Requests\Student\PurchaseRequest;
 use App\Models\Book;
 use App\Models\BookChapter;
 use App\Services\BookAccessService;
+use App\Services\Payment\PaymentGatewayResolver;
 use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\JsonResponse;
@@ -39,14 +40,15 @@ class LibraryController extends BaseApiController
         return $this->success($data);
     }
 
-    public function purchase(PurchaseRequest $request, Book $book, PurchaseService $purchases, ZinipayService $zinipay): JsonResponse
+    public function purchase(PurchaseRequest $request, Book $book, PurchaseService $purchases, PaymentGatewayResolver $resolver): JsonResponse
     {
         try {
+            $gateway = $resolver->resolve($request->payment_method);
             $result = $purchases->purchaseBook(
                 auth('sanctum')->user(),
                 $book,
                 $request->payment_method,
-                $request->payment_method === 'zinipay' ? $zinipay : null
+                $gateway
             );
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), [], 422);
@@ -110,20 +112,21 @@ class LibraryController extends BaseApiController
         ]);
     }
 
-    public function purchaseChapter(Request $request, Book $book, BookChapter $chapter, PurchaseService $purchases, ZinipayService $zinipay): JsonResponse
+    public function purchaseChapter(Request $request, Book $book, BookChapter $chapter, PurchaseService $purchases, PaymentGatewayResolver $resolver): JsonResponse
     {
         abort_unless($chapter->book_id === $book->id, 404);
 
         $validated = $request->validate([
-            'payment_method' => ['required', 'in:wallet,zinipay'],
+            'payment_method' => ['required', 'in:wallet,zinipay,mhpay'],
         ]);
 
         try {
+            $gateway = $resolver->resolve($validated['payment_method']);
             $result = $purchases->purchaseChapter(
                 auth('sanctum')->user(),
                 $chapter,
                 $validated['payment_method'],
-                $validated['payment_method'] === 'zinipay' ? $zinipay : null
+                $gateway
             );
         } catch (\RuntimeException $e) {
             return $this->error($e->getMessage(), [], 422);

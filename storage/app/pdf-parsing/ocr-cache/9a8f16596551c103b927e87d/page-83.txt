@@ -1,0 +1,29 @@
+ag উচ্চতর গণিত
+
+Q E R
+
+প্রমাণ: APQE এ ZPQE = 90° এবং PE অতিভুজ
+PE? = PQ? + QE? -----(1)
+
+আবার, APQR এ ZPQR = 90° এবং PR অতিভুজ
+2 PR? = PQ? +QR?
+বা, PR? = PQ? +(QE+ RE)
+বা, PR? = PQ? + QE? + RE? +2QE- RE
+বা, PR? = PQ? + QE? + QE? +2RE-RE [QE = RE]
+বা, PR? = PE? + QE? + 275 [(1) নং এর সাহায্য]
+«PR? = PE? + 085 72705 প্রমাণিত]
+
+গ) APQR এ ZPQR = 90° এবং QF 1 771) প্রমাণ করতে হবে যে, QF? = PF-RF 1
+Q
+
+প্রমাণ: ZPQR = 90°
+« ZPQF + ZFQR = 90° (৫)
+
+আবার, QF L PRA 47170 = ZQFR = 90°
+APQF এ ZPFQ+ZPQF + ZQPF = 180°
+বা, 90° + 4৫917 + ZQPF = 180°
+ ZPQF + ZQPF = 90° --+-++ (2)
+
+(1) নং এবং (2) নং হতে পাই
+
+২০২৬

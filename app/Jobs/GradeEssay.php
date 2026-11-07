@@ -46,6 +46,8 @@ class GradeEssay implements ShouldQueue
                 throw new \RuntimeException('AI returned an invalid grading format.');
             }
 
+            $this->validateResult($result);
+
             $submission->update(['result' => $result, 'status' => 'completed']);
         } catch (\Throwable $e) {
             $submission->update(['status' => 'failed']);
@@ -76,5 +78,28 @@ class GradeEssay implements ShouldQueue
         }
         Write all feedback in the same language as the essay.
         PROMPT;
+    }
+
+    private function validateResult(array $result): void
+    {
+        foreach (['total_score', 'max_score', 'breakdown', 'overall_feedback', 'strengths', 'improvements'] as $key) {
+            if (! array_key_exists($key, $result)) {
+                throw new \RuntimeException("AI grading response is missing {$key}.");
+            }
+        }
+
+        if (! is_numeric($result['total_score']) || ! is_numeric($result['max_score'])
+            || ! is_array($result['breakdown'])
+            || trim((string) $result['overall_feedback']) === ''
+            || ! is_array($result['strengths']) || ! is_array($result['improvements'])) {
+            throw new \RuntimeException('AI returned an invalid essay grading structure.');
+        }
+
+        foreach (['content', 'language', 'structure', 'originality'] as $criterion) {
+            $row = $result['breakdown'][$criterion] ?? null;
+            if (! is_array($row) || ! isset($row['score'], $row['max'], $row['feedback'])) {
+                throw new \RuntimeException("AI grading response is missing {$criterion} breakdown.");
+            }
+        }
     }
 }

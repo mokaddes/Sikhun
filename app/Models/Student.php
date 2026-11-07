@@ -291,6 +291,16 @@ class Student extends Authenticatable implements MustVerifyEmail
         ));
     }
 
+    public function sendApiEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification(
+            URL::temporarySignedRoute('api.auth.email.verify', now()->addMinutes(60), [
+                'id' => $this->getKey(),
+                'hash' => sha1($this->getEmailForVerification()),
+            ])
+        ));
+    }
+
     public function sendPasswordResetNotification($token): void
     {
         $this->notify(new ResetPasswordNotification($token, $this->getEmailForVerification()));

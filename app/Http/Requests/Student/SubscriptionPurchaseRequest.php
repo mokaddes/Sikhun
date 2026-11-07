@@ -11,7 +11,9 @@ class SubscriptionPurchaseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'plan_id' => ['required', 'exists:plans,id'],
+            'plan_id' => ['required_without:is_custom', 'nullable', 'exists:plans,id'],
+            'is_custom' => ['nullable', 'boolean'],
+            'custom_config' => ['nullable', 'array'],
             'months' => ['required', 'integer', 'min:1', 'max:12'],
             'payment_method' => ['required', 'in:wallet,zinipay,mhpay,free'],
         ];

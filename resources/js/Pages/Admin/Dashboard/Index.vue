@@ -150,6 +150,18 @@ const statusBadge = (s) => ({
             </Link>
         </div>
 
+        <div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <Link v-for="metric in [
+                { label: locale === 'en' ? 'Open support tickets' : 'খোলা সাপোর্ট টিকিট', value: stats.open_tickets ?? 0, href: '/admin/tickets', tint: 'text-[var(--secondary)]' },
+                { label: locale === 'en' ? 'Overdue SLA tickets' : 'SLA মেয়াদোত্তীর্ণ', value: stats.overdue_tickets ?? 0, href: '/admin/tickets?status=open', tint: 'text-red-500' },
+                { label: locale === 'en' ? 'New feedback/reports' : 'নতুন ফিডব্যাক/রিপোর্ট', value: stats.new_feedback ?? 0, href: '/admin/feedback', tint: 'text-amber-500' },
+                { label: locale === 'en' ? 'Bot handoffs' : 'বট থেকে হ্যান্ডঅফ', value: stats.bot_handoffs ?? 0, href: '/admin/tickets', tint: 'text-[var(--tertiary)]' },
+            ]" :key="metric.label" :href="metric.href" class="card card-hover rounded-2xl p-4">
+                <div class="text-xs text-[var(--text-muted)]">{{ metric.label }}</div>
+                <div class="mt-2 font-heading text-2xl font-extrabold" :class="metric.tint">{{ metric.value }}</div>
+            </Link>
+        </div>
+
         <!-- Charts Grid -->
         <div class="mb-8 grid gap-6 lg:grid-cols-2">
             <!-- Revenue Area Chart -->

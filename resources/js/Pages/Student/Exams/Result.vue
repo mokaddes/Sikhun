@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
+import { formatNumber } from '@/utils/format';
 import {
     ArrowLeftIcon,
     ArrowDownTrayIcon,
@@ -16,6 +17,7 @@ import {
 
 const props = defineProps({ exam: Object, canExplain: Boolean });
 const { t, locale } = useI18n();
+const displayNumber = (value) => formatNumber(value, locale.value);
 const page = usePage();
 const csrfToken = computed(() => page.props.csrf_token ?? '');
 
@@ -158,17 +160,17 @@ const scoreGrade = computed(() => {
                             {{ exam.title || exam.display_title || t('exams.your_score') }}
                         </h1>
                         <p class="mt-1 text-xs text-[var(--text-muted)]">
-                            {{ exam.config?.type?.toUpperCase() || 'MCQ' }} · {{ exam.total }} {{ t('exams.questions') }}
+                            {{ exam.config?.type?.toUpperCase() || 'MCQ' }} · {{ displayNumber(exam.total) }} {{ t('exams.questions') }}
                         </p>
                     </div>
 
                     <!-- Large Score Circle / Badge -->
                     <div class="flex flex-col items-center rounded-2xl bg-[var(--surface2)] px-6 py-4 border border-[var(--border)]">
                         <span class="font-heading text-4xl font-black tracking-tight" :class="exam.percentage >= 70 ? 'text-emerald-500' : exam.percentage >= 40 ? 'text-amber-500' : 'text-rose-500'">
-                            {{ exam.percentage }}%
+                            {{ displayNumber(exam.percentage) }}%
                         </span>
                         <span class="mt-1 text-xs font-bold text-[var(--text-muted)]">
-                            {{ exam.score }} / {{ exam.total }} {{ locale === 'en' ? 'Score' : 'নম্বর' }}
+                            {{ displayNumber(exam.score) }} / {{ displayNumber(exam.total) }} {{ locale === 'en' ? 'Score' : 'নম্বর' }}
                         </span>
                     </div>
                 </div>
@@ -177,15 +179,15 @@ const scoreGrade = computed(() => {
                 <div class="mt-6 grid grid-cols-3 gap-3 border-t border-[var(--border)] pt-5">
                     <div class="rounded-xl bg-emerald-500/10 p-3 text-center border border-emerald-500/20">
                         <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 block">{{ t('exams.correct') }}</span>
-                        <span class="text-xl font-black text-emerald-600 dark:text-emerald-400">{{ correctCount }}</span>
+                        <span class="text-xl font-black text-emerald-600 dark:text-emerald-400">{{ displayNumber(correctCount) }}</span>
                     </div>
                     <div class="rounded-xl bg-rose-500/10 p-3 text-center border border-rose-500/20">
                         <span class="text-xs font-semibold text-rose-600 dark:text-rose-400 block">{{ t('exams.incorrect') }}</span>
-                        <span class="text-xl font-black text-rose-600 dark:text-rose-400">{{ incorrectCount }}</span>
+                        <span class="text-xl font-black text-rose-600 dark:text-rose-400">{{ displayNumber(incorrectCount) }}</span>
                     </div>
                     <div class="rounded-xl bg-blue-500/10 p-3 text-center border border-blue-500/20">
                         <span class="text-xs font-semibold text-blue-600 dark:text-blue-400 block">{{ locale === 'en' ? 'Total' : 'মোট' }}</span>
-                        <span class="text-xl font-black text-blue-600 dark:text-blue-400">{{ exam.total }}</span>
+                        <span class="text-xl font-black text-blue-600 dark:text-blue-400">{{ displayNumber(exam.total) }}</span>
                     </div>
                 </div>
 
@@ -222,7 +224,7 @@ const scoreGrade = computed(() => {
                 >
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                            {{ locale === 'en' ? 'Question' : 'প্রশ্ন' }} {{ idx + 1 }}
+                            {{ locale === 'en' ? 'Question' : 'প্রশ্ন' }} {{ displayNumber(idx + 1) }}
                         </span>
                         <span
                             class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold"
@@ -263,11 +265,11 @@ const scoreGrade = computed(() => {
                             class="font-bold text-[var(--primary)] underline underline-offset-2"
                         >
                             {{ q.book_ref.chapter || (locale === 'en' ? 'Book' : 'বই') }}
-                            <span v-if="q.book_ref.page"> · {{ locale === 'en' ? 'Page' : 'পৃষ্ঠা' }} {{ q.book_ref.page }}</span>
+                            <span v-if="q.book_ref.page"> · {{ locale === 'en' ? 'Page' : 'পৃষ্ঠা' }} {{ displayNumber(q.book_ref.page) }}</span>
                         </Link>
                         <span v-else>
                             {{ q.book_ref.chapter || (locale === 'en' ? 'Book' : 'বই') }}
-                            <span v-if="q.book_ref.page"> · {{ locale === 'en' ? 'Page' : 'পৃষ্ঠা' }} {{ q.book_ref.page }}</span>
+                            <span v-if="q.book_ref.page"> · {{ locale === 'en' ? 'Page' : 'পৃষ্ঠা' }} {{ displayNumber(q.book_ref.page) }}</span>
                         </span>
                     </div>
 

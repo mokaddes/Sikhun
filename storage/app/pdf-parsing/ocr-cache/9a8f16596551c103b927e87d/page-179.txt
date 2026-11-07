@@ -1,0 +1,45 @@
+১৭৪
+
+উদাহরণ ১৬. 458 ও B= 7 হলে প্রমাণ করো যে,
+ক) sin(A + B) = sinAcosB + cosAsinB
+
+tanA — tanB
+খ) tan(A— B) =
+D ant )= Ty tanAtanB
+
+সমাধান:
+ক) বামপক্ষ = sin(A +B) = গড +%)_ সঙ =1
+* : wT T T wT
+ডানপক্ষ = sinAcosB + cosAsinB = sin—cos— + cos,sing
+V3 v8 11 3111
+2°92 °2'2 4°49
+
+খ) বামপক্ষ = tan(A— B) = tan(2 - =
+
+#
+tanA—tanB — ‘any — tang
+
+ডানপক্ষ _ -974 an 38 76
+1+tanAtanB 1 4 tan“ 05
+3° 6
+=z 1
+_ Vi- 2,11
+“Te LIS
+1+v3- Vv ‘
+৬3
+
+. বামপক্ষ = ডানপক্ষ (প্রমাণিত)।
+
+উচ্চতর গণিত
+
+ও i রি এর জন্য নি্নোন্ত অভেদসমূহ প্রমাণ করো:
+ক) 9004 -18) = sinAcosB — cosAsinB
+খ) cos(A + B) = cosAcosB — sinAsinB
+
+গ) cos(A — B) = cosAcosB + sinAsinB
+
+2tanB
+ঘ) tangp=
+D tan B =a
+
+২০২৬

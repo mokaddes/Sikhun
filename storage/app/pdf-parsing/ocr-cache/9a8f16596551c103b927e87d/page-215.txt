@@ -1,0 +1,60 @@
+Re উচ্চতর গণিত
+
+এবং (at)? = x? বা ২৮ = oP
+-. P= yl বা lay = 8৪
+
+উদাহরণ ২৬. দেখাও যে, log,p x log,g x log,r x log, b = log,b
+সমাধান: বামপক্ষ = logy x log,g x log,r x log,
+
+= (log,p x log,q) x (log,r x log, b)
+
+= log,g x log,b = log,b = ভানপক্ষ
+
+উদাহরণ ২৭, ote, 2, } ,_ 1
+ae ' Tog, (abe) * Tog,(abe) * Tog, (abe) ~ 1
+
+সমাধান: ধরি, log, (abe) = x, log,(abe) = y, log, (abe) =
+সুতরাং, a® = abe, bY = abe, ০ = abc
+
+.a = (abe)?, b= (abc)*, c= (abe)?
+
+এখন, (abc)! = abc = (abe)? (৫০)৯ (abc)? = (abe)?
+
+1,11
+চি SSL
+72
+1 1 1
+wg ny
+
+log, (abe) " log,(abc) * fog, (abe)
+উদাহরণ ২৮. যদি p = log, (be), ৫ = log,(ca), r = log, (ab) হয় তবে দেখাও যে,
+1 1 1
+
+লি =1
+77778777777
+
+সমাধান: 1+ p = 1+ log, (bc) = log,a + log, (be) = log, (abc)
+একইভাবে 1 + ৫ = log, (abe) এবং 1 +17 = log, (abc)
+
+পূর্ববর্তী উদাহরণে আমরা প্রমাণ করেছি,
+
+1 1 1 ‘ 1
+০7114717771
+
+উদাহরণ ২৯. যদি Be = tosh _ 18 হয় তবে দেখাও যে, ৫০%০ = 1
+—z 2-8 @-y
+
+1 1
+Tog, (abe) = * Tog,(abe) * log.(abe)
+
+=1
+
+=1
+
+loga _ 1০8) _ 1০8০
+y-2 z-a xy
+তাহলে, loga = k(y — ০), logb = k(z — x), loge = k(« — y)
+
+সমাধান: ধরি, =k
+
+২০২৬

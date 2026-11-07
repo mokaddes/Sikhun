@@ -3,8 +3,12 @@ import { Head } from '@inertiajs/vue3';
 import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import ConfirmButton from '@/Components/UI/ConfirmButton.vue';
 import Pagination from '@/Components/UI/Pagination.vue';
+import { useI18n } from '@/i18n';
+import { formatNumber } from '@/utils/format';
 
 defineProps({ entries: Object });
+const { locale } = useI18n();
+const displayNumber = (value) => formatNumber(value, locale.value);
 </script>
 
 <template>
@@ -26,8 +30,8 @@ defineProps({ entries: Object });
                     <tr v-for="e in entries.data" :key="e.id" class="border-b border-[var(--border)] last:border-0">
                         <td class="px-5 py-3">{{ e.student.name }}</td>
                         <td class="px-5 py-3 uppercase text-xs text-[var(--text-muted)]">{{ e.student_type }}</td>
-                        <td class="px-5 py-3">{{ e.score }}/{{ e.total }} ({{ e.percentage }}%)</td>
-                        <td class="px-5 py-3 text-[var(--text-muted)]">W{{ e.week_number }} / M{{ e.month_number }} / {{ e.year }}</td>
+                        <td class="px-5 py-3">{{ displayNumber(e.score) }}/{{ displayNumber(e.total) }} ({{ displayNumber(e.percentage) }}%)</td>
+                        <td class="px-5 py-3 text-[var(--text-muted)]">W{{ displayNumber(e.week_number) }} / M{{ displayNumber(e.month_number) }} / {{ displayNumber(e.year) }}</td>
                         <td class="px-5 py-3 text-right">
                             <ConfirmButton :href="`/admin/leaderboard/${e.id}`" method="delete" label="Remove" />
                         </td>

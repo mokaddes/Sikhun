@@ -110,7 +110,14 @@ class PurchaseService
 
     public function purchaseSubscription(Student $student, Plan $plan, int $months, string $method, ?PaymentGatewayContract $gateway = null): array
     {
-        $amount = (float) $plan->price_monthly * $months;
+        $baseAmount = (float) $plan->price_monthly * $months;
+        $discountFactor = match ($months) {
+            3 => 0.90,
+            6 => 0.80,
+            12 => 0.70,
+            default => 1.0,
+        };
+        $amount = round($baseAmount * $discountFactor, 2);
 
         // Instant fulfillment for Free Plan (0 Tk)
         if ($amount <= 0 || $plan->is_free || $method === 'free') {
@@ -120,10 +127,35 @@ class PurchaseService
 
             return ['redirect_url' => null, 'order' => $order];
         }
-        $order = $this->createOrder($student, 'subscription', $plan->id, $amount, $method, ['months' => $months]);
+        $order = $this->createOrder($student, 'subscription', $plan->id, $amount, $method, [
+            'months' => $months,
+            'base_amount' => $baseAmount,
+            'discount' => round($baseAmount - $amount, 2),
+        ]);
 
         if ($method === 'wallet') {
             $this->wallet->debit($student, $amount, 'subscription_purchase', $order->order_number, "Subscribed: {$plan->name} ({$months}mo)");
+            $order->update(['status' => 'completed']);
+            $this->fulfill($order);
+
+            return ['redirect_url' => null, 'order' => $order];
+        }
+
+        $redirectUrl = $gateway->initiate($order);
+
+        return ['redirect_url' => $redirectUrl, 'order' => $order];
+    }
+
+    public function purchaseCustomSubscription(Student $student, array $config, int $months, string $method, ?PaymentGatewayContract $gateway = null): array
+    {
+        $amount = (float) ($config['total_price'] ?? 199) * $months;
+        $order = $this->createOrder($student, 'custom_subscription', 0, $amount, $method, [
+            'months' => $months,
+            'custom_config' => $config,
+        ]);
+
+        if ($method === 'wallet') {
+            $this->wallet->debit($student, $amount, 'custom_subscription_purchase', $order->order_number, "Custom Plan Subscribed ({$months}mo)");
             $order->update(['status' => 'completed']);
             $this->fulfill($order);
 
@@ -186,6 +218,11 @@ class PurchaseService
             'course' => $order->student->courseEnrollments()->firstOrCreate(
                 ['course_id' => $order->orderable_id],
                 ['progress_percentage' => 0]
+            ),
+            'custom_subscription' => $this->subscriptions->assignCustom(
+                $order->student,
+                $order->meta['custom_config'] ?? [],
+                (int) ($order->meta['months'] ?? 1)
             ),
             'subscription' => $this->subscriptions->assign(
                 $order->student,

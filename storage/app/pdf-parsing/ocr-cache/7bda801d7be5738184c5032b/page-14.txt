@@ -1,0 +1,41 @@
+English For Today
+
+students. Querium is an Al-powered tutor that provides students with step-by-step
+tutoring on math problems and builds personalized lesson plans. ALEKS is an
+Al-powered learning platform that provides individualized learning paths based on
+students’ strengths and weaknesses. Carnegie Learning offers an Al-powered tutor
+that helps students improve their math skills by providing personalised learning
+based on their performance. There's also Smart Sparrow, which allows users to
+provide constructive feedback that is unique to each student. Finally, Gradescope
+is an Al-powered grading tool that automates the grading process, which can free
+up teachers’ time and allow them to provide more individualised attention to
+students.
+
+These are just a few examples of AI tools with applications in the classroom. It is
+important to note that these tools should not replace teachers but rather assist them
+in their work.
+
+Downsides and Challenges of AI in the Classroom
+
+Some teachers and instructors may see AI as a threat to their jobs, believing it will
+automate their tasks and make them redundant. But it is important to note that AT
+is not meant to replace teachers but rather to assist them in their work. AI is a tool
+and should be developed and used as such.
+
+There are also negatives to consider, one of which is the cost of developing and
+
+implementing Al-powered educational tools. This can be a significant barrier for
+
+schools and teachers who need more resources to invest in AI technology.
+
+There is also the lack of human interaction and emotional support that students
+receive when using Al-powered educational tools. While AI can provide
+personalized learning and instant feedback, it cannot replace the human and
+emotional support that students need to succeed, and relying too heavily on
+AL-powered educational tools may impact students negatively.
+
+Privacy concerns are also a limitation of AI in the classroom. Al-powered
+educational tools may collect and store sensitive personal data, which raises
+concerns about privacy and security.
+
+2025-2026

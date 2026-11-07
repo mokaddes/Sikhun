@@ -20,6 +20,8 @@ use App\Http\Controllers\Admin\CourseVideoUploadController;
 use App\Http\Controllers\Admin\CustomPageController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FreeCampaignController;
+use App\Http\Controllers\Admin\JobCircularController;
+use App\Http\Controllers\Admin\JobSourceController;
 use App\Http\Controllers\Admin\LeaderboardController;
 use App\Http\Controllers\Admin\MentorController;
 use App\Http\Controllers\Admin\NotificationBroadcastController;
@@ -110,6 +112,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
         Route::resource('pages', CustomPageController::class)->except(['show']);
+
+        // Job circulars module
+        Route::post('jobs/scrape-now', [JobCircularController::class, 'scrapeNow'])->name('jobs.scrape-now');
+        Route::patch('jobs/{job}/toggle-featured', [JobCircularController::class, 'toggleFeatured'])->name('jobs.toggle-featured');
+        Route::resource('jobs', JobCircularController::class)->except(['show']);
+        Route::post('job-sources/run-all', [JobSourceController::class, 'runAll'])->name('job-sources.run-all');
+        Route::post('job-sources/{jobSource}/run', [JobSourceController::class, 'run'])->name('job-sources.run');
+        Route::resource('job-sources', JobSourceController::class)->only(['index', 'store', 'update', 'destroy']);
 
         // Blog module (Posts, Categories, Scraper Sources, Blocklist)
         Route::post('blog/bulk', [BlogPostController::class, 'bulkAction'])->name('blog.bulk');

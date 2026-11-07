@@ -8,6 +8,9 @@ use App\Models\Book;
 use App\Models\Order;
 use App\Models\Student;
 use App\Models\StudentSubscription;
+use App\Models\SupportConversation;
+use App\Models\SupportTicket;
+use App\Models\Feedback;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -37,6 +40,11 @@ class DashboardController extends Controller
                 'revenue_total' => (float) Order::where('status', 'completed')->sum('amount'),
                 'revenue_today' => (float) Order::where('status', 'completed')->whereDate('created_at', today())->sum('amount'),
                 'draft_blogs' => BlogPost::where('status', 'draft')->count(),
+                'open_tickets' => SupportTicket::whereIn('status', ['open', 'pending'])->count(),
+                'overdue_tickets' => SupportTicket::whereIn('status', ['open', 'pending'])
+                    ->whereNotNull('sla_due_at')->where('sla_due_at', '<', now())->count(),
+                'new_feedback' => Feedback::where('status', 'new')->count(),
+                'bot_handoffs' => SupportConversation::where('bot_enabled', false)->count(),
             ],
             'charts' => [
                 'labels' => $days->map(fn ($d) => $d->format('M j'))->values(),

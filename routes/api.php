@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\WalletController;
 use App\Http\Controllers\Api\ZinipayWebhookController;
+use App\Http\Controllers\Api\MhpayWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -40,6 +41,9 @@ Route::prefix('auth')->group(function () {
 // of living in routes/api.php; the handler always re-verifies the invoice
 // against ZiniPay before fulfilling, so a forged callback is harmless.
 Route::match(['get', 'post'], 'zinipay/webhook', [ZinipayWebhookController::class, 'handle'])->name('zinipay.webhook');
+
+// MHPay automated MFS payment webhook with HMAC signature verification
+Route::match(['get', 'post'], 'mhpay/webhook', [MhpayWebhookController::class, 'handle'])->name('mhpay.webhook');
 
 Route::get('pages/{slug}', [PageController::class, 'show']);
 

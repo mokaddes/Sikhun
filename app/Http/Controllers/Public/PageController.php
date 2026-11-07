@@ -59,6 +59,7 @@ class PageController extends Controller
                 ->take(3)
                 ->get(['id', 'title', 'slug', 'excerpt', 'featured_image', 'blog_category_id', 'published_at', 'view_count']),
             'plans' => Plan::where('is_active', true)->orderBy('price_monthly')->get(),
+            'featuredJobs' => \App\Models\JobCircular::orderByDesc('is_featured')->orderBy('deadline')->take(4)->get(),
             'testimonials' => Testimonial::published()->get(['student_name', 'student_role', 'avatar', 'quote']),
             'seo' => $seo->forHome(),
         ]);

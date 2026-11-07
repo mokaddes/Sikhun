@@ -5,6 +5,7 @@ import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import Pagination from '@/Components/UI/Pagination.vue';
 import TableDropdown from '@/Components/UI/TableDropdown.vue';
 import { useI18n } from '@/i18n';
+import { formatMoney } from '@/utils/format';
 import {
     PlusIcon,
     MagnifyingGlassIcon,
@@ -22,6 +23,7 @@ const props = defineProps({
 });
 
 const { t, locale } = useI18n();
+const displayMoney = (value) => formatMoney(value, locale.value);
 
 const search = ref(props.filters?.search ?? '');
 const status = ref(props.filters?.status ?? '');
@@ -162,7 +164,7 @@ function getBookActions(book) {
                                     {{ t('common.free') }}
                                 </span>
                                 <span v-else class="font-heading font-bold text-[var(--text)]">
-                                    ৳{{ book.price }}
+                                    ৳{{ displayMoney(book.price) }}
                                 </span>
                             </td>
 

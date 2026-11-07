@@ -166,6 +166,14 @@ class BookAccessService
             ->value('chapter_id');
 
         if (! $chapter) {
+            $chapter = $book->chapters()
+                ->where('start_page', '<=', $page)
+                ->where(fn ($q) => $q->whereNull('end_page')->orWhere('end_page', '>=', $page))
+                ->orderByDesc('level')
+                ->value('id');
+        }
+
+        if (! $chapter) {
             return false;
         }
 

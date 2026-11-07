@@ -58,6 +58,16 @@ class PageTextService
 
         if ($row) {
             $row->update(['content' => $text]);
+        } else {
+            $chapterId = $book->chapters()
+                ->where('start_page', '<=', $page)
+                ->where(fn ($q) => $q->whereNull('end_page')->orWhere('end_page', '>=', $page))
+                ->value('id');
+            $book->pages()->create([
+                'page_number' => $page,
+                'chapter_id' => $chapterId,
+                'content' => $text,
+            ]);
         }
 
         return $text;

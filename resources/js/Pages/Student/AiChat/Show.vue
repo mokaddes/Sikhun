@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, nextTick, onMounted } from 'vue';
-import { Head, usePage, router, useForm } from '@inertiajs/vue3';
+import { Head, usePage, router } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
 import ChatSidebar from './Partials/ChatSidebar.vue';
@@ -12,6 +12,18 @@ import {
     Bars3Icon,
     SparklesIcon,
 } from '@heroicons/vue/24/outline';
+import MarkdownIt from 'markdown-it';
+
+const md = new MarkdownIt({
+    html: false,
+    linkify: true,
+    breaks: true,
+});
+
+function renderMarkdown(content) {
+    if (!content) return '';
+    return md.render(content);
+}
 
 const props = defineProps({ session: Object, sessions: Array, books: Array, myBooks: Array });
 
@@ -33,8 +45,6 @@ const attachingBook = ref(false);
 const selectedImage = ref(null);
 const imagePreview = ref(null);
 const fileInput = ref(null);
-const selectedReportIndex = ref(null);
-const feedbackForm = useForm({ type: 'answer_report', target_type: 'ai_answer', target_id: props.session.id, target_key: '', message: '' });
 
 const attachedBook = computed(() => {
     if (props.session.source_type === 'upload') return props.session.myBook ?? null;
@@ -42,29 +52,18 @@ const attachedBook = computed(() => {
 });
 
 const renderMessages = computed(() =>
-    messages.value.map((m, index) => {
+    messages.value.map((m) => {
         if (Array.isArray(m.content)) {
             const text = m.content.filter((p) => p.type === 'text').map((p) => p.text).join('\n');
             const images = m.content
                 .filter((p) => p.type === 'image')
                 .map((p) => (p.path ? `/storage/${p.path}` : p.url))
                 .filter(Boolean);
-            return { role: m.role, text, images, imageOnly: !text, index };
+            return { role: m.role, text, images, imageOnly: !text };
         }
-        return { role: m.role, text: m.content, images: [], imageOnly: false, index };
+        return { role: m.role, text: m.content, images: [], imageOnly: false };
     }),
 );
-
-function submitAnswerReport(index) {
-    feedbackForm.target_key = String(index);
-    feedbackForm.post('/feedback', {
-        preserveScroll: true,
-        onSuccess: () => {
-            selectedReportIndex.value = null;
-            feedbackForm.reset('message');
-        },
-    });
-}
 
 function scrollToBottom() {
     nextTick(() => {
@@ -256,26 +255,16 @@ onMounted(scrollToBottom);
                         <div class="max-w-[85%] sm:max-w-[75%] space-y-2"
                             :class="m.role === 'user' ? 'bg-[var(--primary)] text-white rounded-2xl rounded-br-md px-4 py-2.5' : 'text-[var(--text)]'">
                             <img v-for="(img, j) in m.images" :key="j" :src="img" alt="uploaded" class="rounded-lg max-h-56 w-auto object-contain bg-[var(--surface2)]" />
-                            <div v-if="m.text" class="text-sm whitespace-pre-wrap break-words">{{ m.text }}</div>
+                            <div v-if="m.text && m.role === 'user'" class="text-sm whitespace-pre-wrap break-words">{{ m.text }}</div>
+                            <div v-else-if="m.text" class="text-sm break-words chat-markdown" v-html="renderMarkdown(m.text)"></div>
                             <div v-else-if="m.imageOnly && !m.images.length" class="text-xs text-[var(--text-muted)]">{{ t('ai_chat.image') }}</div>
-                            <template v-if="m.role === 'assistant' && m.text">
-                                <button v-if="selectedReportIndex !== m.index" type="button" class="text-xs text-[var(--text-muted)] underline underline-offset-2" @click="selectedReportIndex = m.index">{{ t('support.report_ai_answer') }}</button>
-                                <form v-else @submit.prevent="submitAnswerReport(m.index)" class="space-y-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
-                                    <label class="block text-xs font-medium">{{ t('support.report_reason') }}
-                                        <textarea v-model="feedbackForm.message" rows="2" maxlength="5000" class="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2 py-1.5 text-sm text-[var(--text)]" />
-                                    </label>
-                                    <div class="flex gap-2">
-                                        <button :disabled="feedbackForm.processing" class="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">{{ t('support.submit_report') }}</button>
-                                        <button type="button" class="px-2 py-1.5 text-xs text-[var(--text-muted)]" @click="selectedReportIndex = null">{{ t('common.cancel') }}</button>
-                                    </div>
-                                </form>
-                            </template>
                         </div>
                     </div>
 
                     <div v-if="streaming" class="flex justify-start">
-                        <div class="max-w-[85%] sm:max-w-[75%] bg-[var(--surface2)] border border-[var(--border)] rounded-2xl rounded-bl-md px-4 py-2.5 text-sm whitespace-pre-wrap break-words">
-                            {{ currentReply || t('ai_chat.thinking') }}
+                        <div class="max-w-[85%] sm:max-w-[75%] bg-[var(--surface2)] border border-[var(--border)] rounded-2xl rounded-bl-md px-4 py-2.5 text-sm break-words chat-markdown">
+                            <div v-if="currentReply" v-html="renderMarkdown(currentReply)"></div>
+                            <span v-else>{{ t('ai_chat.thinking') }}</span>
                             <span v-if="!currentReply" class="inline-flex gap-1 ml-1 align-middle">
                                 <span class="inline-block w-1 h-1 rounded-full bg-current animate-bounce" style="animation-delay:0ms">.</span>
                                 <span class="inline-block w-1 h-1 rounded-full bg-current animate-bounce" style="animation-delay:150ms">.</span>
@@ -414,3 +403,75 @@ onMounted(scrollToBottom);
         </div>
     </StudentLayout>
 </template>
+
+<style scoped>
+:deep(.chat-markdown) {
+    line-height: 1.6;
+}
+:deep(.chat-markdown p) {
+    margin-bottom: 0.65rem;
+}
+:deep(.chat-markdown p:last-child) {
+    margin-bottom: 0;
+}
+:deep(.chat-markdown h1),
+:deep(.chat-markdown h2),
+:deep(.chat-markdown h3),
+:deep(.chat-markdown h4) {
+    font-weight: 700;
+    color: var(--text);
+    margin-top: 0.85rem;
+    margin-bottom: 0.4rem;
+    line-height: 1.35;
+}
+:deep(.chat-markdown h1) { font-size: 1.15rem; }
+:deep(.chat-markdown h2) { font-size: 1.05rem; }
+:deep(.chat-markdown h3) { font-size: 0.95rem; }
+:deep(.chat-markdown h4) { font-size: 0.88rem; }
+:deep(.chat-markdown strong) {
+    font-weight: 700;
+    color: var(--text);
+}
+:deep(.chat-markdown ul) {
+    list-style-type: disc;
+    margin-left: 1.25rem;
+    margin-top: 0.4rem;
+    margin-bottom: 0.65rem;
+}
+:deep(.chat-markdown ol) {
+    list-style-type: decimal;
+    margin-left: 1.25rem;
+    margin-top: 0.4rem;
+    margin-bottom: 0.65rem;
+}
+:deep(.chat-markdown li) {
+    margin-bottom: 0.3rem;
+}
+:deep(.chat-markdown code) {
+    font-family: monospace;
+    font-size: 0.85em;
+    padding: 0.15rem 0.35rem;
+    border-radius: 0.35rem;
+    background-color: color-mix(in srgb, var(--text) 8%, transparent);
+}
+:deep(.chat-markdown pre) {
+    font-family: monospace;
+    font-size: 0.82em;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    background-color: color-mix(in srgb, var(--text) 8%, transparent);
+    overflow-x: auto;
+    margin: 0.65rem 0;
+}
+:deep(.chat-markdown blockquote) {
+    border-left: 3px solid var(--primary);
+    padding-left: 0.75rem;
+    color: var(--text-muted);
+    margin: 0.5rem 0;
+}
+:deep(.chat-markdown hr) {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0.65rem 0;
+}
+</style>

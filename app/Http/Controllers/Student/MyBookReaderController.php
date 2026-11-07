@@ -18,8 +18,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MyBookReaderController extends Controller
 {
-    // Pre-sign up to 250 pages so the opening window paints immediately.
-    private const PRE_SIGNED_WINDOW = 250;
+    // Pre-sign up to 1000 pages so the opening window paints immediately.
+    private const PRE_SIGNED_WINDOW = 1000;
 
     /**
      * Stable signing expiry: URLs for a page/student stay identical all day,

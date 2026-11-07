@@ -57,7 +57,16 @@ function isCurrentChapter(chapter) {
 
 function selectChapter(chapter) {
     if (chapter.start_page) {
-        goToRealPage(chapter.start_page);
+        const sp = Number(chapter.start_page);
+        ensureUrl(sp);
+        if (sp + 1 <= props.totalPages) ensureUrl(sp + 1);
+
+        if (ready.value && bookEl.value) {
+            try {
+                $(bookEl.value).turn('stop');
+            } catch (e) {}
+        }
+        goToRealPage(sp);
     }
     if (window.innerWidth < 768) {
         chapterSidebarOpen.value = false;
@@ -83,6 +92,7 @@ let panStart = { x: 0, y: 0 };
 
 const size = ref(computeSize());
 const loaded = {};
+const pageImageUrls = {};
 const memoryCache = new Set();
 let inflight = new Set();
 let prewarmTimer = null;
@@ -164,7 +174,10 @@ function pageUrl(realPage) {
 
 function goToRealPage(page) {
     const index = realPages.value.indexOf(Number(page));
-    if (ready.value && index >= 0) {
+    if (ready.value && index >= 0 && bookEl.value) {
+        try {
+            $(bookEl.value).turn('stop');
+        } catch (e) {}
         $(bookEl.value).turn('page', index + 1);
     }
 }
@@ -201,10 +214,23 @@ function buildPages() {
 }
 
 function applyPageImage(realPage, url) {
-    const $page = $(bookEl.value).find(`.page[data-real="${realPage}"]`).first();
+    pageImageUrls[realPage] = url;
+    let $page = $(bookEl.value).find(`.page[data-real="${realPage}"]`).first();
+    if (!$page.length && bookEl.value) {
+        const turnData = $(bookEl.value).data();
+        if (turnData?.pageObjs) {
+            const pos = realPages.value.indexOf(Number(realPage)) + 1;
+            if (turnData.pageObjs[pos]) {
+                $page = turnData.pageObjs[pos];
+            }
+        }
+    }
     if (!$page.length) return;
 
-    if ($page.attr('data-loaded-url') === url) return;
+    if ($page.attr('data-loaded-url') === url && memoryCache.has(url)) {
+        $page.children('.turn-page-loader').remove();
+        return;
+    }
 
     // Apply background image immediately so the browser starts progressive painting
     $page.attr('data-loaded-url', url);
@@ -240,6 +266,7 @@ function applyPageImage(realPage, url) {
             `);
             loader.find('.retry-btn').off('click').on('click', () => {
                 delete loaded[realPage];
+                delete pageImageUrls[realPage];
                 ensureUrl(realPage);
             });
         }
@@ -342,9 +369,14 @@ function loadView(view, prefetch = true) {
     view.forEach((pos) => {
         if (pos > 0) {
             const real = realPages.value[pos - 1];
-            if (real !== undefined && !seen.has(real)) {
-                seen.add(real);
-                ensureUrl(real);
+            if (real !== undefined) {
+                const knownUrl = pageImageUrls[real] || props.pageUrls?.[real];
+                if (knownUrl) {
+                    applyPageImage(real, knownUrl);
+                } else if (!seen.has(real)) {
+                    seen.add(real);
+                    ensureUrl(real);
+                }
             }
         }
     });
@@ -501,6 +533,9 @@ function jumpTo() {
 
 function turnTo(pos) {
     if (ready.value && bookEl.value) {
+        try {
+            $(bookEl.value).turn('stop');
+        } catch (e) {}
         $(bookEl.value).turn('page', Math.max(1, Math.min(pos, realPages.value.length)));
     }
 }

@@ -20,9 +20,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReaderController extends Controller
 {
-    // Pre-sign up to 250 pages so almost any book requires zero extra round-trips
+    // Pre-sign up to 1000 pages so almost any book requires zero extra round-trips
     // to mint URLs. Farther pages are minted on demand.
-    private const PRE_SIGNED_WINDOW = 250;
+    private const PRE_SIGNED_WINDOW = 1000;
 
     /**
      * Stable signing expiry: URLs minted for a page/student stay identical for
@@ -119,7 +119,7 @@ class ReaderController extends Controller
 
     private function preSignedWindow(Book $book, $student, ?array $accessiblePages): array
     {
-        $limit = min(self::PRE_SIGNED_WINDOW, (int) $book->total_pages);
+        $limit = min(self::PRE_SIGNED_WINDOW, max((int) $book->total_pages, 1));
 
         $pages = $accessiblePages !== null
             ? collect($accessiblePages)->filter(fn (int $p) => $p <= $limit)->sort()->values()->all()
@@ -128,6 +128,19 @@ class ReaderController extends Controller
         $urls = [];
         foreach ($pages as $p) {
             $urls[$p] = $this->signedPageUrl($book->id, $p, $student->id);
+        }
+
+        // Always ensure every chapter's start and second page are signed so clicking chapters is instant
+        foreach ($book->chapters as $chapter) {
+            if ($chapter->start_page && ($accessiblePages === null || in_array($chapter->start_page, $accessiblePages, true))) {
+                $sp = (int) $chapter->start_page;
+                if (! isset($urls[$sp])) {
+                    $urls[$sp] = $this->signedPageUrl($book->id, $sp, $student->id);
+                }
+                if ($sp + 1 <= (int) $book->total_pages && (! isset($urls[$sp + 1])) && ($accessiblePages === null || in_array($sp + 1, $accessiblePages, true))) {
+                    $urls[$sp + 1] = $this->signedPageUrl($book->id, $sp + 1, $student->id);
+                }
+            }
         }
 
         return $urls;

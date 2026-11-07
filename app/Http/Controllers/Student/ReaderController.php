@@ -229,6 +229,7 @@ class ReaderController extends Controller
         $validated = $request->validate([
             'message' => ['required', 'string', 'max:4000'],
             'page' => ['required', 'integer', 'min:1'],
+            'session_id' => ['nullable', 'integer'],
         ]);
 
         $target = (int) $validated['page'];
@@ -251,7 +252,26 @@ class ReaderController extends Controller
             ->where(fn ($q) => $q->whereNull('end_page')->orWhere('end_page', '>=', $target))
             ->orderByDesc('level')->first();
 
-        return $chat->stream($book->title, $contextPages, $validated['message'], $chapter?->title);
+        // Attach to existing AiSession or create a new session named after Book and Page
+        $session = null;
+        if (! empty($validated['session_id']) && $student) {
+            $session = $student->aiSessions()->find($validated['session_id']);
+        }
+
+        if (! $session && $student) {
+            $bnPage = \App\Models\BookChapter::toBengaliDigits($target);
+            $sessionTitle = "{$book->title} - পৃষ্ঠা {$bnPage}";
+
+            $session = $student->aiSessions()->create([
+                'source_type' => 'book',
+                'source_book_id' => $book->id,
+                'title' => $sessionTitle,
+                'messages' => [],
+                'tokens_used' => 0,
+            ]);
+        }
+
+        return $chat->stream($book->title, $contextPages, $validated['message'], $chapter?->title, $session);
     }
 
     /**

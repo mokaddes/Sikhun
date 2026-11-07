@@ -53,18 +53,19 @@ function onPageChange(pageNumber) {
             @page-change="onPageChange"
         />
 
-        <!-- Page-context chat — pinned to bottom-right corner -->
-        <div class="fixed bottom-6 right-6 z-40 flex flex-col items-end pointer-events-none">
-            <div v-if="chatOpen" class="mb-3 w-80 sm:w-96 max-w-[calc(100vw-3rem)] pointer-events-auto">
-                <ReaderChatPanel
-                    :chat-url="`/my-books/${myBook.id}/read/chat`"
-                    :page="currentPage"
-                    @close="chatOpen = false"
-                />
-            </div>
+        <!-- Floating Reader Chatbot (draggable, resizable, dockable left/right) -->
+        <ReaderChatPanel
+            v-if="chatOpen"
+            :chat-url="`/my-books/${myBook.id}/read/chat`"
+            :page="currentPage"
+            :book-title="myBook.title"
+            @close="chatOpen = false"
+        />
+
+        <!-- Floating Chat Opener Button (when chat is closed) -->
+        <div v-else class="fixed bottom-6 right-6 z-40">
             <button
-                v-else
-                class="pointer-events-auto w-14 h-14 rounded-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+                class="w-14 h-14 rounded-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
                 :aria-label="t('reader.chat_title')"
                 :title="t('reader.chat_title')"
                 @click="chatOpen = true"

@@ -124,10 +124,12 @@ class MyBookReaderController extends Controller
     public function chat(Request $request, MyBook $myBook, PageChatService $chat, PageTextService $pageText): StreamedResponse
     {
         $this->authorize($myBook);
+        $student = auth('web')->user();
 
         $validated = $request->validate([
             'message' => ['required', 'string', 'max:4000'],
             'page' => ['required', 'integer', 'min:1'],
+            'session_id' => ['nullable', 'integer'],
         ]);
 
         $target = (int) $validated['page'];
@@ -144,6 +146,25 @@ class MyBookReaderController extends Controller
             }
         }
 
-        return $chat->stream($myBook->title, $contextPages, $validated['message']);
+        // Attach to existing AiSession or create a new session named after MyBook and Page
+        $session = null;
+        if (! empty($validated['session_id']) && $student) {
+            $session = $student->aiSessions()->find($validated['session_id']);
+        }
+
+        if (! $session && $student) {
+            $bnPage = \App\Models\BookChapter::toBengaliDigits($target);
+            $sessionTitle = "{$myBook->title} - পৃষ্ঠা {$bnPage}";
+
+            $session = $student->aiSessions()->create([
+                'source_type' => 'upload',
+                'source_my_book_id' => $myBook->id,
+                'title' => $sessionTitle,
+                'messages' => [],
+                'tokens_used' => 0,
+            ]);
+        }
+
+        return $chat->stream($myBook->title, $contextPages, $validated['message'], null, $session);
     }
 }

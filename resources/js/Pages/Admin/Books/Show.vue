@@ -44,9 +44,42 @@ const embeddingCoverage = props.stats.chunks > 0
 
 // ==================== MANUAL CHAPTER DIVISION ====================
 
-// Sort chapters by start_page
+const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+
+function toEnglishDigits(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[০-৯]/g, (d) => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+}
+
+function toBengaliDigits(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[0-9]/g, (d) => BN_DIGITS[Number(d)]);
+}
+
+function parseChapterNumber(val) {
+    if (val === null || val === undefined || val === '') return null;
+    const eng = toEnglishDigits(String(val));
+    const m = eng.match(/\d+/);
+    return m ? parseInt(m[0], 10) : null;
+}
+
+// Sort chapters strictly by reading order (1, 2, 3...)
 const sortedChapters = computed(() => {
-    return [...(props.chapters || [])].sort((a, b) => (a.start_page || 0) - (b.start_page || 0));
+    return [...(props.chapters || [])].sort((a, b) => {
+        const pageA = (a.start_page != null && a.start_page > 0) ? Number(a.start_page) : 999999;
+        const pageB = (b.start_page != null && b.start_page > 0) ? Number(b.start_page) : 999999;
+        if (pageA !== pageB) return pageA - pageB;
+
+        const numA = parseChapterNumber(a.chapter_number) ?? 999999;
+        const numB = parseChapterNumber(b.chapter_number) ?? 999999;
+        if (numA !== numB) return numA - numB;
+
+        const sortA = Number(a.sort_order ?? 0);
+        const sortB = Number(b.sort_order ?? 0);
+        if (sortA !== sortB) return sortA - sortB;
+
+        return (a.id || 0) - (b.id || 0);
+    });
 });
 
 // Calculate total coverage
@@ -74,7 +107,7 @@ const showChapterModal = ref(false);
 const editingChapterId = ref(null);
 const chapterForm = useForm({
     title: '',
-    chapter_number: null,
+    chapter_number: '',
     start_page: 1,
     end_page: 1,
     price: null,
@@ -84,13 +117,20 @@ function openAddChapterModal() {
     editingChapterId.value = null;
     const chapters = sortedChapters.value;
     let nextStart = 1;
-    let nextNum = 1;
+    let maxNum = 0;
+    let maxEndPage = 0;
 
-    if (chapters.length > 0) {
-        const last = chapters[chapters.length - 1];
-        nextStart = Math.min((last.end_page || last.start_page || 1) + 1, totalBookPages.value);
-        nextNum = (last.chapter_number || chapters.length) + 1;
+    for (const c of chapters) {
+        const end = Number(c.end_page || c.start_page || 0);
+        if (end > maxEndPage) maxEndPage = end;
+        const n = parseChapterNumber(c.chapter_number);
+        if (n && n > maxNum) maxNum = n;
     }
+
+    if (maxEndPage > 0) {
+        nextStart = Math.min(maxEndPage + 1, totalBookPages.value);
+    }
+    const nextNum = maxNum > 0 ? maxNum + 1 : (chapters.length + 1);
 
     chapterForm.reset();
     chapterForm.title = `অধ্যায় ${nextNum}`;
@@ -104,7 +144,7 @@ function openAddChapterModal() {
 function openEditChapterModal(chapter) {
     editingChapterId.value = chapter.id;
     chapterForm.title = chapter.title;
-    chapterForm.chapter_number = chapter.chapter_number;
+    chapterForm.chapter_number = chapter.chapter_number ?? '';
     chapterForm.start_page = chapter.start_page || 1;
     chapterForm.end_page = chapter.end_page || chapter.start_page || 1;
     chapterForm.price = chapter.price !== null ? Number(chapter.price) : null;
@@ -112,6 +152,10 @@ function openEditChapterModal(chapter) {
 }
 
 function saveChapter() {
+    // Normalize chapter_number to integer if provided
+    const parsedNum = parseChapterNumber(chapterForm.chapter_number);
+    chapterForm.chapter_number = parsedNum !== null ? parsedNum : null;
+
     if (editingChapterId.value) {
         chapterForm.put(`/admin/books/${props.book.id}/chapters/${editingChapterId.value}`, {
             preserveScroll: true,
@@ -419,7 +463,7 @@ function applyQuickSplit() {
                             class="hover:bg-[var(--surface2)]/40 transition"
                         >
                             <td class="py-3 px-4 font-mono font-bold text-[var(--text-muted)]">
-                                {{ c.chapter_number ?? '—' }}
+                                {{ c.chapter_number ? `${toEnglishDigits(c.chapter_number)} (${toBengaliDigits(c.chapter_number)})` : '—' }}
                             </td>
                             <td class="py-3 px-4">
                                 <div class="font-bold text-sm text-[var(--text)]">{{ c.title }}</div>
@@ -502,12 +546,13 @@ function applyQuickSplit() {
                             <div>
                                 <label class="block font-bold text-[var(--text)] mb-1">Chapter Number</label>
                                 <input
-                                    v-model.number="chapterForm.chapter_number"
-                                    type="number"
-                                    min="1"
-                                    placeholder="1, 2, 3..."
+                                    v-model="chapterForm.chapter_number"
+                                    type="text"
+                                    inputmode="numeric"
+                                    placeholder="1, 2, 3... বা ১, ২, ৩..."
                                     class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--primary)]"
                                 />
+                                <p class="text-[11px] text-[var(--text-muted)] mt-0.5">বাংলা বা ইংরেজি সংখ্যা (যেমন: 1 বা ১)</p>
                             </div>
                             <div>
                                 <label class="block font-bold text-[var(--text)] mb-1">Price (৳ Optional)</label>

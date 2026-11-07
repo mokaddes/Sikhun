@@ -41,8 +41,19 @@ class Book extends Model implements PdfParsable
     public function category() { return $this->belongsTo(Category::class); }
     public function bookShelves() { return $this->hasMany(BookShelf::class); }
     public function chunks() { return $this->hasMany(BookChunk::class); }
-    public function chapters() { return $this->hasMany(BookChapter::class)->orderBy('sort_order'); }
-    public function topChapters() { return $this->hasMany(BookChapter::class)->whereNull('parent_id')->orderBy('sort_order'); }
+    public function chapters() {
+        return $this->hasMany(BookChapter::class)
+            ->orderByRaw('CASE WHEN start_page IS NOT NULL AND start_page > 0 THEN start_page ELSE 999999 END ASC')
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
+    public function topChapters() {
+        return $this->hasMany(BookChapter::class)
+            ->whereNull('parent_id')
+            ->orderByRaw('CASE WHEN start_page IS NOT NULL AND start_page > 0 THEN start_page ELSE 999999 END ASC')
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
     public function pages() { return $this->hasMany(BookPage::class); }
     public function elements() { return $this->hasMany(BookElement::class); }
     public function tables() { return $this->hasMany(BookTable::class); }

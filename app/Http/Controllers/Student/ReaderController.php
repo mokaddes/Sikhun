@@ -113,7 +113,11 @@ class ReaderController extends Controller
             'accessiblePages' => $accessiblePages,
             'pageUrls' => $pageUrls,
             'initialPage' => $initialPage,
-            'chapters' => $book->chapters()->orderBy('sort_order')->get(['id', 'parent_id', 'title', 'chapter_number', 'level', 'start_page', 'end_page']),
+            'chapters' => $book->chapters()
+                ->orderByRaw('CASE WHEN start_page IS NOT NULL AND start_page > 0 THEN start_page ELSE 999999 END ASC')
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get(['id', 'parent_id', 'title', 'chapter_number', 'level', 'start_page', 'end_page']),
         ]);
     }
 

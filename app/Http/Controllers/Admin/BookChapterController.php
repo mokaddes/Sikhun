@@ -16,6 +16,15 @@ class BookChapterController extends Controller
 {
     public function store(Request $request, Book $book): RedirectResponse
     {
+        $rawChapterNum = $request->input('chapter_number');
+        $parsedNum = ($rawChapterNum !== null && $rawChapterNum !== '')
+            ? BookChapter::parseNumber($rawChapterNum)
+            : null;
+
+        if ($parsedNum !== null) {
+            $request->merge(['chapter_number' => $parsedNum]);
+        }
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'chapter_number' => ['nullable', 'integer', 'min:1'],
@@ -25,7 +34,21 @@ class BookChapterController extends Controller
         ]);
 
         DB::transaction(function () use ($book, $validated) {
-            $baseSlug = Str::slug($validated['title']) ?: 'chapter-' . ($validated['chapter_number'] ?? $validated['start_page']);
+            $chapterNumber = $validated['chapter_number'] ?? null;
+            if ($chapterNumber === null) {
+                // Auto-determine next chapter number based on existing chapters
+                $existing = $book->chapters()->get();
+                $maxNum = 0;
+                foreach ($existing as $c) {
+                    $n = BookChapter::parseNumber($c->chapter_number);
+                    if ($n && $n > $maxNum) {
+                        $maxNum = $n;
+                    }
+                }
+                $chapterNumber = $maxNum > 0 ? $maxNum + 1 : ($existing->count() + 1);
+            }
+
+            $baseSlug = Str::slug($validated['title']) ?: 'chapter-' . ($chapterNumber ?? $validated['start_page']);
             $slug = $baseSlug;
             $counter = 1;
             while ($book->chapters()->where('slug', $slug)->exists()) {
@@ -35,7 +58,7 @@ class BookChapterController extends Controller
 
             $chapter = $book->chapters()->create([
                 'title' => $validated['title'],
-                'chapter_number' => $validated['chapter_number'] ?? ($book->chapters()->count() + 1),
+                'chapter_number' => (string) $chapterNumber,
                 'slug' => $slug,
                 'level' => 1,
                 'start_page' => $validated['start_page'],
@@ -53,6 +76,9 @@ class BookChapterController extends Controller
             BookChunk::where('book_id', $book->id)
                 ->whereBetween('page_number', [$chapter->start_page, $chapter->end_page])
                 ->update(['chapter_id' => $chapter->id]);
+
+            // Resequence all chapters in chronological order (1, 2, 3...)
+            BookChapter::resequenceForBook($book->id);
         });
 
         return back()->with('success', 'Chapter created and pages synchronized successfully.');
@@ -61,6 +87,15 @@ class BookChapterController extends Controller
     public function update(Request $request, Book $book, BookChapter $chapter): RedirectResponse
     {
         abort_unless($chapter->book_id === $book->id, 404);
+
+        $rawChapterNum = $request->input('chapter_number');
+        $parsedNum = ($rawChapterNum !== null && $rawChapterNum !== '')
+            ? BookChapter::parseNumber($rawChapterNum)
+            : null;
+
+        if ($parsedNum !== null) {
+            $request->merge(['chapter_number' => $parsedNum]);
+        }
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -71,9 +106,13 @@ class BookChapterController extends Controller
         ]);
 
         DB::transaction(function () use ($book, $chapter, $validated) {
+            $chapterNumber = isset($validated['chapter_number']) && $validated['chapter_number'] !== null
+                ? (string) $validated['chapter_number']
+                : $chapter->chapter_number;
+
             $chapter->update([
                 'title' => $validated['title'],
-                'chapter_number' => $validated['chapter_number'] ?? $chapter->chapter_number,
+                'chapter_number' => $chapterNumber,
                 'start_page' => $validated['start_page'],
                 'end_page' => $validated['end_page'],
                 'price' => $validated['price'] ?? null,
@@ -89,6 +128,9 @@ class BookChapterController extends Controller
             BookChunk::where('book_id', $book->id)
                 ->whereBetween('page_number', [$chapter->start_page, $chapter->end_page])
                 ->update(['chapter_id' => $chapter->id]);
+
+            // Resequence all chapters in chronological order (1, 2, 3...)
+            BookChapter::resequenceForBook($book->id);
         });
 
         return back()->with('success', 'Chapter updated and pages synchronized successfully.');
@@ -109,6 +151,9 @@ class BookChapterController extends Controller
                 ->update(['chapter_id' => null]);
 
             $chapter->delete();
+
+            // Resequence remaining chapters
+            BookChapter::resequenceForBook($book->id);
         });
 
         return back()->with('success', 'Chapter deleted successfully.');
@@ -119,6 +164,16 @@ class BookChapterController extends Controller
      */
     public function sync(Request $request, Book $book): RedirectResponse
     {
+        $rawChapters = $request->input('chapters', []);
+        if (is_array($rawChapters)) {
+            foreach ($rawChapters as $idx => $raw) {
+                if (isset($raw['chapter_number']) && $raw['chapter_number'] !== null && $raw['chapter_number'] !== '') {
+                    $rawChapters[$idx]['chapter_number'] = BookChapter::parseNumber($raw['chapter_number']);
+                }
+            }
+            $request->merge(['chapters' => $rawChapters]);
+        }
+
         $validated = $request->validate([
             'chapters' => ['required', 'array'],
             'chapters.*.id' => ['nullable', 'integer'],
@@ -138,7 +193,11 @@ class BookChapterController extends Controller
                     $chapter = $book->chapters()->find($item['id']);
                 }
 
-                $baseSlug = Str::slug($item['title']) ?: 'chapter-' . ($item['chapter_number'] ?? ($index + 1));
+                $chapterNum = isset($item['chapter_number']) && $item['chapter_number'] !== null
+                    ? (string) $item['chapter_number']
+                    : (string) ($index + 1);
+
+                $baseSlug = Str::slug($item['title']) ?: 'chapter-' . $chapterNum;
                 $slug = $baseSlug;
 
                 if (! $chapter) {
@@ -150,7 +209,7 @@ class BookChapterController extends Controller
 
                     $chapter = $book->chapters()->create([
                         'title' => $item['title'],
-                        'chapter_number' => $item['chapter_number'] ?? ($index + 1),
+                        'chapter_number' => $chapterNum,
                         'slug' => $slug,
                         'level' => 1,
                         'start_page' => $item['start_page'],
@@ -161,7 +220,7 @@ class BookChapterController extends Controller
                 } else {
                     $chapter->update([
                         'title' => $item['title'],
-                        'chapter_number' => $item['chapter_number'] ?? ($index + 1),
+                        'chapter_number' => $chapterNum,
                         'start_page' => $item['start_page'],
                         'end_page' => $item['end_page'],
                         'price' => $item['price'] ?? null,
@@ -197,6 +256,9 @@ class BookChapterController extends Controller
                     $rm->delete();
                 }
             }
+
+            // Resequence all chapters
+            BookChapter::resequenceForBook($book->id);
         });
 
         return back()->with('success', count($validated['chapters']) . ' chapters synchronized successfully.');

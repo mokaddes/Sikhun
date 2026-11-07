@@ -7,6 +7,7 @@ use App\Http\Requests\Student\PurchaseRequest;
 use App\Models\Book;
 use App\Models\Category;
 use App\Services\BookAccessService;
+use App\Services\Payment\PaymentGatewayResolver;
 use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\Request;
@@ -64,7 +65,9 @@ class LibraryController extends Controller
         $chapters = collect();
         if ($book->chapter_purchase_enabled && $book->chapters()->exists()) {
             $chapters = $book->chapters()
+                ->orderByRaw('CASE WHEN start_page IS NOT NULL AND start_page > 0 THEN start_page ELSE 999999 END ASC')
                 ->orderBy('sort_order')
+                ->orderBy('id')
                 ->get(['id', 'parent_id', 'chapter_number', 'title', 'level', 'start_page', 'end_page', 'price'])
                 ->map(function ($chapter) use ($ownedChapterIds, $hasFullAccess) {
                     return [
@@ -119,22 +122,23 @@ class LibraryController extends Controller
         return back()->with('success', 'Book added to your bookshelf!');
     }
 
-    public function purchaseChapter(Request $request, Book $book, \App\Models\BookChapter $chapter, PurchaseService $purchases, ZinipayService $zinipay): \Symfony\Component\HttpFoundation\Response
+    public function purchaseChapter(Request $request, Book $book, \App\Models\BookChapter $chapter, PurchaseService $purchases, PaymentGatewayResolver $resolver): \Symfony\Component\HttpFoundation\Response
     {
         abort_unless($chapter->book_id === $book->id, 404);
 
         $validated = $request->validate([
-            'payment_method' => ['required', 'in:wallet,zinipay'],
+            'payment_method' => ['required', 'in:wallet,zinipay,mhpay'],
         ]);
 
         $student = auth('web')->user();
 
         try {
+            $gateway = $resolver->resolve($validated['payment_method']);
             $result = $purchases->purchaseChapter(
                 $student,
                 $chapter,
                 $validated['payment_method'],
-                $validated['payment_method'] === 'zinipay' ? $zinipay : null
+                $gateway
             );
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
@@ -147,16 +151,17 @@ class LibraryController extends Controller
         return back()->with('success', 'Chapter purchased!');
     }
 
-    public function purchase(PurchaseRequest $request, Book $book, PurchaseService $purchases, ZinipayService $zinipay): \Symfony\Component\HttpFoundation\Response
+    public function purchase(PurchaseRequest $request, Book $book, PurchaseService $purchases, PaymentGatewayResolver $resolver): \Symfony\Component\HttpFoundation\Response
     {
         $student = auth('web')->user();
 
         try {
+            $gateway = $resolver->resolve($request->payment_method);
             $result = $purchases->purchaseBook(
                 $student,
                 $book,
                 $request->payment_method,
-                $request->payment_method === 'zinipay' ? $zinipay : null
+                $gateway
             );
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());

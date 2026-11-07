@@ -215,7 +215,9 @@ class BookController extends Controller
         return Inertia::render('Admin/Books/Show', [
             'book' => $book,
             'chapters' => $book->chapters()
+                ->orderByRaw('CASE WHEN start_page IS NOT NULL AND start_page > 0 THEN start_page ELSE 999999 END ASC')
                 ->orderBy('sort_order')
+                ->orderBy('id')
                 ->get(['id', 'parent_id', 'chapter_number', 'title', 'level', 'start_page', 'end_page', 'price']),
             'stats' => [
                 'pages' => $book->pages_count,

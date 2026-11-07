@@ -33,19 +33,97 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['page-change']);
-const { t } = useI18n();
+const { t, locale } = useI18n();
+
+const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+
+function toEnglishDigits(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[০-৯]/g, (d) => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+}
+
+function toBengaliDigits(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[0-9]/g, (d) => BN_DIGITS[Number(d)]);
+}
+
+function parseChapterNum(val) {
+    if (val === null || val === undefined || val === '') return null;
+    const eng = toEnglishDigits(String(val));
+    const m = eng.match(/\d+/);
+    return m ? parseInt(m[0], 10) : null;
+}
+
+function formatChapterLabel(chapter) {
+    if (!chapter.chapter_number) {
+        return locale.value === 'bn' ? 'অনুচ্ছেদ' : 'Section';
+    }
+    const isBn = locale.value === 'bn' || /[০-৯\u0980-\u09FF]/.test(String(chapter.chapter_number)) || /[০-৯\u0980-\u09FF]/.test(props.book?.title || '');
+    if (isBn) {
+        return `অধ্যায় ${toBengaliDigits(chapter.chapter_number)}`;
+    }
+    return `Chapter ${toEnglishDigits(chapter.chapter_number)}`;
+}
+
+function formatPageRange(start, end) {
+    const s = start || 1;
+    const e = end || s;
+    const isBn = locale.value === 'bn' || /[০-৯\u0980-\u09FF]/.test(props.book?.title || '');
+    if (isBn) {
+        return `পৃষ্ঠা ${toBengaliDigits(s)}–${toBengaliDigits(e)}`;
+    }
+    return `Pages ${s}–${e}`;
+}
 
 // Chapter sidebar drawer state
 const chapterSidebarOpen = ref(false);
 const chapterSearch = ref('');
-const filteredChapters = computed(() => {
+
+// Sorted chapters strictly in reading order (1, 2, 3...)
+const sortedChapters = computed(() => {
     if (!props.chapters?.length) return [];
-    if (!chapterSearch.value.trim()) return props.chapters;
-    const q = chapterSearch.value.toLowerCase();
-    return props.chapters.filter((c) =>
-        (c.title && c.title.toLowerCase().includes(q)) ||
-        (c.chapter_number && String(c.chapter_number).toLowerCase().includes(q))
-    );
+    return [...props.chapters].sort((a, b) => {
+        const pageA = (a.start_page != null && a.start_page > 0) ? Number(a.start_page) : 999999;
+        const pageB = (b.start_page != null && b.start_page > 0) ? Number(b.start_page) : 999999;
+        if (pageA !== pageB) return pageA - pageB;
+
+        const numA = parseChapterNum(a.chapter_number) ?? 999999;
+        const numB = parseChapterNum(b.chapter_number) ?? 999999;
+        if (numA !== numB) return numA - numB;
+
+        const sortA = Number(a.sort_order ?? 0);
+        const sortB = Number(b.sort_order ?? 0);
+        if (sortA !== sortB) return sortA - sortB;
+
+        return (a.id || 0) - (b.id || 0);
+    });
+});
+
+const filteredChapters = computed(() => {
+    if (!sortedChapters.value.length) return [];
+    if (!chapterSearch.value.trim()) return sortedChapters.value;
+
+    const rawQ = chapterSearch.value.toLowerCase().trim();
+    const engQ = toEnglishDigits(rawQ);
+    const bnQ = toBengaliDigits(rawQ);
+
+    return sortedChapters.value.filter((c) => {
+        const title = (c.title || '').toLowerCase();
+        const numStr = String(c.chapter_number || '');
+        const numEng = toEnglishDigits(numStr);
+        const numBn = toBengaliDigits(numStr);
+
+        return (
+            title.includes(rawQ) ||
+            title.includes(engQ) ||
+            title.includes(bnQ) ||
+            numStr.includes(rawQ) ||
+            numEng.includes(engQ) ||
+            numBn.includes(bnQ) ||
+            `অধ্যায় ${numBn}`.toLowerCase().includes(rawQ) ||
+            `chapter ${numEng}`.toLowerCase().includes(rawQ)
+        );
+    });
 });
 
 function isCurrentChapter(chapter) {
@@ -817,13 +895,13 @@ onBeforeUnmount(() => {
                     @click="selectChapter(c)"
                 >
                     <div class="flex items-center justify-between gap-2">
-                        <span class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md"
+                        <span class="text-[10px] font-bold tracking-wider px-1.5 py-0.5 rounded-md"
                             :class="isCurrentChapter(c) ? 'bg-[var(--primary)] text-white' : 'bg-slate-200/80 dark:bg-neutral-800 text-slate-600 dark:text-slate-400'">
-                            {{ c.chapter_number ? `Chapter ${c.chapter_number}` : 'Section' }}
+                            {{ formatChapterLabel(c) }}
                         </span>
                         <span v-if="isCurrentChapter(c)" class="text-[10px] font-semibold text-[var(--primary)] flex items-center gap-1">
                             <span class="w-1.5 h-1.5 rounded-full bg-[var(--primary)] animate-pulse"></span>
-                            Reading
+                            {{ locale === 'bn' ? 'চলমান' : 'Reading' }}
                         </span>
                     </div>
 
@@ -832,7 +910,7 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                        Pages {{ c.start_page ?? '?' }}–{{ c.end_page ?? '?' }}
+                        {{ formatPageRange(c.start_page, c.end_page) }}
                     </div>
                 </div>
 

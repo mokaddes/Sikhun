@@ -126,14 +126,60 @@ const filteredChapters = computed(() => {
     });
 });
 
+const userSelectedChapterId = ref(null);
+
+// Determine the single active chapter based on visible spread and user selection
+const currentChapterId = computed(() => {
+    if (!sortedChapters.value.length) return null;
+
+    // Currently visible pages on screen (in 2-page spread: [leftPage, rightPage])
+    const visiblePages = currentView.value.length ? currentView.value : [currentPage.value];
+
+    // 1. If user explicitly clicked a chapter and that chapter has any page visible on screen:
+    if (userSelectedChapterId.value) {
+        const selected = sortedChapters.value.find((c) => c.id === userSelectedChapterId.value);
+        if (selected) {
+            const start = Number(selected.start_page) || 1;
+            const end = Number(selected.end_page) || props.totalPages;
+            if (visiblePages.some((p) => p >= start && p <= end)) {
+                return selected.id;
+            }
+        }
+    }
+
+    // 2. If a new chapter begins on this visible spread (e.g. right page 187 starts Chapter 6),
+    // prioritize the chapter starting on this spread!
+    const startingChapter = sortedChapters.value.find((c) => {
+        return c.start_page && visiblePages.includes(Number(c.start_page));
+    });
+    if (startingChapter) {
+        return startingChapter.id;
+    }
+
+    // 3. Otherwise, check visible pages from right-to-left:
+    for (let i = visiblePages.length - 1; i >= 0; i--) {
+        const p = visiblePages[i];
+        const match = sortedChapters.value.find((c) => {
+            const start = Number(c.start_page) || 1;
+            const end = Number(c.end_page) || props.totalPages;
+            return p >= start && p <= end;
+        });
+        if (match) {
+            return match.id;
+        }
+    }
+
+    return sortedChapters.value[0]?.id ?? null;
+});
+
 function isCurrentChapter(chapter) {
-    const pageNum = currentPage.value;
-    const start = chapter.start_page || 1;
-    const end = chapter.end_page || props.totalPages;
-    return pageNum >= start && pageNum <= end;
+    return chapter.id === currentChapterId.value;
 }
 
 function selectChapter(chapter) {
+    if (chapter.id) {
+        userSelectedChapterId.value = chapter.id;
+    }
     if (chapter.start_page) {
         const sp = Number(chapter.start_page);
         ensureUrl(sp);

@@ -104,8 +104,9 @@ class BookChapter extends Model
             return $a->id <=> $b->id;
         })->values();
 
-        foreach ($sorted as $index => $chapter) {
-            $desiredOrder = $index + 1;
+        for ($i = 0; $i < $sorted->count(); $i++) {
+            $chapter = $sorted[$i];
+            $desiredOrder = $i + 1;
             $parsedNum = self::parseNumber($chapter->chapter_number);
 
             $updates = [];
@@ -115,6 +116,18 @@ class BookChapter extends Model
 
             if ($parsedNum !== null && (string) $chapter->chapter_number !== (string) $parsedNum) {
                 $updates['chapter_number'] = (string) $parsedNum;
+            }
+
+            // Prevent overlap with next chapter if next chapter has a known start_page
+            if ($i + 1 < $sorted->count()) {
+                $next = $sorted[$i + 1];
+                if ($next->start_page && $next->start_page > 1) {
+                    $maxAllowedEnd = $next->start_page - 1;
+                    if ($chapter->end_page && $chapter->end_page > $maxAllowedEnd && $maxAllowedEnd >= ($chapter->start_page ?? 1)) {
+                        $updates['end_page'] = $maxAllowedEnd;
+                        $chapter->end_page = $maxAllowedEnd;
+                    }
+                }
             }
 
             if (!empty($updates)) {

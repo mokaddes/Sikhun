@@ -13,6 +13,9 @@ class QuestionBank extends Model
 
     protected $fillable = [
         'segment',
+        'allowed_student_types',
+        'allowed_plan_ids',
+        'is_public_to_all',
         'subject_id',
         'topic_id',
         'topic_name',
@@ -43,6 +46,9 @@ class QuestionBank extends Model
     protected function casts(): array
     {
         return [
+            'allowed_student_types' => 'array',
+            'allowed_plan_ids' => 'array',
+            'is_public_to_all' => 'boolean',
             'subject_id' => 'integer',
             'topic_id' => 'integer',
             'year' => 'integer',
@@ -88,6 +94,49 @@ class QuestionBank extends Model
         }
 
         return null;
+    }
+
+    /**
+     * Check if a student can view this question based on type and subscription plan.
+     */
+    public function isAccessibleBy(?Student $student): bool
+    {
+        if (!$student) {
+            return false;
+        }
+
+        // Check student type (SSC, HSC, Admission, Job, University)
+        if (!empty($this->allowed_student_types) && is_array($this->allowed_student_types)) {
+            if (!in_array('all', $this->allowed_student_types, true)) {
+                $studentType = strtolower($student->type ?? 'hsc');
+                if (!in_array($studentType, array_map('strtolower', $this->allowed_student_types), true)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if question requires higher subscription plan for the student.
+     */
+    public function isPlanLockedFor(?Student $student): bool
+    {
+        if (!$student) {
+            return true;
+        }
+
+        if (empty($this->allowed_plan_ids) || !is_array($this->allowed_plan_ids) || in_array('all', $this->allowed_plan_ids)) {
+            return false;
+        }
+
+        // Student's active plan
+        $activeSub = $student->activeSubscription;
+        $studentPlanId = $activeSub ? (int)$activeSub->plan_id : 'free';
+
+        // Check if student's plan is in allowed list
+        return !in_array($studentPlanId, $this->allowed_plan_ids) && !in_array((string)$studentPlanId, $this->allowed_plan_ids);
     }
 
     public function scopePublished(Builder $query): Builder

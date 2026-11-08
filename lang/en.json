@@ -94,6 +94,7 @@
         "i_am_a": "I am a",
         "type_ssc": "SSC",
         "type_hsc": "HSC",
+        "type_admission": "Admission",
         "type_university": "University",
         "type_job": "Job seeker",
         "already_have_account": "Already have an account?",

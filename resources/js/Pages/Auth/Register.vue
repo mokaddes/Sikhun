@@ -36,6 +36,7 @@ onMounted(() => {
 const types = computed(() => [
     { value: 'ssc', label: t('auth.type_ssc') },
     { value: 'hsc', label: t('auth.type_hsc') },
+    { value: 'admission', label: locale.value === 'bn' ? 'ভর্তি প্রস্তুতি' : 'Admission' },
     { value: 'university', label: t('auth.type_university') },
     { value: 'job', label: t('auth.type_job') },
 ]);
@@ -69,7 +70,7 @@ function submit() {
 
                 <div>
                     <label class="block text-xs font-bold mb-1">{{ t('auth.i_am_a') }}</label>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
                         <button
                             v-for="tOpt in types" :key="tOpt.value" type="button"
                             @click="form.type = tOpt.value"

@@ -133,6 +133,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('question-import/pdf', [QuestionImportController::class, 'showPdfUpload'])->name('question-import.pdf');
         Route::post('question-import/pdf', [QuestionImportController::class, 'processPdf'])->name('question-import.pdf.process');
 
+        Route::get('question-bank/generate', [QuestionBankController::class, 'generateForm'])->name('question-bank.generate-form');
+        Route::post('question-bank/generate', [QuestionBankController::class, 'generateAndPublish'])->name('question-bank.generate');
         Route::post('question-bank/ai-explain', [QuestionBankController::class, 'aiExplain'])->name('question-bank.ai-explain');
         Route::resource('question-bank', QuestionBankController::class);
 

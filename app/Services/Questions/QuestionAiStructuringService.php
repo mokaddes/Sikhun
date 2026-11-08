@@ -12,6 +12,82 @@ use Illuminate\Support\Str;
 class QuestionAiStructuringService
 {
     /**
+     * Generate new exam-standard questions via AI based on student type, subject, topic, and count.
+     */
+    public function generateQuestionsBatch(array $params): array
+    {
+        $count = (int)($params['count'] ?? 5);
+        $count = max(1, min(25, $count));
+        $studentType = $params['student_type'] ?? 'admission';
+        $subjectSlug = $params['subject_slug'] ?? 'physics';
+        $topicName = $params['topic_name'] ?? 'General';
+        $originTag = $params['origin_tag'] ?? strtoupper($studentType) . '-25';
+        $difficulty = $params['difficulty'] ?? 'medium';
+        $institution = $params['institution'] ?? '';
+
+        $subject = QuestionSubject::where('slug', $subjectSlug)->first() ?: QuestionSubject::first();
+        $subjectName = $subject?->name_bn ?: 'সাধারণ';
+
+        $systemPrompt = <<<PROMPT
+You are Bangladesh's premier examination paper setter and curriculum specialist for {$studentType} students.
+Generate exactly {$count} distinct, authentic, high-yield examination multiple choice questions (MCQ) for:
+- Target Group: {$studentType}
+- Subject: {$subjectName} ({$subjectSlug})
+- Topic / Focus: {$topicName}
+- Target Origin / Pattern: {$originTag}
+- Difficulty: {$difficulty}
+
+Rules:
+1. Ensure the academic standard strictly aligns with actual Bangladeshi examinations for {$studentType} (e.g. Dhaka University/BUET/Medical for Admission, 46th/45th BCS or BB for Job, NCTB Board syllabus for SSC/HSC).
+2. For mathematical/scientific questions, render formulas in KaTeX LaTeX notation ($...$ inline, $$...$$ display).
+3. Provide 4 realistic options (A, B, C, D) with distinct plausible distractors.
+4. Mark the single correct option key (e.g. "A").
+5. Write a comprehensive, step-by-step conceptual explanation in Bengali explaining the solution and why other options are incorrect.
+
+Return ONLY a valid JSON object without markdown fences, in this exact format:
+{
+  "questions": [
+    {
+      "question_text": "...",
+      "question_type": "mcq",
+      "options": [
+        {"key": "A", "text": "..."},
+        {"key": "B", "text": "..."},
+        {"key": "C", "text": "..."},
+        {"key": "D", "text": "..."}
+      ],
+      "correct_option": "A",
+      "explanation": "...",
+      "difficulty": "{$difficulty}"
+    }
+  ]
+}
+PROMPT;
+
+        try {
+            $provider = AiProviderFactory::default('exam_gen', []);
+            $response = $provider->chat([
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user', 'content' => "Generate {$count} questions for {$studentType} on {$subjectName} ({$topicName})."],
+            ], [
+                'temperature' => 0.4,
+                'max_tokens' => 4500,
+            ]);
+
+            return $this->parseJsonResponse($response, [
+                'segment' => in_array($studentType, ['job']) ? 'job' : 'admission',
+                'origin_tag' => $originTag,
+                'institution' => $institution ?: ($studentType === 'job' ? 'BPSC / Bank' : 'Public University'),
+                'year' => (int)date('Y'),
+                'ingestion_type' => 'ai_generated',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('generateQuestionsBatch failed: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Parses raw unstructured text (from scraper or PDF OCR) into structured question records.
      *
      * @param string $rawText

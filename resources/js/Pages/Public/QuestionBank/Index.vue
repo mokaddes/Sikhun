@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import PublicLayout from '@/Components/Layout/PublicLayout.vue';
+import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import Pagination from '@/Components/UI/Pagination.vue';
 import { renderMath } from '@/Utils/renderMath';
 import {
@@ -14,12 +14,10 @@ import {
     ChevronDownIcon,
     ChevronUpIcon,
     TagIcon,
-    BoltIcon,
+    LockClosedIcon,
+    ShieldCheckIcon,
     BookOpenIcon,
-    CalculatorIcon,
-    GlobeAltIcon,
-    CpuChipIcon,
-    FireIcon,
+    UserGroupIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -29,6 +27,7 @@ const props = defineProps({
     years: Array,
     counts: Object,
     currentSegment: String,
+    studentType: String,
     filters: Object,
 });
 
@@ -65,42 +64,54 @@ function selectOrigin(originTag) {
     applyFilters();
 }
 
-// Student interactive practice state (stored in local ref)
+// Student interactive practice state
 const userSelectedOptions = ref({});
 const revealedSolutions = ref(new Set());
 
-function selectOption(qId, key) {
+function selectOption(qId, key, isLocked) {
+    if (isLocked) return;
     userSelectedOptions.value[qId] = key;
-    // Auto reveal solution on selection
     revealedSolutions.value.add(qId);
 }
 
-function toggleSolution(qId) {
+function toggleSolution(qId, isLocked) {
+    if (isLocked) return;
     if (revealedSolutions.value.has(qId)) {
         revealedSolutions.value.delete(qId);
     } else {
         revealedSolutions.value.add(qId);
     }
 }
+
+function getStudentTypeBadge(type) {
+    const map = {
+        ssc: 'এসএসসি (SSC)',
+        hsc: 'এইচএসসি (HSC)',
+        admission: 'বিশ্ববিদ্যালয় ভর্তি (Admission)',
+        job: 'বিসিএস ও চাকরি (Job)',
+        university: 'বিশ্ববিদ্যালয় (University)',
+    };
+    return map[type] || 'শিক্ষার্থী';
+}
 </script>
 
 <template>
-    <PublicLayout>
-        <Head title="প্রশ্ন ব্যাংক — বিশ্ববিদ্যালয় ভর্তি ও বিসিএস/চাকরি প্রস্তুতি (Question Bank)" />
+    <StudentLayout>
+        <Head title="প্রশ্ন ব্যাংক — বিশ্ববিদ্যালয় ভর্তি ও চাকরি প্রস্তুতি (Question Bank)" />
 
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+        <div class="space-y-6 pb-12">
             <!-- Hero Banner -->
-            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-primary/95 to-indigo-950 text-white p-8 sm:p-12 shadow-xl border border-white/10">
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-primary/95 to-indigo-950 text-white p-6 sm:p-10 shadow-xl border border-white/10">
                 <div class="relative z-10 max-w-2xl space-y-3">
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold tracking-wider text-emerald-300 border border-white/15">
                         <SparklesIcon class="w-4 h-4" />
-                        <span>১০০% নির্ভুল ও ব্যাখ্যাসহ বিশাল প্রশ্ন ভাণ্ডার</span>
+                        <span>আপনার লক্ষ্য: {{ getStudentTypeBadge(studentType) }}</span>
                     </div>
-                    <h1 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
-                        বিগত বছরের প্রশ্ন ও <span class="text-emerald-400">AI বিশ্লেষণ সমাধান</span>
+                    <h1 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
+                        অধ্যায়ভিত্তিক প্রশ্ন ব্যাংক ও <span class="text-emerald-400">AI বিশ্লেষণ সমাধান</span>
                     </h1>
-                    <p class="text-sm sm:text-base text-gray-200/90 leading-relaxed">
-                        ঢাকা বিশ্ববিদ্যালয়, বুয়েট, মেডিক্যাল, ৪৬তম ও বিগত বিসিএস এবং ব্যাংক রিক্রুটমেন্ট পরীক্ষার প্রশ্নের সম্পূর্ণ অধ্যায়ভিত্তিক বিশ্লেষণ।
+                    <p class="text-xs sm:text-sm text-gray-200/90 leading-relaxed">
+                        ঢাকা বিশ্ববিদ্যালয়, বুয়েট, মেডিক্যাল, ৪৬তম ও বিগত বিসিএস এবং ব্যাংক রিক্রুটমেন্ট পরীক্ষার প্রশ্নের সম্পূর্ণ শ্রেণীবদ্ধ অনুশীলন ভাণ্ডার।
                     </p>
                 </div>
 
@@ -114,7 +125,7 @@ function toggleSolution(qId) {
                 <button
                     type="button"
                     @click="setSegment('admission')"
-                    class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all"
                     :class="filterForm.segment === 'admission'
                         ? 'bg-white dark:bg-gray-900 text-primary shadow-sm'
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'"
@@ -125,7 +136,7 @@ function toggleSolution(qId) {
                 <button
                     type="button"
                     @click="setSegment('job')"
-                    class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all"
                     :class="filterForm.segment === 'job'
                         ? 'bg-white dark:bg-gray-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'"
@@ -228,6 +239,15 @@ function toggleSolution(qId) {
                                 {{ q.subject?.name_bn }}
                                 <span v-if="q.topic_name" class="font-normal text-gray-400">· {{ q.topic_name }}</span>
                             </span>
+
+                            <!-- Locked Status Badge -->
+                            <span
+                                v-if="q.is_locked"
+                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60"
+                            >
+                                <LockClosedIcon class="w-3 h-3" />
+                                <span>সাবস্ক্রিপশন সংরক্ষিত</span>
+                            </span>
                         </div>
 
                         <span class="text-gray-400 text-[11px]">
@@ -247,32 +267,34 @@ function toggleSolution(qId) {
                             v-for="opt in q.options"
                             :key="opt.key"
                             type="button"
-                            @click="selectOption(q.id, opt.key)"
-                            class="flex items-start gap-3 p-3.5 rounded-2xl border text-left text-sm transition-all cursor-pointer"
+                            @click="selectOption(q.id, opt.key, q.is_locked)"
+                            class="flex items-start gap-3 p-3.5 rounded-2xl border text-left text-sm transition-all"
                             :class="{
-                                // Correct and selected
-                                'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-950 dark:text-emerald-100 shadow-sm ring-2 ring-emerald-500/20 font-bold': userSelectedOptions[q.id] && opt.key.toUpperCase() === q.correct_option?.toUpperCase(),
-                                // Wrong selected
-                                'bg-rose-50 dark:bg-rose-950/40 border-rose-400 text-rose-900 dark:text-rose-200 ring-2 ring-rose-400/20': userSelectedOptions[q.id] === opt.key && opt.key.toUpperCase() !== q.correct_option?.toUpperCase(),
-                                // Unselected standard
-                                'bg-gray-50/70 dark:bg-gray-900/50 border-gray-200/80 dark:border-gray-700/80 text-gray-800 dark:text-gray-200 hover:border-primary/50 hover:bg-gray-100/50': !userSelectedOptions[q.id],
-                                // Other options once one is chosen
-                                'opacity-70 bg-gray-50/40 dark:bg-gray-900/30 border-gray-200 dark:border-gray-700': userSelectedOptions[q.id] && userSelectedOptions[q.id] !== opt.key && opt.key.toUpperCase() !== q.correct_option?.toUpperCase()
+                                // Locked state
+                                'opacity-85 cursor-not-allowed bg-gray-50/50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-700': q.is_locked,
+                                // Correct and selected (when unlocked)
+                                'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-950 dark:text-emerald-100 shadow-sm ring-2 ring-emerald-500/20 font-bold cursor-pointer': !q.is_locked && userSelectedOptions[q.id] && opt.key.toUpperCase() === q.correct_option?.toUpperCase(),
+                                // Wrong selected (when unlocked)
+                                'bg-rose-50 dark:bg-rose-950/40 border-rose-400 text-rose-900 dark:text-rose-200 ring-2 ring-rose-400/20 cursor-pointer': !q.is_locked && userSelectedOptions[q.id] === opt.key && opt.key.toUpperCase() !== q.correct_option?.toUpperCase(),
+                                // Unselected standard (when unlocked)
+                                'bg-gray-50/70 dark:bg-gray-900/50 border-gray-200/80 dark:border-gray-700/80 text-gray-800 dark:text-gray-200 hover:border-primary/50 hover:bg-gray-100/50 cursor-pointer': !q.is_locked && !userSelectedOptions[q.id],
+                                // Other options once chosen
+                                'opacity-70 bg-gray-50/40 dark:bg-gray-900/30 border-gray-200 dark:border-gray-700 cursor-pointer': !q.is_locked && userSelectedOptions[q.id] && userSelectedOptions[q.id] !== opt.key && opt.key.toUpperCase() !== q.correct_option?.toUpperCase()
                             }"
                         >
                             <span
                                 class="inline-flex items-center justify-center w-7 h-7 rounded-xl text-xs font-black shrink-0 transition-colors"
                                 :class="{
-                                    'bg-emerald-600 text-white shadow-sm': userSelectedOptions[q.id] && opt.key.toUpperCase() === q.correct_option?.toUpperCase(),
-                                    'bg-rose-600 text-white': userSelectedOptions[q.id] === opt.key && opt.key.toUpperCase() !== q.correct_option?.toUpperCase(),
-                                    'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300': !userSelectedOptions[q.id] || (userSelectedOptions[q.id] !== opt.key && opt.key.toUpperCase() !== q.correct_option?.toUpperCase())
+                                    'bg-emerald-600 text-white shadow-sm': !q.is_locked && userSelectedOptions[q.id] && opt.key.toUpperCase() === q.correct_option?.toUpperCase(),
+                                    'bg-rose-600 text-white': !q.is_locked && userSelectedOptions[q.id] === opt.key && opt.key.toUpperCase() !== q.correct_option?.toUpperCase(),
+                                    'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300': q.is_locked || (!userSelectedOptions[q.id] || (userSelectedOptions[q.id] !== opt.key && opt.key.toUpperCase() !== q.correct_option?.toUpperCase()))
                                 }"
                             >
                                 {{ opt.key }}
                             </span>
                             <div class="flex-1 leading-snug pt-1" v-html="renderMath(opt.text)"></div>
                             <span
-                                v-if="userSelectedOptions[q.id] && opt.key.toUpperCase() === q.correct_option?.toUpperCase()"
+                                v-if="!q.is_locked && userSelectedOptions[q.id] && opt.key.toUpperCase() === q.correct_option?.toUpperCase()"
                                 class="text-emerald-600 dark:text-emerald-400 text-xs font-black shrink-0 self-center"
                             >
                                 ✓ সঠিক
@@ -280,11 +302,38 @@ function toggleSolution(qId) {
                         </button>
                     </div>
 
-                    <!-- Solution & Concept Toggle -->
-                    <div class="pt-3 border-t border-gray-100 dark:border-gray-700/60">
+                    <!-- Locked Overlay Banner (Freemium Upsell CTA) -->
+                    <div
+                        v-if="q.is_locked"
+                        class="mt-3 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/[0.08] to-primary/[0.06] border border-amber-200/80 dark:border-amber-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                    >
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-sm">
+                                <LockClosedIcon class="w-5 h-5" />
+                            </div>
+                            <div>
+                                <div class="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
+                                    🔒 এই প্রশ্নের সঠিক উত্তর ও AI কনসেপ্ট ব্যাখ্যা দেখতে সাবস্ক্রিপশন প্রয়োজন
+                                </div>
+                                <div class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    পূর্ণাঙ্গ গাণিতিক সমাধান ও বিশ্লেষণ আনলক করতে প্ল্যান আপগ্রেড করুন।
+                                </div>
+                            </div>
+                        </div>
+                        <Link
+                            href="/plans"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-primary text-white text-xs font-bold shadow-md shadow-amber-500/20 hover:opacity-95 whitespace-nowrap transition active:scale-95"
+                        >
+                            <SparklesIcon class="w-3.5 h-3.5" />
+                            <span>প্ল্যান আপগ্রেড করুন</span>
+                        </Link>
+                    </div>
+
+                    <!-- Solution & Concept Toggle (when unlocked) -->
+                    <div v-else class="pt-3 border-t border-gray-100 dark:border-gray-700/60">
                         <button
                             type="button"
-                            @click="toggleSolution(q.id)"
+                            @click="toggleSolution(q.id, false)"
                             class="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline transition"
                         >
                             <SparklesIcon class="w-4 h-4" />
@@ -316,7 +365,7 @@ function toggleSolution(qId) {
                     <AcademicCapIcon class="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                     <div class="text-lg font-bold text-gray-800 dark:text-gray-200">কোনো প্রশ্ন খুঁজে পাওয়া যায়নি</div>
                     <p class="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
-                        অনুগ্রহ করে অন্য কোনো বিষয় সিলেক্ট করুন অথবা সার্চ কিওয়ার্ড পরিবর্তন করুন।
+                        আপনার ক্যাটাগরির জন্য এই বিষয়ে প্রশ্ন প্রস্তুত করা হচ্ছে। অন্য কোনো বিষয় সিলেক্ট করুন অথবা কিওয়ার্ড পরিবর্তন করুন।
                     </p>
                 </div>
 
@@ -326,5 +375,5 @@ function toggleSolution(qId) {
                 </div>
             </div>
         </div>
-    </PublicLayout>
+    </StudentLayout>
 </template>

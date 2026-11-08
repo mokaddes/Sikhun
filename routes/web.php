@@ -52,7 +52,6 @@ Route::get('/jobs/{slug}', [\App\Http\Controllers\Public\JobController::class, '
 Route::get('/tools', [\App\Http\Controllers\Public\ToolController::class, 'tools'])->name('tools.index');
 Route::redirect('/calculators', '/tools', 301);
 Route::get('/results', [\App\Http\Controllers\Public\ToolController::class, 'results'])->name('tools.results');
-Route::get('/question-bank', [\App\Http\Controllers\Public\QuestionBankController::class, 'index'])->name('question-bank.index');
 
 // Public Courses (browse, detail, free-preview lessons & guest checkout are public)
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
@@ -141,6 +140,9 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::middleware('ai.access')->group(function () {
         Route::post('/ai/chat', [AiChatController::class, 'create'])->name('ai-chat.create');
     });
+
+    // Question Bank (Authenticated Students Only)
+    Route::get('/question-bank', [\App\Http\Controllers\Public\QuestionBankController::class, 'index'])->name('question-bank.index');
 
     // AI Exam Engine
     Route::get('/exams', [ExamController::class, 'index'])->name('exams.index');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Plan;
 use App\Models\QuestionBank;
 use App\Models\QuestionSource;
 use App\Models\QuestionSubject;
@@ -63,6 +64,14 @@ class QuestionBankController extends Controller
             $query->where('year', (int)$request->input('year'));
         }
 
+        if ($request->filled('student_type') && $request->input('student_type') !== 'all') {
+            $st = $request->input('student_type');
+            $query->where(function ($q) use ($st) {
+                $q->whereJsonContains('allowed_student_types', $st)
+                  ->orWhereJsonContains('allowed_student_types', 'all');
+            });
+        }
+
         $questions = $query->paginate(20)->withQueryString();
 
         $stats = [
@@ -82,8 +91,106 @@ class QuestionBankController extends Controller
             'subjects' => $subjects,
             'originTags' => $originTags,
             'years' => $years,
-            'filters' => $request->only(['search', 'segment', 'subject_id', 'origin_tag', 'difficulty', 'status', 'year']),
+            'filters' => $request->only(['search', 'segment', 'subject_id', 'origin_tag', 'difficulty', 'status', 'year', 'student_type']),
         ]);
+    }
+
+    /**
+     * Show form to generate questions using AI and publish for specific groups.
+     */
+    public function generateForm(): Response
+    {
+        $subjects = QuestionSubject::with('topics')->active()->get();
+        $plans = Plan::where('is_active', true)->get(['id', 'name', 'slug', 'price_monthly']);
+
+        $studentTypes = [
+            ['key' => 'ssc', 'label' => 'SSC (মাধ্যমিক)'],
+            ['key' => 'hsc', 'label' => 'HSC (উচ্চ মাধ্যমিক)'],
+            ['key' => 'admission', 'label' => 'Admission (বিশ্ববিদ্যালয় ভর্তি)'],
+            ['key' => 'job', 'label' => 'Job (বিসিএস ও চাকরি)'],
+            ['key' => 'university', 'label' => 'University (বিশ্ববিদ্যালয়)'],
+        ];
+
+        return Inertia::render('Admin/Questions/Bank/Generate', [
+            'subjects' => $subjects,
+            'plans' => $plans,
+            'studentTypes' => $studentTypes,
+        ]);
+    }
+
+    /**
+     * Generate questions via AI and directly publish for target plan and student type groups.
+     */
+    public function generateAndPublish(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'student_types' => ['required', 'array', 'min:1'],
+            'student_types.*' => ['string', 'in:all,ssc,hsc,admission,job,university'],
+            'plan_ids' => ['required', 'array', 'min:1'],
+            'plan_ids.*' => ['string'],
+            'subject_id' => ['required', 'exists:question_subjects,id'],
+            'topic_name' => ['nullable', 'string', 'max:255'],
+            'origin_tag' => ['required', 'string', 'max:100'],
+            'institution' => ['nullable', 'string', 'max:255'],
+            'difficulty' => ['required', 'string', 'in:easy,medium,hard,mixed'],
+            'count' => ['required', 'integer', 'min:1', 'max:25'],
+            'status' => ['required', 'string', 'in:published,pending_review,draft'],
+            'segment' => ['nullable', 'string', 'in:admission,job'],
+        ]);
+
+        $subject = QuestionSubject::findOrFail($validated['subject_id']);
+
+        // Determine primary student type for prompt context
+        $studentTypes = $validated['student_types'];
+        $primaryType = 'admission';
+        if (in_array('job', $studentTypes, true)) {
+            $primaryType = 'job';
+        } elseif (in_array('ssc', $studentTypes, true)) {
+            $primaryType = 'ssc';
+        } elseif (in_array('hsc', $studentTypes, true)) {
+            $primaryType = 'hsc';
+        } elseif (in_array('university', $studentTypes, true)) {
+            $primaryType = 'university';
+        }
+
+        $segment = $validated['segment'] ?? ($primaryType === 'job' ? 'job' : 'admission');
+        $originTag = strtoupper(trim($validated['origin_tag']));
+
+        $generated = $this->aiStructuringService->generateQuestionsBatch([
+            'student_type' => $primaryType,
+            'subject_slug' => $subject->slug,
+            'topic_name' => $validated['topic_name'] ?: $subject->name_bn,
+            'origin_tag' => $originTag,
+            'difficulty' => $validated['difficulty'],
+            'institution' => $validated['institution'] ?? '',
+            'count' => (int)$validated['count'],
+        ]);
+
+        if (empty($generated)) {
+            return redirect()->back()->with('error', 'AI প্রশ্ন তৈরি করতে পারেনি। অনুগ্রহ করে পুনরায় চেষ্টা করুন।');
+        }
+
+        $adminId = auth('admin')->id();
+        $savedCount = 0;
+
+        foreach ($generated as $item) {
+            $item['subject_id'] = $subject->id;
+            $item['segment'] = $segment;
+            $item['origin_tag'] = $originTag;
+            $item['allowed_student_types'] = $studentTypes;
+            $item['allowed_plan_ids'] = $validated['plan_ids'];
+            $item['is_public_to_all'] = false;
+            $item['status'] = $validated['status'];
+            $item['verification_status'] = 'verified';
+            $item['verified_at'] = now();
+            $item['verified_by_admin_id'] = $adminId;
+
+            QuestionBank::create($item);
+            $savedCount++;
+        }
+
+        return redirect()->route('admin.question-bank.index')
+            ->with('success', "AI এর মাধ্যমে সফলভাবে {$savedCount}টি প্রশ্ন তৈরি ও নির্দিষ্ট গ্রুপে পাবলিশ করা হয়েছে!");
     }
 
     /**
@@ -93,11 +200,22 @@ class QuestionBankController extends Controller
     {
         $subjects = QuestionSubject::with('topics')->active()->get();
         $sources = QuestionSource::active()->get(['id', 'name', 'institution']);
+        $plans = Plan::where('is_active', true)->get(['id', 'name', 'slug', 'price_monthly']);
+
+        $studentTypes = [
+            ['key' => 'ssc', 'label' => 'SSC (মাধ্যমিক)'],
+            ['key' => 'hsc', 'label' => 'HSC (উচ্চ মাধ্যমিক)'],
+            ['key' => 'admission', 'label' => 'Admission (বিশ্ববিদ্যালয় ভর্তি)'],
+            ['key' => 'job', 'label' => 'Job (বিসিএস ও চাকরি)'],
+            ['key' => 'university', 'label' => 'University (বিশ্ববিদ্যালয়)'],
+        ];
 
         return Inertia::render('Admin/Questions/Bank/Form', [
             'question' => null,
             'subjects' => $subjects,
             'sources' => $sources,
+            'plans' => $plans,
+            'studentTypes' => $studentTypes,
         ]);
     }
 
@@ -129,12 +247,26 @@ class QuestionBankController extends Controller
             'difficulty' => ['required', 'string', 'in:easy,medium,hard'],
             'source_id' => ['nullable', 'exists:question_sources,id'],
             'status' => ['required', 'string', 'in:published,pending_review,draft,archived'],
+            'allowed_student_types' => ['nullable', 'array'],
+            'allowed_student_types.*' => ['string', 'in:all,ssc,hsc,admission,job,university'],
+            'allowed_plan_ids' => ['nullable', 'array'],
+            'allowed_plan_ids.*' => ['string'],
+            'is_public_to_all' => ['nullable', 'boolean'],
         ]);
 
         $validated['origin_tag'] = strtoupper(trim($validated['origin_tag']));
         $validated['correct_option'] = strtoupper(trim($validated['correct_option']));
         $validated['verification_status'] = 'verified';
         $validated['verified_at'] = now();
+        $validated['verified_by_admin_id'] = auth('admin')->id();
+
+        if (empty($validated['allowed_student_types'])) {
+            $validated['allowed_student_types'] = ['all'];
+        }
+        if (empty($validated['allowed_plan_ids'])) {
+            $validated['allowed_plan_ids'] = ['all'];
+        }
+        $validated['is_public_to_all'] = (bool)($validated['is_public_to_all'] ?? false);
 
         QuestionBank::create($validated);
 
@@ -148,11 +280,22 @@ class QuestionBankController extends Controller
     {
         $subjects = QuestionSubject::with('topics')->active()->get();
         $sources = QuestionSource::active()->get(['id', 'name', 'institution']);
+        $plans = Plan::where('is_active', true)->get(['id', 'name', 'slug', 'price_monthly']);
+
+        $studentTypes = [
+            ['key' => 'ssc', 'label' => 'SSC (মাধ্যমিক)'],
+            ['key' => 'hsc', 'label' => 'HSC (উচ্চ মাধ্যমিক)'],
+            ['key' => 'admission', 'label' => 'Admission (বিশ্ববিদ্যালয় ভর্তি)'],
+            ['key' => 'job', 'label' => 'Job (বিসিএস ও চাকরি)'],
+            ['key' => 'university', 'label' => 'University (বিশ্ববিদ্যালয়)'],
+        ];
 
         return Inertia::render('Admin/Questions/Bank/Form', [
             'question' => $questionBank,
             'subjects' => $subjects,
             'sources' => $sources,
+            'plans' => $plans,
+            'studentTypes' => $studentTypes,
         ]);
     }
 
@@ -184,10 +327,23 @@ class QuestionBankController extends Controller
             'difficulty' => ['required', 'string', 'in:easy,medium,hard'],
             'source_id' => ['nullable', 'exists:question_sources,id'],
             'status' => ['required', 'string', 'in:published,pending_review,draft,archived'],
+            'allowed_student_types' => ['nullable', 'array'],
+            'allowed_student_types.*' => ['string', 'in:all,ssc,hsc,admission,job,university'],
+            'allowed_plan_ids' => ['nullable', 'array'],
+            'allowed_plan_ids.*' => ['string'],
+            'is_public_to_all' => ['nullable', 'boolean'],
         ]);
 
         $validated['origin_tag'] = strtoupper(trim($validated['origin_tag']));
         $validated['correct_option'] = strtoupper(trim($validated['correct_option']));
+
+        if (empty($validated['allowed_student_types'])) {
+            $validated['allowed_student_types'] = ['all'];
+        }
+        if (empty($validated['allowed_plan_ids'])) {
+            $validated['allowed_plan_ids'] = ['all'];
+        }
+        $validated['is_public_to_all'] = (bool)($validated['is_public_to_all'] ?? false);
 
         $questionBank->update($validated);
 

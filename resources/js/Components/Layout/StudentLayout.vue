@@ -30,12 +30,10 @@ import {
     ChevronDoubleLeftIcon,
     MagnifyingGlassIcon,
     BellIcon,
-    EnvelopeIcon,
-    DocumentTextIcon,
 } from '@heroicons/vue/24/outline';
 
 const theme = useThemeStore();
-const { t, locale, money, digits } = useI18n();
+const { t, locale } = useI18n();
 const page = usePage();
 const student = page.props.auth?.student;
 const site = page.props.site;
@@ -83,6 +81,7 @@ const nav = computed(() => [
         label: t('nav.practice'),
         icon: ClipboardDocumentCheckIcon,
         items: [
+            { label: t('nav.question_bank'), href: '/question-bank', icon: AcademicCapIcon },
             { label: t('nav.exams'), href: '/exams', icon: ClipboardDocumentCheckIcon },
             { label: t('nav.flashcards'), href: '/flashcards', icon: RectangleStackIcon },
             { label: t('nav.essays'), href: '/essays', icon: PencilSquareIcon },
@@ -113,9 +112,6 @@ const nav = computed(() => [
         items: [
             { label: t('nav.plans'), href: '/plans', icon: CreditCardIcon },
             { label: t('nav.wallet'), href: '/wallet', icon: WalletIcon },
-            { label: t('nav.invoices'), href: '/invoices', icon: DocumentTextIcon },
-            { label: t('nav.tickets'), href: '/support/tickets', icon: ShieldCheckIcon },
-            { label: t('nav.feedback'), href: '/feedback', icon: PencilSquareIcon },
             { label: t('nav.access'), href: '/access', icon: ShieldCheckIcon },
         ],
     },
@@ -308,7 +304,7 @@ function logout() {
                 <div class="flex items-center gap-2 sm:gap-2.5">
                     <div class="hidden items-center gap-1.5 rounded-full border border-[var(--secondary)]/20 bg-[var(--secondary)]/10 px-3.5 py-1.5 text-sm font-medium sm:flex">
                         <span class="text-[var(--text-muted)]">{{ t('dashboard.wallet_balance') }}:</span>
-                        <span class="font-semibold">৳{{ money(student?.wallet_balance ?? 0, 2) }}</span>
+                        <span class="font-semibold">৳{{ student?.wallet_balance ?? 0 }}</span>
                     </div>
                     <LanguageSwitcher />
                     <ThemeToggle />
@@ -335,7 +331,7 @@ function logout() {
                         <SparklesIcon class="h-4 w-4 text-emerald-500 shrink-0" />
                         <span>
                             <strong>{{ locale === 'en' ? '7-Day Free Trial Active' : '৭ দিনের ফ্রি ট্রায়াল চালু রয়েছে' }}</strong>
-                            ({{ locale === 'en' ? `${student.trial_days_remaining} day${student.trial_days_remaining === 1 ? '' : 's'} remaining` : `বাকি ${digits(student.trial_days_remaining)} দিন` }}).
+                            ({{ locale === 'en' ? `${student.trial_days_remaining} day${student.trial_days_remaining === 1 ? '' : 's'} remaining` : `বাকি ${student.trial_days_remaining} দিন` }}).
                             {{ locale === 'en' ? 'Enjoy full access to AI Chat, practice exams & book study.' : 'বই রিডার, এআই চ্যাট ও পরীক্ষার সম্পূর্ণ সুবিধা বিনামূল্যে ব্যবহার করুন।' }}
                         </span>
                     </div>
@@ -356,25 +352,6 @@ function logout() {
                     </div>
                     <Link href="/plans" class="btn btn-sm btn-primary rounded-xl font-bold shadow-sm">
                         {{ locale === 'en' ? 'Choose a Plan →' : 'প্ল্যান বেছে নিন →' }}
-                    </Link>
-                </div>
-
-                <!-- Email verification nudge. Non-blocking by design: students
-                     can keep learning, but password reset and receipts work best
-                     with a confirmed address. -->
-                <div
-                    v-if="student && student.email_verified === false"
-                    class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-xs text-sky-800 shadow-sm dark:text-sky-300"
-                >
-                    <div class="flex items-center gap-2.5">
-                        <EnvelopeIcon class="h-4 w-4 shrink-0 text-sky-500" />
-                        <span>
-                            {{ t('auth.email_unverified_banner') }}
-                            {{ locale === 'en' ? 'Verify it so password resets and receipts reach you.' : 'পাসওয়ার্ড রিসেট ও রিসিট নিরাপদে পেতে যাচাই করুন।' }}
-                        </span>
-                    </div>
-                    <Link href="/email/verify" class="rounded-xl border border-sky-500/40 px-3 py-1.5 font-bold transition hover:bg-sky-500/10">
-                        {{ t('auth.verify_now') }}
                     </Link>
                 </div>
 

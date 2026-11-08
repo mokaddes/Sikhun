@@ -10,12 +10,18 @@ import {
     PlusIcon,
     TrashIcon,
     EyeIcon,
+    UserGroupIcon,
+    CreditCardIcon,
+    CheckCircleIcon,
+    LockClosedIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     question: Object,
     subjects: Array,
     sources: Array,
+    plans: Array,
+    studentTypes: Array,
 });
 
 const isEditing = computed(() => !!props.question);
@@ -46,6 +52,9 @@ const form = useForm({
     difficulty: props.question?.difficulty || 'medium',
     source_id: props.question?.source_id || '',
     status: props.question?.status || 'published',
+    allowed_student_types: props.question?.allowed_student_types || ['all'],
+    allowed_plan_ids: props.question?.allowed_plan_ids || ['all'],
+    is_public_to_all: props.question?.is_public_to_all ?? false,
 });
 
 function addOption() {
@@ -56,6 +65,41 @@ function addOption() {
 function removeOption(index) {
     if (form.options.length <= 2) return;
     form.options.splice(index, 1);
+}
+
+// Student type toggle
+function toggleStudentType(typeKey) {
+    if (typeKey === 'all') {
+        form.allowed_student_types = ['all'];
+        return;
+    }
+    form.allowed_student_types = form.allowed_student_types.filter((t) => t !== 'all');
+    if (form.allowed_student_types.includes(typeKey)) {
+        form.allowed_student_types = form.allowed_student_types.filter((t) => t !== typeKey);
+        if (form.allowed_student_types.length === 0) {
+            form.allowed_student_types = ['all'];
+        }
+    } else {
+        form.allowed_student_types.push(typeKey);
+    }
+}
+
+// Plan toggle
+function togglePlan(planId) {
+    if (planId === 'all') {
+        form.allowed_plan_ids = ['all'];
+        return;
+    }
+    form.allowed_plan_ids = form.allowed_plan_ids.filter((p) => p !== 'all');
+    const strId = String(planId);
+    if (form.allowed_plan_ids.includes(strId)) {
+        form.allowed_plan_ids = form.allowed_plan_ids.filter((p) => p !== strId);
+        if (form.allowed_plan_ids.length === 0) {
+            form.allowed_plan_ids = ['all'];
+        }
+    } else {
+        form.allowed_plan_ids.push(strId);
+    }
 }
 
 // AI generate explanation
@@ -118,165 +162,254 @@ function submit() {
                         class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-primary mb-2 transition"
                     >
                         <ArrowLeftIcon class="w-4 h-4" />
-                        <span>প্রশ্ন ভাণ্ডারে ফিরে যান</span>
+                        <span>প্রশ্ন ব্যাংকে ফিরে যান</span>
                     </Link>
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-                        {{ isEditing ? 'প্রশ্ন সম্পাদনা করুন' : 'নতুন প্রশ্ন তৈরি করুন' }}
+                        {{ isEditing ? 'প্রশ্ন তথ্য সম্পাদনা' : 'নতুন প্রশ্ন যুক্ত করুন' }}
                     </h1>
                 </div>
             </div>
 
+            <!-- Form -->
             <form @submit.prevent="submit" class="space-y-6">
-                <!-- Meta Info Card -->
+                <!-- Group & Access Controls -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-5">
+                    <div class="flex items-center gap-2 border-b border-gray-100 dark:border-gray-700/60 pb-3">
+                        <UserGroupIcon class="w-5 h-5 text-primary" />
+                        <h2 class="text-sm font-bold text-gray-900 dark:text-white">
+                            টার্গেট শিক্ষার্থী ও সাবস্ক্রিপশন প্ল্যান এক্সেস (Group Access)
+                        </h2>
+                    </div>
+
+                    <!-- Target Student Types -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300">
+                            টার্গেট স্টুডেন্ট গ্রুপ (Student Types):
+                        </label>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                            <button
+                                type="button"
+                                @click="toggleStudentType('all')"
+                                class="flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs font-bold transition"
+                                :class="form.allowed_student_types.includes('all')
+                                    ? 'bg-primary/10 border-primary text-primary'
+                                    : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'"
+                            >
+                                <CheckCircleIcon class="w-4 h-4" :class="form.allowed_student_types.includes('all') ? 'text-primary' : 'text-gray-400'" />
+                                <span>সকল শিক্ষার্থী (All)</span>
+                            </button>
+
+                            <button
+                                v-for="st in studentTypes"
+                                :key="st.key"
+                                type="button"
+                                @click="toggleStudentType(st.key)"
+                                class="flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs font-bold transition"
+                                :class="form.allowed_student_types.includes(st.key) && !form.allowed_student_types.includes('all')
+                                    ? 'bg-primary/10 border-primary text-primary'
+                                    : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'"
+                            >
+                                <CheckCircleIcon class="w-4 h-4" :class="form.allowed_student_types.includes(st.key) && !form.allowed_student_types.includes('all') ? 'text-primary' : 'text-gray-400'" />
+                                <span>{{ st.label }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Target Subscription Plans -->
+                    <div class="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-700/60">
+                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300">
+                            সাবস্ক্রিপশন প্ল্যান এক্সেস (Plan Access):
+                        </label>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            <button
+                                type="button"
+                                @click="togglePlan('all')"
+                                class="flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs font-bold transition"
+                                :class="form.allowed_plan_ids.includes('all')
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-200'
+                                    : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'"
+                            >
+                                <CheckCircleIcon class="w-4 h-4" :class="form.allowed_plan_ids.includes('all') ? 'text-emerald-600' : 'text-gray-400'" />
+                                <span>উন্মুক্ত / All Plans</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                @click="togglePlan('free')"
+                                class="flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs font-bold transition"
+                                :class="form.allowed_plan_ids.includes('free') && !form.allowed_plan_ids.includes('all')
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-200'
+                                    : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'"
+                            >
+                                <CheckCircleIcon class="w-4 h-4" :class="form.allowed_plan_ids.includes('free') && !form.allowed_plan_ids.includes('all') ? 'text-emerald-600' : 'text-gray-400'" />
+                                <span>ফ্রি প্ল্যান (Free)</span>
+                            </button>
+
+                            <button
+                                v-for="plan in plans"
+                                :key="plan.id"
+                                type="button"
+                                @click="togglePlan(plan.id)"
+                                class="flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs font-bold transition"
+                                :class="form.allowed_plan_ids.includes(String(plan.id)) && !form.allowed_plan_ids.includes('all')
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-200'
+                                    : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'"
+                            >
+                                <CheckCircleIcon class="w-4 h-4" :class="form.allowed_plan_ids.includes(String(plan.id)) && !form.allowed_plan_ids.includes('all') ? 'text-emerald-600' : 'text-gray-400'" />
+                                <span>{{ plan.name }} (৳{{ plan.price_monthly }})</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Basic Meta Info -->
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
-                    <h3 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <AcademicCapIcon class="w-4 h-4 text-primary" />
-                        <span>পরীক্ষা ও শ্রেণিবিন্যাস (Classification)</span>
+                    <h3 class="text-sm font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700/60 pb-3">
+                        মৌলিক তথ্য ও ক্যাটাগরি
                     </h3>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <!-- Segment -->
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">সেগমেন্ট *</label>
+                            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">ক্যাটাগরি *</label>
                             <select
                                 v-model="form.segment"
-                                class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
                             >
                                 <option value="admission">বিশ্ববিদ্যালয় ভর্তি (Admission)</option>
-                                <option value="job">সরকারি চাকরি ও ব্যাংক (Job)</option>
+                                <option value="job">চাকরি ও বিসিএস (Job)</option>
                             </select>
                         </div>
 
                         <!-- Subject -->
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">বিষয় (Subject) *</label>
+                            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">বিষয় *</label>
                             <select
                                 v-model="form.subject_id"
-                                class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
                             >
-                                <option v-for="sub in subjects" :key="sub.id" :value="sub.id">
-                                    {{ sub.name_bn }} ({{ sub.name_en }})
+                                <option v-for="s in subjects" :key="s.id" :value="s.id">
+                                    {{ s.name_bn }} ({{ s.name_en }})
                                 </option>
                             </select>
                         </div>
 
-                        <!-- Subcategory / Topic -->
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">টপিক বা উপ-বিষয় (Topic)</label>
-                            <input
-                                v-model="form.topic_name"
-                                type="text"
-                                placeholder="উদাঃ কারক ও বিভক্তি / মহাকর্ষ"
-                                class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white"
-                            />
-                        </div>
-
                         <!-- Origin Tag -->
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                                উৎস ট্যাগ (Origin Tag) *
-                            </label>
+                            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">অরিজিন ট্যাগ *</label>
                             <input
                                 v-model="form.origin_tag"
                                 type="text"
-                                required
-                                placeholder="DU-24, BCS-46, BUET-23, BB-AD-24"
-                                class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white uppercase font-bold"
+                                placeholder="DU-24 / BCS-46"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 font-mono font-bold uppercase"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <!-- Topic Name -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">অধ্যায় / টপিক</label>
+                            <input
+                                v-model="form.topic_name"
+                                type="text"
+                                placeholder="যেমন: মহাকর্ষ ও অভিকর্ষ"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
                             />
                         </div>
 
                         <!-- Institution -->
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">প্রতিষ্ঠান / বোর্ড / কমিশন</label>
+                            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">প্রতিষ্ঠান</label>
                             <input
                                 v-model="form.institution"
                                 type="text"
-                                placeholder="উদাঃ University of Dhaka, BPSC"
-                                class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white"
-                            />
-                        </div>
-
-                        <!-- Exam Name -->
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">পরীক্ষার নাম (Exam Name)</label>
-                            <input
-                                v-model="form.exam_name"
-                                type="text"
-                                placeholder="উদাঃ DU KA Unit Admission 2024"
-                                class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white"
+                                placeholder="যেমন: University of Dhaka"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
                             />
                         </div>
 
                         <!-- Year -->
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">বছর (Year)</label>
+                            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">সাল (Year)</label>
                             <input
                                 v-model.number="form.year"
                                 type="number"
-                                min="1990"
-                                max="2035"
-                                class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white"
+                                placeholder="2024"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
                             />
                         </div>
+                    </div>
 
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <!-- Difficulty -->
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">কাঠিন্য মাত্রা *</label>
+                            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">কঠিনতা *</label>
                             <select
                                 v-model="form.difficulty"
-                                class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
                             >
-                                <option value="easy">সহজ (Easy)</option>
-                                <option value="medium">মাঝারি (Medium)</option>
-                                <option value="hard">কঠিন (Hard)</option>
+                                <option value="easy">Easy (সহজ)</option>
+                                <option value="medium">Medium (মাঝারি)</option>
+                                <option value="hard">Hard (কঠিন)</option>
                             </select>
                         </div>
 
                         <!-- Status -->
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">প্রকাশের স্ট্যাটাস *</label>
+                            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">স্ট্যাটাস *</label>
                             <select
                                 v-model="form.status"
-                                class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
                             >
-                                <option value="published">Published (সরাসরি প্রকাশ)</option>
+                                <option value="published">Published</option>
                                 <option value="pending_review">Pending Review</option>
-                                <option value="draft">Draft (খসড়া)</option>
+                                <option value="draft">Draft</option>
+                                <option value="archived">Archived</option>
+                            </select>
+                        </div>
+
+                        <!-- Source Registry -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">উৎস (Question Source)</label>
+                            <select
+                                v-model="form.source_id"
+                                class="w-full text-xs px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                            >
+                                <option :value="''">কোনো সোর্স নির্দিষ্ট নেই</option>
+                                <option v-for="src in sources" :key="src.id" :value="src.id">
+                                    {{ src.name }} ({{ src.institution || 'N/A' }})
+                                </option>
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <!-- Question Text & Live Math Preview -->
+                <!-- Question Text -->
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
-                    <div class="flex items-center justify-between">
-                        <label class="block text-sm font-bold text-gray-900 dark:text-white">
-                            প্রশ্নের মূলভাব (Question Text) *
-                        </label>
-                        <span class="text-[11px] text-gray-400">
-                            LaTeX সূত্র লিখতে $...$ বা $$...$$ ব্যবহার করুন
-                        </span>
-                    </div>
+                    <h3 class="text-sm font-bold text-gray-900 dark:text-white flex items-center justify-between border-b border-gray-100 dark:border-gray-700/60 pb-3">
+                        <span>প্রশ্নের মূলভাব (Question Stem) *</span>
+                        <span class="text-xs font-normal text-gray-400">LaTeX সমর্থন: $ সূত্র $ অথবা $$ সূত্র $$</span>
+                    </h3>
 
                     <textarea
                         v-model="form.question_text"
-                        rows="3"
+                        rows="4"
                         required
-                        placeholder="প্রশ্নটি লিখুন। গণিত বা বৈজ্ঞানিক সূত্রের জন্য যেমনঃ $g' = \frac{1}{4}g$ বা $\lim_{x \to 0} \frac{\sin x}{x}$"
-                        class="w-full text-sm px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white leading-relaxed font-mono"
+                        placeholder="প্রশ্নের মূলভাব লিখুন। প্রয়োজনে LaTeX গণিত চিহ্ন ($E=mc^2$) ব্যবহার করুন।"
+                        class="w-full text-xs sm:text-sm px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white leading-relaxed"
                     ></textarea>
 
                     <!-- Live Math Preview -->
-                    <div v-if="form.question_text" class="p-4 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-gray-200/80 dark:border-gray-700">
-                        <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                            <EyeIcon class="w-3.5 h-3.5" />
-                            <span>লাইভ প্রিভিউ (KaTeX Math Render):</span>
+                    <div v-if="form.question_text" class="p-4 bg-primary/[0.03] dark:bg-primary/[0.06] rounded-xl border border-primary/20">
+                        <div class="text-[11px] font-bold text-primary uppercase tracking-wider mb-1">
+                            লাইভ প্রিভিউ (KaTeX Math Preview):
                         </div>
-                        <div class="text-base text-gray-900 dark:text-white font-medium" v-html="renderMath(form.question_text)"></div>
+                        <div class="text-sm text-gray-800 dark:text-gray-200 leading-relaxed" v-html="renderMath(form.question_text)"></div>
                     </div>
                 </div>
 
-                <!-- Options Card -->
+                <!-- Options -->
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
                     <div class="flex items-center justify-between">
                         <h3 class="text-sm font-bold text-gray-900 dark:text-white">
@@ -299,7 +432,6 @@ function submit() {
                             class="flex items-center gap-3 p-3 rounded-xl border transition-colors"
                             :class="form.correct_option === opt.key ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-700' : 'bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700'"
                         >
-                            <!-- Radio selector for correct answer -->
                             <label class="flex items-center gap-1.5 cursor-pointer shrink-0">
                                 <input
                                     type="radio"
@@ -313,7 +445,6 @@ function submit() {
                                 </span>
                             </label>
 
-                            <!-- Option text input -->
                             <input
                                 v-model="opt.text"
                                 type="text"
@@ -322,10 +453,8 @@ function submit() {
                                 class="flex-1 text-xs px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                             />
 
-                            <!-- Live preview of option formula -->
                             <div class="min-w-[80px] max-w-[200px] text-xs px-2 truncate" v-html="renderMath(opt.text)"></div>
 
-                            <!-- Remove option button -->
                             <button
                                 v-if="form.options.length > 2"
                                 type="button"
@@ -368,7 +497,6 @@ function submit() {
                         class="w-full text-xs px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white leading-relaxed font-mono"
                     ></textarea>
 
-                    <!-- Live Math Preview for Explanation -->
                     <div v-if="form.explanation" class="p-4 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-gray-200/80 dark:border-gray-700">
                         <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">
                             ব্যাখ্যার লাইভ প্রিভিউ:

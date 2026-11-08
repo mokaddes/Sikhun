@@ -12,13 +12,16 @@ use Inertia\Response;
 class QuestionBankController extends Controller
 {
     /**
-     * Public, open student Question Bank portal (No login required).
+     * Private Student Question Bank portal (Authenticated students only).
      */
     public function index(Request $request): Response
     {
-        $segment = $request->input('segment', 'admission');
-        if (!in_array($segment, ['admission', 'job'])) {
-            $segment = 'admission';
+        $student = $request->user('web');
+        $studentType = strtolower($student?->type ?? 'hsc');
+
+        $segment = $request->input('segment');
+        if (!in_array($segment, ['admission', 'job'], true)) {
+            $segment = ($studentType === 'job') ? 'job' : 'admission';
         }
 
         $query = QuestionBank::query()
@@ -26,6 +29,13 @@ class QuestionBankController extends Controller
             ->published()
             ->where('segment', $segment)
             ->latest('id');
+
+        // Access control: filter by student type group
+        $query->where(function ($q) use ($studentType) {
+            $q->whereNull('allowed_student_types')
+              ->orWhereJsonContains('allowed_student_types', 'all')
+              ->orWhereJsonContains('allowed_student_types', $studentType);
+        });
 
         if ($request->filled('search')) {
             $search = trim($request->input('search'));
@@ -57,12 +67,28 @@ class QuestionBankController extends Controller
 
         $questions = $query->paginate(15)->withQueryString();
 
+        // Strip solutions for questions locked behind higher subscription tiers
+        $questions->getCollection()->transform(function ($q) use ($student) {
+            $isLocked = $q->isPlanLockedFor($student);
+            $q->is_locked = $isLocked;
+            if ($isLocked) {
+                $q->correct_option = null;
+                $q->explanation = null;
+            }
+            return $q;
+        });
+
         $subjects = QuestionSubject::active()
             ->forSegment($segment)
             ->get(['id', 'name_bn', 'name_en', 'slug', 'icon']);
 
         $origins = QuestionBank::published()
             ->where('segment', $segment)
+            ->where(function ($q) use ($studentType) {
+                $q->whereNull('allowed_student_types')
+                  ->orWhereJsonContains('allowed_student_types', 'all')
+                  ->orWhereJsonContains('allowed_student_types', $studentType);
+            })
             ->distinct()
             ->pluck('origin_tag')
             ->filter()
@@ -70,6 +96,11 @@ class QuestionBankController extends Controller
 
         $years = QuestionBank::published()
             ->where('segment', $segment)
+            ->where(function ($q) use ($studentType) {
+                $q->whereNull('allowed_student_types')
+                  ->orWhereJsonContains('allowed_student_types', 'all')
+                  ->orWhereJsonContains('allowed_student_types', $studentType);
+            })
             ->distinct()
             ->orderByDesc('year')
             ->pluck('year')
@@ -77,8 +108,18 @@ class QuestionBankController extends Controller
             ->values();
 
         $counts = [
-            'admission' => QuestionBank::published()->where('segment', 'admission')->count(),
-            'job' => QuestionBank::published()->where('segment', 'job')->count(),
+            'admission' => QuestionBank::published()->where('segment', 'admission')
+                ->where(function ($q) use ($studentType) {
+                    $q->whereNull('allowed_student_types')
+                      ->orWhereJsonContains('allowed_student_types', 'all')
+                      ->orWhereJsonContains('allowed_student_types', $studentType);
+                })->count(),
+            'job' => QuestionBank::published()->where('segment', 'job')
+                ->where(function ($q) use ($studentType) {
+                    $q->whereNull('allowed_student_types')
+                      ->orWhereJsonContains('allowed_student_types', 'all')
+                      ->orWhereJsonContains('allowed_student_types', $studentType);
+                })->count(),
         ];
 
         return Inertia::render('Public/QuestionBank/Index', [
@@ -88,6 +129,7 @@ class QuestionBankController extends Controller
             'years' => $years,
             'counts' => $counts,
             'currentSegment' => $segment,
+            'studentType' => $studentType,
             'filters' => $request->only(['search', 'subject', 'origin', 'difficulty', 'year', 'segment']),
         ]);
     }

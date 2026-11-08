@@ -1,9 +1,10 @@
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import Pagination from '@/Components/UI/Pagination.vue';
 import { renderMath } from '@/Utils/renderMath';
+import { useI18n } from '@/i18n';
 import {
     AcademicCapIcon,
     BriefcaseIcon,
@@ -30,6 +31,9 @@ const props = defineProps({
     studentType: String,
     filters: Object,
 });
+
+const { locale } = useI18n();
+const en = computed(() => locale.value === 'en');
 
 const filterForm = reactive({
     search: props.filters.search || '',
@@ -85,19 +89,19 @@ function toggleSolution(qId, isLocked) {
 
 function getStudentTypeBadge(type) {
     const map = {
-        ssc: 'এসএসসি (SSC)',
-        hsc: 'এইচএসসি (HSC)',
-        admission: 'বিশ্ববিদ্যালয় ভর্তি (Admission)',
-        job: 'বিসিএস ও চাকরি (Job)',
-        university: 'বিশ্ববিদ্যালয় (University)',
+        ssc: en.value ? 'SSC' : 'এসএসসি (SSC)',
+        hsc: en.value ? 'HSC' : 'এইচএসসি (HSC)',
+        admission: en.value ? 'University Admission' : 'বিশ্ববিদ্যালয় ভর্তি (Admission)',
+        job: en.value ? 'BCS & Govt Jobs' : 'বিসিএস ও চাকরি (Job)',
+        university: en.value ? 'University' : 'বিশ্ববিদ্যালয় (University)',
     };
-    return map[type] || 'শিক্ষার্থী';
+    return map[type] || (en.value ? 'Student' : 'শিক্ষার্থী');
 }
 </script>
 
 <template>
     <StudentLayout>
-        <Head title="প্রশ্ন ব্যাংক — বিশ্ববিদ্যালয় ভর্তি ও চাকরি প্রস্তুতি (Question Bank)" />
+        <Head :title="en ? 'Question Bank — Admission & Job Preparation' : 'প্রশ্ন ব্যাংক — বিশ্ববিদ্যালয় ভর্তি ও চাকরি প্রস্তুতি (Question Bank)'" />
 
         <div class="space-y-6 pb-12">
             <!-- Hero Banner -->
@@ -105,13 +109,17 @@ function getStudentTypeBadge(type) {
                 <div class="relative z-10 max-w-2xl space-y-3">
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold tracking-wider text-emerald-300 border border-white/15">
                         <SparklesIcon class="w-4 h-4" />
-                        <span>আপনার লক্ষ্য: {{ getStudentTypeBadge(studentType) }}</span>
+                        <span>{{ en ? 'Target: ' : 'আপনার লক্ষ্য: ' }}{{ getStudentTypeBadge(studentType) }}</span>
                     </div>
                     <h1 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
-                        অধ্যায়ভিত্তিক প্রশ্ন ব্যাংক ও <span class="text-emerald-400">AI বিশ্লেষণ সমাধান</span>
+                        <template v-if="en">Chapter-wise Question Bank & <span class="text-emerald-400">AI Explanations</span></template>
+                        <template v-else>অধ্যায়ভিত্তিক প্রশ্ন ব্যাংক ও <span class="text-emerald-400">AI বিশ্লেষণ সমাধান</span></template>
                     </h1>
                     <p class="text-xs sm:text-sm text-gray-200/90 leading-relaxed">
-                        ঢাকা বিশ্ববিদ্যালয়, বুয়েট, মেডিক্যাল, ৪৬তম ও বিগত বিসিএস এবং ব্যাংক রিক্রুটমেন্ট পরীক্ষার প্রশ্নের সম্পূর্ণ শ্রেণীবদ্ধ অনুশীলন ভাণ্ডার।
+                        {{ en
+                            ? 'Comprehensive categorized question bank from DU, BUET, Medical, 46th & previous BCS, and Bank recruitment exams with instant interactive practice.'
+                            : 'ঢাকা বিশ্ববিদ্যালয়, বুয়েট, মেডিক্যাল, ৪৬তম ও বিগত বিসিএস এবং ব্যাংক রিক্রুটমেন্ট পরীক্ষার প্রশ্নের সম্পূর্ণ শ্রেণীবদ্ধ অনুশীলন ভাণ্ডার।'
+                        }}
                     </p>
                 </div>
 
@@ -128,10 +136,10 @@ function getStudentTypeBadge(type) {
                     class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all"
                     :class="filterForm.segment === 'admission'
                         ? 'bg-white dark:bg-gray-900 text-primary shadow-sm'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'"
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'"
                 >
                     <AcademicCapIcon class="w-4 h-4" />
-                    <span>বিশ্ববিদ্যালয় ভর্তি ({{ counts.admission }})</span>
+                    <span>{{ en ? 'Admission' : 'বিশ্ববিদ্যালয় ভর্তি' }} ({{ counts.admission }})</span>
                 </button>
                 <button
                     type="button"
@@ -139,17 +147,17 @@ function getStudentTypeBadge(type) {
                     class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all"
                     :class="filterForm.segment === 'job'
                         ? 'bg-white dark:bg-gray-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'"
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'"
                 >
                     <BriefcaseIcon class="w-4 h-4" />
-                    <span>চাকরি ও বিসিএস ({{ counts.job }})</span>
+                    <span>{{ en ? 'Jobs & BCS' : 'চাকরি ও বিসিএস' }} ({{ counts.job }})</span>
                 </button>
             </div>
 
             <!-- Subject Category Pills -->
             <div class="space-y-2">
-                <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    বিষয় বেছে নিন:
+                <div class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    {{ en ? 'Select Subject:' : 'বিষয় বেছে নিন:' }}
                 </div>
                 <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
                     <button
@@ -160,7 +168,7 @@ function getStudentTypeBadge(type) {
                             ? 'bg-primary text-white border-primary shadow-sm shadow-primary/25'
                             : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/50'"
                     >
-                        সব বিষয়
+                        {{ en ? 'All Subjects' : 'সব বিষয়' }}
                     </button>
                     <button
                         v-for="sub in subjects"
@@ -172,14 +180,14 @@ function getStudentTypeBadge(type) {
                             ? 'bg-primary text-white border-primary shadow-sm shadow-primary/25'
                             : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/50'"
                     >
-                        {{ sub.name_bn }}
+                        {{ en ? (sub.name_en || sub.name_bn) : sub.name_bn }}
                     </button>
                 </div>
             </div>
 
             <!-- Origin Tags Chips (e.g. DU-24, BCS-46) -->
             <div v-if="origins && origins.length > 0" class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                <span class="text-xs font-medium text-gray-400 shrink-0">পরীক্ষা ফিল্টার:</span>
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400 shrink-0">{{ en ? 'Exam Filter:' : 'পরীক্ষা ফিল্টার:' }}</span>
                 <button
                     v-for="tag in origins"
                     :key="tag"
@@ -188,7 +196,7 @@ function getStudentTypeBadge(type) {
                     class="px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap border transition-all"
                     :class="filterForm.origin === tag
                         ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                        : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100'"
+                        : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-950/50'"
                 >
                     {{ tag }}
                 </button>
@@ -201,7 +209,7 @@ function getStudentTypeBadge(type) {
                     v-model="filterForm.search"
                     @keyup.enter="applyFilters"
                     type="text"
-                    placeholder="প্রশ্নের যেকোনো অংশ লিখে খুঁজুন..."
+                    :placeholder="en ? 'Search any keyword or question stem...' : 'প্রশ্নের যেকোনো অংশ লিখে খুঁজুন...'"
                     class="w-full pl-11 pr-24 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm"
                 />
                 <button
@@ -209,7 +217,7 @@ function getStudentTypeBadge(type) {
                     @click="applyFilters"
                     class="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-primary text-white text-xs font-semibold rounded-xl hover:bg-primary/90"
                 >
-                    খুঁজুন
+                    {{ en ? 'Search' : 'খুঁজুন' }}
                 </button>
             </div>
 
@@ -218,7 +226,7 @@ function getStudentTypeBadge(type) {
                 <div
                     v-for="(q, index) in questions.data"
                     :key="q.id"
-                    class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-6 sm:p-7 shadow-sm hover:shadow-md transition-shadow space-y-4"
+                    class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 p-6 sm:p-7 shadow-sm hover:shadow-md transition-shadow space-y-4"
                 >
                     <!-- Header -->
                     <div class="flex items-center justify-between gap-3 text-xs">
@@ -236,7 +244,7 @@ function getStudentTypeBadge(type) {
 
                             <!-- Subject & Topic -->
                             <span class="font-bold text-gray-800 dark:text-gray-200">
-                                {{ q.subject?.name_bn }}
+                                {{ en ? (q.subject?.name_en || q.subject?.name_bn) : q.subject?.name_bn }}
                                 <span v-if="q.topic_name" class="font-normal text-gray-400">· {{ q.topic_name }}</span>
                             </span>
 
@@ -246,7 +254,7 @@ function getStudentTypeBadge(type) {
                                 class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60"
                             >
                                 <LockClosedIcon class="w-3 h-3" />
-                                <span>সাবস্ক্রিপশন সংরক্ষিত</span>
+                                <span>{{ en ? 'Subscription Required' : 'সাবস্ক্রিপশন সংরক্ষিত' }}</span>
                             </span>
                         </div>
 
@@ -297,7 +305,7 @@ function getStudentTypeBadge(type) {
                                 v-if="!q.is_locked && userSelectedOptions[q.id] && opt.key.toUpperCase() === q.correct_option?.toUpperCase()"
                                 class="text-emerald-600 dark:text-emerald-400 text-xs font-black shrink-0 self-center"
                             >
-                                ✓ সঠিক
+                                {{ en ? '✓ Correct' : '✓ সঠিক' }}
                             </span>
                         </button>
                     </div>
@@ -313,10 +321,10 @@ function getStudentTypeBadge(type) {
                             </div>
                             <div>
                                 <div class="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
-                                    🔒 এই প্রশ্নের সঠিক উত্তর ও AI কনসেপ্ট ব্যাখ্যা দেখতে সাবস্ক্রিপশন প্রয়োজন
+                                    {{ en ? '🔒 Subscription required to view verified answer and AI concept breakdown' : '🔒 এই প্রশ্নের সঠিক উত্তর ও AI কনসেপ্ট ব্যাখ্যা দেখতে সাবস্ক্রিপশন প্রয়োজন' }}
                                 </div>
                                 <div class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                    পূর্ণাঙ্গ গাণিতিক সমাধান ও বিশ্লেষণ আনলক করতে প্ল্যান আপগ্রেড করুন।
+                                    {{ en ? 'Upgrade your plan to unlock complete mathematical solutions and detailed explanations.' : 'পূর্ণাঙ্গ গাণিতিক সমাধান ও বিশ্লেষণ আনলক করতে প্ল্যান আপগ্রেড করুন।' }}
                                 </div>
                             </div>
                         </div>
@@ -325,7 +333,7 @@ function getStudentTypeBadge(type) {
                             class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-primary text-white text-xs font-bold shadow-md shadow-amber-500/20 hover:opacity-95 whitespace-nowrap transition active:scale-95"
                         >
                             <SparklesIcon class="w-3.5 h-3.5" />
-                            <span>প্ল্যান আপগ্রেড করুন</span>
+                            <span>{{ en ? 'Upgrade Plan' : 'প্ল্যান আপগ্রেড করুন' }}</span>
                         </Link>
                     </div>
 
@@ -337,7 +345,12 @@ function getStudentTypeBadge(type) {
                             class="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline transition"
                         >
                             <SparklesIcon class="w-4 h-4" />
-                            <span>{{ revealedSolutions.has(q.id) ? 'সমাধান ও কনসেপ্ট বন্ধ করুন' : 'বিস্তারিত সমাধান ও AI কনসেপ্ট ব্যাখ্যা দেখুন' }}</span>
+                            <span>
+                                {{ en
+                                    ? (revealedSolutions.has(q.id) ? 'Hide Solution & Concept' : 'View Verified Solution & AI Explanation')
+                                    : (revealedSolutions.has(q.id) ? 'সমাধান ও কনসেপ্ট বন্ধ করুন' : 'বিস্তারিত সমাধান ও AI কনসেপ্ট ব্যাখ্যা দেখুন')
+                                }}
+                            </span>
                             <component :is="revealedSolutions.has(q.id) ? ChevronUpIcon : ChevronDownIcon" class="w-3.5 h-3.5" />
                         </button>
 
@@ -348,24 +361,29 @@ function getStudentTypeBadge(type) {
                             <div class="flex items-center justify-between pb-2 border-b border-primary/10">
                                 <div class="font-black text-primary flex items-center gap-1.5">
                                     <SparklesIcon class="w-4 h-4" />
-                                    <span>সঠিক উত্তর: অপশন ({{ q.correct_option }})</span>
+                                    <span>{{ en ? `Correct Answer: Option (${q.correct_option})` : `সঠিক উত্তর: অপশন (${q.correct_option})` }}</span>
                                 </div>
                                 <span class="text-[11px] text-gray-400 font-mono">Verified Solution</span>
                             </div>
                             <div
                                 class="pt-1 whitespace-pre-wrap leading-relaxed text-xs sm:text-sm text-gray-800 dark:text-gray-200"
-                                v-html="renderMath(q.explanation || 'এই প্রশ্নের জন্য এখনো কোনো বিস্তারিত সমাধান যুক্ত করা হয়নি।')"
+                                v-html="renderMath(q.explanation || (en ? 'No detailed explanation added for this question yet.' : 'এই প্রশ্নের জন্য এখনো কোনো বিস্তারিত সমাধান যুক্ত করা হয়নি।'))"
                             ></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Empty State -->
-                <div v-if="!questions.data || questions.data.length === 0" class="text-center py-20 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-8">
+                <div v-if="!questions.data || questions.data.length === 0" class="text-center py-20 bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 p-8">
                     <AcademicCapIcon class="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                    <div class="text-lg font-bold text-gray-800 dark:text-gray-200">কোনো প্রশ্ন খুঁজে পাওয়া যায়নি</div>
-                    <p class="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
-                        আপনার ক্যাটাগরির জন্য এই বিষয়ে প্রশ্ন প্রস্তুত করা হচ্ছে। অন্য কোনো বিষয় সিলেক্ট করুন অথবা কিওয়ার্ড পরিবর্তন করুন।
+                    <div class="text-lg font-bold text-gray-800 dark:text-gray-200">
+                        {{ en ? 'No questions found' : 'কোনো প্রশ্ন খুঁজে পাওয়া যায়নি' }}
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">
+                        {{ en
+                            ? 'Questions for this category are being prepared. Select another subject or try different keywords.'
+                            : 'আপনার ক্যাটাগরির জন্য এই বিষয়ে প্রশ্ন প্রস্তুত করা হচ্ছে। অন্য কোনো বিষয় সিলেক্ট করুন অথবা কিওয়ার্ড পরিবর্তন করুন।'
+                        }}
                     </p>
                 </div>
 

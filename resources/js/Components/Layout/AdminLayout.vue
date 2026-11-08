@@ -36,7 +36,7 @@ import {
     ArrowUpTrayIcon,
 } from '@heroicons/vue/24/outline';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const page = usePage();
 const admin = page.props.auth?.admin;
 const site = page.props.site;
@@ -116,23 +116,23 @@ const nav = computed(() => [
     },
     {
         id: 'jobs',
-        label: 'চাকরির সার্কুলার',
+        label: t('admin.nav.jobs'),
         icon: BriefcaseIcon,
         items: [
-            { label: 'সকল সার্কুলার', href: '/admin/jobs', icon: BriefcaseIcon },
-            { label: 'নতুন সার্কুলার যুক্ত করুন', href: '/admin/jobs/create', icon: PlusCircleIcon },
-            { label: 'স্ক্র্যাপিং সোর্স সমূহ', href: '/admin/job-sources', icon: BoltIcon },
+            { label: locale.value === 'en' ? 'All Circulars' : 'সকল সার্কুলার', href: '/admin/jobs', icon: BriefcaseIcon },
+            { label: locale.value === 'en' ? 'Add Circular' : 'নতুন সার্কুলার যুক্ত করুন', href: '/admin/jobs/create', icon: PlusCircleIcon },
+            { label: locale.value === 'en' ? 'Scraping Sources' : 'স্ক্র্যাপিং সোর্স সমূহ', href: '/admin/job-sources', icon: BoltIcon },
         ],
     },
     {
         id: 'questions',
-        label: 'প্রশ্ন ব্যাংক',
+        label: t('admin.nav.question_bank'),
         icon: AcademicCapIcon,
         items: [
-            { label: 'প্রশ্ন ভাণ্ডার', href: '/admin/question-bank', icon: DocumentTextIcon },
-            { label: 'নতুন প্রশ্ন যুক্ত করুন', href: '/admin/question-bank/create', icon: PlusCircleIcon },
-            { label: 'সোর্স ও অনুমতি ব্যবস্থাপনা', href: '/admin/question-sources', icon: ShieldCheckIcon },
-            { label: 'পিডিএফ প্রশ্ন ও OCR ইমপোর্ট', href: '/admin/question-import/pdf', icon: ArrowUpTrayIcon },
+            { label: locale.value === 'en' ? 'Question Archive' : 'প্রশ্ন ভাণ্ডার', href: '/admin/question-bank', icon: DocumentTextIcon },
+            { label: locale.value === 'en' ? 'Add Question' : 'নতুন প্রশ্ন যুক্ত করুন', href: '/admin/question-bank/create', icon: PlusCircleIcon },
+            { label: locale.value === 'en' ? 'Sources & Permissions' : 'সোর্স ও অনুমতি ব্যবস্থাপনা', href: '/admin/question-sources', icon: ShieldCheckIcon },
+            { label: locale.value === 'en' ? 'PDF & OCR Ingestion' : 'পিডিএফ প্রশ্ন ও OCR ইমপোর্ট', href: '/admin/question-import/pdf', icon: ArrowUpTrayIcon },
         ],
     },
     {

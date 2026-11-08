@@ -958,7 +958,7 @@ function scrollToCheckout() {
                             >
                                 <span class="inline-flex items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-slate-900 shadow-xl backdrop-blur transition hover:scale-105">
                                     <PlayCircleIcon class="h-4 w-4 text-[var(--primary)]" />
-                                    <span>{{ locale === 'en' ? 'Preview this course' : 'ফ্রি ট্রায়াল প্রিভিউ দেখুন' }}</span>
+                                    <span>{{ locale === 'en' ? 'Preview this course' : 'ফ্রি প্রিভিউ দেখুন' }}</span>
                                 </span>
                             </Link>
                         </div>

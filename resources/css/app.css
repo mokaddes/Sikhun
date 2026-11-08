@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=Anek+Bangla:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 
 @import 'tailwindcss';
@@ -73,6 +73,15 @@ html:not(.dark) .home-design [class*="text-[#ffb690]"] { color: var(--primary) !
 html:not(.dark) .home-design [class*="text-[#4cd7f6]"] { color: var(--tertiary) !important; }
 html:not(.dark) .home-design [class*="text-[#b4c5ff]"] { color: var(--secondary) !important; }
 html:not(.dark) .home-design [class*="text-[#6ee7b7]"] { color: #047857 !important; }
+html:not(.dark) .home-design [class*="bg-[#1a202f]"],
+html:not(.dark) .home-design [class*="bg-[#171c28]"],
+html:not(.dark) .home-design [class*="bg-[#161a26]"],
+html:not(.dark) .home-design [class*="bg-[#1c2233]"],
+html:not(.dark) .home-design [class*="bg-[#0e121d]"],
+html:not(.dark) .home-design [class*="bg-[#0e1320]"],
+html:not(.dark) .home-design [class*="bg-[#141824]"],
+html:not(.dark) .home-design [class*="bg-[#121622]"],
+html:not(.dark) .home-design [class*="bg-[#202738]"] { background-color: var(--surface) !important; }
 html:not(.dark) .home-design [class*="border-white/"] { border-color: var(--border) !important; }
 html:not(.dark) .home-design [class*="from-[#1c1f2a]"] {
     --tw-gradient-from: var(--surface) !important;
@@ -81,6 +90,13 @@ html:not(.dark) .home-design [class*="from-[#1c1f2a]"] {
 }
 html:not(.dark) .home-design [class*="from-[#111827]"] {
     --tw-gradient-from: var(--surface2) !important;
+    --tw-gradient-to: var(--surface) !important;
+}
+html:not(.dark) .home-design [class*="from-[#1d1f2e]"],
+html:not(.dark) .home-design [class*="from-[#162524]"],
+html:not(.dark) .home-design [class*="from-[#1a202f]"] {
+    --tw-gradient-from: var(--surface) !important;
+    --tw-gradient-via: var(--surface2) !important;
     --tw-gradient-to: var(--surface) !important;
 }
 html:not(.dark) .public-header,
@@ -105,7 +121,7 @@ html { background-color: var(--bg); scroll-behavior: smooth; }
 html { font-size: calc(16px * var(--text-scale, 1)); }
 
 body {
-    font-family: 'Anek Bangla', 'DM Sans', 'Noto Sans Bengali', sans-serif;
+    font-family: 'DM Sans', 'Hind Siliguri', sans-serif;
     background-color: var(--bg);
     color: var(--text);
     transition: background-color 0.2s ease, color 0.2s ease;
@@ -113,7 +129,7 @@ body {
 }
 
 h1, h2, h3, h4, .font-heading {
-    font-family: 'Anek Bangla', 'DM Sans', 'Noto Sans Bengali', sans-serif;
+    font-family: 'DM Sans', 'Hind Siliguri', sans-serif;
 }
 
 .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 1.25em; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; direction: ltr; font-feature-settings: 'liga'; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
@@ -263,7 +279,7 @@ h1, h2, h3, h4, .font-heading {
     .card-hover:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
 
     .eyebrow {
-        font-family: 'JetBrains Mono', 'Anek Bangla', monospace;
+        font-family: 'JetBrains Mono', 'Hind Siliguri', monospace;
         font-size: 0.6875rem;
         font-weight: 600;
         letter-spacing: 0.16em;

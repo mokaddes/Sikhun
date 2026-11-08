@@ -36,6 +36,7 @@ function adjustDisplay(key, amount) {
 const nav = computed(() => [
     { label: t('nav.courses'), href: '/courses' },
     { label: t('nav.library'), href: '/library' },
+    { label: locale.value === 'bn' ? 'প্রশ্ন ব্যাংক' : 'Question Bank', href: '/question-bank' },
     { label: locale.value === 'bn' ? 'চাকরির খবর' : 'Jobs', href: '/jobs' },
     { label: locale.value === 'bn' ? 'টুলস' : 'Tools', href: '/tools' },
     { label: locale.value === 'bn' ? 'রেজাল্ট' : 'Results', href: '/results' },
@@ -119,6 +120,7 @@ const nav = computed(() => [
                         <ul class="space-y-3 text-sm text-[#a2aabc]">
                             <li><Link href="/courses" class="hover:text-[var(--primary)] transition-colors">{{ t('courses_page.title') }}</Link></li>
                             <li><Link href="/library" class="hover:text-[var(--primary)] transition-colors">{{ t('nav.library') }}</Link></li>
+                            <li><Link href="/question-bank" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'প্রশ্ন ব্যাংক (ভর্তি ও চাকরি)' : 'Question Bank' }}</Link></li>
                             <li><Link href="/jobs" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'চাকরির সার্কুলার' : 'Job Circulars' }}</Link></li>
                             <li><Link href="/tools" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'স্টুডেন্ট টুলস' : 'Student Tools' }}</Link></li>
                             <li><Link href="/results" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'বোর্ড রেজাল্ট চেকার' : 'Result Checker' }}</Link></li>

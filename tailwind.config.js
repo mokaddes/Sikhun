@@ -11,8 +11,8 @@ export default {
         extend: {
             fontFamily: {
                 heading: ['Syne', 'sans-serif'],
-                sans: ['DM Sans', 'sans-serif'],
-                bangla: ['Hind Siliguri', 'sans-serif'],
+                sans: ['DM Sans', 'Anek Bangla', 'Noto Sans Bengali', 'sans-serif'],
+                bangla: ['Anek Bangla', 'Noto Sans Bengali', 'sans-serif'],
                 mono: ['JetBrains Mono', 'monospace'],
             },
             colors: {

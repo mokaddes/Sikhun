@@ -27,6 +27,9 @@ use App\Http\Controllers\Admin\MentorController;
 use App\Http\Controllers\Admin\NotificationBroadcastController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\QuestionBankController;
+use App\Http\Controllers\Admin\QuestionImportController;
+use App\Http\Controllers\Admin\QuestionSourceController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\PublicationController;
 use App\Http\Controllers\Admin\ReferralController;
@@ -120,6 +123,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('job-sources/run-all', [JobSourceController::class, 'runAll'])->name('job-sources.run-all');
         Route::post('job-sources/{jobSource}/run', [JobSourceController::class, 'run'])->name('job-sources.run');
         Route::resource('job-sources', JobSourceController::class)->only(['index', 'store', 'update', 'destroy']);
+
+        // Question Bank & Source Registry Management
+        Route::post('question-sources/{questionSource}/check-robots', [QuestionSourceController::class, 'checkRobots'])->name('question-sources.check-robots');
+        Route::post('question-sources/{questionSource}/test-connection', [QuestionSourceController::class, 'testConnection'])->name('question-sources.test-connection');
+        Route::patch('question-sources/{questionSource}/toggle-active', [QuestionSourceController::class, 'toggleActive'])->name('question-sources.toggle-active');
+        Route::resource('question-sources', QuestionSourceController::class)->only(['index', 'store', 'update', 'destroy']);
+
+        Route::get('question-import/pdf', [QuestionImportController::class, 'showPdfUpload'])->name('question-import.pdf');
+        Route::post('question-import/pdf', [QuestionImportController::class, 'processPdf'])->name('question-import.pdf.process');
+
+        Route::post('question-bank/ai-explain', [QuestionBankController::class, 'aiExplain'])->name('question-bank.ai-explain');
+        Route::resource('question-bank', QuestionBankController::class);
 
         // Blog module (Posts, Categories, Scraper Sources, Blocklist)
         Route::post('blog/bulk', [BlogPostController::class, 'bulkAction'])->name('blog.bulk');

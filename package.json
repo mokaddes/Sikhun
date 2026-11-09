@@ -26,6 +26,7 @@
         "apexcharts": "^5.10.0",
         "dayjs": "^1.11.11",
         "jquery": "^3.7.1",
+        "jspdf": "^4.2.1",
         "katex": "^0.19.1",
         "laravel-echo": "^1.16.1",
         "pinia": "^2.1.7",

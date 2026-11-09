@@ -23,9 +23,11 @@ import {
     BookOpenIcon,
     CheckCircleIcon,
     CpuChipIcon,
+    BanknotesIcon,
+    DocumentDuplicateIcon,
 } from '@heroicons/vue/24/outline';
 
-// Import New Study & Tech Tool Components
+// Import Tool Components
 import PomodoroTimer from './Components/PomodoroTimer.vue';
 import StudyPlanner from './Components/StudyPlanner.vue';
 import FormulaConverter from './Components/FormulaConverter.vue';
@@ -33,6 +35,9 @@ import CodeFormatter from './Components/CodeFormatter.vue';
 import JsonViewer from './Components/JsonViewer.vue';
 import MarkdownEditor from './Components/MarkdownEditor.vue';
 import RegexTester from './Components/RegexTester.vue';
+import ImageToPdf from './Components/ImageToPdf.vue';
+import PdfToText from './Components/PdfToText.vue';
+import CurrencyConverter from './Components/CurrencyConverter.vue';
 
 const props = defineProps({
     recentJobs: Array,
@@ -41,14 +46,14 @@ const props = defineProps({
 const { t, locale } = useI18n();
 const en = computed(() => locale.value === 'en');
 
-// Active view: 'catalog' | 'pomodoro' | 'routine' | 'formulas' | 'code_formatter' | 'json_viewer' | 'markdown' | 'regex' | 'age' | 'resizer' | 'calculator' | 'gpa' | 'text'
+// Active view: 'catalog' | toolId
 const activeTab = ref('catalog');
-const categoryFilter = ref('all'); // 'all' | 'study' | 'tech' | 'career'
+const categoryFilter = ref('all'); // 'all' | 'study' | 'tech' | 'pdf' | 'finance' | 'career'
 const searchQuery = ref('');
 const copied = ref(false);
 
 // ==========================================
-// TOOLS DIRECTORY DATA
+// 14 ESSENTIAL STUDENT & TECH TOOLS DIRECTORY
 // ==========================================
 const toolsList = [
     // --- Study & Academic Tools ---
@@ -70,8 +75,8 @@ const toolsList = [
         category: 'study',
         titleBn: 'দৈনিক পড়ার রুটিন ও প্ল্যানার',
         titleEn: 'Daily Study Routine & Planner',
-        descBn: 'সকাল থেকে রাত পড়ার সময়সূচি তৈরি করুন এবং ১-ক্লিকে সুন্দর লেআউটে প্রিন্ট বা PDF ডাউনলোড করুন।',
-        descEn: 'Build personal study routines with target hours and 1-click print/save as PDF.',
+        descBn: 'পড়ার সময়সূচি তৈরি করুন এবং ১-ক্লিকে চমৎকার A4 শিটে প্রিন্ট বা PDF হিসেবে সংরক্ষণ করুন।',
+        descEn: 'Build personal study routines with target hours and 1-click clean A4 PDF export.',
         icon: CalendarDaysIcon,
         badgeBn: 'প্রিন্ট রেডি',
         badgeEn: 'Print Ready',
@@ -103,6 +108,47 @@ const toolsList = [
         badgeEn: 'Board Standard',
         badgeColor: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
         color: 'text-emerald-500',
+    },
+
+    // --- PDF & Document Tools ---
+    {
+        id: 'image_to_pdf',
+        category: 'pdf',
+        titleBn: 'ছবি থেকে পিডিএফ কনভার্টার',
+        titleEn: 'Image to PDF Converter',
+        descBn: 'একাধিক ছবি (JPG, PNG, WebP) যুক্ত করে ব্রাউজারে ১-ক্লিকে চমৎকার A4 PDF তৈরি ও ডাউনলোড করুন।',
+        descEn: 'Combine multiple JPG, PNG, or WebP images into a single clean PDF in browser.',
+        icon: PhotoIcon,
+        badgeBn: 'নতুন পিডিএফ',
+        badgeEn: 'New PDF',
+        badgeColor: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
+        color: 'text-indigo-500',
+    },
+    {
+        id: 'pdf_to_text',
+        category: 'pdf',
+        titleBn: 'পিডিএফ থেকে টেক্সট এক্সট্রাক্টর',
+        titleEn: 'PDF to Text Extractor',
+        descBn: 'যেকোনো পিডিএফ ফাইল থেকে সব লেখা আলাদা করুন, ওয়ার্ড কাউন্ট দেখুন বা .TXT ফাইল ডাউনলোড করুন।',
+        descEn: 'Extract readable text from PDF documents, copy, or download as TXT file in browser.',
+        icon: DocumentDuplicateIcon,
+        badgeBn: 'নতুন এক্সট্রাক্ট',
+        badgeEn: 'New Extract',
+        badgeColor: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
+        color: 'text-teal-500',
+    },
+    {
+        id: 'resizer',
+        category: 'pdf',
+        titleBn: 'চাকরির ছবি ও স্বাক্ষর রিসাইজার',
+        titleEn: 'Job Photo & Signature Resizer',
+        descBn: 'টেলিটক ও সরকারি চাকরির আবেদনের জন্য ৩০০x৩০০ ছবি (১০০KB) ও ৩০০x৮০ স্বাক্ষর (৬০KB) রূপান্তর।',
+        descEn: 'Resize photos (300x300, <100KB) and signatures (300x80, <60KB) for Teletalk govt jobs.',
+        icon: PhotoIcon,
+        badgeBn: 'সরকারি আবেদন',
+        badgeEn: 'Govt Job App',
+        badgeColor: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+        color: 'text-blue-500',
     },
 
     // --- Tech & Developer Tools ---
@@ -137,8 +183,8 @@ const toolsList = [
         category: 'tech',
         titleBn: 'মার্কডাউন নোট ও PDF এক্সপোর্টার',
         titleEn: 'Markdown Notes to PDF',
-        descBn: 'স্প্লিট এডিটরে লাইভ মার্কডাউন নোট লিখুন, কোড ও ফর্মুলা সাজান এবং ১-ক্লিকে PDF প্রিন্ট নিন।',
-        descEn: 'Write notes in markdown with instant preview and export directly to clean PDF.',
+        descBn: 'স্প্লিট এডিটরে লাইভ মার্কডাউন নোট লিখুন এবং পরিচ্ছন্ন মার্জিত A4 পেপারে PDF সেভ করুন।',
+        descEn: 'Write notes in markdown with instant preview and export directly to clean A4 PDF.',
         icon: DocumentTextIcon,
         badgeBn: 'নোটবুক',
         badgeEn: 'Notebook',
@@ -163,7 +209,7 @@ const toolsList = [
         category: 'tech',
         titleBn: 'ওয়ার্ড কাউন্টার ও টেক্সট কনভার্টার',
         titleEn: 'Word Counter & Case Tools',
-        descBn: 'রিয়েল-টাইম মোট শব্দ, বর্ণ, পড়ার সময় গণনা এবং UPPERCASE/lowercase কনভার্সন।',
+        descBn: 'রিয়েল-টাইমে মোট শব্দ, বর্ণ, পড়ার সময় গণনা এবং UPPERCASE/lowercase কনভার্সন।',
         descEn: 'Real-time word, character, and sentence count with instant case transformations.',
         icon: DocumentTextIcon,
         badgeBn: 'ইউটিলিটি',
@@ -172,7 +218,20 @@ const toolsList = [
         color: 'text-pink-500',
     },
 
-    // --- Career & Online Application Tools ---
+    // --- Currency & Finance / Utilities ---
+    {
+        id: 'currency',
+        category: 'finance',
+        titleBn: 'লাইভ কারেন্সি ও মুদ্রা কনভার্টার',
+        titleEn: 'Live Currency Converter',
+        descBn: 'বাংলাদেশী টাকা (BDT), ইউএস ডলার ($), সৌদি রিয়াল (SAR), দিরহাম, ইউরো, পাউন্ডের লাইভ রেট কনভার্টার।',
+        descEn: 'Real-time exchange rate converter for BDT, USD, SAR, AED, EUR, GBP, MYR, INR.',
+        icon: BanknotesIcon,
+        badgeBn: 'নতুন এফএক্স',
+        badgeEn: 'New FX',
+        badgeColor: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+        color: 'text-emerald-500',
+    },
     {
         id: 'age',
         category: 'career',
@@ -185,19 +244,6 @@ const toolsList = [
         badgeEn: 'Popular',
         badgeColor: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
         color: 'text-amber-500',
-    },
-    {
-        id: 'resizer',
-        category: 'career',
-        titleBn: 'চাকরির ছবি ও স্বাক্ষর রিসাইজার',
-        titleEn: 'Job Photo & Signature Resizer',
-        descBn: 'টেলিটক ও সরকারি চাকরির আবেদনের জন্য ৩০০x৩০০ ছবি (১০০KB) ও ৩০০x৮০ স্বাক্ষর (৬০KB) রূপান্তর।',
-        descEn: 'Resize photos (300x300, <100KB) and signatures (300x80, <60KB) for Teletalk govt jobs.',
-        icon: PhotoIcon,
-        badgeBn: 'সরকারি আবেদন',
-        badgeEn: 'Govt Job App',
-        badgeColor: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-        color: 'text-blue-500',
     },
     {
         id: 'calculator',
@@ -304,7 +350,6 @@ function copyAgeSummary() {
 // ==========================================
 const calcDisplay = ref('0');
 const calcEquation = ref('');
-const calcMemory = ref(0);
 
 function calcInput(char) {
     if (calcDisplay.value === '0' && !isNaN(char)) {
@@ -343,30 +388,10 @@ function calcEqual() {
     }
 }
 
-// Keyboard shortcuts for calculator
-function handleKeydown(e) {
-    if (activeTab.value !== 'calculator') return;
-    if ((e.key >= '0' && e.key <= '9') || e.key === '.') {
-        calcInput(e.key);
-    } else if (['+', '-', '*', '/'].includes(e.key)) {
-        const opMap = { '*': '×', '/': '÷' };
-        calcOp(opMap[e.key] || e.key);
-    } else if (e.key === 'Enter' || e.key === '=') {
-        calcEqual();
-    } else if (e.key === 'Backspace') {
-        calcBackspace();
-    } else if (e.key === 'Escape') {
-        calcClear();
-    }
-}
-
-onMounted(() => { window.addEventListener('keydown', handleKeydown); });
-onUnmounted(() => { window.removeEventListener('keydown', handleKeydown); });
-
 // ==========================================
 // TOOL: RESIZER
 // ==========================================
-const resizerMode = ref('photo'); // 'photo' (300x300) | 'signature' (300x80)
+const resizerMode = ref('photo');
 const resizerFile = ref(null);
 const resizerPreview = ref(null);
 const resizerLoading = ref(false);
@@ -452,9 +477,7 @@ function downloadResized() {
 // ==========================================
 // TOOL: GPA & CGPA CALCULATOR
 // ==========================================
-const gpaType = ref('ssc_hsc'); // 'ssc_hsc' | 'honours'
-const sscGroup = ref('science'); // 'science' | 'commerce' | 'humanities'
-
+const gpaType = ref('ssc_hsc');
 const sscSubjects = ref([
     { name_bn: 'বাংলা ১ম ও ২য়', name_en: 'Bangla', grade: 5.0 },
     { name_bn: 'ইংরেজি ১ম ও ২য়', name_en: 'English', grade: 5.0 },
@@ -536,20 +559,20 @@ function convertText(mode) {
 </script>
 
 <template>
-    <Head :title="en ? 'Student Online Tools Hub | 100% Free Study & Tech Utilities' : 'স্টুডেন্ট অনলাইন টুলস হাব | ১০০% ফ্রি স্টাডি ও টেক ইউটিলিটি - শিখুন'" />
+    <Head :title="en ? 'Student & Tech Online Tools Hub | 100% Free Utilities - Sikhun' : 'স্টুডেন্ট ও টেক অনলাইন টুলস হাব | ১০০% ফ্রি ইউটিলিটি - শিখুন'" />
 
     <PublicLayout>
         <!-- Hero Header -->
         <header class="bg-gradient-to-b from-gray-50 via-white to-gray-50 dark:from-[#111622] dark:via-[#0d111a] dark:to-[var(--bg)] border-b border-gray-200 dark:border-white/5 py-12 md:py-16">
             <div class="max-w-6xl mx-auto px-4 md:px-6 text-center">
                 <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[var(--primary)]/15 border border-[var(--primary)]/30 text-[var(--primary)] text-xs font-bold uppercase tracking-wider mb-3">
-                    <SparklesIcon class="w-4 h-4" /> {{ en ? '100% Free Online Student & Tech Utilities (No Login Required)' : '১০০% ফ্রি অনলাইন স্টুডেন্ট ও টেক টুলস (কোনো লগইন ছাড়াই)' }}
+                    <SparklesIcon class="w-4 h-4" /> {{ en ? '100% Free Online Student & Tech Utilities (No Login Required)' : '১০০% ফ্রি অনলাইন স্টুডেন্ট ও টেক টুলস (লগইন ছাড়াই)' }}
                 </span>
                 <h1 class="font-heading text-3xl md:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                     {{ en ? 'Student & Tech' : 'স্টাডি ও টেক অনলাইন' }} <span class="text-gradient">{{ en ? 'Tools Hub' : 'টুলস হাব' }}</span>
                 </h1>
                 <p class="mt-3 max-w-2xl mx-auto text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                    {{ en ? 'Pomodoro focus timer, study planner, formula sheet, code formatter, JSON validator, regex tester, GPA & age calculators—free in one place.' : 'পোমোডোরো স্টাডি টাইমার, পড়ার রুটিন মেকার, সূত্র ও একক কনভার্টার, কোড ফরম্যাটার, জেসন ভ্যালিডেটর, রেজেক্স ও জিপিএ ক্যালকুলেটর—পড়াশোনা ও প্রযুক্তির সকল ফ্রি টুলস এক জায়গায়।' }}
+                    {{ en ? 'Pomodoro timer, study planner, image to PDF, PDF to text, live currency exchange, code formatter, JSON validator, and formulas—all in one place.' : 'পোমোডোরো টাইমার, স্টাডি রুটিন মেকার, ইমেজ টু পিডিএফ, পিডিএফ টু টেক্সট, লাইভ মুদ্রা কনভার্টার, কোড ফরম্যাটার, জেসন ভিউয়ার ও সূত্রাবলি—সকল দরকারি ফ্রি টুলস এক জায়গায়।' }}
                 </p>
 
                 <!-- Search Input Bar -->
@@ -558,7 +581,7 @@ function convertText(mode) {
                     <input
                         v-model="searchQuery"
                         type="text"
-                        :placeholder="en ? 'Search any tool by name, topic, or keyword...' : 'টুল খুঁজুন... (যেমন: পোমোডোরো, রুটিন, কোড, জেসন, বয়স, ছবি)'"
+                        :placeholder="en ? 'Search any tool (e.g. Pomodoro, PDF, Currency, Routine, Code)...' : 'টুল খুঁজুন... (যেমন: পোমোডোরো, পিডিএফ, মুদ্রা, রুটিন, কোড, বয়স)'"
                         class="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-white dark:bg-[#161a26] border border-gray-300 dark:border-white/10 text-xs sm:text-sm text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                     />
                 </div>
@@ -571,7 +594,7 @@ function convertText(mode) {
                         class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border"
                         :class="categoryFilter === 'all' && activeTab === 'catalog' ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-md shadow-[var(--primary)]/20' : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'"
                     >
-                        <span>🌟</span> {{ en ? 'All Tools Catalog' : 'সবগুলো টুলস ক্যাটালগ' }}
+                        <span>🌟</span> {{ en ? 'All Tools (14)' : 'সবগুলো ক্যাটালগ (১৪)' }}
                     </button>
 
                     <button
@@ -585,6 +608,15 @@ function convertText(mode) {
 
                     <button
                         type="button"
+                        @click="categoryFilter = 'pdf'; activeTab = 'catalog'"
+                        class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border"
+                        :class="categoryFilter === 'pdf' && activeTab === 'catalog' ? 'bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/20' : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'"
+                    >
+                        <span>📑</span> {{ en ? 'PDF & Images' : 'পিডিএফ ও ইমেজ' }}
+                    </button>
+
+                    <button
+                        type="button"
                         @click="categoryFilter = 'tech'; activeTab = 'catalog'"
                         class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border"
                         :class="categoryFilter === 'tech' && activeTab === 'catalog' ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20' : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'"
@@ -594,36 +626,43 @@ function convertText(mode) {
 
                     <button
                         type="button"
+                        @click="categoryFilter = 'finance'; activeTab = 'catalog'"
+                        class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border"
+                        :class="categoryFilter === 'finance' && activeTab === 'catalog' ? 'bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-600/20' : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'"
+                    >
+                        <span>💱</span> {{ en ? 'Currency & FX' : 'মুদ্রা ও ফাইন্যান্স' }}
+                    </button>
+
+                    <button
+                        type="button"
                         @click="categoryFilter = 'career'; activeTab = 'catalog'"
                         class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border"
-                        :class="categoryFilter === 'career' && activeTab === 'catalog' ? 'bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-600/20' : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'"
+                        :class="categoryFilter === 'career' && activeTab === 'catalog' ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20' : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'"
                     >
-                        <span>💼</span> {{ en ? 'Career & Utilities' : 'ক্যারিয়ার ও ইউটিলিটি' }}
+                        <span>💼</span> {{ en ? 'Career & Apply' : 'চাকরি ও আবেদন' }}
                     </button>
                 </div>
             </div>
         </header>
 
         <main class="max-w-6xl mx-auto px-4 md:px-6 py-10">
-            <!-- ========================================== -->
-            <!-- BREADCRUMB / BACK TO CATALOG WHEN TOOL ACTIVE -->
-            <!-- ========================================== -->
+            <!-- Breadcrumb Navigation when a tool is active -->
             <div v-if="activeTab !== 'catalog'" class="mb-6 flex items-center justify-between gap-3">
                 <button
                     type="button"
                     @click="activeTab = 'catalog'"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 transition"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 transition"
                 >
-                    <ArrowLeftIcon class="w-3.5 h-3.5" />
+                    <ArrowLeftIcon class="w-4 h-4" />
                     <span>{{ en ? 'Back to All Tools Catalog' : '← সকল টুলসের ক্যাটালগে ফিরে যান' }}</span>
                 </button>
 
-                <!-- Quick Switcher to Other Tools -->
+                <!-- Quick Switcher Dropdown -->
                 <div class="hidden sm:flex items-center gap-2 text-xs">
                     <span class="text-gray-500">{{ en ? 'Switch Tool:' : 'দ্রুত পরিবর্তন:' }}</span>
                     <select
                         v-model="activeTab"
-                        class="bg-white dark:bg-[#161a26] border border-gray-300 dark:border-white/10 rounded-xl px-2.5 py-1 text-xs text-gray-900 dark:text-white"
+                        class="bg-white dark:bg-[#161a26] border border-gray-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs text-gray-900 dark:text-white font-semibold"
                     >
                         <option v-for="t in toolsList" :key="t.id" :value="t.id">
                             {{ en ? t.titleEn : t.titleBn }}
@@ -638,10 +677,10 @@ function convertText(mode) {
             <section v-if="activeTab === 'catalog'" class="space-y-6">
                 <div class="flex items-center justify-between text-xs text-gray-500">
                     <span>
-                        {{ en ? `Showing ${filteredTools.length} free utilities` : `${filteredTools.length}টি ১০০% ফ্রি টুলস প্রদর্শিত হচ্ছে` }}
+                        {{ en ? `Showing ${filteredTools.length} free tools` : `${filteredTools.length}টি ১০০% ফ্রি ইউটিলিটি টুলস` }}
                     </span>
-                    <span v-if="categoryFilter !== 'all'" class="font-semibold text-[var(--primary)]">
-                        {{ en ? `Filtered by ${categoryFilter}` : 'ক্যাটাগরি ফিল্টার সক্রিয়' }}
+                    <span v-if="categoryFilter !== 'all'" class="font-semibold text-[var(--primary)] uppercase tracking-wider">
+                        {{ categoryFilter }}
                     </span>
                 </div>
 
@@ -673,7 +712,7 @@ function convertText(mode) {
                                         {{ en ? tool.titleEn : tool.titleBn }}
                                     </h3>
                                     <span class="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">
-                                        {{ tool.category === 'study' ? 'Study Tool' : (tool.category === 'tech' ? 'Developer Tool' : 'Career Tool') }}
+                                        {{ tool.category.toUpperCase() }} UTILITY
                                     </span>
                                 </div>
                             </div>
@@ -722,41 +761,62 @@ function convertText(mode) {
             </section>
 
             <!-- ========================================== -->
-            <!-- 4. CODE FORMATTER & BEAUTIFIER -->
+            <!-- 4. IMAGE TO PDF CONVERTER -->
+            <!-- ========================================== -->
+            <section v-else-if="activeTab === 'image_to_pdf'">
+                <ImageToPdf :en="en" />
+            </section>
+
+            <!-- ========================================== -->
+            <!-- 5. PDF TO TEXT EXTRACTOR -->
+            <!-- ========================================== -->
+            <section v-else-if="activeTab === 'pdf_to_text'">
+                <PdfToText :en="en" />
+            </section>
+
+            <!-- ========================================== -->
+            <!-- 6. LIVE CURRENCY CONVERTER -->
+            <!-- ========================================== -->
+            <section v-else-if="activeTab === 'currency'">
+                <CurrencyConverter :en="en" />
+            </section>
+
+            <!-- ========================================== -->
+            <!-- 7. CODE FORMATTER & BEAUTIFIER -->
             <!-- ========================================== -->
             <section v-else-if="activeTab === 'code_formatter'">
                 <CodeFormatter :en="en" />
             </section>
 
             <!-- ========================================== -->
-            <!-- 5. JSON VALIDATOR & VIEWER -->
+            <!-- 8. JSON VALIDATOR & VIEWER -->
             <!-- ========================================== -->
             <section v-else-if="activeTab === 'json_viewer'">
                 <JsonViewer :en="en" />
             </section>
 
             <!-- ========================================== -->
-            <!-- 6. MARKDOWN NOTES TO PDF -->
+            <!-- 9. MARKDOWN NOTES TO PDF -->
             <!-- ========================================== -->
             <section v-else-if="activeTab === 'markdown'">
                 <MarkdownEditor :en="en" />
             </section>
 
             <!-- ========================================== -->
-            <!-- 7. REGEX TESTER & CHEATSHEET -->
+            <!-- 10. REGEX TESTER & CHEATSHEET -->
             <!-- ========================================== -->
             <section v-else-if="activeTab === 'regex'">
                 <RegexTester :en="en" />
             </section>
 
             <!-- ========================================== -->
-            <!-- 8. GENERAL AGE CALCULATOR -->
+            <!-- 11. GENERAL AGE CALCULATOR -->
             <!-- ========================================== -->
             <section v-else-if="activeTab === 'age'" class="space-y-6">
                 <div class="card p-6 md:p-8 rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161a26] text-gray-900 dark:text-white shadow-xl">
                     <h2 class="font-heading text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 border-b border-gray-200 dark:border-white/10 pb-4">
                         <CalendarDaysIcon class="w-6 h-6 text-amber-500 dark:text-amber-400" />
-                        {{ en ? 'General Age Calculator' : 'সাধারণ বয়স ক্যালকুলেটর (Age Calculator)' }}
+                        {{ en ? 'General & Job Age Calculator' : 'সাধারণ ও চাকরির বয়স ক্যালকুলেটর (Age Calculator)' }}
                     </h2>
                     <p class="text-xs text-gray-600 dark:text-gray-300 mt-2">
                         {{ en ? 'Calculate your exact age in years, months, and days from birth date to any specific date.' : 'আপনার জন্মতারিখ থেকে আজকের দিন বা যে কোনো নির্দিষ্ট তারিখ পর্যন্ত নির্ভুল বয়স (বছর, মাস, দিন) হিসাব করুন।' }}
@@ -843,7 +903,7 @@ function convertText(mode) {
             </section>
 
             <!-- ========================================== -->
-            <!-- 9. PHOTO & SIGNATURE RESIZER -->
+            <!-- 12. PHOTO & SIGNATURE RESIZER -->
             <!-- ========================================== -->
             <section v-else-if="activeTab === 'resizer'" class="space-y-6">
                 <div class="card p-6 md:p-8 rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161a26] text-gray-900 dark:text-white shadow-xl">
@@ -956,7 +1016,7 @@ function convertText(mode) {
             </section>
 
             <!-- ========================================== -->
-            <!-- 10. INTERACTIVE STANDARD CALCULATOR -->
+            <!-- 13. INTERACTIVE STANDARD CALCULATOR -->
             <!-- ========================================== -->
             <section v-else-if="activeTab === 'calculator'" class="space-y-6">
                 <div class="card p-6 md:p-8 rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161a26] text-gray-900 dark:text-white shadow-xl max-w-xl mx-auto">
@@ -1008,7 +1068,7 @@ function convertText(mode) {
             </section>
 
             <!-- ========================================== -->
-            <!-- 11. GPA & CGPA CALCULATOR -->
+            <!-- 14. GPA & CGPA CALCULATOR -->
             <!-- ========================================== -->
             <section v-else-if="activeTab === 'gpa'" class="space-y-6">
                 <div class="card p-6 md:p-8 rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161a26] text-gray-900 dark:text-white shadow-xl">
@@ -1160,7 +1220,7 @@ function convertText(mode) {
             </section>
 
             <!-- ========================================== -->
-            <!-- 12. WORD & CHARACTER COUNTER -->
+            <!-- 15. WORD & CHARACTER COUNTER -->
             <!-- ========================================== -->
             <section v-else-if="activeTab === 'text'" class="space-y-6">
                 <div class="card p-6 md:p-8 rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161a26] text-gray-900 dark:text-white shadow-xl">

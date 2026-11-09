@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed } from 'vue';
+import { jsPDF } from 'jspdf';
 import {
     DocumentTextIcon,
     PrinterIcon,
     ClipboardDocumentIcon,
     CheckIcon,
+    ArrowDownTrayIcon,
     SparklesIcon,
 } from '@heroicons/vue/24/outline';
 
@@ -42,7 +44,6 @@ const renderedHtml = computed(() => {
 function parseMarkdown(md) {
     if (!md) return '';
     let html = md
-        // Escape HTML
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
@@ -81,7 +82,6 @@ function parseMarkdown(md) {
     // Line breaks to <br>
     html = html.replace(/\n/g, '<br/>');
 
-    // Clean multiple br around headers and lists
     html = html.replace(/(<\/h[1-3]>|<hr[^>]*>|<\/pre>|<\/blockquote>|<br\/>\s*<li)/g, (match) => {
         if (match.startsWith('<br/>')) return match.replace('<br/>', '');
         return match;
@@ -96,8 +96,67 @@ function copyHtml() {
     setTimeout(() => { copied.value = false; }, 2000);
 }
 
+// Clean Isolated A4 Document Print / PDF Export
 function printNote() {
-    window.print();
+    const printWindow = window.open('', '_blank', 'width=850,height=950');
+    if (!printWindow) {
+        window.print();
+        return;
+    }
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="bn">
+        <head>
+            <meta charset="utf-8">
+            <title>Sikhun Notes</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@400;500;600;700&display=swap" rel="stylesheet">
+            <style>
+                @page {
+                    size: A4;
+                    margin: 20mm;
+                }
+                body {
+                    font-family: 'Anek Bangla', 'Segoe UI', system-ui, -apple-system, sans-serif;
+                    color: #111827;
+                    background: #ffffff;
+                    margin: 0;
+                    padding: 15px;
+                    line-height: 1.7;
+                    font-size: 11pt;
+                }
+                h1 { font-size: 22pt; font-weight: 800; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px; margin-bottom: 12px; }
+                h2 { font-size: 16pt; font-weight: 700; border-bottom: 1px solid #f3f4f6; padding-bottom: 4px; margin-top: 18px; margin-bottom: 8px; }
+                h3 { font-size: 13pt; font-weight: 700; margin-top: 14px; margin-bottom: 6px; }
+                p { margin-bottom: 10px; }
+                pre { background: #f3f4f6; border: 1px solid #e5e7eb; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 9.5pt; overflow-x: auto; white-space: pre-wrap; }
+                code { background: #f3f4f6; padding: 2px 5px; border-radius: 4px; font-family: monospace; font-size: 9.5pt; color: #dc2626; }
+                blockquote { border-left: 4px solid #6366f1; padding-left: 12px; margin: 12px 0; color: #4b5563; font-style: italic; background: #f8fafc; padding-top: 4px; padding-bottom: 4px; }
+                ul, ol { margin: 8px 0 12px 20px; }
+                li { margin-bottom: 4px; }
+                table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+                th, td { border: 1px solid #d1d5db; padding: 8px 12px; text-align: left; font-size: 10pt; }
+                th { background: #f9fafb; font-weight: 700; }
+                hr { border: 0; border-top: 1px solid #e5e7eb; margin: 16px 0; }
+                .doc-footer { margin-top: 30px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 9pt; color: #9ca3af; text-align: right; }
+            </style>
+        </head>
+        <body>
+            ${renderedHtml.value}
+            <div class="doc-footer">Created with Sikhun Notes (sikhun.com)</div>
+            <script>
+                window.onload = function() {
+                    window.focus();
+                    window.print();
+                };
+            <\/script>
+        </body>
+        </html>
+    `;
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
 }
 
 function clearNote() {
@@ -112,10 +171,10 @@ function clearNote() {
             <div>
                 <h2 class="font-heading text-xl md:text-2xl font-bold flex items-center gap-2.5">
                     <DocumentTextIcon class="w-6 h-6 text-purple-500" />
-                    {{ en ? 'Markdown Live Notes & PDF Exporter' : 'মার্কডাউন লাইভ নোট ও পিডিএফ এক্সপোর্টার' }}
+                    {{ en ? 'Markdown Live Notes & Clean PDF Exporter' : 'মার্কডাউন নোট ও পরিচ্ছন্ন PDF এক্সপোর্টার' }}
                 </h2>
                 <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                    {{ en ? 'Write formatted study notes with headings, math formulas, and print/save directly as PDF.' : 'হেডিং, বুলেট পয়েন্ট ও ফর্মুলা দিয়ে ক্লাসের নোট তৈরি করুন এবং সরাসরি প্রিন্ট বা PDF ডাউনলোড করুন।' }}
+                    {{ en ? 'Write formatted study notes with headings, math formulas, and export directly as clean A4 PDF.' : 'হেডিং, বুলেট পয়েন্ট ও ফর্মুলা দিয়ে ক্লাসের নোট তৈরি করুন এবং পরিচ্ছন্ন A4 পেপারে PDF সেভ করুন।' }}
                 </p>
             </div>
 
@@ -123,10 +182,10 @@ function clearNote() {
                 <button
                     type="button"
                     @click="printNote"
-                    class="btn btn-primary text-xs py-2 px-3.5 flex items-center gap-1.5"
+                    class="btn btn-primary text-xs py-2 px-4 flex items-center gap-1.5 shadow-md shadow-purple-500/25"
                 >
                     <PrinterIcon class="w-4 h-4" />
-                    <span>{{ en ? 'Print / Save PDF' : 'প্রিন্ট / PDF ডাউনলোড' }}</span>
+                    <span>{{ en ? 'Print / Save as PDF' : 'প্রিন্ট / PDF হিসেবে সেভ করুন' }}</span>
                 </button>
             </div>
         </div>

@@ -8,6 +8,7 @@ import {
     ArrowPathIcon,
     CheckCircleIcon,
     SparklesIcon,
+    ShieldCheckIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -38,7 +39,7 @@ onMounted(() => {
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed) && parsed.length) slots.value = parsed;
+            if (Array.isArray(parsed)) slots.value = parsed;
         } catch (e) {}
     }
     const savedName = localStorage.getItem('sikhun_student_name');
@@ -83,13 +84,104 @@ function removeSlot(id) {
     saveRoutine();
 }
 
+function clearAllSlots() {
+    if (confirm(props.en ? 'Clear all slots and start with a blank routine?' : 'সবগুলো স্লট মুছে একদম খালি রুটিন দিয়ে শুরু করতে চান?')) {
+        slots.value = [];
+        saveRoutine();
+    }
+}
+
 function toggleDone(slot) {
     slot.done = !slot.done;
     saveRoutine();
 }
 
 function printRoutine() {
-    window.print();
+    const printWindow = window.open('', '_blank', 'width=850,height=950');
+    if (!printWindow) {
+        window.print();
+        return;
+    }
+    const rowsHtml = slots.value.map((s, idx) => `
+        <tr style="${s.done ? 'background-color: #f0fdf4;' : ''}">
+            <td style="padding: 10px; border: 1px solid #e5e7eb; text-align: center; font-weight: bold;">${idx + 1}</td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb; font-family: monospace;">${s.time}</td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold;">${s.subject}</td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;">${s.topic}</td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb; text-align: center; font-family: monospace;">${s.hours}h</td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb; text-align: center;">${s.done ? '✓ Done' : '○ Pending'}</td>
+        </tr>
+    `).join('');
+
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="bn">
+        <head>
+            <meta charset="utf-8">
+            <title>Daily Study Routine - ${studentName.value || 'Sikhun'}</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@400;500;600;700&display=swap" rel="stylesheet">
+            <style>
+                @page { size: A4 portrait; margin: 15mm; }
+                body { font-family: 'Anek Bangla', 'Segoe UI', system-ui, sans-serif; color: #111827; background: #fff; margin: 0; padding: 15px; }
+                .header-box { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #4f46e5; padding-bottom: 12px; margin-bottom: 16px; }
+                h1 { margin: 0; font-size: 20pt; color: #1e1b4b; }
+                .meta-strip { margin: 12px 0 16px; display: flex; gap: 20px; font-size: 11pt; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10.5pt; }
+                th { background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-weight: bold; }
+                .stats-footer { margin-top: 20px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 11pt; font-weight: bold; }
+                .brand { font-size: 9pt; color: #94a3b8; text-align: right; margin-top: 20px; }
+            </style>
+        </head>
+        <body>
+            <div class="header-box">
+                <div>
+                    <h1>📅 দৈনিক পড়ার রুটিন ও স্টাডি প্ল্যানার</h1>
+                    <div style="font-size: 11pt; color: #4f46e5; font-weight: bold; margin-top: 4px;">${examTarget.value || 'Exam Preparation'}</div>
+                </div>
+                <div style="text-align: right; font-size: 10pt; color: #64748b;">
+                    <div>তারিখ: ${currentDate}</div>
+                    ${studentName.value ? `<div style="font-weight: bold; color: #0f172a; margin-top: 2px;">শিক্ষার্থী: ${studentName.value}</div>` : ''}
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px; text-align: center;">নং</th>
+                        <th style="width: 160px;">সময়সূচি</th>
+                        <th style="width: 140px;">বিষয়</th>
+                        <th>অধ্যায় ও পড়ার লক্ষ্য</th>
+                        <th style="width: 70px; text-align: center;">ঘণ্টা</th>
+                        <th style="width: 80px; text-align: center;">স্ট্যাটাস</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml}
+                </tbody>
+            </table>
+
+            <div class="stats-footer">
+                <div>মোট পড়ার লক্ষ্য: ${totalPlannedHours.value} ঘণ্টা</div>
+                <div>সম্পন্ন হয়েছে: ${completedHours.value} ঘণ্টা</div>
+                <div>অগ্রগতি: ${totalPlannedHours.value > 0 ? Math.round((completedHours.value / totalPlannedHours.value) * 100) : 0}%</div>
+            </div>
+
+            <div class="brand">Sikhun.com — বাংলাদেশের ১ম AI-চালিত শিক্ষা প্ল্যাটফর্ম</div>
+
+            <script>
+                window.onload = function() {
+                    window.focus();
+                    window.print();
+                };
+            <\/script>
+        </body>
+        </html>
+    `;
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
 }
 
 function loadTemplate(type) {
@@ -131,10 +223,10 @@ function loadTemplate(type) {
             <div>
                 <h2 class="font-heading text-xl md:text-2xl font-bold flex items-center gap-2.5">
                     <CalendarDaysIcon class="w-6 h-6 text-indigo-500" />
-                    {{ en ? 'Daily Study Routine & Planner Maker' : 'দৈনিক পড়ার রুটিন ও প্ল্যানার মেকার' }}
+                    {{ en ? 'Daily Study Routine & Planner' : 'দৈনিক পড়ার রুটিন ও প্ল্যানার মেকার' }}
                 </h2>
                 <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                    {{ en ? 'Plan your study hours, track completed topics, and print/save your personalized routine as PDF.' : 'প্রতিদিনের পড়ার সময় ভাগ করুন, সম্পন্ন বিষয় টিক দিন এবং ১-ক্লিকে রুটিন প্রিন্ট বা PDF ডাউনলোড করুন।' }}
+                    {{ en ? 'Build your personal daily study routine with target hours, track progress, and print/save clean A4 PDF.' : 'প্রতিদিনের পড়ার সময় ভাগ করুন, সম্পন্ন বিষয় টিক দিন এবং ১-ক্লিকে চমৎকার A4 শিটে রুটিন প্রিন্ট বা PDF ডাউনলোড করুন।' }}
                 </p>
             </div>
 
@@ -143,7 +235,7 @@ function loadTemplate(type) {
                 <button
                     type="button"
                     @click="printRoutine"
-                    class="btn btn-primary text-xs py-2 px-3.5 flex items-center gap-1.5"
+                    class="btn btn-primary text-xs py-2 px-3.5 flex items-center gap-1.5 shadow-md shadow-indigo-500/25"
                 >
                     <PrinterIcon class="w-4 h-4" />
                     <span>{{ en ? 'Print / Save as PDF' : 'প্রিন্ট / PDF ডাউনলোড' }}</span>
@@ -151,29 +243,49 @@ function loadTemplate(type) {
             </div>
         </div>
 
-        <!-- Preset Templates Selector -->
-        <div class="mt-5 flex items-center gap-2 flex-wrap text-xs">
-            <span class="text-gray-500 font-semibold">{{ en ? 'Quick Templates:' : 'প্রস্তুত রুটিন লোড করুন:' }}</span>
+        <!-- Privacy & LocalStorage Guarantee Banner -->
+        <div class="mt-4 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 flex items-start sm:items-center gap-2.5">
+            <ShieldCheckIcon class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div class="leading-relaxed">
+                <strong>{{ en ? '100% Private to your Device:' : '🔒 ১০০% ব্যক্তিগত ও সুরক্ষিত:' }}</strong>
+                {{ en ? 'This routine is stored strictly inside your browser (Local Storage). It is never sent to the server or visible to any other user.' : 'এই রুটিনটি সম্পূর্ণ আপনার নিজস্ব ডিভাইসের ব্রাউজার মেমরিতে (Local Storage) সংরক্ষিত। এটি কোনো সার্ভারে জমা হয় না এবং অন্য কোনো শিক্ষার্থী বা ব্যক্তি কখনোই আপনার রুটিন দেখতে পাবে না।' }}
+            </div>
+        </div>
+
+        <!-- Preset Templates Selector & Clear Button -->
+        <div class="mt-5 flex items-center justify-between gap-2 flex-wrap text-xs">
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-gray-500 font-semibold">{{ en ? 'Sample Templates:' : 'নমুনা টেমপ্লেট:' }}</span>
+                <button
+                    type="button"
+                    @click="loadTemplate('hsc')"
+                    class="px-3 py-1 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-bold hover:bg-indigo-500/20 transition"
+                >
+                    🎓 {{ en ? 'HSC/SSC Board' : 'এইচএসসি/এসএসসি' }}
+                </button>
+                <button
+                    type="button"
+                    @click="loadTemplate('admission')"
+                    class="px-3 py-1 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-bold hover:bg-purple-500/20 transition"
+                >
+                    🏛️ {{ en ? 'Varsity Admission' : 'ভার্সিটি ভর্তি' }}
+                </button>
+                <button
+                    type="button"
+                    @click="loadTemplate('bcs')"
+                    class="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold hover:bg-emerald-500/20 transition"
+                >
+                    💼 {{ en ? 'BCS & Govt Job' : 'বিসিএস ও চাকরি' }}
+                </button>
+            </div>
+
+            <!-- Clear / Start Blank -->
             <button
                 type="button"
-                @click="loadTemplate('hsc')"
-                class="px-3 py-1 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-bold hover:bg-indigo-500/20 transition"
+                @click="clearAllSlots"
+                class="px-3 py-1 rounded-xl text-rose-500 hover:text-rose-700 border border-rose-500/20 hover:bg-rose-500/10 transition font-semibold"
             >
-                🎓 {{ en ? 'HSC/SSC Board Routine' : 'এইচএসসি/এসএসসি বোর্ড রুটিন' }}
-            </button>
-            <button
-                type="button"
-                @click="loadTemplate('admission')"
-                class="px-3 py-1 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-bold hover:bg-purple-500/20 transition"
-            >
-                🏛️ {{ en ? 'University Admission' : 'ভার্সিটি ভর্তি পরীক্ষা' }}
-            </button>
-            <button
-                type="button"
-                @click="loadTemplate('bcs')"
-                class="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold hover:bg-emerald-500/20 transition"
-            >
-                💼 {{ en ? 'BCS & Govt Job Routine' : 'বিসিএস ও সরকারি চাকরি' }}
+                🗑️ {{ en ? 'Start with Blank Routine' : 'খালি রুটিন দিয়ে শুরু করুন' }}
             </button>
         </div>
 
@@ -181,7 +293,7 @@ function loadTemplate(type) {
         <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    {{ en ? "Student Name (Optional):" : 'শিক্ষার্থীর নাম:' }}
+                    {{ en ? "Student Name (Optional):" : 'শিক্ষার্থীর নাম (ঐচ্ছিক):' }}
                 </label>
                 <input
                     v-model="studentName"
@@ -224,7 +336,7 @@ function loadTemplate(type) {
         </div>
 
         <!-- Schedule Table -->
-        <div class="mt-6 overflow-x-auto rounded-2xl border border-gray-200 dark:border-white/10 print:border-black">
+        <div class="mt-6 overflow-x-auto rounded-2xl border border-gray-200 dark:border-white/10">
             <table class="w-full text-left text-xs">
                 <thead class="bg-gray-100 dark:bg-[#0e121d] border-b border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 font-bold">
                     <tr>
@@ -233,7 +345,7 @@ function loadTemplate(type) {
                         <th class="py-3 px-3">{{ en ? 'Subject / Paper' : 'বিষয়' }}</th>
                         <th class="py-3 px-3">{{ en ? 'Topic & Target' : 'অধ্যায় ও পড়ার লক্ষ্য' }}</th>
                         <th class="py-3 px-3 w-20 text-center">{{ en ? 'Hours' : 'ঘণ্টা' }}</th>
-                        <th class="py-3 px-3 w-16 text-center print:hidden">{{ en ? 'Action' : 'মুছুন' }}</th>
+                        <th class="py-3 px-3 w-16 text-center">{{ en ? 'Action' : 'মুছুন' }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-white/5">
@@ -263,7 +375,7 @@ function loadTemplate(type) {
                         <td class="py-3 px-3 text-center font-mono font-bold text-indigo-600 dark:text-indigo-400">
                             {{ slot.hours }}h
                         </td>
-                        <td class="py-3 px-3 text-center print:hidden">
+                        <td class="py-3 px-3 text-center">
                             <button
                                 type="button"
                                 @click="removeSlot(slot.id)"
@@ -274,8 +386,8 @@ function loadTemplate(type) {
                         </td>
                     </tr>
                     <tr v-if="!slots.length">
-                        <td colspan="6" class="py-6 text-center text-gray-500">
-                            {{ en ? 'No study slots added yet. Add one below or load a template!' : 'কোনো পড়ার স্লট যুক্ত করা নেই। নিচে নতুন স্লট যুক্ত করুন অথবা উপরের টেমপ্লেট লোড করুন।' }}
+                        <td colspan="6" class="py-8 text-center text-gray-500">
+                            {{ en ? 'Your routine is currently blank. Add your study slots below or load a template!' : 'আপনার রুটিন বর্তমানে সম্পূর্ণ খালি। নিচের ফর্ম দিয়ে নিজের পছন্দমতো পড়ার সময় যুক্ত করুন।' }}
                         </td>
                     </tr>
                 </tbody>
@@ -283,7 +395,7 @@ function loadTemplate(type) {
         </div>
 
         <!-- Add New Slot Form -->
-        <div class="mt-6 p-4 rounded-2xl bg-gray-50 dark:bg-[#0e121d] border border-gray-200 dark:border-white/10 print:hidden">
+        <div class="mt-6 p-4 rounded-2xl bg-gray-50 dark:bg-[#0e121d] border border-gray-200 dark:border-white/10">
             <h3 class="text-xs font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-1.5">
                 <PlusIcon class="w-4 h-4 text-indigo-500" />
                 {{ en ? 'Add New Study Slot' : 'নতুন পড়ার স্লট যুক্ত করুন' }}

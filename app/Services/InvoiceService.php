@@ -129,6 +129,7 @@ class InvoiceService
         StudentSubscription::with(['student', 'plan'])
             ->where('status', 'active')
             ->whereNotNull('expires_at')
+            ->whereHas('plan', fn ($q) => $q->where('is_free', false)->where('price_monthly', '>', 0))
             ->whereBetween('expires_at', [now()->startOfDay(), now()->addDays($days)->endOfDay()])
             ->chunkById(200, function ($subscriptions) use (&$created) {
                 foreach ($subscriptions as $subscription) {

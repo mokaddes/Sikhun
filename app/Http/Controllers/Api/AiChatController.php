@@ -26,7 +26,9 @@ class AiChatController extends BaseApiController
         $book = $request->source_book_id ? Book::find($request->source_book_id) : null;
 
         if ($book) {
-            abort_unless($access->hasAccess($student, $book), 403);
+            $canAccess = $access->hasAccess($student, $book)
+                || ($student && $student->ownedChapters()->where('book_id', $book->id)->exists());
+            abort_unless($canAccess, 403);
         }
 
         $session = $student->aiSessions()->create([

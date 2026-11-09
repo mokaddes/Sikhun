@@ -171,6 +171,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     // Invoices / receipts
     Route::get('/invoices', [\App\Http\Controllers\Student\InvoiceController::class, 'index'])->name('invoices.index');
     Route::get('/invoices/{invoice}', [\App\Http\Controllers\Student\InvoiceController::class, 'show'])->name('invoices.show');
+    Route::post('/invoices/{invoice}/pay', [\App\Http\Controllers\Student\InvoiceController::class, 'pay'])->name('invoices.pay');
     Route::get('/invoices/{invoice}/print', [\App\Http\Controllers\Student\InvoiceController::class, 'print'])->name('invoices.print');
 
     // Subscription
@@ -200,6 +201,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
         ->middleware('throttle:ai')
         ->name('exams.questions.explanation');
     Route::get('/exams/{exam}/pdf', [ExamController::class, 'pdf'])->name('exams.pdf');
+    Route::get('/exams/{exam}/print', [ExamController::class, 'print'])->name('exams.print');
     Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
         Route::post('/exams', [ExamController::class, 'create'])->name('exams.create');
     });

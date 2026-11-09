@@ -1,12 +1,26 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
-import { ArrowLeftIcon, PrinterIcon } from '@heroicons/vue/24/outline';
+import { ArrowLeftIcon, PrinterIcon, CreditCardIcon, XMarkIcon } from '@heroicons/vue/24/outline';
 
-defineProps({ invoice: Object });
+const props = defineProps({ invoice: Object });
 
 const { t, locale, money, digits } = useI18n();
+
+const showPayModal = ref(false);
+const payForm = useForm({
+    payment_method: 'zinipay',
+});
+
+function submitPayment() {
+    payForm.post(`/invoices/${props.invoice.id}/pay`, {
+        onSuccess: () => {
+            showPayModal.value = false;
+        },
+    });
+}
 
 const statusClass = (status) => ({
     paid: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
@@ -27,10 +41,78 @@ const fmtDate = (value) => (value ? new Date(value).toLocaleDateString(locale.va
                 <ArrowLeftIcon class="h-4 w-4" />
                 {{ t('invoices.back') }}
             </Link>
-            <a :href="`/invoices/${invoice.id}/print`" target="_blank" rel="noopener" class="btn btn-primary inline-flex items-center gap-2 rounded-xl">
-                <PrinterIcon class="h-4 w-4" />
-                {{ t('invoices.print') }}
-            </a>
+            <div class="flex items-center gap-2">
+                <button
+                    v-if="invoice.status === 'sent' || invoice.status === 'overdue' || invoice.status === 'draft'"
+                    type="button"
+                    @click="showPayModal = true"
+                    class="btn bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-2 rounded-xl text-sm font-bold px-4 py-2"
+                >
+                    <CreditCardIcon class="h-4 w-4" />
+                    <span>{{ locale === 'bn' ? 'পরিশোধ করুন' : 'Pay Now' }} (৳{{ money(invoice.total) }})</span>
+                </button>
+                <a :href="`/invoices/${invoice.id}/print`" target="_blank" rel="noopener" class="btn btn-primary inline-flex items-center gap-2 rounded-xl">
+                    <PrinterIcon class="h-4 w-4" />
+                    {{ t('invoices.print') }}
+                </a>
+            </div>
+        </div>
+
+        <!-- Payment Modal -->
+        <div v-if="showPayModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div class="w-full max-w-md rounded-2xl bg-[var(--surface)] p-6 shadow-2xl border border-[var(--border)]">
+                <div class="flex items-center justify-between pb-4 border-b border-[var(--border)]">
+                    <h3 class="font-heading text-lg font-bold">
+                        {{ locale === 'bn' ? 'ইনভয়েস পরিশোধ' : 'Pay Invoice' }} #{{ invoice.invoice_number }}
+                    </h3>
+                    <button type="button" @click="showPayModal = false" class="text-[var(--text-muted)] hover:text-[var(--text)]">
+                        <XMarkIcon class="h-5 w-5" />
+                    </button>
+                </div>
+
+                <div class="my-4 p-4 rounded-xl bg-[var(--surface2)]/60 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-[var(--text-muted)]">{{ locale === 'bn' ? 'মোট প্রদেয়:' : 'Total Payable:' }}</span>
+                        <span class="font-bold text-base text-[var(--primary)]">৳{{ money(invoice.total) }}</span>
+                    </div>
+                </div>
+
+                <form @submit.prevent="submitPayment" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">
+                            {{ locale === 'bn' ? 'পেমেন্ট মাধ্যম বেছে নিন' : 'Select Payment Method' }}
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-[var(--border)] cursor-pointer hover:bg-[var(--surface2)]"
+                                :class="payForm.payment_method === 'zinipay' ? 'ring-2 ring-[var(--primary)] border-[var(--primary)]' : ''">
+                                <input type="radio" value="zinipay" v-model="payForm.payment_method" class="sr-only" />
+                                <div class="flex-1">
+                                    <div class="font-semibold text-sm">bKash / Nagad / Rocket / Card</div>
+                                    <div class="text-xs text-[var(--text-muted)]">{{ locale === 'bn' ? 'স্বয়ংক্রিয় ও নিরাপদ পেমেন্ট গেটওয়ে' : 'Instant automated payment via ZiniPay' }}</div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-[var(--border)] cursor-pointer hover:bg-[var(--surface2)]"
+                                :class="payForm.payment_method === 'wallet' ? 'ring-2 ring-[var(--primary)] border-[var(--primary)]' : ''">
+                                <input type="radio" value="wallet" v-model="payForm.payment_method" class="sr-only" />
+                                <div class="flex-1">
+                                    <div class="font-semibold text-sm">{{ locale === 'bn' ? 'ওয়ালেট ব্যালেন্স' : 'Wallet Balance' }}</div>
+                                    <div class="text-xs text-[var(--text-muted)]">{{ locale === 'bn' ? 'আপনার বর্তমান ব্যালেন্স থেকে কাটা হবে' : 'Deduct from your available wallet balance' }}</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-3 border-t border-[var(--border)]">
+                        <button type="button" @click="showPayModal = false" class="btn btn-secondary text-sm">
+                            {{ locale === 'bn' ? 'বাতিল' : 'Cancel' }}
+                        </button>
+                        <button type="submit" :disabled="payForm.processing" class="btn btn-primary text-sm font-bold">
+                            {{ payForm.processing ? (locale === 'bn' ? 'প্রক্রিয়াকরণ হচ্ছে...' : 'Processing...') : (locale === 'bn' ? 'এখনই পরিশোধ করুন' : 'Proceed to Pay') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <div class="card anim-rise overflow-hidden rounded-2xl">

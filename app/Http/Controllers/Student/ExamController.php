@@ -380,6 +380,17 @@ class ExamController extends Controller
         return $pdf->download("exam-{$exam->id}-answer-sheet.pdf");
     }
 
+    public function print(ExamSession $exam)
+    {
+        $this->authorizeExam($exam);
+        abort_unless($exam->status === 'completed', 404);
+
+        return view('exams.print', [
+            'exam' => $exam,
+            'student' => auth('web')->user(),
+        ]);
+    }
+
     private function withBookReferences(ExamSession $exam, array $questions, BookAccessService $access): array
     {
         $book = $exam->book;

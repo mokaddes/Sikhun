@@ -155,8 +155,13 @@ class PurchaseService
         }
 
         DB::transaction(function () use ($order, $gatewayTransactionId) {
-            $order->update(['status' => 'completed', 'gateway_transaction_id' => $gatewayTransactionId]);
-            $this->fulfill($order);
+            $lockedOrder = Order::whereKey($order->id)->lockForUpdate()->first();
+            if (! $lockedOrder || $lockedOrder->status === 'completed') {
+                return;
+            }
+
+            $lockedOrder->update(['status' => 'completed', 'gateway_transaction_id' => $gatewayTransactionId]);
+            $this->fulfill($lockedOrder);
         });
     }
 
@@ -192,6 +197,25 @@ class PurchaseService
                 $order->order_number,
                 'Wallet recharge via '.$order->payment_method
             ),
+            'invoice' => (function () use ($order) {
+                $invoice = \App\Models\Invoice::find($order->orderable_id);
+                if ($invoice) {
+                    $invoice->update(['status' => 'paid']);
+                    if (! empty($invoice->meta['subscription_id'])) {
+                        $sub = \App\Models\StudentSubscription::find($invoice->meta['subscription_id']);
+                        if ($sub && $sub->status === 'active') {
+                            $sub->update(['expires_at' => $sub->expires_at->addMonth()]);
+                        } elseif ($sub) {
+                            $this->subscriptions->assign($order->student, $sub->plan, 1);
+                        }
+                    } elseif (! empty($invoice->meta['plan_id'])) {
+                        $plan = \App\Models\Plan::find($invoice->meta['plan_id']);
+                        if ($plan) {
+                            $this->subscriptions->assign($order->student, $plan, 1);
+                        }
+                    }
+                }
+            })(),
             default => null,
         };
 
@@ -205,21 +229,24 @@ class PurchaseService
             }
         }
 
-        if ($order->orderable_type !== 'wallet_recharge') {
+        if ($order->orderable_type !== 'wallet_recharge' && $order->orderable_type !== 'invoice') {
             $this->referrals->rewardIfEligible($order->student);
             Mail::to($order->student->email)->send(new OrderConfirmationMail($order));
         }
 
         // Invoicing must never break fulfilment: a mail/DB hiccup while
         // writing the receipt is logged, not surfaced to the buyer.
-        try {
-            $this->invoices->createForOrder($order->refresh());
-        } catch (\Throwable $e) {
-            Log::error('Invoice creation failed', [
-                'order_id' => $order->id,
-                'order_number' => $order->order_number,
-                'error' => $e->getMessage(),
-            ]);
+        // Orders paying an existing invoice already have an invoice record.
+        if ($order->orderable_type !== 'invoice') {
+            try {
+                $this->invoices->createForOrder($order->refresh());
+            } catch (\Throwable $e) {
+                Log::error('Invoice creation failed', [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 

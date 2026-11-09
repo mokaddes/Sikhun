@@ -125,6 +125,10 @@ class WalletController extends Controller
                 }
             }
 
+            if ($order->orderable_type === 'invoice' && $order->orderable_id) {
+                return redirect()->route('invoices.show', $order->orderable_id)->with($flashKey, $message);
+            }
+
             if ($order->orderable_type === 'subscription') {
                 return redirect()->route('dashboard')->with($flashKey, $message);
             }

@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import { useI18n } from '@/i18n';
@@ -8,6 +9,20 @@ const { t } = useI18n();
 
 const retryForm = useForm({});
 const retrying = retryForm.processing;
+
+const editingPrices = ref(false);
+const chapterPriceForm = useForm({
+    chapters: (props.chapters || []).map((c) => ({ id: c.id, price: c.price ?? '' })),
+});
+
+function savePrices() {
+    chapterPriceForm.put(`/admin/books/${props.book.id}/chapters`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            editingPrices.value = false;
+        },
+    });
+}
 
 function retryProcessing() {
     retryForm.post(`/admin/books/${props.book.id}/retry-processing`, {
@@ -121,16 +136,60 @@ const embeddingCoverage = props.stats.chunks > 0
 
         <!-- Chapters -->
         <div class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h2 class="font-heading text-lg font-bold mb-4">{{ t('admin.books.chapters') }}</h2>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-heading text-lg font-bold">{{ t('admin.books.chapters') }}</h2>
+                <div class="flex gap-2">
+                    <button
+                        v-if="!editingPrices && chapters && chapters.length"
+                        type="button"
+                        @click="editingPrices = true"
+                        class="px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface2)] text-xs font-semibold"
+                    >
+                        Edit Chapter Prices
+                    </button>
+                    <button
+                        v-if="editingPrices"
+                        type="button"
+                        @click="editingPrices = false"
+                        class="px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface2)] text-xs font-semibold"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        v-if="editingPrices"
+                        type="button"
+                        @click="savePrices"
+                        :disabled="chapterPriceForm.processing"
+                        class="px-3 py-1.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-semibold disabled:opacity-60"
+                    >
+                        {{ chapterPriceForm.processing ? 'Saving...' : 'Save Prices' }}
+                    </button>
+                </div>
+            </div>
             <div v-if="!chapterTree.length" class="text-sm text-[var(--text-muted)]">{{ t('common.no_results') }}</div>
-            <ul v-else class="space-y-1 text-sm">
-                <li v-for="chapter in chapterTree" :key="chapter.id">
-                    <div class="flex items-center gap-2">
-                        <span class="font-medium">{{ chapter.chapter_number ? chapter.chapter_number + ' — ' : '' }}{{ chapter.title }}</span>
-                        <span class="text-xs text-[var(--text-muted)]">pp. {{ chapter.start_page ?? '?' }}–{{ chapter.end_page ?? '?' }}</span>
-                        <span v-if="chapter.price !== null" class="text-xs px-1.5 py-0.5 rounded bg-[var(--primary)]/10 text-[var(--primary)]">৳{{ chapter.price }}</span>
+            <ul v-else class="space-y-2 text-sm">
+                <li v-for="chapter in chapterTree" :key="chapter.id" class="p-2 rounded-lg hover:bg-[var(--surface2)]/50">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-medium">{{ chapter.chapter_number ? chapter.chapter_number + ' — ' : '' }}{{ chapter.title }}</span>
+                            <span class="text-xs text-[var(--text-muted)]">pp. {{ chapter.start_page ?? '?' }}–{{ chapter.end_page ?? '?' }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <template v-if="editingPrices">
+                                <span class="text-xs text-[var(--text-muted)]">৳</span>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="Price (৳)"
+                                    v-model="chapterPriceForm.chapters.find((c) => c.id === chapter.id).price"
+                                    class="w-24 px-2 py-1 text-xs rounded border border-[var(--border)] bg-[var(--surface2)]"
+                                />
+                            </template>
+                            <span v-else-if="chapter.price !== null" class="text-xs px-2 py-0.5 rounded font-bold bg-[var(--primary)]/10 text-[var(--primary)]">৳{{ chapter.price }}</span>
+                        </div>
                     </div>
-                    <ul v-if="chapter.children.length" class="ml-6 space-y-1 text-[var(--text-muted)]">
+                    <ul v-if="chapter.children.length" class="ml-6 mt-1 space-y-1 text-[var(--text-muted)]">
                         <li v-for="child in chapter.children" :key="child.id" class="flex items-center gap-2">
                             <span>{{ child.chapter_number ? child.chapter_number + ' ' : '' }}{{ child.title }}</span>
                             <span class="text-xs">pp. {{ child.start_page ?? '?' }}–{{ child.end_page ?? '?' }}</span>

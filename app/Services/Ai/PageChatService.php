@@ -21,7 +21,7 @@ class PageChatService
     {
         $student = Auth::guard('web')->user();
 
-        if (! $student || ! $student->hasActiveAiAccess()) {
+        if (! $student || ! $student->hasActiveAiChatAccess()) {
             return $this->error('Your free AI trial is used up. Subscribe to a plan to continue.');
         }
 
@@ -45,9 +45,11 @@ class PageChatService
         ];
 
         return response()->stream(function () use ($payload, $student) {
+            $fullReply = '';
             try {
                 $provider = AiProviderFactory::default('book_chat', ['student' => $student]);
                 foreach ($provider->stream($payload) as $chunk) {
+                    $fullReply .= $chunk;
                     echo 'data: '.json_encode(['content' => $chunk, 'done' => false])."\n\n";
                     ob_flush();
                     flush();
@@ -58,6 +60,18 @@ class PageChatService
                 flush();
 
                 return;
+            }
+
+            if (! app(\App\Services\AccessGrantService::class)->hasActiveAccess($student)) {
+                if ($sub = $student->activeSubscription) {
+                    $sub->decrement('ai_chat_minutes_remaining');
+                } else {
+                    $student->increment('ai_trial_minutes_used');
+                }
+            }
+
+            if ($fullReply !== '') {
+                $student->recordSuccessfulAiChat();
             }
 
             echo 'data: '.json_encode(['content' => '', 'done' => true])."\n\n";

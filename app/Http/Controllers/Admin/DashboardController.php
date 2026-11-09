@@ -21,7 +21,11 @@ class DashboardController extends Controller
     {
         $days = collect(range(13, 0))->map(fn ($i) => Carbon::today()->subDays($i));
 
-        $revenueByDay = Order::where('status', 'completed')
+        // When a user recharges wallet and then purchases items using wallet,
+        // counting both double-counts revenue. Revenue is incoming funds (excluding wallet debits).
+        $revenueQuery = fn () => Order::where('status', 'completed')->where('payment_method', '!=', 'wallet');
+
+        $revenueByDay = $revenueQuery()
             ->where('created_at', '>=', Carbon::today()->subDays(13))
             ->selectRaw('DATE(created_at) as day, SUM(amount) as total')
             ->groupBy('day')
@@ -36,9 +40,11 @@ class DashboardController extends Controller
             'stats' => [
                 'total_students' => Student::count(),
                 'total_books' => Book::count(),
-                'active_subscriptions' => StudentSubscription::where('status', 'active')->count(),
-                'revenue_total' => (float) Order::where('status', 'completed')->sum('amount'),
-                'revenue_today' => (float) Order::where('status', 'completed')->whereDate('created_at', today())->sum('amount'),
+                'active_subscriptions' => StudentSubscription::where('status', 'active')
+                    ->whereHas('plan', fn ($q) => $q->where('is_free', false))
+                    ->count(),
+                'revenue_total' => (float) $revenueQuery()->sum('amount'),
+                'revenue_today' => (float) $revenueQuery()->whereDate('created_at', today())->sum('amount'),
                 'draft_blogs' => BlogPost::where('status', 'draft')->count(),
                 'open_tickets' => SupportTicket::whereIn('status', ['open', 'pending'])->count(),
                 'overdue_tickets' => SupportTicket::whereIn('status', ['open', 'pending'])

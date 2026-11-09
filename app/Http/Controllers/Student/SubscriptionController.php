@@ -45,7 +45,7 @@ class SubscriptionController extends Controller
 
         $plan = Plan::findOrFail($request->plan_id);
 
-        $isFree = $plan->is_free || (float) $plan->price_monthly <= 0 || $request->payment_method === 'free';
+$isFree = $plan->is_free || (float) $plan->price_monthly <= 0 || $request->payment_method === 'free';
         $gateway = $isFree ? null : $resolver->resolve($request->payment_method);
 
         $result = $purchases->purchaseSubscription(

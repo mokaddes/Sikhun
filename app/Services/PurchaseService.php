@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Services\Payment\PaymentGatewayContract;
 use App\Mail\OrderConfirmationMail;
 use App\Models\Book;
 use App\Models\BookChapter;
@@ -9,77 +10,45 @@ use App\Models\Course;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\Student;
-use App\Services\Payment\PaymentGatewayContract;
+use App\Services\CourseDeliveryService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
-/**
- * Central checkout orchestrator. Every purchasable thing (book, subscription,
- * wallet top-up) flows through here so there is exactly one place that
- * creates Orders, debits wallets, and fulfills access — never scattered
- * across controllers.
- */
 class PurchaseService
 {
     public function __construct(
-        private WalletService $wallet,
-        private SubscriptionService $subscriptions,
-        private ReferralService $referrals,
-        private BookAccessService $access,
-        private CourseDeliveryService $courseDelivery,
+        protected WalletService $wallet,
+        protected SubscriptionService $subscriptions,
+        protected ReferralService $referrals,
+        protected InvoiceService $invoices,
+        protected CourseDeliveryService $courseDelivery
     ) {}
 
-    /**
-     * @return array{redirect_url: ?string, order: Order}
-     */
     public function purchaseBook(Student $student, Book $book, string $method, ?PaymentGatewayContract $gateway = null): array
     {
-        if ($book->is_free) {
-            throw new \RuntimeException('This book is free — no purchase needed.');
-        }
-
         $order = $this->createOrder($student, 'book', $book->id, $book->price, $method);
 
         if ($method === 'wallet') {
-            $this->wallet->debit($student, (float) $book->price, 'book_purchase', $order->order_number, "Purchased: {$book->title}");
+            $this->wallet->debit($student, (float) $book->price, 'book_purchase', $order->order_number, "Purchased book: {$book->title}");
             $order->update(['status' => 'completed']);
             $this->fulfill($order);
 
             return ['redirect_url' => null, 'order' => $order];
         }
 
-        // Gateway (ZiniPay) — order stays 'pending' until the callback verifies it.
         $redirectUrl = $gateway->initiate($order);
 
         return ['redirect_url' => $redirectUrl, 'order' => $order];
     }
 
-    public function purchaseChapter(
-        Student $student,
-        BookChapter $chapter,
-        string $method,
-        ?PaymentGatewayContract $gateway = null
-    ): array {
-        if (! $chapter->book->chapter_purchase_enabled) {
-            throw new \RuntimeException('Chapter purchase is not enabled for this book.');
-        }
-
-        if ($chapter->price === null) {
-            throw new \RuntimeException('This chapter is not for sale individually.');
-        }
-
-        if ($this->access->canAccessChapter($student, $chapter)) {
-            throw new \RuntimeException('You already have access to this chapter.');
-        }
-
-        $order = $this->createOrder($student, 'book_chapter', $chapter->id, (float) $chapter->price, $method, [
-            'book_id' => $chapter->book_id,
-            'chapter_title' => $chapter->title,
-        ]);
+    public function purchaseChapter(Student $student, BookChapter $chapter, string $method, ?PaymentGatewayContract $gateway = null): array
+    {
+        $order = $this->createOrder($student, 'book_chapter', $chapter->id, $chapter->price, $method, ['book_id' => $chapter->book_id]);
 
         if ($method === 'wallet') {
-            $this->wallet->debit($student, (float) $chapter->price, 'chapter_purchase', $order->order_number, "Chapter: {$chapter->title}");
+            $this->wallet->debit($student, (float) $chapter->price, 'chapter_purchase', $order->order_number, "Purchased chapter: {$chapter->title}");
             $order->update(['status' => 'completed']);
             $this->fulfill($order);
 
@@ -183,19 +152,19 @@ class PurchaseService
     }
 
     /**
-     * Called from the ZiniPay success callback / webhook after verify() has
-     * confirmed the transaction server-side. Idempotent — completing an
-     * already-completed order is a safe no-op.
+     * Called from the payment callback / webhook after verify() has
+     * confirmed the transaction server-side. Atomic & idempotent.
      */
     public function completeGatewayOrder(Order $order, string $gatewayTransactionId): void
     {
-        if ($order->status === 'completed') {
-            return;
-        }
-
         DB::transaction(function () use ($order, $gatewayTransactionId) {
-            $order->update(['status' => 'completed', 'gateway_transaction_id' => $gatewayTransactionId]);
-            $this->fulfill($order);
+            $lockedOrder = Order::whereKey($order->id)->lockForUpdate()->first();
+            if (! $lockedOrder || $lockedOrder->status === 'completed') {
+                return;
+            }
+
+            $lockedOrder->update(['status' => 'completed', 'gateway_transaction_id' => $gatewayTransactionId]);
+            $this->fulfill($lockedOrder);
         });
     }
 
@@ -236,6 +205,25 @@ class PurchaseService
                 $order->order_number,
                 'Wallet recharge via '.$order->payment_method
             ),
+            'invoice' => (function () use ($order) {
+                $invoice = \App\Models\Invoice::find($order->orderable_id);
+                if ($invoice) {
+                    $invoice->update(['status' => 'paid']);
+                    if (! empty($invoice->meta['subscription_id'])) {
+                        $sub = \App\Models\StudentSubscription::find($invoice->meta['subscription_id']);
+                        if ($sub && $sub->status === 'active') {
+                            $sub->update(['expires_at' => $sub->expires_at->addMonth()]);
+                        } elseif ($sub) {
+                            $this->subscriptions->assign($order->student, $sub->plan, 1);
+                        }
+                    } elseif (! empty($invoice->meta['plan_id'])) {
+                        $plan = \App\Models\Plan::find($invoice->meta['plan_id']);
+                        if ($plan) {
+                            $this->subscriptions->assign($order->student, $plan, 1);
+                        }
+                    }
+                }
+            })(),
             default => null,
         };
 
@@ -249,9 +237,28 @@ class PurchaseService
             }
         }
 
-        if ($order->orderable_type !== 'wallet_recharge') {
+        if ($order->orderable_type !== 'wallet_recharge' && $order->orderable_type !== 'invoice') {
             $this->referrals->rewardIfEligible($order->student);
-            try { Mail::to($order->student->email)->send(new OrderConfirmationMail($order)); } catch (\Throwable $e) { \Illuminate\Support\Facades\Log::warning("Order confirmation mail delivery failed: " . $e->getMessage()); }
+            try {
+                Mail::to($order->student->email)->send(new OrderConfirmationMail($order));
+            } catch (\Throwable $e) {
+                Log::warning("Order confirmation mail delivery failed: " . $e->getMessage());
+            }
+        }
+
+        // Invoicing must never break fulfilment: a mail/DB hiccup while
+        // writing the receipt is logged, not surfaced to the buyer.
+        // Orders paying an existing invoice already have an invoice record.
+        if ($order->orderable_type !== 'invoice') {
+            try {
+                $this->invoices->createForOrder($order->refresh());
+            } catch (\Throwable $e) {
+                Log::error('Invoice creation failed', [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 

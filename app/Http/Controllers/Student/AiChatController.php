@@ -27,9 +27,16 @@ class AiChatController extends Controller
     {
         $student = auth('web')->user();
 
+        $accessibleBooks = Book::query()
+            ->where(function ($query) use ($student) {
+                $query->whereIn('id', $student->books()->select('books.id'))
+                    ->orWhereIn('id', $student->ownedChapters()->select('book_id'));
+            })
+            ->get(['books.id', 'books.title']);
+
         return Inertia::render('Student/AiChat/Index', [
             'sessions' => $student->aiSessions()->latest()->get(['id', 'title', 'source_type', 'created_at']),
-            'books' => $student->books()->get(['books.id', 'books.title']),
+            'books' => $accessibleBooks,
             'myBooks' => $student->myBooks()->latest()->get(['id', 'title']),
         ]);
     }
@@ -55,7 +62,9 @@ class AiChatController extends Controller
         $book = $request->source_book_id ? Book::find($request->source_book_id) : null;
 
         if ($book) {
-            abort_unless($access->hasAccess($student, $book), 403, 'You need access to this book to chat about it.');
+            $canAccess = $access->hasAccess($student, $book)
+                || ($student && $student->ownedChapters()->where('book_id', $book->id)->exists());
+            abort_unless($canAccess, 403, 'You need access to this book to chat about it.');
         }
 
         $session = $student->aiSessions()->create([
@@ -73,10 +82,17 @@ class AiChatController extends Controller
         $this->authorizeSession($session);
         $student = auth('web')->user();
 
+        $accessibleBooks = Book::query()
+            ->where(function ($query) use ($student) {
+                $query->whereIn('id', $student->books()->select('books.id'))
+                    ->orWhereIn('id', $student->ownedChapters()->select('book_id'));
+            })
+            ->get(['books.id', 'books.title', 'books.cover_image']);
+
         return Inertia::render('Student/AiChat/Show', [
             'session' => $session->load(['book', 'myBook']),
             'sessions' => $student->aiSessions()->latest()->get(['id', 'title', 'source_type', 'created_at']),
-            'books' => $student->books()->get(['books.id', 'books.title', 'books.cover_image']),
+            'books' => $accessibleBooks,
             'myBooks' => $student->myBooks()->latest()->get(['id', 'title']),
         ]);
     }
@@ -132,7 +148,9 @@ class AiChatController extends Controller
         }
 
         $book = Book::find($bookId);
-        abort_unless($access->hasAccess($student, $book), 403, 'You need access to this book to attach it.');
+        $canAccess = $access->hasAccess($student, $book)
+            || ($student && $student->ownedChapters()->where('book_id', $book->id)->exists());
+        abort_unless($canAccess, 403, 'You need access to this book to attach it.');
 
         $session->update([
             'source_type' => 'book',

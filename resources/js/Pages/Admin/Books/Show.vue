@@ -23,6 +23,20 @@ const { t } = useI18n();
 const retryForm = useForm({});
 const retrying = retryForm.processing;
 
+const editingPrices = ref(false);
+const chapterPriceForm = useForm({
+    chapters: (props.chapters || []).map((c) => ({ id: c.id, price: c.price ?? '' })),
+});
+
+function savePrices() {
+    chapterPriceForm.put(`/admin/books/${props.book.id}/chapters`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            editingPrices.value = false;
+        },
+    });
+}
+
 function retryProcessing() {
     retryForm.post(`/admin/books/${props.book.id}/retry-processing`, {
         preserveScroll: true,

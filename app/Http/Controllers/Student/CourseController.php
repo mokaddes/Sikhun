@@ -201,7 +201,7 @@ class CourseController extends Controller
             return redirect()->route('courses.show', $course)->with('success', 'Enrolled successfully!');
         }
 
-        $chosenMethod = $validated['payment_method'] ?? 'mhpay';
+        $chosenMethod = $validated['payment_method'] ?? (config('mhpay.api_key') ? 'mhpay' : 'zinipay');
         $gateway = $resolver->resolve($chosenMethod);
 
         try {

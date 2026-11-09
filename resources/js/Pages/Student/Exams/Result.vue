@@ -139,6 +139,14 @@ const scoreGrade = computed(() => {
 
                 <div class="flex items-center gap-2">
                     <a
+                        :href="`/exams/${exam.id}/print`"
+                        target="_blank"
+                        rel="noopener"
+                        class="btn btn-secondary inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold"
+                    >
+                        <span>🖨️ {{ locale === 'en' ? 'Print / Save' : 'প্রিন্ট / সেভ' }}</span>
+                    </a>
+                    <a
                         :href="`/exams/${exam.id}/pdf`"
                         class="btn btn-secondary inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold"
                     >

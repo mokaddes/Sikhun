@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\Student\ExamController;
+use App\Models\AiExplanation;
 use App\Models\Book;
 use App\Models\BookChapter;
 use App\Models\BookPage;
@@ -21,7 +22,9 @@ class ExamExplanationTest extends TestCase
     {
         parent::setUp();
 
-        Route::post('/_test/exams/{exam}/questions/{question}/explanation', [ExamController::class, 'explanation']);
+        Route::bind('exam', fn (string $value) => ExamSession::findOrFail($value));
+        Route::post('/_test/exams/{exam}/questions/{question}/explanation', [ExamController::class, 'explanation'])
+            ->middleware('web');
     }
 
     private function studentWithPlan(bool $free): Student
@@ -149,6 +152,149 @@ class ExamExplanationTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Student/Exams/Result')
+                ->where('exam.questions.0.book_ref.book', 'Open Physics')
+                ->where('exam.questions.0.book_ref.chapter', 'Motion')
+                ->where('exam.questions.0.book_ref.page', 7)
+                ->where('exam.questions.0.book_ref.reader_url', route('reader.show', ['book' => $book->id, 'page' => 7]))
+                ->where('canExplain', false));
+    }
+
+    public function test_in_progress_practice_explanation_is_available_to_the_paid_exam_owner(): void
+    {
+        $student = $this->studentWithPlan(free: false);
+        $exam = $this->completedExam($student, [
+            'status' => 'in_progress',
+            'completed_at' => null,
+        ]);
+
+        $this->assertTrue($student->canUseAiExplain());
+        $this->actingAs($student, 'web');
+
+        $response = $this->post('/_test/exams/'.$exam->id.'/questions/1/explanation', ['student_answer' => 'Gravity']);
+        $response->assertOk();
+        $this->assertStringContainsString('AI explanation is temporarily unavailable.', $response->streamedContent());
+    }
+
+    public function test_in_progress_practice_explanation_is_denied_to_another_student(): void
+    {
+        $owner = $this->studentWithPlan(free: false);
+        $otherStudent = $this->studentWithPlan(free: false);
+        $exam = $this->completedExam($owner, [
+            'status' => 'in_progress',
+            'completed_at' => null,
+        ]);
+
+        $this->actingAs($otherStudent, 'web')
+            ->post('/_test/exams/'.$exam->id.'/questions/1/explanation', ['student_answer' => 'Gravity'])
+            ->assertForbidden();
+    }
+
+    public function test_in_progress_exam_mode_explanation_is_not_allowed(): void
+    {
+        $student = $this->studentWithPlan(free: false);
+        $exam = $this->completedExam($student, [
+            'mode' => 'exam',
+            'status' => 'in_progress',
+            'completed_at' => null,
+        ]);
+
+        $this->actingAs($student, 'web')
+            ->post('/_test/exams/'.$exam->id.'/questions/1/explanation', ['student_answer' => 'Gravity'])
+            ->assertNotFound();
+    }
+
+    public function test_in_progress_practice_explanation_remains_plan_gated(): void
+    {
+        $student = $this->studentWithPlan(free: true);
+        $exam = $this->completedExam($student, [
+            'status' => 'in_progress',
+            'completed_at' => null,
+        ]);
+
+        $this->actingAs($student, 'web')
+            ->post('/_test/exams/'.$exam->id.'/questions/1/explanation', ['student_answer' => 'Gravity'])
+            ->assertForbidden();
+    }
+
+    public function test_identical_practice_explanations_are_reused_and_student_answer_is_in_cache_key(): void
+    {
+        $student = $this->studentWithPlan(free: false);
+        $exam = $this->completedExam($student, [
+            'status' => 'in_progress',
+            'completed_at' => null,
+        ]);
+        $sourceHash = hash('sha256', trim($exam->source_text));
+        $answer = 'Gravity';
+        $cacheKey = hash('sha256', json_encode([
+            'question' => 'What does the first law describe?',
+            'correct_answer' => 'Inertia',
+            'student_answer' => $answer,
+            'source_hash' => $sourceHash,
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        AiExplanation::create([
+            'cache_key' => $cacheKey,
+            'question' => 'What does the first law describe?',
+            'correct_answer' => 'Inertia',
+            'student_answer' => $answer,
+            'source_hash' => $sourceHash,
+            'explanation' => 'Cached practice explanation for Gravity.',
+        ]);
+
+        $this->actingAs($student, 'web');
+        foreach (range(1, 2) as $_) {
+            $response = $this->post('/_test/exams/'.$exam->id.'/questions/1/explanation', ['student_answer' => $answer]);
+            $response->assertOk();
+            $this->assertStringContainsString('Cached practice explanation for Gravity.', $response->streamedContent());
+        }
+
+        $differentAnswerResponse = $this->post('/_test/exams/'.$exam->id.'/questions/1/explanation', ['student_answer' => 'Inertia']);
+        $differentAnswerResponse->assertOk();
+        $this->assertStringNotContainsString('Cached practice explanation for Gravity.', $differentAnswerResponse->streamedContent());
+    }
+
+    public function test_practice_show_includes_page_citation_and_access_checked_reader_link(): void
+    {
+        $student = $this->studentWithPlan(free: true);
+        $book = Book::create([
+            'title' => 'Open Physics',
+            'slug' => 'open-physics-'.uniqid(),
+            'price' => 0,
+            'is_free' => true,
+            'is_published' => true,
+        ]);
+        $chapter = BookChapter::create([
+            'book_id' => $book->id,
+            'title' => 'Motion',
+            'slug' => 'motion',
+            'start_page' => 7,
+            'end_page' => 12,
+        ]);
+        $chunk = $book->chunks()->create([
+            'chapter_id' => $chapter->id,
+            'page_number' => 7,
+            'chunk_index' => 0,
+            'content' => 'Open content about inertia.',
+        ]);
+        $exam = $this->completedExam($student, [
+            'source_type' => 'book',
+            'source_book_id' => $book->id,
+            'source_text' => null,
+            'status' => 'in_progress',
+            'completed_at' => null,
+            'questions' => [[
+                'id' => 1,
+                'question' => 'What does the law describe?',
+                'correct_answer' => 'Inertia',
+                'book_ref' => ['chunk_id' => $chunk->id],
+            ]],
+        ]);
+
+        $this->actingAs($student, 'web')
+            ->get(route('exams.show', $exam))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Student/Exams/Show')
+                ->where('exam.questions.0.book_ref.book', 'Open Physics')
                 ->where('exam.questions.0.book_ref.chapter', 'Motion')
                 ->where('exam.questions.0.book_ref.page', 7)
                 ->where('exam.questions.0.book_ref.reader_url', route('reader.show', ['book' => $book->id, 'page' => 7]))

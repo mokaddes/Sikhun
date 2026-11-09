@@ -3,17 +3,12 @@
 namespace App\Services\Ai;
 
 use App\Models\AiSession;
+use App\Models\Student;
 use App\Services\AccessGrantService;
-use App\Services\Ai\AiProviderFactory;
+use App\Services\Ai\Contracts\AiProviderFactory;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-/**
- * Minimal streaming chat grounded in one or more extracted PDF pages —
- * used by the in-reader "chat about this page" widget.
- * Saves user conversation into an attached AiSession so the student
- * can view and continue discussions directly from /ai/chat.
- */
 class PageChatService
 {
     /**
@@ -28,21 +23,27 @@ class PageChatService
     ): StreamedResponse {
         $student = Auth::guard('web')->user();
 
-        if (! $student || ! $student->hasActiveAiAccess()) {
+        if (! $student || ! $student->hasActiveAiChatAccess()) {
             return $this->error('Your free AI trial is used up. Subscribe to a plan to continue.');
         }
 
-        $system = 'You are a helpful, encouraging study assistant for a Bangladeshi student. '
-            .'Answer clearly and concisely. Respond in the same language the student writes in (Bengali or English). '
-            ."The student is reading \"{$documentTitle}\"".($chapterTitle ? " in chapter/section \"{$chapterTitle}\"" : '')." and has shared the surrounding page text with you. "
-            .'Ground your answer in that text where relevant, citing the page number (e.g. "Page 12").';
+        $excerpt = $this->buildContext($pages);
 
-        if ($pages) {
-            foreach ($pages as $page) {
-                $system .= "\n\n[Page {$page['page_number']} of \"{$documentTitle}\"]\n".$page['content'];
-            }
-        } else {
-            $system .= "\n\nNo page text is available for this part of the book yet. "
+        $system = "You are an AI study assistant for the book '{$documentTitle}'";
+        if ($chapterTitle) {
+            $system .= " (Chapter: {$chapterTitle})";
+        }
+        $system .= ".\n\n"
+            ."You have access to the following page excerpts:\n"
+            ."---\n{$excerpt}\n---\n"
+            .'Answer the student clearly, accurately, and concisely. '
+            .'Always answer in Bengali unless the student specifically asks in English. '
+            .'If the excerpt is empty or unrelated, politely answer from general knowledge '
+            .'and remind them to make sure the page has extracted text.';
+
+        if (blank($excerpt)) {
+            $system = "You are an AI study assistant for the book '{$documentTitle}'. "
+                .'The text for the requested pages could not be extracted from the PDF. '
                 .'Answer from general knowledge and politely note the page text is not available.';
         }
 
@@ -80,10 +81,10 @@ class PageChatService
                     flush();
                 }
             } catch (\Throwable $e) {
-                echo 'data: '.json_encode(['error' => 'AI service unavailable: '.$e->getMessage()])."\n\n";
+                report($e);
+                echo 'data: '.json_encode(['error' => 'AI generation failed: '.$e->getMessage()])."\n\n";
                 ob_flush();
                 flush();
-
                 return;
             }
 
@@ -98,14 +99,19 @@ class PageChatService
                     'messages' => $messages,
                     'tokens_used' => $tokensUsed,
                 ]);
+            }
 
-                // Track quota usage
-                if (! app(AccessGrantService::class)->hasActiveAccess($student)) {
+            // Track quota usage
+            if (! app(AccessGrantService::class)->hasActiveAccess($student)) {
+                if ($sub = $student->activeSubscription) {
+                    $sub->decrement('ai_chat_minutes_remaining');
+                } else {
                     $student->increment('ai_trial_minutes_used');
-                    if ($sub = $student->activeSubscription) {
-                        $sub->decrement('ai_chat_minutes_remaining');
-                    }
                 }
+            }
+
+            if ($fullReply !== '') {
+                $student->recordSuccessfulAiChat();
             }
 
             echo 'data: '.json_encode([
@@ -117,18 +123,56 @@ class PageChatService
             flush();
         }, 200, [
             'Content-Type' => 'text/event-stream',
-            'X-Accel-Buffering' => 'no',
             'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
             'Connection' => 'keep-alive',
         ]);
     }
 
-    private function error(string $message): StreamedResponse
+    /**
+     * @param  array<int, array{page_number: int, content: string}>  $pages
+     */
+    protected function buildContext(array $pages): string
+    {
+        $buffer = [];
+        $totalLength = 0;
+        $maxChars = 6000;
+
+        foreach ($pages as $p) {
+            $num = $p['page_number'] ?? '?';
+            $text = trim($p['content'] ?? '');
+            if ($text === '') {
+                continue;
+            }
+
+            $entry = "[Page {$num}]\n{$text}";
+            $len = mb_strlen($entry);
+
+            if ($totalLength + $len > $maxChars) {
+                $remaining = $maxChars - $totalLength;
+                if ($remaining > 200) {
+                    $buffer[] = mb_substr($entry, 0, $remaining).'... [truncated]';
+                }
+                break;
+            }
+
+            $buffer[] = $entry;
+            $totalLength += $len;
+        }
+
+        return implode("\n\n", $buffer);
+    }
+
+    protected function error(string $message): StreamedResponse
     {
         return response()->stream(function () use ($message) {
             echo 'data: '.json_encode(['error' => $message])."\n\n";
             ob_flush();
             flush();
-        }, 200, ['Content-Type' => 'text/event-stream', 'X-Accel-Buffering' => 'no', 'Cache-Control' => 'no-cache']);
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+        ]);
     }
 }

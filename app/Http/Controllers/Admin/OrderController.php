@@ -42,12 +42,21 @@ class OrderController extends Controller
      */
     public function approve(Order $order, PurchaseService $purchases): RedirectResponse
     {
-        if ($order->status === 'completed') {
+        $approved = DB::transaction(function () use ($order, $purchases) {
+            $lockedOrder = Order::whereKey($order->id)->lockForUpdate()->first();
+            if (! $lockedOrder || $lockedOrder->status === 'completed') {
+                return false;
+            }
+
+            $lockedOrder->update(['status' => 'completed']);
+            $purchases->fulfill($lockedOrder);
+
+            return true;
+        });
+
+        if (! $approved) {
             return back()->with('error', 'Order was already completed.');
         }
-
-        $order->update(['status' => 'completed']);
-        $purchases->fulfill($order);
 
         // Auto-approve corresponding MHPay invoice if payment was via MHPay
         if ($order->payment_method === 'mhpay' && $order->gateway_invoice_id) {
@@ -59,7 +68,6 @@ class OrderController extends Controller
                 \Illuminate\Support\Facades\Log::warning('Could not notify MHPay of admin order approval: ' . $e->getMessage());
             }
         }
-
         return back()->with('success', 'Order approved and fulfilled.');
     }
 }

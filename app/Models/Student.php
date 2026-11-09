@@ -78,20 +78,17 @@ class Student extends Authenticatable implements MustVerifyEmail
 
         $sub = $this->activeSubscription;
         if ($sub && $sub->expires_at->isFuture()) {
-            return $sub->plan->is_free
-                ? $sub->ai_chat_minutes_remaining > 0 || $sub->ai_exam_count_remaining > 0
-                : true;
+            return $sub->ai_chat_minutes_remaining > 0 || $sub->ai_exam_count_remaining > 0;
         }
 
+        $trialLimit = Plan::where('is_active', true)->max('trial_ai_minutes') ?: 10;
         if ($this->isInTrial()) {
-            return true;
+            return $this->ai_trial_minutes_used < $trialLimit;
         }
 
         if (Plan::where('is_free', true)->exists()) {
             return false;
         }
-
-        $trialLimit = Plan::where('is_active', true)->max('trial_ai_minutes') ?: 10;
 
         return $this->ai_trial_minutes_used < $trialLimit;
     }
@@ -104,13 +101,16 @@ class Student extends Authenticatable implements MustVerifyEmail
 
         $sub = $this->activeSubscription;
         if ($sub && $sub->expires_at->isFuture()) {
-            return $sub->plan->is_free
-                ? $sub->ai_chat_minutes_remaining > 0
-                : true;
+            return $sub->ai_chat_minutes_remaining > 0;
         }
 
-        return $this->isInTrial() || ! Plan::where('is_free', true)->exists()
-            && $this->hasActiveAiAccess();
+        $trialLimit = Plan::where('is_active', true)->max('trial_ai_minutes') ?: 10;
+        if ($this->isInTrial()) {
+            return $this->ai_trial_minutes_used < $trialLimit;
+        }
+
+        return ! Plan::where('is_free', true)->exists()
+            && $this->ai_trial_minutes_used < $trialLimit;
     }
 
     public function hasActiveAiExamAccess(): bool
@@ -121,13 +121,16 @@ class Student extends Authenticatable implements MustVerifyEmail
 
         $sub = $this->activeSubscription;
         if ($sub && $sub->expires_at->isFuture()) {
-            return $sub->plan->is_free
-                ? $sub->ai_exam_count_remaining > 0
-                : true;
+            return $sub->ai_exam_count_remaining > 0;
         }
 
-        return $this->isInTrial() || ! Plan::where('is_free', true)->exists()
-            && $this->hasActiveAiAccess();
+        $trialLimit = Plan::where('is_active', true)->max('trial_ai_minutes') ?: 10;
+        if ($this->isInTrial()) {
+            return $this->ai_trial_minutes_used < $trialLimit;
+        }
+
+        return ! Plan::where('is_free', true)->exists()
+            && $this->ai_trial_minutes_used < $trialLimit;
     }
 
     public function canUseAiExplain(): bool

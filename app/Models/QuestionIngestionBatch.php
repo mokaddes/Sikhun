@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use App\Contracts\PdfParsable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class QuestionIngestionBatch extends Model
+class QuestionIngestionBatch extends Model implements PdfParsable
 {
     use HasFactory;
 
@@ -39,5 +40,21 @@ class QuestionIngestionBatch extends Model
     public function source(): BelongsTo
     {
         return $this->belongsTo(QuestionSource::class, 'source_id');
+    }
+
+    /**
+     * Primary key for PdfParsable.
+     */
+    public function pdfSourceId(): int
+    {
+        return $this->id;
+    }
+
+    /**
+     * Relative path on the private disk.
+     */
+    public function pdfFilePath(): ?string
+    {
+        return $this->file_path;
     }
 }

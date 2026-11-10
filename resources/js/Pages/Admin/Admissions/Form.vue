@@ -19,8 +19,11 @@ const form = useForm({
     institution_name: props.notice?.institution_name ?? '',
     university_type: props.notice?.university_type ?? 'public',
     academic_year: props.notice?.academic_year ?? '2026-2027',
-    application_start: props.notice?.application_start ?? '',
-    application_deadline: props.notice?.application_deadline ?? '',
+    application_start: props.notice?.application_start ? props.notice.application_start.substring(0, 16) : '',
+    application_start_text: props.notice?.application_start_text ?? '',
+    application_deadline: props.notice?.application_deadline ? props.notice.application_deadline.substring(0, 16) : '',
+    application_deadline_text: props.notice?.application_deadline_text ?? '',
+    admit_card_date_text: props.notice?.admit_card_date_text ?? '',
     minimum_gpa_ssc: props.notice?.minimum_gpa_ssc ?? '',
     minimum_gpa_hsc: props.notice?.minimum_gpa_hsc ?? '',
     total_gpa_required: props.notice?.total_gpa_required ?? '',
@@ -130,20 +133,50 @@ function submit() {
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-300 uppercase mb-1">আবেদন শুরু</label>
+                        <label class="block text-xs font-bold text-gray-300 uppercase mb-1">আবেদন শুরু (Datetime)</label>
                         <input
                             v-model="form.application_start"
-                            type="date"
-                            class="input w-full"
+                            type="datetime-local"
+                            class="input w-full text-xs"
                         />
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-300 uppercase mb-1">আবেদনের শেষ তারিখ</label>
+                        <label class="block text-xs font-bold text-gray-300 uppercase mb-1">আবেদন শুরু লিখিত বিবরণ (Text)</label>
+                        <input
+                            v-model="form.application_start_text"
+                            type="text"
+                            placeholder="যেমন: ১১ নভেম্বর ২০২৬, বুধবার • বেলা ১২:০০টা"
+                            class="input w-full text-xs"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 uppercase mb-1">আবেদনের শেষ তারিখ (Datetime)</label>
                         <input
                             v-model="form.application_deadline"
-                            type="date"
-                            class="input w-full"
+                            type="datetime-local"
+                            class="input w-full text-xs"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 uppercase mb-1">আবেদনের শেষ তারিখ লিখিত বিবরণ (Text)</label>
+                        <input
+                            v-model="form.application_deadline_text"
+                            type="text"
+                            placeholder="যেমন: ২৫ নভেম্বর ২০২৬, বুধবার • রাত ১১:৫৯টা"
+                            class="input w-full text-xs"
+                        />
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-300 uppercase mb-1">প্রবেশপত্র ডাউনলোডের বিবরণ / সময়সূচি</label>
+                        <input
+                            v-model="form.admit_card_date_text"
+                            type="text"
+                            placeholder="যেমন: সংশ্লিষ্ট ইউনিটের পরীক্ষার দিন সকাল পর্যন্ত"
+                            class="input w-full text-xs"
                         />
                     </div>
                 </div>

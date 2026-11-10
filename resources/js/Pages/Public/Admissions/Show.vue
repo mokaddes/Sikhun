@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import { useI18n } from '@/i18n';
@@ -13,6 +13,72 @@ const { locale } = useI18n();
 const en = computed(() => locale.value === 'en');
 const imageModalOpen = ref(false);
 
+const timer = ref({ days: '00', hours: '00', minutes: '00', seconds: '00' });
+const isExpired = ref(false);
+let timerInterval = null;
+
+const targetDate = computed(() => {
+    if (props.notice.target_countdown_iso) {
+        return new Date(props.notice.target_countdown_iso);
+    }
+    if (props.notice.application_deadline) {
+        return new Date(props.notice.application_deadline);
+    }
+    return null;
+});
+
+const countdownTitle = computed(() => {
+    if (props.notice.application_status === 'upcoming') {
+        return en.value ? 'Application Starting In' : 'আবেদন শুরু হতে বাকি';
+    }
+    if (isExpired.value || props.notice.application_status === 'closed') {
+        return en.value ? 'Application Closed' : 'আবেদনের সময়সীমা শেষ';
+    }
+    return en.value ? 'Application Deadline In' : 'আবেদনের শেষ সময় বাকি';
+});
+
+const countdownSubTitle = computed(() => {
+    if (props.notice.application_status === 'upcoming') {
+        return 'Application Starting In';
+    }
+    return 'Application Deadline Countdown';
+});
+
+function updateTimer() {
+    if (!targetDate.value) return;
+    const now = new Date().getTime();
+    const distance = targetDate.value.getTime() - now;
+
+    if (distance <= 0) {
+        timer.value = { days: '00', hours: '00', minutes: '00', seconds: '00' };
+        if (props.notice.application_status === 'open') {
+            isExpired.value = true;
+        }
+        return;
+    }
+
+    const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((distance % (1000 * 60)) / 1000);
+
+    timer.value = {
+        days: d.toString().padStart(2, '0'),
+        hours: h.toString().padStart(2, '0'),
+        minutes: m.toString().padStart(2, '0'),
+        seconds: s.toString().padStart(2, '0'),
+    };
+}
+
+onMounted(() => {
+    updateTimer();
+    timerInterval = setInterval(updateTimer, 1000);
+});
+
+onUnmounted(() => {
+    if (timerInterval) clearInterval(timerInterval);
+});
+
 function formatDate(dateStr) {
     if (!dateStr) return en.value ? 'To be announced' : 'ঘোষণা সাপেক্ষে';
     const d = new Date(dateStr);
@@ -20,6 +86,18 @@ function formatDate(dateStr) {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
+    });
+}
+
+function formatDateTimeBn(dt) {
+    if (!dt) return en.value ? 'TBA' : 'ঘোষণা সাপেক্ষে';
+    const d = new Date(dt);
+    return d.toLocaleString(en.value ? 'en-US' : 'bn-BD', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
     });
 }
 
@@ -84,13 +162,83 @@ const typeLabel = computed(() => {
                                 </h1>
                             </div>
 
+                            <!-- Real-Time Countdown Hero Banner (Matching official portal admission.eis.du.ac.bd) -->
+                            <div class="my-6 rounded-3xl overflow-hidden border border-blue-500/25 bg-gradient-to-br from-[#0c1938] via-[#101e42] to-[#0c1630] text-white p-6 md:p-8 shadow-xl relative">
+                                <div class="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl"></div>
+
+                                <div class="relative z-10 text-center max-w-xl mx-auto">
+                                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-bold mb-2">
+                                        <span class="material-symbols-outlined !text-sm">hourglass_top</span>
+                                        <span>{{ countdownTitle }}</span>
+                                    </div>
+
+                                    <div class="text-[11px] font-semibold text-blue-200/80 uppercase tracking-widest mb-3">
+                                        {{ countdownSubTitle }}
+                                    </div>
+
+                                    <!-- 4-Block Live Countdown Timer (দিন : ঘণ্টা : মিনিট : সেকেন্ড) -->
+                                    <div v-if="!isExpired" class="flex items-center justify-center gap-2 sm:gap-4 my-4 font-mono">
+                                        <div class="flex flex-col items-center">
+                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-[#172554]/95 border border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-white shadow-inner">
+                                                {{ timer.days }}
+                                            </div>
+                                            <span class="text-[10px] sm:text-xs font-bold text-blue-300 mt-1.5">{{ en ? 'Days' : 'দিন' }}</span>
+                                        </div>
+                                        <span class="text-xl sm:text-3xl font-bold text-blue-400 -mt-5">:</span>
+                                        <div class="flex flex-col items-center">
+                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-[#172554]/95 border border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-white shadow-inner">
+                                                {{ timer.hours }}
+                                            </div>
+                                            <span class="text-[10px] sm:text-xs font-bold text-blue-300 mt-1.5">{{ en ? 'Hours' : 'ঘণ্টা' }}</span>
+                                        </div>
+                                        <span class="text-xl sm:text-3xl font-bold text-blue-400 -mt-5">:</span>
+                                        <div class="flex flex-col items-center">
+                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-[#172554]/95 border border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-white shadow-inner">
+                                                {{ timer.minutes }}
+                                            </div>
+                                            <span class="text-[10px] sm:text-xs font-bold text-blue-300 mt-1.5">{{ en ? 'Minutes' : 'মিনিট' }}</span>
+                                        </div>
+                                        <span class="text-xl sm:text-3xl font-bold text-blue-400 -mt-5">:</span>
+                                        <div class="flex flex-col items-center">
+                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-[#172554]/95 border border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-white shadow-inner">
+                                                {{ timer.seconds }}
+                                            </div>
+                                            <span class="text-[10px] sm:text-xs font-bold text-blue-300 mt-1.5">{{ en ? 'Seconds' : 'সেকেন্ড' }}</span>
+                                        </div>
+                                    </div>
+                                    <div v-else class="my-3 py-2 px-4 rounded-xl bg-red-500/20 border border-red-500/40 text-red-300 font-bold text-xs inline-block">
+                                        {{ en ? 'Application Deadline Has Passed' : 'এই সার্কুলারের আবেদনের সময়সীমা শেষ হয়েছে' }}
+                                    </div>
+
+                                    <!-- 2 Official Date Boxes (Matching Image 1) -->
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 pt-5 border-t border-blue-500/20 text-left">
+                                        <div class="p-3.5 rounded-2xl bg-[#142145]/90 border border-blue-400/25">
+                                            <span class="text-[11px] font-bold text-blue-300 uppercase block mb-1">
+                                                {{ en ? 'Application Starting' : 'আবেদন শুরু' }}
+                                            </span>
+                                            <div class="text-xs sm:text-sm font-extrabold text-white">
+                                                {{ notice.application_start_text || formatDateTimeBn(notice.application_start) }}
+                                            </div>
+                                        </div>
+                                        <div class="p-3.5 rounded-2xl bg-[#142145]/90 border border-blue-400/25">
+                                            <span class="text-[11px] font-bold text-blue-300 uppercase block mb-1">
+                                                {{ en ? 'Application Deadline' : 'শেষ তারিখ' }}
+                                            </span>
+                                            <div class="text-xs sm:text-sm font-extrabold text-red-400">
+                                                {{ notice.application_deadline_text || formatDateTimeBn(notice.application_deadline) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Key Overview Summary Box -->
                             <div class="my-6 p-6 rounded-2xl bg-gradient-to-br from-orange-500/5 to-amber-500/5 border border-orange-500/20 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
                                 <div>
                                     <span class="text-gray-500 dark:text-gray-400 block mb-1">{{ en ? 'Application Deadline' : 'আবেদনের শেষ তারিখ' }}</span>
                                     <span class="font-bold text-red-500 text-sm flex items-center gap-1">
                                         <span class="material-symbols-outlined !text-base">alarm</span>
-                                        {{ formatDate(notice.application_deadline) }}
+                                        {{ notice.application_deadline_text || formatDate(notice.application_deadline) }}
                                     </span>
                                 </div>
                                 <div>

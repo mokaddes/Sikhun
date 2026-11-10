@@ -256,13 +256,16 @@ HTML;
                 'university_type' => 'public',
                 'academic_year' => '2026-2027',
                 'units' => [
-                    ['name' => 'ক ইউনিট (বিজ্ঞান)', 'faculty' => 'বিজ্ঞান, জীববিজ্ঞান, ফার্মেসি, আর্থ অ্যান্ড এনভায়রনমেন্টাল সায়েন্সেস অনুষদ', 'min_gpa' => '8.00', 'fee' => '১০৫০ টাকা', 'exam_date' => '২০২৭-০২-১৫'],
-                    ['name' => 'খ ইউনিট (কলা, আইন ও সামাজিক বিজ্ঞান)', 'faculty' => 'কলা, আইন ও সামাজিক বিজ্ঞান অনুষদ', 'min_gpa' => '7.50', 'fee' => '১০৫০ টাকা', 'exam_date' => '২০২৭-০২-২২'],
-                    ['name' => 'গ ইউনিট (ব্যবসায় শিক্ষা)', 'faculty' => 'ব্যবসায় শিক্ষা অনুষদ', 'min_gpa' => '7.50', 'fee' => '১০৫০ টাকা', 'exam_date' => '২০২৭-০৩-০১'],
-                    ['name' => 'চারুকলা ইউনিট', 'faculty' => 'চারুকলা অনুষদ', 'min_gpa' => '6.50', 'fee' => '১০৫০ টাকা', 'exam_date' => '২০২৭-০৩-০৮'],
+                    ['name' => 'ক ইউনিট (বিজ্ঞান)', 'faculty' => 'বিজ্ঞান, জীববিজ্ঞান, ফার্মেসি, আর্থ অ্যান্ড এনভায়রনমেন্টাল সায়েন্সেস অনুষদ', 'min_gpa' => '8.00', 'fee' => '১০৫০ টাকা', 'exam_date' => '২০২৭-০২-১৫ (সকাল ১১:০০ - ১২:৩০)'],
+                    ['name' => 'খ ইউনিট (কলা, আইন ও সামাজিক বিজ্ঞান)', 'faculty' => 'কলা, আইন ও সামাজিক বিজ্ঞান অনুষদ', 'min_gpa' => '7.50', 'fee' => '১০৫০ টাকা', 'exam_date' => '২০২৭-০২-২২ (সকাল ১১:০০ - ১২:৩০)'],
+                    ['name' => 'গ ইউনিট (ব্যবসায় শিক্ষা)', 'faculty' => 'ব্যবসায় শিক্ষা অনুষদ', 'min_gpa' => '7.50', 'fee' => '১০৫০ টাকা', 'exam_date' => '২০২৭-০৩-০১ (সকাল ১১:০০ - ১২:৩০)'],
+                    ['name' => 'চারুকলা ইউনিট', 'faculty' => 'চারুকলা অনুষদ', 'min_gpa' => '6.50', 'fee' => '১০৫০ টাকা', 'exam_date' => '২০২৭-০৩-০৮ (সকাল ১১:০০ - ১২:৩০)'],
                 ],
-                'application_start' => now()->subDays(5)->toDateString(),
-                'application_deadline' => now()->addDays(25)->toDateString(),
+                'application_start' => '2026-11-11 12:00:00',
+                'application_start_text' => '১১ নভেম্বর ২০২৬, বুধবার • বেলা ১২:০০টা',
+                'application_deadline' => '2026-11-25 23:59:00',
+                'application_deadline_text' => '২৫ নভেম্বর ২০২৬, বুধবার • রাত ১১:৫৯টা',
+                'admit_card_date_text' => 'সংশ্লিষ্ট ইউনিটের পরীক্ষার দিন সকাল পর্যন্ত',
                 'minimum_gpa_ssc' => '3.50',
                 'minimum_gpa_hsc' => '3.50',
                 'total_gpa_required' => '৮.০০ (বিজ্ঞান) / ৭.৫০ (মানবিক ও ব্যবসায়)',
@@ -283,12 +286,14 @@ HTML;
                 'description' => <<<HTML
 <h2>১. ভর্তি সংক্রান্ত গুরুত্বপূর্ণ তারিখ ও সময়সূচি</h2>
 <table class="w-full border-collapse border border-gray-300 dark:border-gray-700 my-4 text-sm">
-    <tr class="bg-gray-100 dark:bg-gray-800"><th class="p-2 border border-gray-300 dark:border-gray-700">কার্যক্রম</th><th class="p-2 border border-gray-300 dark:border-gray-700">তারিখ / সময়</th></tr>
-    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">অনলাইন আবেদন শুরু</td><td class="p-2 border border-gray-300 dark:border-gray-700">নির্ধারিত সময় থেকে চলমান</td></tr>
-    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">আবেদনের শেষ তারিখ</td><td class="p-2 border border-gray-300 dark:border-gray-700 font-bold text-red-500">চলতি মাসের শেষ দিন রাত ১১:৫৯ পর্যন্ত</td></tr>
-    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">প্রবেশপত্র ডাউনলোড</td><td class="p-2 border border-gray-300 dark:border-gray-700">পরীক্ষার ১০ দিন পূর্ব থেকে</td></tr>
-    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">ক ইউনিট ভর্তি পরীক্ষা</td><td class="p-2 border border-gray-300 dark:border-gray-700 font-bold">১৫ ফেব্রুয়ারি, সকাল ১১:০০ - দুপুর ১২:৩০</td></tr>
-    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">খ ইউনিট ভর্তি পরীক্ষা</td><td class="p-2 border border-gray-300 dark:border-gray-700 font-bold">২২ ফেব্রুয়ারি, সকাল ১১:০০ - দুপুর ১২:৩০</td></tr>
+    <tr class="bg-gray-100 dark:bg-gray-800"><th class="p-2.5 border border-gray-300 dark:border-gray-700 text-left font-bold">কার্যক্রম</th><th class="p-2.5 border border-gray-300 dark:border-gray-700 text-left font-bold">তারিখ ও সময়</th></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">অনলাইন আবেদন শুরু</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-bold text-emerald-600 dark:text-emerald-400">১১ নভেম্বর ২০২৬, বুধবার • বেলা ১২:০০টা</td></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">আবেদনের শেষ তারিখ</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-bold text-red-600 dark:text-red-400">২৫ নভেম্বর ২০২৬, বুধবার • রাত ১১:৫৯টা</td></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">প্রবেশপত্র ডাউনলোড</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-medium">সংশ্লিষ্ট ইউনিটের পরীক্ষার দিন সকাল পর্যন্ত</td></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">ক ইউনিট (বিজ্ঞান) ভর্তি পরীক্ষা</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-bold text-blue-600 dark:text-blue-400">১৫ ফেব্রুয়ারি ২০২৭, সকাল ১১:০০ - দুপুর ১২:৩০</td></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">খ ইউনিট (কলা, আইন ও সামাজিক বিজ্ঞান)</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-bold text-purple-600 dark:text-purple-400">২২ ফেব্রুয়ারি ২০২৭, সকাল ১১:০০ - দুপুর ১২:৩০</td></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">গ ইউনিট (ব্যবসায় শিক্ষা)</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-bold text-amber-600 dark:text-amber-400">০১ মার্চ ২০২৭, সকাল ১১:০০ - দুপুর ১২:৩০</td></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">চারুকলা ইউনিট (সাধারণ জ্ঞান ও অঙ্কন)</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-bold text-rose-600 dark:text-rose-400">০৮ মার্চ ২০২৭, সকাল ১১:০০ - দুপুর ১২:৩০</td></tr>
 </table>
 
 <h2>২. ইউনিটভিত্তিক বিস্তারিত যোগ্যতা</h2>
@@ -322,8 +327,11 @@ HTML
                     ['name' => 'B Unit (Humanities)', 'faculty' => 'কলা ও সমাজবিজ্ঞান', 'min_gpa' => '7.00', 'fee' => '১৫০০ টাকা', 'exam_date' => '২০২৭-০৪-১৭'],
                     ['name' => 'C Unit (Commerce)', 'faculty' => 'ব্যবসায় প্রশাসন ও অর্থনীতি', 'min_gpa' => '7.50', 'fee' => '১৫০০ টাকা', 'exam_date' => '২০২৭-০৪-২৪'],
                 ],
-                'application_start' => now()->subDays(2)->toDateString(),
-                'application_deadline' => now()->addDays(32)->toDateString(),
+                'application_start' => '2026-12-01 12:00:00',
+                'application_start_text' => '০১ ডিসেম্বর ২০২৬, মঙ্গলবার • বেলা ১২:০০টা',
+                'application_deadline' => '2026-12-25 23:59:00',
+                'application_deadline_text' => '২৫ ডিসেম্বর ২০২৬, শুক্রবার • রাত ১১:৫৯টা',
+                'admit_card_date_text' => 'পরীক্ষার ৭ দিন পূর্ব থেকে ডাউনলোডযোগ্য',
                 'minimum_gpa_ssc' => '3.00',
                 'minimum_gpa_hsc' => '3.00',
                 'total_gpa_required' => '৭.০০ - ৮.০০',
@@ -368,8 +376,11 @@ HTML
                     ['name' => 'School of Engineering & Physical Sciences (SEPS)', 'faculty' => 'CSE, EEE, Civil', 'min_gpa' => '7.50', 'fee' => '১৫০০ টাকা', 'exam_date' => '২০২৬-১২-০৫'],
                     ['name' => 'School of Health & Life Sciences (SHLS)', 'faculty' => 'Pharmacy, Biochemistry', 'min_gpa' => '8.00', 'fee' => '১৫০০ টাকা', 'exam_date' => '২০২৬-১২-০৫'],
                 ],
-                'application_start' => now()->subDays(10)->toDateString(),
-                'application_deadline' => now()->addDays(20)->toDateString(),
+                'application_start' => '2026-10-15 10:00:00',
+                'application_start_text' => '১৫ অক্টোবর ২০২৬, বৃহস্পতিবার • সকাল ১০:০০টা',
+                'application_deadline' => '2026-12-01 17:00:00',
+                'application_deadline_text' => '০১ ডিসেম্বর ২০২৬, মঙ্গলবার • বিকাল ৫:০০টা',
+                'admit_card_date_text' => 'পরীক্ষার ৩ দিন পূর্ব থেকে',
                 'minimum_gpa_ssc' => '3.50',
                 'minimum_gpa_hsc' => '3.50',
                 'total_gpa_required' => '৭.০০ (ন্যূনতম)',
@@ -413,8 +424,11 @@ HTML
                     ['name' => 'Engineering & CSE', 'faculty' => 'School of Data and Sciences', 'min_gpa' => '7.50', 'fee' => '১৫০০ টাকা', 'exam_date' => '২০২৬-১১-২৮'],
                     ['name' => 'Business School (BBS)', 'faculty' => 'BBA Program', 'min_gpa' => '7.00', 'fee' => '১৫০০ টাকা', 'exam_date' => '২০২৬-১১-২৮'],
                 ],
-                'application_start' => now()->subDays(7)->toDateString(),
-                'application_deadline' => now()->addDays(24)->toDateString(),
+                'application_start' => '2026-10-20 10:00:00',
+                'application_start_text' => '২০ অক্টোবর ২০২৬, মঙ্গলবার • সকাল ১০:০০টা',
+                'application_deadline' => '2026-11-24 23:59:00',
+                'application_deadline_text' => '২৪ নভেম্বর ২০২৬, মঙ্গলবার • রাত ১১:৫৯টা',
+                'admit_card_date_text' => 'ভর্তি পরীক্ষার দিন সকাল পর্যন্ত',
                 'minimum_gpa_ssc' => '3.50',
                 'minimum_gpa_hsc' => '3.50',
                 'total_gpa_required' => '৭.০০',
@@ -450,8 +464,11 @@ HTML
                     ['name' => 'ক গ্রুপ (প্রকৌশল বিভাগসমূহ এবং নগর ও অঞ্চল পরিকল্পনা বিভাগ)', 'faculty' => 'প্রকৌশল অনুষদ', 'min_gpa' => '5.00', 'fee' => '১২০০ টাকা', 'exam_date' => '২০২৭-০১-২০'],
                     ['name' => 'খ গ্রুপ (প্রকৌশল, ইউআরপি ও স্থাপত্য বিভাগ)', 'faculty' => 'স্থাপত্য ও পরিকল্পনা অনুষদ', 'min_gpa' => '5.00', 'fee' => '১৪০০ টাকা', 'exam_date' => '২০২৭-০১-২০'],
                 ],
-                'application_start' => now()->addDays(5)->toDateString(),
-                'application_deadline' => now()->addDays(35)->toDateString(),
+                'application_start' => '2026-11-20 10:00:00',
+                'application_start_text' => '২০ নভেম্বর ২০২৬, শুক্রবার • সকাল ১০:০০টা',
+                'application_deadline' => '2026-12-10 15:00:00',
+                'application_deadline_text' => '১০ ডিসেম্বর ২০২৬, বৃহস্পতিবার • বিকাল ৩:০০টা',
+                'admit_card_date_text' => 'প্রাক-নির্বাচনী পরীক্ষার ৫ দিন পূর্ব থেকে',
                 'minimum_gpa_ssc' => '4.00',
                 'minimum_gpa_hsc' => '5.00',
                 'total_gpa_required' => 'এইচএসসিতে পদার্থ, রসায়ন ও গণিতে জিপিএ ৫.০০ এবং ন্যূনতম গ্রেড পয়েন্ট',
@@ -486,14 +503,11 @@ HTML
 
         $imported = 0;
         foreach ($circulars as $item) {
-            $notice = AdmissionNotice::firstOrCreate(
+            $notice = AdmissionNotice::updateOrCreate(
                 ['slug' => $item['slug']],
                 $item
             );
-
-            if ($notice->wasRecentlyCreated) {
-                $imported++;
-            }
+            $imported++;
         }
 
         return $imported;

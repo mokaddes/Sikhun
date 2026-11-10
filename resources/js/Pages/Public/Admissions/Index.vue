@@ -177,13 +177,23 @@ function getTypeBadge(type) {
 
                             <!-- Key Specs -->
                             <div class="p-6 pt-4 space-y-2.5 text-xs">
+                                <div v-if="notice.application_start_text" class="flex items-center justify-between text-gray-600 dark:text-gray-400">
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined !text-sm text-emerald-500">event_available</span>
+                                        <span>{{ en ? 'Starting:' : 'আবেদন শুরু:' }}</span>
+                                    </span>
+                                    <span class="font-bold text-emerald-600 dark:text-emerald-400 truncate max-w-[200px]" :title="notice.application_start_text">
+                                        {{ notice.application_start_text }}
+                                    </span>
+                                </div>
+
                                 <div class="flex items-center justify-between text-gray-600 dark:text-gray-400">
                                     <span class="flex items-center gap-1.5">
                                         <span class="material-symbols-outlined !text-sm text-red-500">event_busy</span>
-                                        <span>{{ en ? 'Application Deadline:' : 'আবেদনের শেষ তারিখ:' }}</span>
+                                        <span>{{ en ? 'Deadline:' : 'শেষ তারিখ:' }}</span>
                                     </span>
-                                    <span class="font-bold text-red-600 dark:text-red-400">
-                                        {{ formatDate(notice.application_deadline) }}
+                                    <span class="font-bold text-red-600 dark:text-red-400 truncate max-w-[200px]" :title="notice.application_deadline_text || formatDate(notice.application_deadline)">
+                                        {{ notice.application_deadline_text || formatDate(notice.application_deadline) }}
                                     </span>
                                 </div>
 

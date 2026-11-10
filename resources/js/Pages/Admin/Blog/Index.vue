@@ -13,6 +13,7 @@ import {
     TrashIcon,
     CheckCircleIcon,
     SparklesIcon,
+    ShareIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -79,6 +80,15 @@ function getPostActions(post) {
             label: post.status === 'published' ? t('admin.blog.unpublish') : t('admin.blog.publish_now'),
             onClick: () => togglePublish(post),
             icon: CheckCircleIcon,
+        },
+        {
+            label: 'Share to Facebook (PagePilotBD)',
+            onClick: () => {
+                if (confirm(`"${post.title}" পোস্টটি কি ফেসবুক পেজে শেয়ার করতে চান? এতে ফটো কার্ড সহ পোস্ট হবে।`)) {
+                    router.post(`/admin/blog/${post.id}/share-facebook`);
+                }
+            },
+            icon: ShareIcon,
         },
         ...(post.status === 'published' ? [{ label: t('common.view'), href: `/blog/${post.slug}`, icon: EyeIcon }] : []),
         { label: t('common.edit'), href: `/admin/blog/${post.id}/edit`, icon: PencilSquareIcon },

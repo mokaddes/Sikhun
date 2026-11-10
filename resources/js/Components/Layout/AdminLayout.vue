@@ -47,6 +47,11 @@ const sidebarOpen = ref(false);   // mobile off-canvas drawer
 const panelOpen = ref(false);     // second-level panel expanded?
 const search = ref('');
 
+// Auto-adjust panelOpen based on screen width
+if (typeof window !== 'undefined') {
+    panelOpen.value = window.innerWidth >= 1280;
+}
+
 const url = computed(() => page.url.split('?')[0]);
 
 function isActive(href) {
@@ -197,11 +202,15 @@ function cancelHover() {
 }
 
 // Keep the rail + second level in sync with the current URL.
-watch(url, () => {
+watch(url, (newUrl, oldUrl) => {
     const match = nav.value.find(group => group.items.some(item => isActive(item.href)));
     if (match) {
         activeGroupId.value = match.id;
-        panelOpen.value = true;
+        if (!oldUrl && typeof window !== 'undefined') {
+            panelOpen.value = window.innerWidth >= 1280 && match.items.length > 0;
+        } else if (match.items.length > 0 && typeof window !== 'undefined' && window.innerWidth >= 1280) {
+            panelOpen.value = true;
+        }
     } else if (url.value === '/admin') {
         activeGroupId.value = 'dashboard';
         panelOpen.value = false;
@@ -319,7 +328,7 @@ function logout() {
                                 >
                                     <component :is="item.icon" class="h-4 w-4" />
                                 </span>
-                                <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
+                                <span class="min-w-0 flex-1 leading-snug break-words text-[13px]">{{ item.label }}</span>
                                 <span v-if="isActive(item.href)" class="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--primary)]"></span>
                             </Link>
                         </div>
@@ -330,9 +339,19 @@ function logout() {
 
         <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden" @click="sidebarOpen = false" />
 
-        <div class="flex min-h-screen flex-1 flex-col">
+        <div class="flex min-h-screen flex-1 min-w-0 flex-col">
             <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-[var(--border)] bg-[var(--bg)]/80 px-4 backdrop-blur-xl sm:px-6">
                 <button class="icon-btn lg:hidden" aria-label="Open menu" @click="sidebarOpen = true">
+                    <Bars3Icon class="h-5 w-5" />
+                </button>
+
+                <button
+                    v-if="activeGroup?.items?.length"
+                    type="button"
+                    class="hidden lg:inline-flex icon-btn text-[var(--text-muted)] hover:text-[var(--text)] transition"
+                    :title="panelOpen ? 'সাইডবার গুটিয়ে নিন (Collapse menu)' : 'সাইডবার খুলুন (Expand menu)'"
+                    @click="panelOpen = !panelOpen"
+                >
                     <Bars3Icon class="h-5 w-5" />
                 </button>
 
@@ -366,7 +385,7 @@ function logout() {
                 </div>
             </header>
 
-            <main class="flex-1 px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-10">
+            <main class="flex-1 min-w-0 px-3 sm:px-6 lg:px-8 pb-24 pt-4 sm:pt-6 lg:pb-10">
                 <FlashBanner />
                 <Transition name="page" mode="out-in">
                     <div :key="url">

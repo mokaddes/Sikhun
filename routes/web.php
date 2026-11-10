@@ -72,6 +72,9 @@ Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}', [Course
 Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}/video', [CourseController::class, 'streamVideo'])->name('courses.lesson.video');
 Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}/download', [CourseController::class, 'downloadAttachment'])->name('courses.lesson.download');
 
+// Public Subscription Plans (accessible without login)
+Route::get('/plans', [SubscriptionController::class, 'plans'])->name('subscription.plans');
+
 Route::get('/p/{page:slug}', [PageController::class, 'show'])->name('pages.show');
 
 Route::post('/language/{locale}', function (string $locale) {
@@ -183,8 +186,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::post('/invoices/{invoice}/pay', [\App\Http\Controllers\Student\InvoiceController::class, 'pay'])->name('invoices.pay');
     Route::get('/invoices/{invoice}/print', [\App\Http\Controllers\Student\InvoiceController::class, 'print'])->name('invoices.print');
 
-    // Subscription
-    Route::get('/plans', [SubscriptionController::class, 'plans'])->name('subscription.plans');
+    // Subscription purchase (authenticated)
     Route::post('/plans/purchase', [SubscriptionController::class, 'purchase'])->name('subscription.purchase');
 
     // AI Chat

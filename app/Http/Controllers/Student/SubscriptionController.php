@@ -19,7 +19,7 @@ class SubscriptionController extends Controller
 
         return Inertia::render('Student/Subscription/Plans', [
             'plans' => Plan::where('is_active', true)->orderBy('price_monthly')->get(),
-            'activeSubscription' => $student->activeSubscription()->with('plan')->first(),
+            'activeSubscription' => $student ? $student->activeSubscription()->with('plan')->first() : null,
         ]);
     }
 

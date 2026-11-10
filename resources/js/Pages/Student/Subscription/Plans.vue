@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
-import StudentLayout from '@/Components/Layout/StudentLayout.vue';
+import { Head, router, usePage } from '@inertiajs/vue3';
+import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import { useI18n } from '@/i18n';
 import {
     CreditCardIcon,
@@ -21,6 +21,8 @@ const props = defineProps({
 });
 
 const { t, locale } = useI18n();
+const page = usePage();
+const student = computed(() => page.props.auth?.student);
 
 const activeTab = ref('general'); // general | admission | job | custom
 const months = ref(1);
@@ -100,10 +102,22 @@ function getPlanPricing(plan) {
 }
 
 function subscribe(plan, method) {
+    if (!student.value) {
+        if (plan.is_free || Number(plan.price_monthly) === 0) {
+            router.visit(`/register?plan_id=${plan.id}`);
+        } else {
+            router.visit('/login?redirect=/plans');
+        }
+        return;
+    }
     router.post('/plans/purchase', { plan_id: plan.id, months: months.value, payment_method: method });
 }
 
 function subscribeCustom(method) {
+    if (!student.value) {
+        router.visit('/login?redirect=/plans');
+        return;
+    }
     router.post('/plans/purchase', {
         is_custom: true,
         months: 1,
@@ -120,6 +134,10 @@ function subscribeCustom(method) {
 }
 
 function subscribeSpecial(pack, method) {
+    if (!student.value) {
+        router.visit('/login?redirect=/plans');
+        return;
+    }
     // Map to custom config with exact special bundle limits
     router.post('/plans/purchase', {
         is_custom: true,
@@ -140,17 +158,21 @@ function subscribeSpecial(pack, method) {
 
 <template>
     <Head :title="t('plans_page.title')" />
-    <StudentLayout>
-        <!-- Header -->
-        <header class="anim-rise mb-6">
-            <span class="eyebrow">{{ locale === 'en' ? 'Account & Subscription' : 'অ্যাকাউন্ট ও সাবস্ক্রিপশন' }}</span>
-            <h1 class="mt-1 flex items-center gap-2 font-heading text-2xl font-extrabold sm:text-3xl">
-                <CreditCardIcon class="h-7 w-7 text-[var(--primary)]" /> {{ t('plans_page.title') }}
-            </h1>
-            <p class="mt-1 text-sm text-[var(--text-muted)]">
-                {{ locale === 'en' ? 'Select from General Learning Plans, Exam Bundles, or build your own custom plan.' : 'আপনার লক্ষ্য অনুযায়ী সাধারণ প্ল্যান, ভর্তি ও চাকরি স্পেশাল বান্ডেল বেছে নিন অথবা কাস্টম প্ল্যান তৈরি করুন।' }}
-            </p>
-        </header>
+    <PublicLayout>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+            <!-- Header -->
+            <header class="anim-rise mb-8 text-center max-w-3xl mx-auto">
+                <div class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-bold mb-3 border border-[var(--primary)]/20">
+                    <SparklesIcon class="w-4 h-4 text-amber-500" />
+                    {{ locale === 'en' ? 'Sikhun AI Subscriptions' : 'শিখুন এআই সাবস্ক্রিপশন প্ল্যান' }}
+                </div>
+                <h1 class="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[var(--text)]">
+                    {{ t('plans_page.title') }}
+                </h1>
+                <p class="mt-3 text-sm sm:text-base text-[var(--text-muted)] leading-relaxed">
+                    {{ locale === 'en' ? 'Select from General Learning Plans, Admission & Job Bundles, or build your own custom plan.' : 'আপনার লক্ষ্য অনুযায়ী সাধারণ স্টাডি প্ল্যান, ভর্তি ও চাকরি স্পেশাল বান্ডেল বেছে নিন অথবা কাস্টম প্ল্যান তৈরি করুন।' }}
+                </p>
+            </header>
 
         <!-- Current Active Plan Banner -->
         <div v-if="activeSubscription" class="mb-6 rounded-2xl border border-[var(--secondary)]/30 bg-[var(--secondary)]/10 px-4 py-3 text-sm flex items-center justify-between flex-wrap gap-2">
@@ -164,7 +186,7 @@ function subscribeSpecial(pack, method) {
         </div>
 
         <!-- Main Categories Tab Navigation -->
-        <div class="mb-6 flex items-center gap-2 p-1.5 rounded-2xl bg-[var(--surface2)] border border-[var(--border)] max-w-2xl overflow-x-auto">
+        <div class="mb-8 flex items-center justify-start sm:justify-center gap-2 p-1.5 rounded-2xl bg-[var(--surface2)] border border-[var(--border)] max-w-2xl mx-auto overflow-x-auto">
             <button
                 type="button"
                 @click="activeTab = 'general'"
@@ -366,6 +388,7 @@ function subscribeSpecial(pack, method) {
                                 {{ locale === 'en' ? 'Subscribe with bKash / Nagad' : 'বিকাশ / নগদ / রকেটে সাবস্ক্রাইব' }}
                             </button>
                             <button
+                                v-if="student"
                                 @click="subscribe(plan, 'wallet')"
                                 class="btn btn-outline w-full text-xs py-2 font-bold"
                             >
@@ -435,6 +458,7 @@ function subscribeSpecial(pack, method) {
                             {{ locale === 'en' ? 'Start 3 Months with bKash / Nagad' : 'বিকাশ / নগদ দিয়ে ৩ মাস শুরু করুন' }}
                         </button>
                         <button
+                            v-if="student"
                             @click="subscribeSpecial({ title: locale === 'en' ? 'Admission Crash Pack (3 Months)' : 'অ্যাডমিশন ক্র্যাশ প্যাক (৩ মাস)', price: 450, months: 3, minutes: 500, images: 120, books: 5, reuploads: 5, quizzes: 60 }, 'wallet')"
                             class="btn btn-outline w-full text-xs py-2 font-bold"
                         >
@@ -487,6 +511,7 @@ function subscribeSpecial(pack, method) {
                             {{ locale === 'en' ? 'Start 6 Months with bKash / Nagad' : 'বিকাশ / নগদ দিয়ে ৬ মাস শুরু করুন' }}
                         </button>
                         <button
+                            v-if="student"
                             @click="subscribeSpecial({ title: locale === 'en' ? 'Admission Success Pass (6 Months)' : 'অ্যাডমিশন সাকসেস পাস (৬ মাস)', price: 850, months: 6, minutes: 1200, images: 350, books: 15, reuploads: 15, quizzes: 150 }, 'wallet')"
                             class="btn btn-outline w-full text-xs py-2 font-bold"
                         >
@@ -554,6 +579,7 @@ function subscribeSpecial(pack, method) {
                             {{ locale === 'en' ? 'Start 3 Months with bKash / Nagad' : 'বিকাশ / নগদ দিয়ে ৩ মাস শুরু করুন' }}
                         </button>
                         <button
+                            v-if="student"
                             @click="subscribeSpecial({ title: locale === 'en' ? 'Govt Job Crash Pack (3 Months)' : 'জব ক্র্যাশ প্যাক (৩ মাস)', price: 500, months: 3, minutes: 500, images: 100, books: 5, reuploads: 5, quizzes: 80 }, 'wallet')"
                             class="btn btn-outline w-full text-xs py-2 font-bold"
                         >
@@ -606,6 +632,7 @@ function subscribeSpecial(pack, method) {
                             {{ locale === 'en' ? 'Start 6 Months with bKash / Nagad' : 'বিকাশ / নগদ দিয়ে ৬ মাস শুরু করুন' }}
                         </button>
                         <button
+                            v-if="student"
                             @click="subscribeSpecial({ title: locale === 'en' ? 'BCS & Bank Complete Pass (6 Months)' : 'বিসিএস ও ব্যাংক কমপ্লিট পাস (৬ মাস)', price: 950, months: 6, minutes: 1500, images: 450, books: 20, reuploads: 20, quizzes: 200 }, 'wallet')"
                             class="btn btn-outline w-full text-xs py-2 font-bold"
                         >
@@ -825,6 +852,7 @@ function subscribeSpecial(pack, method) {
                             {{ locale === 'en' ? 'Activate with bKash / Nagad' : 'বিকাশ / নগদ দিয়ে সক্রিয় করুন' }}
                         </button>
                         <button
+                            v-if="student"
                             type="button"
                             @click="subscribeCustom('wallet')"
                             class="btn btn-outline w-full text-xs py-2 font-bold"
@@ -835,5 +863,6 @@ function subscribeSpecial(pack, method) {
                 </div>
             </div>
         </div>
-    </StudentLayout>
+        </div>
+    </PublicLayout>
 </template>

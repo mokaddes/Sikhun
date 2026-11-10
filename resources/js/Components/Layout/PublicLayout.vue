@@ -40,7 +40,7 @@ const nav = computed(() => [
     { label: locale.value === 'bn' ? 'টুলস' : 'Tools', href: '/tools' },
     { label: locale.value === 'bn' ? 'রেজাল্ট' : 'Results', href: '/results' },
     { label: t('nav.blog'), href: '/blog' },
-    { label: t('plans_page.title'), href: '/#pricing' },
+    { label: t('plans_page.title'), href: '/plans' },
 ]);
 </script>
 

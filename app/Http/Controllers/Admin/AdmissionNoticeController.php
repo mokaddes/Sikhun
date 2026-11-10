@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\DispatchPagePilotSocialPost;
 use App\Models\AdmissionNotice;
 use App\Services\Admissions\AdmissionScraperService;
+use App\Services\Social\PagePilotSocialService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -104,6 +106,10 @@ class AdmissionNoticeController extends Controller
 
         $notice = AdmissionNotice::create($validated);
 
+        if ($notice->status === 'published') {
+            DispatchPagePilotSocialPost::dispatch('admission', $notice->id);
+        }
+
         return redirect()->route('admin.admissions.index')->with('success', 'ভর্তি বিজ্ঞপ্তি সফলভাবে তৈরি করা হয়েছে।');
     }
 
@@ -148,9 +154,25 @@ class AdmissionNoticeController extends Controller
             $validated['published_at'] = now();
         }
 
+        $wasPublished = $admission->status === 'published';
         $admission->update($validated);
 
+        if ($admission->status === 'published' && (! $wasPublished || $request->boolean('share_to_social'))) {
+            DispatchPagePilotSocialPost::dispatch('admission', $admission->id);
+        }
+
         return redirect()->route('admin.admissions.index')->with('success', 'ভর্তি বিজ্ঞপ্তি সফলভাবে আপডেট করা হয়েছে।');
+    }
+
+    public function shareToFacebook(AdmissionNotice $admission, PagePilotSocialService $social): RedirectResponse
+    {
+        $result = $social->publishAdmissionNotice($admission);
+
+        if ($result['success'] ?? false) {
+            return back()->with('success', 'ফেসবুক পেজে সফলভাবে পোস্ট এবং প্রথম কমেন্ট প্রকাশিত হয়েছে!');
+        }
+
+        return back()->with('error', 'ফেসবুক পোস্টে ব্যর্থ হয়েছে: ' . ($result['message'] ?? 'অজানা ত্রুটি'));
     }
 
     public function togglePublish(AdmissionNotice $admission): RedirectResponse

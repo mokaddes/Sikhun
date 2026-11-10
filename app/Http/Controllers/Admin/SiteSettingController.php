@@ -96,6 +96,9 @@ class SiteSettingController extends Controller
             'blog_digest_email' => ['nullable', 'email', 'max:255'],
             'blog_credit_enabled' => ['nullable', 'boolean'],
             'blog_daily_ai_limit' => ['nullable', 'integer', 'min:1', 'max:200'],
+            'pagepilot_webhook_url' => ['nullable', 'string', 'max:500'],
+            'pagepilot_api_key' => ['nullable', 'string', 'max:255'],
+            'pagepilot_auto_publish' => ['nullable', 'boolean'],
         ]);
 
         foreach ($validated as $key => $value) {
@@ -164,5 +167,16 @@ class SiteSettingController extends Controller
                 $request->merge([$key => $current[$key]]);
             }
         }
+    }
+
+    public function testPagePilot(\App\Services\Social\PagePilotSocialService $social): RedirectResponse
+    {
+        $result = $social->testConnection();
+
+        if ($result['success'] ?? false) {
+            return back()->with('success', 'PagePilotBD টেস্ট সফল হয়েছে! ফেসবুক পেজে টেস্ট পোস্ট ও প্রথম কমেন্ট পৌঁছেছে।');
+        }
+
+        return back()->with('error', 'PagePilotBD সংযোগে ব্যর্থ হয়েছে: ' . ($result['message'] ?? 'অজানা ত্রুটি'));
     }
 }

@@ -63,6 +63,12 @@ function deleteNotice(notice) {
     router.delete(`/admin/admissions/${notice.id}`, { preserveScroll: true });
 }
 
+function shareFacebook(item) {
+    if (confirm(`"${item.title}" বিজ্ঞপ্তিটি কি ফেসবুক পেজে পোস্ট করতে চান? এতে ফটো কার্ড সহ পোস্ট হবে এবং প্রথম কমেন্টে সরাসরি লিঙ্ক যাবে।`)) {
+        router.post(`/admin/admissions/${item.id}/share-facebook`);
+    }
+}
+
 function formatType(t) {
     switch (t) {
         case 'public': return 'পাবলিক বিশ্ববিদ্যালয়';
@@ -226,6 +232,14 @@ function formatType(t) {
                                 </td>
                                 <td class="p-3 whitespace-nowrap text-right">
                                     <div class="flex items-center justify-end gap-1.5">
+                                        <!-- Share to Facebook via PagePilotBD -->
+                                        <button
+                                            @click="shareFacebook(item)"
+                                            class="p-1.5 rounded hover:bg-blue-500/20 text-blue-400 transition"
+                                            title="ফেসবুক পেজে পোস্ট করুন (PagePilotBD)"
+                                        >
+                                            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                        </button>
                                         <!-- Pre-publish Preview Modal trigger -->
                                         <button
                                             @click="previewNotice = item"

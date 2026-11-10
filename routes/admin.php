@@ -129,6 +129,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('settings', [SiteSettingController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [SiteSettingController::class, 'update'])->name('settings.update');
+        Route::post('settings/test-pagepilot', [SiteSettingController::class, 'testPagePilot'])->name('settings.test-pagepilot');
 
         // Admin account: profile information + password
         Route::get('profile', [ProfileController::class, 'settings'])->name('profile.settings');
@@ -140,6 +141,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Job circulars module
         Route::post('jobs/scrape-now', [JobCircularController::class, 'scrapeNow'])->name('jobs.scrape-now');
         Route::patch('jobs/{job}/toggle-featured', [JobCircularController::class, 'toggleFeatured'])->name('jobs.toggle-featured');
+        Route::post('jobs/{job}/share-facebook', [JobCircularController::class, 'shareToFacebook'])->name('jobs.share-facebook');
         Route::resource('jobs', JobCircularController::class)->except(['show']);
         Route::post('job-sources/run-all', [JobSourceController::class, 'runAll'])->name('job-sources.run-all');
         Route::post('job-sources/{jobSource}/run', [JobSourceController::class, 'run'])->name('job-sources.run');
@@ -148,6 +150,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // University Admission Notices module
         Route::post('admissions/scrape-now', [\App\Http\Controllers\Admin\AdmissionNoticeController::class, 'scrapeNow'])->name('admissions.scrape-now');
         Route::patch('admissions/{admission}/toggle-publish', [\App\Http\Controllers\Admin\AdmissionNoticeController::class, 'togglePublish'])->name('admissions.toggle-publish');
+        Route::post('admissions/{admission}/share-facebook', [\App\Http\Controllers\Admin\AdmissionNoticeController::class, 'shareToFacebook'])->name('admissions.share-facebook');
         Route::resource('admissions', \App\Http\Controllers\Admin\AdmissionNoticeController::class)->except(['show']);
 
         // Question Bank & Source Registry Management
@@ -171,6 +174,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('blog/ai-studio/save', [\App\Http\Controllers\Admin\AiBlogStudioController::class, 'save'])->name('blog.ai-studio.save');
         Route::post('blog/bulk', [BlogPostController::class, 'bulkAction'])->name('blog.bulk');
         Route::post('blog/{blog}/toggle-publish', [BlogPostController::class, 'togglePublish'])->name('blog.toggle-publish');
+        Route::post('blog/{blog}/share-facebook', [BlogPostController::class, 'shareToFacebook'])->name('blog.share-facebook');
         Route::post('blog/{blog}/block', [BlogPostController::class, 'block'])->name('blog.block');
         Route::resource('blog', BlogPostController::class)->except(['show']);
 

@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\JobCircularRequest;
+use App\Jobs\DispatchPagePilotSocialPost;
 use App\Models\JobCircular;
 use App\Services\Jobs\JobScraperService;
+use App\Services\Social\PagePilotSocialService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -79,7 +81,9 @@ class JobCircularController extends Controller
             $data['published_date'] = now()->toDateString();
         }
 
-        JobCircular::create($data);
+        $job = JobCircular::create($data);
+
+        DispatchPagePilotSocialPost::dispatch('job', $job->id);
 
         return redirect()->route('admin.jobs.index')->with('success', 'চাকরির সার্কুলার সফলভাবে তৈরি করা হয়েছে।');
     }
@@ -128,5 +132,16 @@ class JobCircularController extends Controller
         $importedCount = $scraper->scrapeAll();
 
         return back()->with('success', "স্ক্র্যাপ সম্পন্ন হয়েছে! মোট {$importedCount}টি নতুন সার্কুলার ডাটাবেজে সংরক্ষিত ও হালনাগাদ করা হয়েছে।");
+    }
+
+    public function shareToFacebook(JobCircular $job, PagePilotSocialService $social): RedirectResponse
+    {
+        $result = $social->publishJobCircular($job);
+
+        if ($result['success'] ?? false) {
+            return back()->with('success', 'ফেসবুক পেজে সফলভাবে সার্কুলার ও প্রথম কমেন্ট প্রকাশিত হয়েছে!');
+        }
+
+        return back()->with('error', 'ফেসবুক পোস্টে ব্যর্থ হয়েছে: ' . ($result['message'] ?? 'অজানা ত্রুটি'));
     }
 }

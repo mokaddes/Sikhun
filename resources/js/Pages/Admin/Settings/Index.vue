@@ -1,11 +1,22 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import { useI18n } from '@/i18n';
 
 const props = defineProps({ settings: Object });
 const { t } = useI18n();
+
+const testingSocial = ref(false);
+
+function testPagePilot() {
+    testingSocial.value = true;
+    router.post('/admin/settings/test-pagepilot', {}, {
+        onFinish: () => {
+            testingSocial.value = false;
+        }
+    });
+}
 
 const form = useForm({
     site_name: props.settings.site_name ?? '',
@@ -28,6 +39,9 @@ const form = useForm({
     blog_digest_email: props.settings.blog_digest_email ?? props.settings.site_email ?? '',
     blog_credit_enabled: props.settings.blog_credit_enabled === undefined ? true : Boolean(Number(props.settings.blog_credit_enabled) || props.settings.blog_credit_enabled === 'true' || props.settings.blog_credit_enabled === true),
     blog_daily_ai_limit: props.settings.blog_daily_ai_limit ?? 25,
+    pagepilot_webhook_url: props.settings.pagepilot_webhook_url ?? 'https://pagepilotbd.com/api/v1/pages/1299709296552706/trigger',
+    pagepilot_api_key: props.settings.pagepilot_api_key ?? 'pp_sec_44350dm0rtZ3kshrDTYM9CcmXS1VaPH2y2sh',
+    pagepilot_auto_publish: props.settings.pagepilot_auto_publish === undefined ? true : Boolean(Number(props.settings.pagepilot_auto_publish) || props.settings.pagepilot_auto_publish === 'true' || props.settings.pagepilot_auto_publish === true),
 });
 
 const logoPreview = ref(props.settings.site_logo ?? null);
@@ -192,6 +206,36 @@ function submit() {
                     Append source credit link at the bottom of AI-rewritten blog posts
                 </label>
             </div>
+            <div class="border-t border-[var(--border)] pt-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-semibold flex items-center gap-2">
+                            <span>ফেসবুক অটো-পোস্ট ইন্টিগ্রেশন (PagePilotBD API)</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Active</span>
+                        </div>
+                        <p class="text-xs text-[var(--text-muted)] mt-0.5">নতুন ভর্তি বিজ্ঞপ্তি, চাকরির খবর ও ব্লগ পাবলিশ হলে সরাসরি ফেসবুক পেজে ফটো কার্ড সহ পোস্ট ও প্রথম কমেন্টে লিঙ্ক যাবে।</p>
+                    </div>
+                    <button type="button" @click="testPagePilot" :disabled="testingSocial" class="px-3.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface2)] hover:bg-[var(--surface)] text-xs font-bold transition disabled:opacity-50">
+                        {{ testingSocial ? 'টেস্টিং...' : '🧪 টেস্ট পোস্ট পাঠান' }}
+                    </button>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">PagePilotBD Webhook Endpoint URL</label>
+                    <input v-model="form.pagepilot_webhook_url" type="url" placeholder="https://pagepilotbd.com/api/v1/pages/1299709296552706/trigger" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)] font-mono text-xs" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">PagePilotBD API Secret Key</label>
+                    <input v-model="form.pagepilot_api_key" type="password" placeholder="pp_sec_..." class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)] font-mono text-xs" />
+                </div>
+
+                <label class="flex items-center gap-2.5 p-3 rounded-lg bg-[var(--surface2)] border border-[var(--border)] text-sm cursor-pointer">
+                    <input v-model="form.pagepilot_auto_publish" type="checkbox" class="rounded text-[var(--primary)]" />
+                    <span class="font-medium">ভর্তি বিজ্ঞপ্তি, চাকরির খবর বা ব্লগ পোস্ট পাবলিশ হওয়ার সাথে সাথে স্বয়ংক্রিয়ভাবে ফেসবুক পেজে পোস্ট ও প্রথম কমেন্ট করুন</span>
+                </label>
+            </div>
+
             <button type="submit" :disabled="form.processing" class="px-5 py-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-semibold disabled:opacity-60">
                 {{ form.processing ? t('common.saving') : t('common.save') }}
             </button>

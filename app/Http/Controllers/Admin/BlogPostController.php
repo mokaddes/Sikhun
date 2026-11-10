@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\BlogPostRequest;
+use App\Jobs\DispatchPagePilotSocialPost;
 use App\Models\BlogBlocklist;
 use App\Models\BlogCategory;
 use App\Models\BlogPost;
@@ -11,6 +12,7 @@ use App\Models\BlogSource;
 use App\Models\BlogTag;
 use App\Services\Blog\BlogBlockService;
 use App\Services\Blog\BlogDeduplicator;
+use App\Services\Social\PagePilotSocialService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -102,6 +104,10 @@ class BlogPostController extends Controller
         $post = BlogPost::create($data);
         $post->tags()->sync($tagIds);
 
+        if ($post->status === 'published') {
+            DispatchPagePilotSocialPost::dispatch('blog', $post->id);
+        }
+
         return redirect()->route('admin.blog.index')->with('success', 'Blog post created.');
     }
 
@@ -139,10 +145,26 @@ class BlogPostController extends Controller
             $data['published_at'] = now();
         }
 
+        $wasPublished = $blog->status === 'published';
         $blog->update($data);
         $blog->tags()->sync($tagIds);
 
+        if ($blog->status === 'published' && (! $wasPublished || $request->boolean('share_to_social'))) {
+            DispatchPagePilotSocialPost::dispatch('blog', $blog->id);
+        }
+
         return redirect()->route('admin.blog.index')->with('success', 'Blog post updated.');
+    }
+
+    public function shareToFacebook(BlogPost $blog, PagePilotSocialService $social): RedirectResponse
+    {
+        $result = $social->publishBlogPost($blog);
+
+        if ($result['success'] ?? false) {
+            return back()->with('success', 'ফেসবুক পেজে সফলভাবে ব্লগ পোস্ট ও প্রথম কমেন্ট প্রকাশিত হয়েছে!');
+        }
+
+        return back()->with('error', 'ফেসবুক পোস্টে ব্যর্থ হয়েছে: ' . ($result['message'] ?? 'অজানা ত্রুটি'));
     }
 
     public function togglePublish(BlogPost $blog): RedirectResponse

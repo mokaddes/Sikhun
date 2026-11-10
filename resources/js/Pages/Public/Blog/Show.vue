@@ -228,4 +228,25 @@ function copyShareLink() {
     color: var(--primary);
     text-decoration: underline;
 }
+.blog-prose :deep(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.875rem;
+}
+.blog-prose :deep(th),
+.blog-prose :deep(td) {
+    border: 1px solid var(--border);
+    padding: 0.65rem 0.85rem;
+}
+.blog-prose :deep(th) {
+    background: var(--surface2);
+    font-weight: 700;
+}
+.blog-prose :deep(pre.mermaid),
+.blog-prose :deep(.mermaid-diagram) {
+    margin: 1.5rem 0;
+    border-radius: 1rem;
+    overflow-x: auto;
+}
 </style>

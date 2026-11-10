@@ -36,9 +36,9 @@ function adjustDisplay(key, amount) {
 const nav = computed(() => [
     { label: t('nav.courses'), href: '/courses' },
     { label: t('nav.library'), href: '/library' },
-    { label: locale.value === 'bn' ? 'চাকরির খবর' : 'Jobs', href: '/jobs' },
+    { label: locale.value === 'bn' ? 'চাকরির খবর' : 'Job News', href: '/job-news' },
+    { label: locale.value === 'bn' ? 'ভর্তি বিজ্ঞপ্তি' : 'Admissions', href: '/admission-notice' },
     { label: locale.value === 'bn' ? 'টুলস' : 'Tools', href: '/tools' },
-    { label: locale.value === 'bn' ? 'রেজাল্ট' : 'Results', href: '/results' },
     { label: t('nav.blog'), href: '/blog' },
     { label: t('plans_page.title'), href: '/plans' },
 ]);
@@ -119,11 +119,11 @@ const nav = computed(() => [
                         <ul class="space-y-3 text-sm text-[#a2aabc]">
                             <li><Link href="/courses" class="hover:text-[var(--primary)] transition-colors">{{ t('courses_page.title') }}</Link></li>
                             <li><Link href="/library" class="hover:text-[var(--primary)] transition-colors">{{ t('nav.library') }}</Link></li>
-                            <li><Link href="/jobs" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'চাকরির সার্কুলার' : 'Job Circulars' }}</Link></li>
+                            <li><Link href="/job-news" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'চাকরির খবর ও ক্যারিয়ার' : 'Job News' }}</Link></li>
+                            <li><Link href="/admission-notice" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'বিশ্ববিদ্যালয় ভর্তি বিজ্ঞপ্তি' : 'Admission Notices' }}</Link></li>
                             <li><Link href="/tools" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'স্টুডেন্ট টুলস' : 'Student Tools' }}</Link></li>
-                            <li><Link href="/results" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'বোর্ড রেজাল্ট চেকার' : 'Result Checker' }}</Link></li>
                             <li><Link href="/blog" class="hover:text-[var(--primary)] transition-colors">{{ t('nav.blog') }}</Link></li>
-                            <li><Link href="/#pricing" class="hover:text-[var(--primary)] transition-colors">{{ t('plans_page.title') }}</Link></li>
+                            <li><Link href="/plans" class="hover:text-[var(--primary)] transition-colors">{{ t('plans_page.title') }}</Link></li>
                         </ul>
                     </div>
                     <div>

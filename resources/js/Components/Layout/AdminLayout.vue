@@ -34,6 +34,7 @@ import {
     PlusCircleIcon,
     DocumentTextIcon,
     ArrowUpTrayIcon,
+    SparklesIcon,
 } from '@heroicons/vue/24/outline';
 
 const { t, locale } = useI18n();
@@ -125,6 +126,15 @@ const nav = computed(() => [
         ],
     },
     {
+        id: 'admissions',
+        label: locale.value === 'en' ? 'Admissions' : 'ভর্তি বিজ্ঞপ্তি',
+        icon: AcademicCapIcon,
+        items: [
+            { label: locale.value === 'en' ? 'All Admission Circulars' : 'সকল ভর্তি বিজ্ঞপ্তি', href: '/admin/admissions', icon: AcademicCapIcon },
+            { label: locale.value === 'en' ? 'Add Circular' : 'নতুন বিজ্ঞপ্তি যুক্ত করুন', href: '/admin/admissions/create', icon: PlusCircleIcon },
+        ],
+    },
+    {
         id: 'questions',
         label: t('admin.nav.question_bank'),
         icon: AcademicCapIcon,
@@ -141,6 +151,7 @@ const nav = computed(() => [
         icon: NewspaperIcon,
         items: [
             { label: t('admin.nav.blog_posts'), href: '/admin/blog', icon: NewspaperIcon },
+            { label: locale.value === 'en' ? 'AI Blog Studio' : 'এআই ব্লগ স্টুডিও', href: '/admin/blog/ai-studio', icon: SparklesIcon },
             { label: t('admin.nav.blog_categories'), href: '/admin/blog-categories', icon: TagIcon },
             { label: t('admin.nav.blog_sources'), href: '/admin/blog-sources', icon: BoltIcon },
             { label: t('admin.nav.blog_blocklist'), href: '/admin/blog-blocklist', icon: ShieldCheckIcon },

@@ -44,7 +44,7 @@ function setCategory(cat) {
 
 function applyFilter() {
     router.get(
-        '/jobs',
+        '/job-news',
         { category: category.value !== 'all' ? category.value : undefined, search: search.value || undefined },
         { preserveState: true, replace: true }
     );
@@ -218,7 +218,7 @@ function formatDate(d) {
                     <!-- Bottom Action Row -->
                     <div class="mt-5 pt-4 border-t border-gray-100 dark:border-white/5 flex items-center justify-between gap-2">
                         <Link
-                            :href="`/jobs/${job.slug}`"
+                            :href="`/job-news/${job.slug}`"
                             class="text-xs font-bold text-gray-900 dark:text-white group-hover:text-[var(--primary)] flex items-center gap-1 transition"
                         >
                             <span>{{ en ? 'View Details' : 'বিস্তারিত সার্কুলার' }}</span>

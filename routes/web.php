@@ -55,9 +55,17 @@ Route::prefix('blog')->name('blog.')->group(function () {
 Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
 Route::get('/library/{book:slug}', [LibraryController::class, 'show'])->name('library.show');
 
-// Public Job Circulars (accessible without login)
-Route::get('/jobs', [\App\Http\Controllers\Public\JobController::class, 'index'])->name('jobs.index');
-Route::get('/jobs/{slug}', [\App\Http\Controllers\Public\JobController::class, 'show'])->name('jobs.show');
+// Public Job News Portal (accessible without login)
+Route::get('/job-news', [\App\Http\Controllers\Public\JobController::class, 'index'])->name('jobs.index');
+Route::get('/job-news/{slug}', [\App\Http\Controllers\Public\JobController::class, 'show'])->name('jobs.show');
+Route::redirect('/jobs', '/job-news', 301);
+Route::get('/jobs/{slug}', function (string $slug) {
+    return redirect("/job-news/{$slug}", 301);
+});
+
+// Public University Admission Notices Portal (accessible without login)
+Route::get('/admission-notice', [\App\Http\Controllers\Public\AdmissionController::class, 'index'])->name('admissions.index');
+Route::get('/admission-notice/{slug}', [\App\Http\Controllers\Public\AdmissionController::class, 'show'])->name('admissions.show');
 
 // Public Student Tools Hub & Result Checker (accessible without login)
 Route::get('/tools', [\App\Http\Controllers\Public\ToolController::class, 'tools'])->name('tools.index');

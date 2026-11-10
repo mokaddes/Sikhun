@@ -145,6 +145,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('job-sources/{jobSource}/run', [JobSourceController::class, 'run'])->name('job-sources.run');
         Route::resource('job-sources', JobSourceController::class)->only(['index', 'store', 'update', 'destroy']);
 
+        // University Admission Notices module
+        Route::post('admissions/scrape-now', [\App\Http\Controllers\Admin\AdmissionNoticeController::class, 'scrapeNow'])->name('admissions.scrape-now');
+        Route::patch('admissions/{admission}/toggle-publish', [\App\Http\Controllers\Admin\AdmissionNoticeController::class, 'togglePublish'])->name('admissions.toggle-publish');
+        Route::resource('admissions', \App\Http\Controllers\Admin\AdmissionNoticeController::class)->except(['show']);
+
         // Question Bank & Source Registry Management
         Route::post('question-sources/{questionSource}/check-robots', [QuestionSourceController::class, 'checkRobots'])->name('question-sources.check-robots');
         Route::post('question-sources/{questionSource}/test-connection', [QuestionSourceController::class, 'testConnection'])->name('question-sources.test-connection');
@@ -160,6 +165,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('question-bank', QuestionBankController::class);
 
         // Blog module (Posts, Categories, Scraper Sources, Blocklist)
+        Route::get('blog/ai-studio', [\App\Http\Controllers\Admin\AiBlogStudioController::class, 'index'])->name('blog.ai-studio');
+        Route::post('blog/ai-studio/generate', [\App\Http\Controllers\Admin\AiBlogStudioController::class, 'generate'])->name('blog.ai-studio.generate');
+        Route::post('blog/ai-studio/enhance', [\App\Http\Controllers\Admin\AiBlogStudioController::class, 'enhance'])->name('blog.ai-studio.enhance');
+        Route::post('blog/ai-studio/save', [\App\Http\Controllers\Admin\AiBlogStudioController::class, 'save'])->name('blog.ai-studio.save');
         Route::post('blog/bulk', [BlogPostController::class, 'bulkAction'])->name('blog.bulk');
         Route::post('blog/{blog}/toggle-publish', [BlogPostController::class, 'togglePublish'])->name('blog.toggle-publish');
         Route::post('blog/{blog}/block', [BlogPostController::class, 'block'])->name('blog.block');

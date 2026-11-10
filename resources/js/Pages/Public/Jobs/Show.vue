@@ -63,7 +63,7 @@ function getDaysRemaining(d) {
             <div class="max-w-7xl mx-auto px-4 md:px-6 flex items-center gap-2">
                 <Link href="/" class="hover:text-[var(--primary)] transition">{{ en ? 'Home' : 'হোম' }}</Link>
                 <span>/</span>
-                <Link href="/jobs" class="hover:text-[var(--primary)] transition">{{ en ? 'Jobs' : 'চাকরির খবর' }}</Link>
+                <Link href="/job-news" class="hover:text-[var(--primary)] transition">{{ en ? 'Job News' : 'চাকরির খবর' }}</Link>
                 <span>/</span>
                 <span class="text-gray-900 dark:text-gray-200 truncate max-w-sm">{{ job.title }}</span>
             </div>
@@ -289,7 +289,7 @@ function getDaysRemaining(d) {
                             <Link
                                 v-for="rel in relatedJobs"
                                 :key="rel.id"
-                                :href="`/jobs/${rel.slug}`"
+                                :href="`/job-news/${rel.slug}`"
                                 class="block p-3 rounded-2xl bg-gray-50 dark:bg-[#202738]/60 hover:bg-gray-100 dark:hover:bg-[#202738] border border-gray-200 dark:border-white/5 transition group"
                             >
                                 <span class="text-[11px] font-semibold text-[var(--primary)] block truncate">{{ rel.organization }}</span>

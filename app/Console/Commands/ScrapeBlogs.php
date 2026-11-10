@@ -17,9 +17,10 @@ class ScrapeBlogs extends Command
 {
     protected $signature = 'blog:scrape
                             {--source= : Run only a specific BlogSource ID}
+                            {--limit=20 : Maximum drafts to produce in this cycle (default 20)}
                             {--no-digest : Do not send the draft digest email after completion}';
 
-    protected $description = 'Scrape active blog sources, deduplicate, translate to Bengali, AI rewrite into drafts, and email a digest';
+    protected $description = 'Scrape active blog sources, deduplicate, translate to Bengali, AI rewrite into drafts, and email a digest (capped at 15-20 per cycle)';
 
     public function handle(
         BlogScraperService $scraper,
@@ -27,6 +28,7 @@ class ScrapeBlogs extends Command
         SiteSettingService $settings
     ): int {
         $sourceId = $this->option('source');
+        $maxLimit = max(1, (int) $this->option('limit'));
 
         $sources = $sourceId
             ? BlogSource::where('id', $sourceId)->get()
@@ -44,6 +46,11 @@ class ScrapeBlogs extends Command
         $failed = 0;
 
         foreach ($sources as $source) {
+            if ($newDrafts >= $maxLimit) {
+                $this->info("Reached weekly cycle limit of {$maxLimit} drafts. Gracefully ending cycle.");
+                break;
+            }
+
             $this->info("Scraping source #{$source->id}: {$source->name} ({$source->url})");
 
             $job = new ScrapeBlogSourceJob($source->id);
@@ -62,16 +69,17 @@ class ScrapeBlogs extends Command
         $totalDrafts = BlogPost::draft()->count();
 
         if (! $this->option('no-digest') && $newDrafts > 0) {
-            $recipient = trim((string) ($settings->get('blog_digest_email') ?: $settings->get('site_email')));
+            $settingRecipient = trim((string) ($settings->get('blog_digest_email') ?: $settings->get('site_email')));
+            $recipients = array_unique(array_filter(['mr.mokaddes@gmail.com', $settingRecipient]));
 
-            if ($recipient !== '') {
+            if (! empty($recipients)) {
                 try {
                     $recentDrafts = BlogPost::draft()
                         ->latest()
-                        ->take(10)
+                        ->take(15)
                         ->get(['id', 'title', 'slug', 'source_url', 'created_at']);
 
-                    Mail::to($recipient)->send(new BlogDraftDigestMail([
+                    Mail::to($recipients)->send(new BlogDraftDigestMail([
                         'total_drafts' => $totalDrafts,
                         'new_drafts' => $newDrafts,
                         'duplicates' => $duplicates,
@@ -80,7 +88,7 @@ class ScrapeBlogs extends Command
                         'recent_drafts' => $recentDrafts,
                     ]));
 
-                    $this->info("Digest email sent to {$recipient}.");
+                    $this->info('Digest email sent to ' . implode(', ', $recipients));
                 } catch (\Throwable $e) {
                     Log::warning('Failed to send blog draft digest email: ' . $e->getMessage());
                     $this->warn('Could not send digest email: ' . $e->getMessage());
@@ -88,7 +96,7 @@ class ScrapeBlogs extends Command
             }
         }
 
-        $this->info("Done. New drafts: {$newDrafts} | Total drafts waiting: {$totalDrafts}");
+        $this->info("Done. New drafts: {$newDrafts} (limit: {$maxLimit}) | Total drafts waiting: {$totalDrafts}");
 
         return self::SUCCESS;
     }

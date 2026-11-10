@@ -12,6 +12,7 @@ import {
     NoSymbolIcon,
     TrashIcon,
     CheckCircleIcon,
+    SparklesIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -99,6 +100,10 @@ function getPostActions(post) {
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
+                <Link href="/admin/blog/ai-studio" class="px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold shadow-md shadow-orange-500/20 inline-flex items-center gap-1.5">
+                    <SparklesIcon class="w-4 h-4" />
+                    <span>AI Blog Studio</span>
+                </Link>
                 <Link href="/admin/blog-categories" class="px-3.5 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-semibold hover:bg-[var(--surface2)]">
                     {{ t('admin.nav.blog_categories') }}
                 </Link>

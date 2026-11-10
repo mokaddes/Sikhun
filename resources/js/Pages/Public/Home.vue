@@ -70,8 +70,8 @@ function formatDate(d) {
                             <Link href="/register" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff7a00] to-[#f97316] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#f97316]/25 transition hover:shadow-[0_0_32px_rgba(249,115,22,.4)] hover:-translate-y-0.5">
                                 {{ en ? 'Get started free' : 'বিনামূল্যে শুরু করুন' }} <span aria-hidden="true">→</span>
                             </Link>
-                            <Link href="/jobs" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#1c1f2a] px-5 py-3.5 text-sm font-semibold text-[var(--text)] transition hover:bg-[#262a35] hover:border-white/20">
-                                <span>{{ en ? 'Job Circulars' : 'চাকরির খবর' }}</span>
+                            <Link href="/job-news" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#1c1f2a] px-5 py-3.5 text-sm font-semibold text-[var(--text)] transition hover:bg-[#262a35] hover:border-white/20">
+                                <span>{{ en ? 'Job News' : 'চাকরির খবর' }}</span>
                                 <span class="material-symbols-outlined !text-sm">work</span>
                             </Link>
                             <Link href="/calculators" class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-[#1c1f2a] px-4 py-3.5 text-sm font-semibold text-[var(--text)] transition hover:bg-[#262a35]">
@@ -175,22 +175,22 @@ function formatDate(d) {
                         </span>
                     </Link>
 
-                    <!-- Tool 3: Board Result Checker -->
+                    <!-- Tool 3: University Admission Notices -->
                     <Link
-                        href="/results"
+                        href="/admission-notice"
                         class="group p-6 rounded-3xl border border-gray-200 dark:border-white/5 bg-white dark:bg-gradient-to-br dark:from-[#1a202f] dark:to-[#141824] hover:border-emerald-500/40 transition-all duration-300 hover:-translate-y-1 shadow-sm dark:shadow-lg"
                     >
                         <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
-                            <span class="material-symbols-outlined">school</span>
+                            <span class="material-symbols-outlined">account_balance</span>
                         </div>
                         <h3 class="font-heading text-lg font-bold text-gray-900 dark:text-white group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition">
-                            {{ en ? 'Board Exam Result Checker' : 'বোর্ড পরীক্ষার রেজাল্ট চেকার' }}
+                            {{ en ? 'University Admission Notices' : 'বিশ্ববিদ্যালয় ভর্তি বিজ্ঞপ্তি' }}
                         </h3>
                         <p class="mt-2 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                            {{ en ? 'Direct official servers and instant SMS format guidelines for SSC, HSC, Alim, and National University results.' : 'এসএসসি, এইচএসসি, আলিম ও জাতীয় বিশ্ববিদ্যালয়ের ফলাফল অফিসিয়াল সার্ভার ও দ্রুত এসএমএসের মাধ্যমে জানার সম্পূর্ণ গাইড।' }}
+                            {{ en ? 'Public, Guccho, and Private university admission circulars, eligibility, units, and deadlines.' : 'পাবলিক, গুচ্ছ ও শীর্ষ বেসরকারি বিশ্ববিদ্যালয়ের ভর্তি বিজ্ঞপ্তি, যোগ্যতা, ইউনিট ও সময়সূচির সম্পূর্ণ গাইড।' }}
                         </p>
                         <span class="mt-4 inline-flex items-center gap-1 text-xs font-bold text-emerald-500 dark:text-emerald-400 group-hover:translate-x-1 transition-transform">
-                            <span>{{ en ? 'Check Result' : 'রেজাল্ট চেক করুন' }}</span> <span>→</span>
+                            <span>{{ en ? 'View Notices' : 'ভর্তি বিজ্ঞপ্তি দেখুন' }}</span> <span>→</span>
                         </span>
                     </Link>
                 </div>
@@ -202,14 +202,14 @@ function formatDate(d) {
                     <div>
                         <span class="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-emerald-500 dark:text-emerald-400">{{ en ? 'CAREERS & RECRUITMENT' : 'ক্যারিয়ার ও নিয়োগ বিজ্ঞপ্তি' }}</span>
                         <h2 class="mt-2 font-heading text-3xl md:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
-                            {{ en ? 'Latest Job Circulars' : 'সর্বশেষ চাকরির খবর ও সার্কুলার' }}
+                            {{ en ? 'Latest Job News' : 'সর্বশেষ চাকরির খবর ও সার্কুলার' }}
                         </h2>
                         <p class="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-muted)]">
                             {{ en ? 'Verified circulars from BCS, Bangladesh Bank, Government departments, and leading private organizations.' : 'বিসিএস, বাংলাদেশ ব্যাংক, সরকারি বিভিন্ন দপ্তর ও শীর্ষ বেসরকারি প্রতিষ্ঠানের সাম্প্রতিক নিয়োগ বিজ্ঞপ্তি।' }}
                         </p>
                     </div>
-                    <Link href="/jobs" class="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-500 dark:text-emerald-400 hover:text-[var(--primary)] transition">
-                        <span>{{ en ? 'All Job Circulars' : 'সকল চাকরির সার্কুলার' }}</span> <span class="material-symbols-outlined !text-sm">arrow_forward</span>
+                    <Link href="/job-news" class="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-500 dark:text-emerald-400 hover:text-[var(--primary)] transition">
+                        <span>{{ en ? 'All Job News' : 'সকল চাকরির খবর' }}</span> <span class="material-symbols-outlined !text-sm">arrow_forward</span>
                     </Link>
                 </div>
 
@@ -227,7 +227,7 @@ function formatDate(d) {
                                 <span class="text-rose-500 dark:text-rose-400 font-semibold text-[10px]">{{ en ? 'Ends:' : 'শেষ:' }} {{ formatDate(job.deadline) }}</span>
                             </div>
                             <span class="text-xs font-semibold text-[var(--primary)] truncate block mb-1">{{ job.organization }}</span>
-                            <Link :href="`/jobs/${job.slug}`">
+                            <Link :href="`/job-news/${job.slug}`">
                                 <h3 class="font-heading text-sm font-bold text-gray-900 dark:text-white line-clamp-2 hover:text-[var(--primary)] transition">
                                     {{ job.title }}
                                 </h3>
@@ -238,13 +238,13 @@ function formatDate(d) {
                             </div>
                         </div>
                         <div class="mt-4 pt-3 border-t border-gray-100 dark:border-white/5 flex items-center justify-between text-xs">
-                            <Link :href="`/jobs/${job.slug}`" class="font-bold text-gray-900 dark:text-white hover:text-[var(--primary)]">{{ en ? 'Details →' : 'বিস্তারিত →' }}</Link>
+                            <Link :href="`/job-news/${job.slug}`" class="font-bold text-gray-900 dark:text-white hover:text-[var(--primary)]">{{ en ? 'Details →' : 'বিস্তারিত →' }}</Link>
                             <a v-if="job.apply_url" :href="job.apply_url" target="_blank" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px]">{{ en ? 'Apply ↗' : 'আবেদন ↗' }}</a>
                         </div>
                     </article>
                 </div>
                 <div v-else class="text-center py-8 rounded-2xl bg-gray-50 dark:bg-[#171c28] border border-gray-200 dark:border-white/5 text-xs text-gray-500 dark:text-gray-400">
-                    <Link href="/jobs" class="text-[var(--primary)] font-bold">{{ en ? 'Visit job circulars page to view all circulars →' : 'চাকরির পেজে গিয়ে সকল সার্কুলার দেখুন →' }}</Link>
+                    <Link href="/job-news" class="text-[var(--primary)] font-bold">{{ en ? 'Visit job circulars page to view all circulars →' : 'চাকরির পেজে গিয়ে সকল সার্কুলার দেখুন →' }}</Link>
                 </div>
             </section>
 

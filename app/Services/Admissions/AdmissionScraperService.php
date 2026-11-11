@@ -242,7 +242,7 @@ HTML
     /**
      * Detect institution name from title or description text
      */
-    public function detectInstitution(string $title, string $desc): string
+    public function detectInstitution(string $title, string $desc = ''): string
     {
         $text = $title . ' ' . $desc;
 
@@ -869,7 +869,7 @@ HTML
 
             // Re-detect institution name if generic
             if (empty($notice->institution_name) || $notice->institution_name === 'বাংলাদেশ পাবলিক/প্রাইভেট বিশ্ববিদ্যালয়') {
-                $detected = $this->detectInstitution($notice->title . ' ' . $notice->description);
+                $detected = $this->detectInstitution($notice->title, (string) $notice->description);
                 if ($detected !== 'বাংলাদেশ পাবলিক/প্রাইভেট বিশ্ববিদ্যালয়') {
                     $notice->institution_name = $detected;
                     $notice->university_type = $this->categorizeUniversity($detected);

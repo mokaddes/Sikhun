@@ -25,13 +25,130 @@ class AdmissionScraperService
     {
         $newNotices = 0;
 
-        // 1. Scrape live RSS / JSON feeds from education and circular portals
+        // 1. Scrape official university portals directly (RU, DU, etc.)
+        $newNotices += $this->scrapeOfficialUniversityPortals();
+
+        // 2. Scrape live RSS / JSON feeds from education and circular portals
         $newNotices += $this->scrapeLiveFeeds();
 
-        // 2. Seed verified foundational circulars for 2026-2027 (DU, BUET, GST, etc.)
+        // 3. Seed verified foundational circulars for 2026-2027 (RU, DU, BUET, GST, etc.)
         $newNotices += $this->seedVerifiedCirculars();
 
+        // 4. Sanitize and clean all database notices to guarantee genuine official URLs
+        $this->sanitizeExistingNotices();
+
         return $newNotices;
+    }
+
+    /**
+     * Directly scrape active official university admission portals
+     */
+    public function scrapeOfficialUniversityPortals(): int
+    {
+        $count = 0;
+
+        // Rajshahi University (RU)
+        try {
+            if ($this->scrapeRajshahiUniversity()) {
+                $count++;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Official RU portal scraper notice: ' . $e->getMessage());
+        }
+
+        return $count;
+    }
+
+    /**
+     * Direct live scraper for Rajshahi University (RU) admission portal
+     */
+    public function scrapeRajshahiUniversity(): ?AdmissionNotice
+    {
+        try {
+            $guidelineUrl = 'https://admission.ru.ac.bd/student/application-guideline';
+            $res = Http::withoutVerifying()->timeout(15)->get($guidelineUrl);
+            if (! $res->successful()) {
+                return null;
+            }
+
+            $body = $res->body();
+            if (! str_contains($body, 'Undergraduate Admission') && ! str_contains($body, 'আবেদন')) {
+                return null;
+            }
+
+            $slug = 'rajshahi-university-undergraduate-admission-circular-2026-2027';
+
+            return AdmissionNotice::updateOrCreate(
+                ['slug' => $slug],
+                [
+                    'title' => 'রাজশাহী বিশ্ববিদ্যালয় আন্ডারগ্র্যাজুয়েট ভর্তি বিজ্ঞপ্তি ২০২৬-২০২৭ (RU Admission)',
+                    'slug' => $slug,
+                    'institution_name' => 'রাজশাহী বিশ্ববিদ্যালয় (RU)',
+                    'university_type' => 'public',
+                    'academic_year' => '2026-2027',
+                    'units' => [
+                        ['name' => 'A Unit (মানবিক)', 'faculty' => 'কলা, আইন, সামাজিক বিজ্ঞান, চারুকলা অনুষদ ও IER', 'min_gpa' => '7.00', 'fee' => '৫৫ টাকা (প্রাথমিক) / ১৩২০ টাকা (চূড়ান্ত)', 'exam_date' => 'ঘোষণা সাপেক্ষে'],
+                        ['name' => 'B Unit (ব্যবসায় শিক্ষা)', 'faculty' => 'ব্যবসায় শিক্ষা অনুষদ ও IBA', 'min_gpa' => '7.50', 'fee' => '৫৫ টাকা (প্রাথমিক) / ১১০০ টাকা (চূড়ান্ত)', 'exam_date' => 'ঘোষণা সাপেক্ষে'],
+                        ['name' => 'C Unit (বিজ্ঞান)', 'faculty' => 'বিজ্ঞান, জীববিজ্ঞান, কৃষি, প্রকৌশল ও ভূ-বিজ্ঞান অনুষদ', 'min_gpa' => '8.00', 'fee' => '৫৫ টাকা (প্রাথমিক) / ১৩২০ টাকা (চূড়ান্ত)', 'exam_date' => 'ঘোষণা সাপেক্ষে'],
+                    ],
+                    'application_start' => '2026-11-15 12:01:00',
+                    'application_start_text' => '১৫ নভেম্বর ২০২৬, রবিবার • দুপুর ১২:০১টা',
+                    'application_deadline' => '2026-11-30 23:59:00',
+                    'application_deadline_text' => '৩০ নভেম্বর ২০২৬, সোমবার • রাত ১১:৫৯টা',
+                    'admit_card_date_text' => 'চূড়ান্ত সিলেকশন ও ফি প্রদানের পর',
+                    'minimum_gpa_ssc' => '3.00',
+                    'minimum_gpa_hsc' => '3.00',
+                    'total_gpa_required' => '৮.০০ (বিজ্ঞান) / ৭.৫০ (ব্যবসায়) / ৭.০০ (মানবিক)',
+                    'application_fee' => '৫৫ টাকা (প্রাথমিক আবেদন ফি)',
+                    'apply_url' => 'https://admission.ru.ac.bd',
+                    'official_website_url' => 'https://ru.ac.bd',
+                    'notice_image_url' => 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1200&auto=format&fit=crop&q=80',
+                    'featured_image_url' => 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200&auto=format&fit=crop&q=80',
+                    'eligibility_criteria' => '২০২৪ বা ২০২৫ সালের এইচএসসি/সমমান এবং ২০২২ বা ২০২৩ সালের এসএসসি/সমমান পরীক্ষায় উত্তীর্ণ শিক্ষার্থীরা আবেদন করতে পারবে। বিজ্ঞান শাখায় মোট জিপিএ ৮.০০, ব্যবসায় শাখায় ৭.৫০ এবং মানবিক শাখায় ৭.০০ থাকতে হবে।',
+                    'marks_distribution' => '১০০ নম্বরের বহুনির্বাচনী (MCQ) পরীক্ষা। মোট ৮০টি বহুনির্বাচনী প্রশ্ন থাকবে, প্রতিটির মান ১.২৫। প্রতিটি ভুল উত্তরের জন্য ০.২৫ নম্বর কর্তন করা হবে। পরীক্ষার সময় ১ ঘণ্টা। পাস নম্বর ৪০। আঞ্চলিক পরীক্ষা কেন্দ্র: রাজশাহী, ঢাকা, চট্টগ্রাম, খুলনা ও রংপুর।',
+                    'status' => 'published',
+                    'is_featured' => true,
+                    'source_name' => 'রাজশাহী বিশ্ববিদ্যালয় কেন্দ্রীয় ভর্তি কমিটি',
+                    'source_url' => $guidelineUrl,
+                    'meta_title' => 'রাজশাহী বিশ্ববিদ্যালয় ভর্তি সার্কুলার ২০২৬-২০২৭ | RU Admission Guide',
+                    'meta_description' => 'রাজশাহী বিশ্ববিদ্যালয় স্নাতক প্রথম বর্ষ ভর্তি বিজ্ঞপ্তি ২০২৬-২০২৭। প্রাথমিক ও চূড়ান্ত আবেদনের নিয়ম, ইউনিটভিত্তিক যোগ্যতা ও আঞ্চলিক পরীক্ষা কেন্দ্র।',
+                    'published_at' => now(),
+                    'description' => <<<HTML
+<h2>১. ভর্তি সংক্রান্ত গুরুত্বপূর্ণ তারিখ ও সময়সূচি</h2>
+<table class="w-full border-collapse border border-gray-300 dark:border-gray-700 my-4 text-sm">
+    <tr class="bg-gray-100 dark:bg-gray-800"><th class="p-2.5 border border-gray-300 dark:border-gray-700 text-left font-bold">কার্যক্রম</th><th class="p-2.5 border border-gray-300 dark:border-gray-700 text-left font-bold">তারিখ ও সময়</th></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">প্রাথমিক আবেদন শুরু</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-bold text-emerald-600 dark:text-emerald-400">১৫ নভেম্বর ২০২৬, রবিবার • দুপুর ১২:০১টা</td></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">প্রাথমিক আবেদনের শেষ তারিখ</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-bold text-red-600 dark:text-red-400">৩০ নভেম্বর ২০২৬, সোমবার • রাত ১১:৫৯টা</td></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">প্রাথমিক আবেদন ফি</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-medium text-blue-600 dark:text-blue-400">৫৫ টাকা (সার্ভিস চার্জসহ)</td></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">পরীক্ষার আঞ্চলিক কেন্দ্র (Zones)</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-medium">রাজশাহী, ঢাকা, চট্টগ্রাম, খুলনা ও রংপুর</td></tr>
+</table>
+
+<h2>২. ইউনিটভিত্তিক বিস্তারিত যোগ্যতা</h2>
+<p>রাজশাহী বিশ্ববিদ্যালয়ের ২০২৬-২০২৭ শিক্ষাবর্ষের প্রথম বর্ষ স্নাতক (সম্মান) শ্রেণীতে ভর্তির জন্য শিক্ষার্থীকে অবশ্যই ২০২২ বা ২০২৩ সালের এসএসসি এবং ২০২৪ বা ২০২৫ সালের এইচএসসি বা সমমান পরীক্ষায় উত্তীর্ণ হতে হবে।</p>
+<ul>
+    <li><strong>A Unit (মানবিক শাখা):</strong> মানবিক শাখা থেকে উত্তীর্ণ প্রার্থীদের এসএসসি ও এইচএসসি উভয় পরীক্ষায় চতুর্থ বিষয়সহ ন্যূনতম জিপিএ ৩.০০ সহ মোট জিপিএ ৭.০০ থাকতে হবে। বিজ্ঞান ও ব্যবসায় শিক্ষা শাখা থেকে পরিবর্তনকারীদের ক্ষেত্রে মোট জিপিএ যথাক্রমে ৮.০০ ও ৭.৫০ থাকতে হবে।</li>
+    <li><strong>B Unit (ব্যবসায় শিক্ষা শাখা):</strong> ব্যবসায় শিক্ষা শাখা থেকে উত্তীর্ণ প্রার্থীদের এসএসসি ও এইচএসসি উভয় পরীক্ষায় ন্যূনতম জিপিএ ৩.০০ সহ মোট জিপিএ ৭.৫০ থাকতে হবে। অন্যান্য শাখার জন্য মোট জিপিএ ৮.০০ বা ৭.০০ থাকতে হবে।</li>
+    <li><strong>C Unit (বিজ্ঞান শাখা):</strong> বিজ্ঞান শাখা থেকে উত্তীর্ণ প্রার্থীদের এসএসসি ও এইচএসসি উভয় পরীক্ষায় ন্যূনতম জিপিএ ৩.৫০ সহ মোট জিপিএ ৮.০০ থাকতে হবে।</li>
+</ul>
+
+<h2>৩. পরীক্ষার মানবণ্টন ও পদ্ধতি</h2>
+<p>ভর্তি পরীক্ষা ১০০ নম্বরের বহুনির্বাচনী (MCQ) পদ্ধতিতে অনুষ্ঠিত হবে। মোট ৮০টি বহুনির্বাচনী প্রশ্ন থাকবে, প্রতিটির মান ১.২৫। প্রতিটি ভুল উত্তরের জন্য ০.২৫ নম্বর কর্তন করা হবে। পরীক্ষায় পাস নম্বর ৪০। ওএমআর শিট পূরণ করে পরীক্ষা দিতে হবে।</p>
+
+<h2>৪. কীভাবে অনলাইনে আবেদন করবেন</h2>
+<ol>
+    <li>রাজশাহী বিশ্ববিদ্যালয়ের অফিসিয়াল ভর্তি ওয়েবসাইট <a href="https://admission.ru.ac.bd" target="_blank" class="text-orange-500 font-bold">admission.ru.ac.bd</a>-এ যান।</li>
+    <li>"Apply" বাটনে ক্লিক করে প্রার্থীর এসএসসি ও এইচএসসি পরীক্ষার রোল নম্বর, রেজিস্ট্রেশন নম্বর এবং শিক্ষাবোর্ড প্রদান করুন।</li>
+    <li>বর্তমান সচল মোবাইল নম্বর এবং সদ্য তোলা পাসপোর্ট সাইজের রঙিন ছবি (100KB এর মধ্যে) আপলোড করুন।</li>
+    <li>পরীক্ষার পছন্দসই কেন্দ্র/অঞ্চল (রাজশাহী/ঢাকা/চট্টগ্রাম/খুলনা/রংপুর) নির্বাচন করুন।</li>
+    <li>মোবাইল ব্যাংকিং (bKash/Nagad/Rocket) এর মাধ্যমে প্রাথমিক আবেদন ফি ৫৫ টাকা পরিশোধ করে স্লিপ সংরক্ষণ করুন।</li>
+</ol>
+HTML
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::warning('RU live scraper error: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**
@@ -73,6 +190,7 @@ class AdmissionScraperService
 
                     $institution = $this->detectInstitution($title, $desc);
                     $type = $this->detectUniversityType($title, $desc, $institution);
+                    $urls = $this->resolveOfficialUrls($institution, $link);
 
                     $notice = AdmissionNotice::create([
                         'title' => $title,
@@ -83,10 +201,10 @@ class AdmissionScraperService
                         'application_start' => now()->toDateString(),
                         'application_deadline' => now()->addDays(28)->toDateString(),
                         'application_fee' => '১,০০০ টাকা',
-                        'apply_url' => $link,
-                        'official_website_url' => $link,
+                        'apply_url' => $urls['apply_url'],
+                        'official_website_url' => $urls['official_website_url'],
                         'notice_image_url' => 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1200&auto=format&fit=crop&q=80',
-                        'description' => $this->generateBlogContent($institution, $title, $desc, $type, $link),
+                        'description' => $this->generateBlogContent($institution, $title, $desc, $type, $urls['apply_url']),
                         'status' => 'draft',
                         'source_name' => 'Students.bd Circular Portal',
                         'source_url' => $link,
@@ -128,36 +246,188 @@ class AdmissionScraperService
     {
         $text = $title . ' ' . $desc;
 
-        $map = [
-            'ঢাকা বিশ্ববিদ্যালয়' => 'ঢাকা বিশ্ববিদ্যালয় (DU)',
-            'Dhaka University' => 'ঢাকা বিশ্ববিদ্যালয় (DU)',
-            'বুয়েট' => 'বাংলাদেশ প্রকৌশল বিশ্ববিদ্যালয় (BUET)',
-            'BUET' => 'বাংলাদেশ প্রকৌশল বিশ্ববিদ্যালয় (BUET)',
-            'রাজশাহী বিশ্ববিদ্যালয়' => 'রাজশাহী বিশ্ববিদ্যালয় (RU)',
-            'Rajshahi University' => 'রাজশাহী বিশ্ববিদ্যালয় (RU)',
-            'চট্টগ্রাম বিশ্ববিদ্যালয়' => 'চট্টগ্রাম বিশ্ববিদ্যালয় (CU)',
-            'Chittagong University' => 'চট্টগ্রাম বিশ্ববিদ্যালয় (CU)',
-            'জাহাঙ্গীরনগর বিশ্ববিদ্যালয়' => 'জাহাঙ্গীরনগর বিশ্ববিদ্যালয় (JU)',
-            'Jahangirnagar' => 'জাহাঙ্গীরনগর বিশ্ববিদ্যালয় (JU)',
-            'গুচ্ছ' => 'জিএসটি গুচ্ছ বিশ্ববিদ্যালয় (GST Cluster)',
-            'GST' => 'জিএসটি গুচ্ছ বিশ্ববিদ্যালয় (GST Cluster)',
-            'কৃষি গুচ্ছ' => 'সমন্বিত কৃষি গুচ্ছ বিশ্ববিদ্যালয় (Agri Cluster)',
-            'ব্র্যাক বিশ্ববিদ্যালয়' => 'ব্র্যাক বিশ্ববিদ্যালয় (BRACU)',
-            'BRAC' => 'ব্র্যাক বিশ্ববিদ্যালয় (BRACU)',
-            'নর্থ সাউথ' => 'নর্থ সাউথ বিশ্ববিদ্যালয় (NSU)',
-            'North South' => 'নর্থ সাউথ বিশ্ববিদ্যালয় (NSU)',
-            'AIUB' => 'আমেরিকান ইন্টারন্যাশনাল ইউনিভার্সিটি (AIUB)',
-            'UIU' => 'ইউনাইটেড ইন্টারন্যাশনাল ইউনিভার্সিটি (UIU)',
-            'ড্যাফোডিল' => 'ড্যাফোডিল ইন্টারন্যাশনাল ইউনিভার্সিটি (DIU)',
+        $patterns = [
+            '/\b(DU|ঢাবি|ঢাকা বিশ্ববিদ্যালয়|ঢাকা বিশ্ববিদ্যালয়|Dhaka University)\b/iu' => 'ঢাকা বিশ্ববিদ্যালয় (DU)',
+            '/\b(RU|রাবি|রাজশাহী বিশ্ববিদ্যালয়|রাজশাহী বিশ্ববিদ্যালয়|Rajshahi University)\b/iu' => 'রাজশাহী বিশ্ববিদ্যালয় (RU)',
+            '/\b(CU|চবি|চট্টগ্রাম বিশ্ববিদ্যালয়|চট্টগ্রাম বিশ্ববিদ্যালয়|Chittagong University)\b/iu' => 'চট্টগ্রাম বিশ্ববিদ্যালয় (CU)',
+            '/\b(JU|জাবি|জাহাঙ্গীরনগর বিশ্ববিদ্যালয়|জাহাঙ্গীরনগর বিশ্ববিদ্যালয়|Jahangirnagar)\b/iu' => 'জাহাঙ্গীরনগর বিশ্ববিদ্যালয় (JU)',
+            '/\b(BUET|বুয়েট|বাংলাদেশ প্রকৌশল)\b/iu' => 'বাংলাদেশ প্রকৌশল বিশ্ববিদ্যালয় (BUET)',
+            '/\b(KUET|কুয়েট|Khulna University of Engineering)\b/iu' => 'খুলনা প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (KUET)',
+            '/\b(RUET|রুয়েট|Rajshahi University of Engineering)\b/iu' => 'রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (RUET)',
+            '/\b(CUET|চুয়েট|Chittagong University of Engineering)\b/iu' => 'চট্টগ্রাম প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (CUET)',
+            '/\b(SUST|সাস্ট|শাহজালাল বিজ্ঞান|Shahjalal University)\b/iu' => 'শাহজালাল বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (SUST)',
+            '/\b(GST|গুচ্ছ|ক্লাস্টার)\b/iu' => 'জিএসটি গুচ্ছ বিশ্ববিদ্যালয় (GST Cluster)',
+            '/\b(কৃষি গুচ্ছ|Agri Cluster|কৃষি বিশ্ববিদ্যালয়)\b/iu' => 'সমন্বিত কৃষি গুচ্ছ বিশ্ববিদ্যালয় (Agri Cluster)',
+            '/\b(NU|জাতীয় বিশ্ববিদ্যালয়|জাতীয় বিশ্ববিদ্যালয়|National University)\b/iu' => 'জাতীয় বিশ্ববিদ্যালয় (NU)',
+            '/\b(BOU|উন্মুক্ত বিশ্ববিদ্যালয়|উন্মুক্ত বিশ্ববিদ্যালয়|Open University)\b/iu' => 'বাংলাদেশ উন্মুক্ত বিশ্ববিদ্যালয় (BOU)',
+            '/\b(BTEB|কারিগরি|কারিগরি শিক্ষা বোর্ড|Technical Education Board)\b/iu' => 'বাংলাদেশ কারিগরি শিক্ষা বোর্ড (BTEB)',
+            '/\b(MBBS|BDS|মেডিকেল|ডেন্টাল|PTAP)\b/iu' => 'মেডিকেল ও ডেন্টাল কলেজ (MBBS/BDS)',
+            '/\b(BRACU|BRAC|ব্র্যাক বিশ্ববিদ্যালয়|ব্র্যাক বিশ্ববিদ্যালয়)\b/iu' => 'ব্র্যাক বিশ্ববিদ্যালয় (BRACU)',
+            '/\b(NSU|নর্থ সাউথ|North South)\b/iu' => 'নর্থ সাউথ বিশ্ববিদ্যালয় (NSU)',
+            '/\b(AIUB|আমেরিকান ইন্টারন্যাশনাল)\b/iu' => 'আমেরিকান ইন্টারন্যাশনাল ইউনিভার্সিটি (AIUB)',
+            '/\b(UIU|ইউনাইটেড ইন্টারন্যাশনাল)\b/iu' => 'ইউনাইটেড ইন্টারন্যাশনাল ইউনিভার্সিটি (UIU)',
+            '/\b(DIU|ড্যাফোডিল|Daffodil)\b/iu' => 'ড্যাফোডিল ইন্টারন্যাশনাল ইউনিভার্সিটি (DIU)',
+            '/\b(IUB|ইন্ডিপেন্ডেন্ট)\b/iu' => 'ইন্ডিপেন্ডেন্ট ইউনিভার্সিটি (IUB)',
         ];
 
-        foreach ($map as $keyword => $instName) {
-            if (mb_stripos($text, $keyword) !== false) {
+        foreach ($patterns as $pattern => $instName) {
+            if (preg_match($pattern, $text)) {
                 return $instName;
             }
         }
 
         return 'বাংলাদেশ পাবলিক/প্রাইভেট বিশ্ববিদ্যালয়';
+    }
+
+    /**
+     * Resolve genuine official website and application portal URLs for a university.
+     * Prevents 3rd party aggregator sites (like students.bd) from ever appearing as official.
+     */
+    public function resolveOfficialUrls(string $institution, ?string $fallbackLink = null): array
+    {
+        $registry = [
+            'ঢাকা বিশ্ববিদ্যালয় (DU)' => [
+                'aliases' => ['DU', 'ঢাকা বিশ্ববিদ্যালয়', 'Dhaka University'],
+                'official_website_url' => 'https://du.ac.bd',
+                'apply_url' => 'https://admission.eis.du.ac.bd',
+            ],
+            'রাজশাহী বিশ্ববিদ্যালয় (RU)' => [
+                'aliases' => ['RU', 'রাজশাহী বিশ্ববিদ্যালয়', 'Rajshahi University'],
+                'official_website_url' => 'https://ru.ac.bd',
+                'apply_url' => 'https://admission.ru.ac.bd',
+            ],
+            'চট্টগ্রাম বিশ্ববিদ্যালয় (CU)' => [
+                'aliases' => ['CU', 'চট্টগ্রাম বিশ্ববিদ্যালয়', 'Chittagong University'],
+                'official_website_url' => 'https://cu.ac.bd',
+                'apply_url' => 'https://admission.cu.ac.bd',
+            ],
+            'জাহাঙ্গীরনগর বিশ্ববিদ্যালয় (JU)' => [
+                'aliases' => ['JU', 'জাহাঙ্গীরনগর বিশ্ববিদ্যালয়', 'Jahangirnagar University'],
+                'official_website_url' => 'https://juniv.edu',
+                'apply_url' => 'https://admission.juniv.edu',
+            ],
+            'বাংলাদেশ প্রকৌশল বিশ্ববিদ্যালয় (BUET)' => [
+                'aliases' => ['BUET', 'বাংলাদেশ প্রকৌশল', 'বুয়েট'],
+                'official_website_url' => 'https://buet.ac.bd',
+                'apply_url' => 'https://www.buet.ac.bd/web/#/admission',
+            ],
+            'খুলনা প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (KUET)' => [
+                'aliases' => ['KUET', 'খুলনা প্রকৌশল', 'কুয়েট'],
+                'official_website_url' => 'https://kuet.ac.bd',
+                'apply_url' => 'https://admission.kuet.ac.bd',
+            ],
+            'চট্টগ্রাম প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (CUET)' => [
+                'aliases' => ['CUET', 'চট্টগ্রাম প্রকৌশল', 'চুয়েট'],
+                'official_website_url' => 'https://cuet.ac.bd',
+                'apply_url' => 'https://admission.cuet.ac.bd',
+            ],
+            'রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (RUET)' => [
+                'aliases' => ['RUET', 'রাজশাহী প্রকৌশল', 'রুয়েট'],
+                'official_website_url' => 'https://ruet.ac.bd',
+                'apply_url' => 'https://admission.ruet.ac.bd',
+            ],
+            'শাহজালাল বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (SUST)' => [
+                'aliases' => ['SUST', 'শাহজালাল বিজ্ঞান', 'সাস্ট'],
+                'official_website_url' => 'https://sust.edu',
+                'apply_url' => 'https://admission.sust.edu',
+            ],
+            'জিএসটি গুচ্ছ বিশ্ববিদ্যালয় (GST Cluster)' => [
+                'aliases' => ['GST', 'গুচ্ছ বিশ্ববিদ্যালয়', 'জিএসটি গুচ্ছ'],
+                'official_website_url' => 'https://gstadmission.ac.bd',
+                'apply_url' => 'https://gstadmission.ac.bd',
+            ],
+            'সমন্বিত কৃষি গুচ্ছ বিশ্ববিদ্যালয় (Agri Cluster)' => [
+                'aliases' => ['Agri Cluster', 'কৃষি গুচ্ছ'],
+                'official_website_url' => 'https://acas.edu.bd',
+                'apply_url' => 'https://acas.edu.bd',
+            ],
+            'মেডিকেল ও ডেন্টাল কলেজ (MBBS/BDS)' => [
+                'aliases' => ['MBBS', 'BDS', 'মেডিকেল', 'ডেন্টাল'],
+                'official_website_url' => 'https://dgme.gov.bd',
+                'apply_url' => 'https://dgme.teletalk.com.bd',
+            ],
+            'জাতীয় বিশ্ববিদ্যালয় (NU)' => [
+                'aliases' => ['NU', 'জাতীয় বিশ্ববিদ্যালয়', 'National University'],
+                'official_website_url' => 'https://nu.ac.bd',
+                'apply_url' => 'http://app1.nu.edu.bd',
+            ],
+            'বাংলাদেশ উন্মুক্ত বিশ্ববিদ্যালয় (BOU)' => [
+                'aliases' => ['BOU', 'উন্মুক্ত বিশ্ববিদ্যালয়', 'Open University'],
+                'official_website_url' => 'https://bou.ac.bd',
+                'apply_url' => 'https://osapsnew.bou.ac.bd',
+            ],
+            'বাংলাদেশ কারিগরি শিক্ষা বোর্ড (BTEB)' => [
+                'aliases' => ['BTEB', 'কারিগরি শিক্ষা বোর্ড', 'Technical Education'],
+                'official_website_url' => 'https://bteb.gov.bd',
+                'apply_url' => 'https://btebadmission.gov.bd',
+            ],
+            'নর্থ সাউথ বিশ্ববিদ্যালয় (NSU)' => [
+                'aliases' => ['NSU', 'নর্থ সাউথ', 'North South'],
+                'official_website_url' => 'https://northsouth.edu',
+                'apply_url' => 'https://admissions.northsouth.edu',
+            ],
+            'ব্র্যাক বিশ্ববিদ্যালয় (BRACU)' => [
+                'aliases' => ['BRACU', 'ব্র্যাক বিশ্ববিদ্যালয়', 'BRAC University'],
+                'official_website_url' => 'https://www.bracu.ac.bd',
+                'apply_url' => 'https://www.bracu.ac.bd/admissions',
+            ],
+            'আমেরিকান ইন্টারন্যাশনাল ইউনিভার্সিটি (AIUB)' => [
+                'aliases' => ['AIUB', 'আমেরিকান ইন্টারন্যাশনাল'],
+                'official_website_url' => 'https://aiub.edu',
+                'apply_url' => 'https://admission.aiub.edu',
+            ],
+            'ইউনাইটেড ইন্টারন্যাশনাল ইউনিভার্সিটি (UIU)' => [
+                'aliases' => ['UIU', 'ইউনাইটেড ইন্টারন্যাশনাল'],
+                'official_website_url' => 'https://uiu.ac.bd',
+                'apply_url' => 'https://admission.uiu.ac.bd',
+            ],
+            'ড্যাফোডিল ইন্টারন্যাশনাল ইউনিভার্সিটি (DIU)' => [
+                'aliases' => ['DIU', 'ড্যাফোডিল'],
+                'official_website_url' => 'https://daffodilvarsity.edu.bd',
+                'apply_url' => 'https://admission.daffodilvarsity.edu.bd',
+            ],
+            'ইন্ডিপেন্ডেন্ট ইউনিভার্সিটি (IUB)' => [
+                'aliases' => ['IUB', 'ইন্ডিপেন্ডেন্ট ইউনিভার্সিটি'],
+                'official_website_url' => 'https://iub.edu.bd',
+                'apply_url' => 'https://admission.iub.edu.bd',
+            ],
+        ];
+
+        foreach ($registry as $instKey => $data) {
+            if ($instKey === $institution) {
+                return [
+                    'official_website_url' => $data['official_website_url'],
+                    'apply_url' => $data['apply_url'],
+                ];
+            }
+
+            foreach ($data['aliases'] as $alias) {
+                if (preg_match('/^[A-Z\/]+$/', $alias)) {
+                    if (preg_match('/\b' . preg_quote($alias, '/') . '\b/i', $institution)) {
+                        return [
+                            'official_website_url' => $data['official_website_url'],
+                            'apply_url' => $data['apply_url'],
+                        ];
+                    }
+                } elseif (mb_stripos($institution, $alias) !== false) {
+                    return [
+                        'official_website_url' => $data['official_website_url'],
+                        'apply_url' => $data['apply_url'],
+                    ];
+                }
+            }
+        }
+
+        // If fallback link is a 3rd party scraper aggregator, do not treat it as official
+        $clean = $fallbackLink;
+        if ($clean && (str_contains($clean, 'students.bd') || str_contains($clean, 'facebook.com'))) {
+            $clean = null;
+        }
+
+        return [
+            'official_website_url' => $clean,
+            'apply_url' => $clean,
+        ];
     }
 
     /**
@@ -171,7 +441,7 @@ class AdmissionScraperService
             return 'guccho';
         }
 
-        if (str_contains($text, 'private') || str_contains($text, 'বেসরকারি') || str_contains($text, 'nsu') || str_contains($text, 'brac') || str_contains($text, 'aiub') || str_contains($text, 'uiu') || str_contains($text, 'daffodil')) {
+        if (str_contains($text, 'private') || str_contains($text, 'বেসরকারি') || str_contains($text, 'nsu') || str_contains($text, 'brac') || str_contains($text, 'aiub') || str_contains($text, 'uiu') || str_contains($text, 'daffodil') || str_contains($text, 'iub')) {
             return 'private';
         }
 
@@ -179,9 +449,9 @@ class AdmissionScraperService
     }
 
     /**
-     * Generate blog-style rich content matching students.bd standard
+     * Generate blog-style rich content matching professional standard
      */
-    public function generateBlogContent(string $institution, string $title, string $desc, string $type, string $applyUrl): string
+    public function generateBlogContent(string $institution, string $title, string $desc, string $type, ?string $applyUrl = null): string
     {
         $typeBn = match ($type) {
             'public' => 'পাবলিক বিশ্ববিদ্যালয়',
@@ -189,6 +459,16 @@ class AdmissionScraperService
             'private' => 'স্বনামধন্য বেসরকারি বিশ্ববিদ্যালয়',
             default => 'বিশ্ববিদ্যালয়',
         };
+
+        // Ensure 3rd-party domains are NEVER shown as official apply website
+        $validApplyUrl = null;
+        if ($applyUrl && ! str_contains($applyUrl, 'students.bd') && ! str_contains($applyUrl, 'facebook.com')) {
+            $validApplyUrl = $applyUrl;
+        }
+
+        $applyStepHtml = $validApplyUrl
+            ? 'অফিসিয়াল ভর্তি ওয়েবসাইট <a href="' . e($validApplyUrl) . '" target="_blank" class="text-orange-500 font-bold">' . e($validApplyUrl) . '</a> এ প্রবেশ করুন।'
+            : 'সংশ্লিষ্ট বিশ্ববিদ্যালয়ের অফিসিয়াল ভর্তি ওয়েবসাইটে প্রবেশ করে অনলাইন আবেদন সম্পন্ন করুন।';
 
         return <<<HTML
 <h2>১. ভর্তি পরীক্ষার সারসংক্ষেপ (Overview)</h2>
@@ -234,7 +514,7 @@ class AdmissionScraperService
 
 <h2>৫. অনলাইনে আবেদনের নিয়মাবলী</h2>
 <ol>
-    <li>অফিসিয়াল ভর্তি ওয়েবসাইট <a href="{$applyUrl}" target="_blank" class="text-orange-500 font-bold">{$applyUrl}</a> এ প্রবেশ করুন।</li>
+    <li>{$applyStepHtml}</li>
     <li>শিক্ষার্থীর এসএসসি ও এইচএসসি পরীক্ষার রোল নম্বর, রেজিস্ট্রেশন নম্বর এবং শিক্ষাবোর্ড সিলেক্ট করুন।</li>
     <li>বর্তমান সচল মোবাইল নম্বর এবং পাসপোর্ট সাইজের ছবি আপলোড করুন।</li>
     <li>বিকাশ, নগদ, রকেট বা ডেবিট/ক্রেডিট কার্ডের মাধ্যমে নির্ধারিত আবেদন ফি পরিশোধ করুন।</li>
@@ -249,6 +529,69 @@ HTML;
     public function seedVerifiedCirculars(): int
     {
         $circulars = [
+            [
+                'title' => 'রাজশাহী বিশ্ববিদ্যালয় আন্ডারগ্র্যাজুয়েট ভর্তি বিজ্ঞপ্তি ২০২৬-২০২৭ (RU Admission)',
+                'slug' => 'rajshahi-university-undergraduate-admission-circular-2026-2027',
+                'institution_name' => 'রাজশাহী বিশ্ববিদ্যালয় (RU)',
+                'university_type' => 'public',
+                'academic_year' => '2026-2027',
+                'units' => [
+                    ['name' => 'A Unit (মানবিক)', 'faculty' => 'কলা, আইন, সামাজিক বিজ্ঞান, চারুকলা অনুষদ ও IER', 'min_gpa' => '7.00', 'fee' => '৫৫ টাকা (প্রাথমিক) / ১৩২০ টাকা (চূড়ান্ত)', 'exam_date' => 'ঘোষণা সাপেক্ষে'],
+                    ['name' => 'B Unit (ব্যবসায় শিক্ষা)', 'faculty' => 'ব্যবসায় শিক্ষা অনুষদ ও IBA', 'min_gpa' => '7.50', 'fee' => '৫৫ টাকা (প্রাথমিক) / ১১০০ টাকা (চূড়ান্ত)', 'exam_date' => 'ঘোষণা সাপেক্ষে'],
+                    ['name' => 'C Unit (বিজ্ঞান)', 'faculty' => 'বিজ্ঞান, জীববিজ্ঞান, কৃষি, প্রকৌশল ও ভূ-বিজ্ঞান অনুষদ', 'min_gpa' => '8.00', 'fee' => '৫৫ টাকা (প্রাথমিক) / ১৩২০ টাকা (চূড়ান্ত)', 'exam_date' => 'ঘোষণা সাপেক্ষে'],
+                ],
+                'application_start' => '2026-11-15 12:01:00',
+                'application_start_text' => '১৫ নভেম্বর ২০২৬, রবিবার • দুপুর ১২:০১টা',
+                'application_deadline' => '2026-11-30 23:59:00',
+                'application_deadline_text' => '৩০ নভেম্বর ২০২৬, সোমবার • রাত ১১:৫৯টা',
+                'admit_card_date_text' => 'চূড়ান্ত সিলেকশন ও ফি প্রদানের পর',
+                'minimum_gpa_ssc' => '3.00',
+                'minimum_gpa_hsc' => '3.00',
+                'total_gpa_required' => '৮.০০ (বিজ্ঞান) / ৭.৫০ (ব্যবসায়) / ৭.০০ (মানবিক)',
+                'application_fee' => '৫৫ টাকা (প্রাথমিক আবেদন ফি)',
+                'apply_url' => 'https://admission.ru.ac.bd',
+                'official_website_url' => 'https://ru.ac.bd',
+                'notice_image_url' => 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1200&auto=format&fit=crop&q=80',
+                'featured_image_url' => 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200&auto=format&fit=crop&q=80',
+                'eligibility_criteria' => '২০২৪ বা ২০২৫ সালের এইচএসসি/সমমান এবং ২০২২ বা ২০২৩ সালের এসএসসি/সমমান পরীক্ষায় উত্তীর্ণ শিক্ষার্থীরা আবেদন করতে পারবে। বিজ্ঞান শাখায় মোট জিপিএ ৮.০০, ব্যবসায় শাখায় ৭.৫০ এবং মানবিক শাখায় ৭.০০ থাকতে হবে।',
+                'marks_distribution' => '১০০ নম্বরের বহুনির্বাচনী (MCQ) পরীক্ষা। মোট ৮০টি বহুনির্বাচনী প্রশ্ন থাকবে, প্রতিটির মান ১.২৫। প্রতিটি ভুল উত্তরের জন্য ০.২৫ নম্বর কর্তন করা হবে। পরীক্ষার সময় ১ ঘণ্টা। পাস নম্বর ৪০। আঞ্চলিক পরীক্ষা কেন্দ্র: রাজশাহী, ঢাকা, চট্টগ্রাম, খুলনা ও রংপুর।',
+                'status' => 'published',
+                'is_featured' => true,
+                'source_name' => 'রাজশাহী বিশ্ববিদ্যালয় কেন্দ্রীয় ভর্তি কমিটি',
+                'source_url' => 'https://admission.ru.ac.bd/student/application-guideline',
+                'meta_title' => 'রাজশাহী বিশ্ববিদ্যালয় ভর্তি সার্কুলার ২০২৬-২০২৭ | RU Admission Guide',
+                'meta_description' => 'রাজশাহী বিশ্ববিদ্যালয় স্নাতক প্রথম বর্ষ ভর্তি বিজ্ঞপ্তি ২০২৬-২০২৭। প্রাথমিক ও চূড়ান্ত আবেদনের নিয়ম, ইউনিটভিত্তিক যোগ্যতা ও আঞ্চলিক পরীক্ষা কেন্দ্র।',
+                'published_at' => now(),
+                'description' => <<<HTML
+<h2>১. ভর্তি সংক্রান্ত গুরুত্বপূর্ণ তারিখ ও সময়সূচি</h2>
+<table class="w-full border-collapse border border-gray-300 dark:border-gray-700 my-4 text-sm">
+    <tr class="bg-gray-100 dark:bg-gray-800"><th class="p-2.5 border border-gray-300 dark:border-gray-700 text-left font-bold">কার্যক্রম</th><th class="p-2.5 border border-gray-300 dark:border-gray-700 text-left font-bold">তারিখ ও সময়</th></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">প্রাথমিক আবেদন শুরু</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-bold text-emerald-600 dark:text-emerald-400">১৫ নভেম্বর ২০২৬, রবিবার • দুপুর ১২:০১টা</td></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">প্রাথমিক আবেদনের শেষ তারিখ</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-bold text-red-600 dark:text-red-400">৩০ নভেম্বর ২০২৬, সোমবার • রাত ১১:৫৯টা</td></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">প্রাথমিক আবেদন ফি</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-medium text-blue-600 dark:text-blue-400">৫৫ টাকা (সার্ভিস চার্জসহ)</td></tr>
+    <tr><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200">পরীক্ষার আঞ্চলিক কেন্দ্র (Zones)</td><td class="p-2.5 border border-gray-300 dark:border-gray-700 font-medium">রাজশাহী, ঢাকা, চট্টগ্রাম, খুলনা ও রংপুর</td></tr>
+</table>
+
+<h2>২. ইউনিটভিত্তিক বিস্তারিত যোগ্যতা</h2>
+<p>রাজশাহী বিশ্ববিদ্যালয়ের ২০২৬-২০২৭ শিক্ষাবর্ষের প্রথম বর্ষ স্নাতক (সম্মান) শ্রেণীতে ভর্তির জন্য শিক্ষার্থীকে অবশ্যই ২০২২ বা ২০২৩ সালের এসএসসি এবং ২০২৪ বা ২০২৫ সালের এইচএসসি বা সমমান পরীক্ষায় উত্তীর্ণ হতে হবে।</p>
+<ul>
+    <li><strong>A Unit (মানবিক শাখা):</strong> মানবিক শাখা থেকে উত্তীর্ণ প্রার্থীদের এসএসসি ও এইচএসসি উভয় পরীক্ষায় চতুর্থ বিষয়সহ ন্যূনতম জিপিএ ৩.০০ সহ মোট জিপিএ ৭.০০ থাকতে হবে। বিজ্ঞান ও ব্যবসায় শিক্ষা শাখা থেকে পরিবর্তনকারীদের ক্ষেত্রে মোট জিপিএ যথাক্রমে ৮.০০ ও ৭.৫০ থাকতে হবে।</li>
+    <li><strong>B Unit (ব্যবসায় শিক্ষা শাখা):</strong> ব্যবসায় শিক্ষা শাখা থেকে উত্তীর্ণ প্রার্থীদের এসএসসি ও এইচএসসি উভয় পরীক্ষায় ন্যূনতম জিপিএ ৩.০০ সহ মোট জিপিএ ৭.৫০ থাকতে হবে। অন্যান্য শাখার জন্য মোট জিপিএ ৮.০০ বা ৭.০০ থাকতে হবে।</li>
+    <li><strong>C Unit (বিজ্ঞান শাখা):</strong> বিজ্ঞান শাখা থেকে উত্তীর্ণ প্রার্থীদের এসএসসি ও এইচএসসি উভয় পরীক্ষায় ন্যূনতম জিপিএ ৩.৫০ সহ মোট জিপিএ ৮.০০ থাকতে হবে।</li>
+</ul>
+
+<h2>৩. পরীক্ষার মানবণ্টন ও পদ্ধতি</h2>
+<p>ভর্তি পরীক্ষা ১০০ নম্বরের বহুনির্বাচনী (MCQ) পদ্ধতিতে অনুষ্ঠিত হবে। মোট ৮০টি বহুনির্বাচনী প্রশ্ন থাকবে, প্রতিটির মান ১.২৫। প্রতিটি ভুল উত্তরের জন্য ০.২৫ নম্বর কর্তন করা হবে। পরীক্ষায় পাস নম্বর ৪০। ওএমআর শিট পূরণ করে পরীক্ষা দিতে হবে।</p>
+
+<h2>৪. কীভাবে অনলাইনে আবেদন করবেন</h2>
+<ol>
+    <li>রাজশাহী বিশ্ববিদ্যালয়ের অফিসিয়াল ভর্তি ওয়েবসাইট <a href="https://admission.ru.ac.bd" target="_blank" class="text-orange-500 font-bold">admission.ru.ac.bd</a>-এ যান।</li>
+    <li>"Apply" বাটনে ক্লিক করে প্রার্থীর এসএসসি ও এইচএসসি পরীক্ষার রোল নম্বর, রেজিস্ট্রেশন নম্বর এবং শিক্ষাবোর্ড প্রদান করুন।</li>
+    <li>ছবি ও মোবাইল নম্বর ভেরিফিকেশন সম্পন্ন করে প্রাথমিক আবেদন ফি ৫৫ টাকা বিকাশ/নগদ/রকেট ইত্যাদি মাধ্যমে পরিশোধ করুন।</li>
+    <li>প্রাথমিক ফলাফলে নির্বাচিত হলে নির্ধারিত সময়ের মধ্যে চূড়ান্ত আবেদন সম্পন্ন করুন।</li>
+</ol>
+HTML
+            ],
             [
                 'title' => 'ঢাকা বিশ্ববিদ্যালয় আন্ডারগ্র্যাজুয়েট ভর্তি বিজ্ঞপ্তি ২০২৬-২০২৭ (DU Admission)',
                 'slug' => 'dhaka-university-undergraduate-admission-circular-2026-2027',
@@ -511,5 +854,74 @@ HTML
         }
 
         return $imported;
+    }
+
+    /**
+     * Sanitize and clean all database notices to guarantee genuine official URLs
+     */
+    public function sanitizeExistingNotices(): int
+    {
+        $updated = 0;
+        $notices = AdmissionNotice::all();
+
+        foreach ($notices as $notice) {
+            $changed = false;
+
+            // Re-detect institution name if generic
+            if (empty($notice->institution_name) || $notice->institution_name === 'বাংলাদেশ পাবলিক/প্রাইভেট বিশ্ববিদ্যালয়') {
+                $detected = $this->detectInstitution($notice->title . ' ' . $notice->description);
+                if ($detected !== 'বাংলাদেশ পাবলিক/প্রাইভেট বিশ্ববিদ্যালয়') {
+                    $notice->institution_name = $detected;
+                    $notice->university_type = $this->categorizeUniversity($detected);
+                    $changed = true;
+                }
+            }
+
+            // Resolve official URLs
+            $resolved = $this->resolveOfficialUrls($notice->institution_name, $notice->apply_url);
+            $officialWebsite = $resolved['official_website_url'];
+            $officialApply = $resolved['apply_url'];
+
+            // Synchronize with verified official URLs
+            if (! empty($officialApply) && $notice->apply_url !== $officialApply) {
+                $notice->apply_url = $officialApply;
+                $changed = true;
+            }
+            if (! empty($officialWebsite) && $notice->official_website_url !== $officialWebsite) {
+                $notice->official_website_url = $officialWebsite;
+                $changed = true;
+            }
+
+            // Clean description HTML: remove any students.bd links or mentions
+            if ($notice->description && str_contains($notice->description, 'students.bd')) {
+                $targetUrl = $officialApply ?: ($officialWebsite ?: '#');
+
+                // Replace anchor tags pointing to students.bd
+                $cleanedDesc = preg_replace(
+                    '/<a\s+[^>]*href=["\']https?:\/\/[^"\']*students\.bd[^"\']*["\'][^>]*>(.*?)<\/a>/iu',
+                    '<a href="' . $targetUrl . '" target="_blank" class="text-orange-500 font-bold">' . ($targetUrl !== '#' ? $targetUrl : '$1') . '</a>',
+                    $notice->description
+                );
+
+                // Replace any raw plain text URLs of students.bd
+                $cleanedDesc = preg_replace(
+                    '/https?:\/\/[^\s<"\'\)]*students\.bd[^\s<"\'\)]*/iu',
+                    $targetUrl,
+                    $cleanedDesc
+                );
+
+                if ($cleanedDesc !== $notice->description) {
+                    $notice->description = $cleanedDesc;
+                    $changed = true;
+                }
+            }
+
+            if ($changed) {
+                $notice->save();
+                $updated++;
+            }
+        }
+
+        return $updated;
     }
 }

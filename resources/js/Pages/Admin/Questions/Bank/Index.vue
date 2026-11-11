@@ -355,8 +355,8 @@ function formatPlanIds(plans) {
                             </span>
 
                             <!-- Exam Name / Institution -->
-                            <span v-if="q.institution" class="hidden sm:inline-block text-gray-400 text-[11px]">
-                                ({{ q.institution }}<span v-if="q.year">, {{ q.year }}</span>)
+                            <span v-if="q.institution || q.exam_name" class="hidden sm:inline-block text-gray-500 dark:text-gray-400 text-[11px] font-semibold">
+                                ({{ q.exam_name || q.institution }}<span v-if="q.year">, {{ q.year }}</span>)
                             </span>
                         </div>
 
@@ -396,6 +396,21 @@ function formatPlanIds(plans) {
                             class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white leading-relaxed"
                             v-html="renderMath(q.question_text)"
                         ></div>
+
+                        <!-- Multiple Exam Appearances Badge Row -->
+                        <div v-if="q.meta?.appeared_in && q.meta.appeared_in.length > 1" class="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+                            <span class="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                                <span>📌 একাধিক পরীক্ষায় আগত ({{ q.meta.appeared_in.length }}টি পরীক্ষা):</span>
+                            </span>
+                            <span
+                                v-for="(app, aIdx) in q.meta.appeared_in"
+                                :key="aIdx"
+                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60 font-medium text-[10px]"
+                            >
+                                <span>{{ app.exam_name }}</span>
+                                <span v-if="app.year" class="text-purple-500 font-bold">({{ app.year }})</span>
+                            </span>
+                        </div>
                     </div>
 
                     <!-- Options Grid -->

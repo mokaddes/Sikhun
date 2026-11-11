@@ -13,7 +13,8 @@ class ImportQuestionsJsonCommand extends Command
     protected $signature = 'questions:import-json 
                             {file? : Specific file name or full path in qsn-json directory}
                             {--segment= : Override segment (job, admission, hsc, ssc)}
-                            {--status=active : Default status (active or draft)}';
+                            {--status=active : Default status (active or draft)}
+                            {--sync-repeats : Sync and cross-link duplicate questions across multiple exams}';
 
     /**
      * The console command description.
@@ -95,6 +96,12 @@ class ImportQuestionsJsonCommand extends Command
                 $this->error("Error importing {$baseName}: " . $e->getMessage());
                 $this->error($e->getTraceAsString());
             }
+        }
+
+        if ($this->option('sync-repeats')) {
+            $this->info("Cross-linking repeated questions across exams...");
+            $crossCount = $importer->syncCrossExamReferences();
+            $this->info("✔ Cross-linked {$crossCount} question occurrences with full exam history (appeared_in).");
         }
 
         $this->line("");

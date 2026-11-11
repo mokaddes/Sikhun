@@ -228,13 +228,63 @@ class QuestionJsonImportService
             $pendingRows = [];
         }
 
+        // Cross-link questions that appear in multiple exams if requested
+        $crossLinkedCount = 0;
+        if (!empty($options['cross_link'])) {
+            $crossLinkedCount = $this->syncCrossExamReferences();
+        }
+
         return [
             'total_exams' => $totalExams,
             'total_questions_in_file' => $totalQuestionsInFile,
             'total_inserted' => $totalInserted,
             'total_skipped' => $totalSkipped,
             'subjects_count' => count($this->subjectCache),
+            'cross_linked_questions' => $crossLinkedCount,
         ];
+    }
+
+    /**
+     * Cross-link questions that appear in multiple exams so that each question
+     * carries a record of all exams/years it was featured in (meta.appeared_in).
+     */
+    public function syncCrossExamReferences(): int
+    {
+        $duplicatedTexts = DB::table('question_banks')
+            ->select('question_text')
+            ->whereNotNull('exam_name')
+            ->where('question_text', '!=', '')
+            ->groupBy('question_text')
+            ->havingRaw('COUNT(DISTINCT exam_name) > 1')
+            ->pluck('question_text');
+
+        $updatedCount = 0;
+
+        foreach ($duplicatedTexts as $text) {
+            $records = DB::table('question_banks')
+                ->where('question_text', $text)
+                ->whereNotNull('exam_name')
+                ->select(['id', 'exam_name', 'year', 'meta'])
+                ->get();
+
+            $allAppearances = $records->map(fn($r) => [
+                'exam_name' => $r->exam_name,
+                'year' => $r->year,
+            ])->unique(fn($a) => $a['exam_name'] . '||' . $a['year'])->values()->toArray();
+
+            foreach ($records as $row) {
+                $meta = json_decode($row->meta ?? '{}', true) ?: [];
+                $meta['appeared_in'] = $allAppearances;
+                DB::table('question_banks')
+                    ->where('id', $row->id)
+                    ->update([
+                        'meta' => json_encode($meta, JSON_UNESCAPED_UNICODE),
+                    ]);
+                $updatedCount++;
+            }
+        }
+
+        return $updatedCount;
     }
 
     /**

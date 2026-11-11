@@ -53,10 +53,30 @@ function getDaysRemaining(d) {
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
     return days > 0 ? days : 0;
 }
+
+const ogImage = computed(() => {
+    if (props.job.image_url) {
+        return props.job.image_url.startsWith('http')
+            ? props.job.image_url
+            : `https://sikhun.com${props.job.image_url.startsWith('/') ? '' : '/'}${props.job.image_url}`;
+    }
+    return `https://sikhun.com/storage/social-cards/job-card-${props.job.id}.png`;
+});
 </script>
 
 <template>
-    <Head :title="`${job.title} - ${en ? 'Job Circular 2026' : 'চাকরির সার্কুলার ২০২৬'}`" />
+    <Head>
+        <title>{{ `${job.title} - ${en ? 'Job Circular 2026' : 'চাকরির সার্কুলার ২০২৬'} | Sikhun` }}</title>
+        <meta name="description" :content="job.summary || `${job.organization} - ${job.title} নিয়োগ বিজ্ঞপ্তি ২০২৬। আবেদনের শেষ তারিখ: ${formatDate(job.deadline)}`" />
+        <meta property="og:title" :content="job.title" />
+        <meta property="og:description" :content="job.summary || `${job.organization} - ${job.title} নিয়োগ বিজ্ঞপ্তি ২০২৬`" />
+        <meta property="og:image" :content="ogImage" />
+        <meta property="og:type" content="article" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" :content="job.title" />
+        <meta name="twitter:description" :content="job.summary || `${job.organization} - ${job.title}`" />
+        <meta name="twitter:image" :content="ogImage" />
+    </Head>
     <PublicLayout>
         <!-- Breadcrumbs -->
         <div class="border-b border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-[#0e1320] py-3 text-xs text-gray-500 dark:text-gray-400">

@@ -8,6 +8,8 @@ import LanguageSwitcher from '@/Components/UI/LanguageSwitcher.vue';
 import NotificationBell from '@/Components/UI/NotificationBell.vue';
 import FlashBanner from '@/Components/UI/FlashBanner.vue';
 import SupportWidget from '@/Components/Support/SupportWidget.vue';
+import StudentAvatar from '@/Components/UI/StudentAvatar.vue';
+import PushNotificationPrompt from '@/Components/UI/PushNotificationPrompt.vue';
 import {
     HomeIcon,
     BookOpenIcon,
@@ -330,15 +332,16 @@ function logout() {
                     <Link
                         href="/profile/settings"
                         :title="t('nav.profile')"
-                        class="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--secondary)] text-sm font-semibold text-white ring-2 ring-[var(--secondary)]/20 transition hover:brightness-110"
+                        class="flex items-center justify-center rounded-full transition hover:brightness-110"
                     >
-                        {{ student?.name?.charAt(0) ?? 'S' }}
+                        <StudentAvatar :avatar="student?.avatar" :name="student?.name" size="sm" class="ring-2 ring-[var(--secondary)]/20" />
                     </Link>
                 </div>
             </header>
 
             <main class="flex-1 min-w-0 px-3 sm:px-6 lg:px-8 pb-24 pt-4 sm:pt-6 lg:pb-10">
                 <FlashBanner />
+                <PushNotificationPrompt />
 
                 <!-- Free Plan / Upgrade Notice Banner -->
                 <div

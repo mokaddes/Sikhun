@@ -4,10 +4,29 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
+use App\Models\PushSubscription;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    public function subscribePush(Request $request): JsonResponse
+    {
+        $request->validate([
+            'subscription' => 'required',
+        ]);
+
+        $student = auth('web')->user();
+        $token = is_array($request->subscription) ? json_encode($request->subscription) : (string) $request->subscription;
+
+        PushSubscription::updateOrCreate(
+            ['student_id' => $student->id, 'channel' => 'web'],
+            ['token' => $token]
+        );
+
+        return response()->json(['success' => true]);
+    }
+
     public function index(): JsonResponse
     {
         $student = auth('web')->user();

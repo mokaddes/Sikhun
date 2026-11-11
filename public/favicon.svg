@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="page-cyan" x1="10" y1="29" x2="34" y2="53" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00F2FE"/>
+      <stop offset="1" stop-color="#3978FF"/>
+    </linearGradient>
+    <linearGradient id="page-amber" x1="54" y1="29" x2="31" y2="53" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFB24A"/>
+      <stop offset="1" stop-color="#F97316"/>
+    </linearGradient>
+    <linearGradient id="orbit" x1="12" y1="47" x2="53" y2="15" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3478FF"/>
+      <stop offset=".55" stop-color="#00D9F2"/>
+      <stop offset="1" stop-color="#FF9A32"/>
+    </linearGradient>
+    <linearGradient id="spark" x1="30" y1="9" x2="38" y2="27" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE08A"/>
+      <stop offset="1" stop-color="#FF7A00"/>
+    </linearGradient>
+  </defs>
+  <!-- Open pages rise into an orbit: a mark for learning in motion. -->
+  <path d="M8.5 35.5C15.7 30.5 23.2 31 32 36.4v17.1c-8.6-5.3-16.4-5.8-23.5-.7V35.5Z" fill="url(#page-cyan)"/>
+  <path d="M55.5 35.5C48.3 30.5 40.8 31 32 36.4v17.1c8.6-5.3 16.4-5.8 23.5-.7V35.5Z" fill="url(#page-amber)"/>
+  <path d="M8.5 35.5C15.7 30.5 23.2 31 32 36.4c8.8-5.4 16.3-5.9 23.5-.9v17.3c-7.1-5.1-14.9-4.6-23.5.7-8.6-5.3-16.4-5.8-23.5-.7V35.5Z" stroke="white" stroke-opacity=".88" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M32 36.5v16.7" stroke="#0B0F19" stroke-opacity=".35" stroke-width="2" stroke-linecap="round"/>
+  <path d="M13 27.8C15.8 17 23.3 9.3 33.8 7.1" stroke="url(#orbit)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M50.8 17.3c3 3.6 4.7 8.2 4.8 13.1" stroke="url(#orbit)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M32 10.5c1.9 5.2 3.8 7.7 7.3 10.1-3.5 1.6-5.4 4.1-7.3 8.7-1.8-4.6-3.8-7.1-7.3-8.7 3.5-2.4 5.5-4.9 7.3-10.1Z" fill="url(#spark)"/>
+  <circle cx="43.8" cy="12.6" r="2.1" fill="#00F2FE"/>
+</svg>

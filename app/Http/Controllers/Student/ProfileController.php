@@ -51,11 +51,21 @@ class ProfileController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('students', 'email')->ignore($student->id)],
+            'type' => ['required', 'string', Rule::in(['ssc', 'hsc', 'admission', 'job', 'university'])],
+            'avatar' => ['nullable', 'string', 'max:255'],
+            'avatar_file' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
         ]);
+
+        if ($request->hasFile('avatar_file')) {
+            $path = $request->file('avatar_file')->store('avatars', 'public');
+            $data['avatar'] = '/storage/'.$path;
+        }
+
+        unset($data['avatar_file']);
 
         $student->update($data);
 
-        return back()->with('success', 'Profile information updated.');
+        return back()->with('success', 'প্রোফাইল তথ্য সফলভাবে আপডেট করা হয়েছে।');
     }
 
     public function updatePassword(Request $request): RedirectResponse

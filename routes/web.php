@@ -22,6 +22,7 @@ use App\Http\Controllers\Student\MyBookReaderController;
 use App\Http\Controllers\Student\OnboardingController;
 use App\Http\Controllers\Student\NotificationController;
 use App\Http\Controllers\Student\ProfileController;
+use App\Http\Controllers\Student\QuestionBankPracticeController;
 use App\Http\Controllers\Student\ReaderController;
 use App\Http\Controllers\Student\ReferralController;
 use App\Http\Controllers\Student\ScheduleController;
@@ -212,6 +213,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/exams', [ExamController::class, 'index'])->name('exams.index');
     Route::get('/exams/create', [ExamController::class, 'createForm'])->name('exams.create-form');
     Route::get('/exams/{exam}', [ExamController::class, 'show'])->name('exams.show');
+    Route::get('/exams/{exam}/take', [ExamController::class, 'show'])->name('exams.take');
     Route::get('/exams/{exam}/status', [ExamController::class, 'status'])->name('exams.status');
     Route::post('/exams/{exam}/retry', [ExamController::class, 'retry'])->middleware('throttle:ai')->name('exams.retry');
     Route::post('/exams/{exam}/complete', [ExamController::class, 'complete'])->name('exams.complete');
@@ -224,6 +226,11 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::middleware(['ai.access', 'throttle:ai'])->group(function () {
         Route::post('/exams', [ExamController::class, 'create'])->name('exams.create');
     });
+
+    // Student Question Bank Practice, Mock Test Generator, & AI Explainer
+    Route::get('/question-bank', [QuestionBankPracticeController::class, 'index'])->name('student.question-bank.index');
+    Route::post('/question-bank/{id}/ai-explain', [QuestionBankPracticeController::class, 'aiExplain'])->name('student.question-bank.ai-explain');
+    Route::post('/question-bank/generate-test', [QuestionBankPracticeController::class, 'generateTest'])->name('student.question-bank.generate-test');
 
     // AI Flashcard Generator
     Route::get('/flashcards', [FlashcardController::class, 'index'])->name('flashcards.index');
@@ -267,6 +274,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
 
     // Notifications (bell dropdown)
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/push-subscription', [NotificationController::class, 'subscribePush'])->name('notifications.push-subscribe');
     Route::put('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::put('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
@@ -280,7 +288,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
 
     // Profile settings (account information + password)
     Route::get('/profile/settings', [ProfileController::class, 'settings'])->name('profile.settings');
-    Route::put('/profile/info', [ProfileController::class, 'updateProfile'])->name('profile.info');
+    Route::match(['put', 'post'], '/profile/info', [ProfileController::class, 'updateProfile'])->name('profile.info');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     // Coupons / free-access status

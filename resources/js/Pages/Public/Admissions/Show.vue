@@ -101,6 +101,15 @@ function formatDateTimeBn(dt) {
     });
 }
 
+const ogImage = computed(() => {
+    if (props.notice.notice_image_url) {
+        return props.notice.notice_image_url.startsWith('http')
+            ? props.notice.notice_image_url
+            : `https://sikhun.com${props.notice.notice_image_url.startsWith('/') ? '' : '/'}${props.notice.notice_image_url}`;
+    }
+    return `https://sikhun.com/storage/social-cards/admission-card-${props.notice.id}.png`;
+});
+
 const typeLabel = computed(() => {
     switch (props.notice.university_type) {
         case 'public': return en.value ? 'Public University' : 'পাবলিক বিশ্ববিদ্যালয়';
@@ -118,7 +127,12 @@ const typeLabel = computed(() => {
             <meta name="description" :content="notice.meta_description || notice.title" />
             <meta property="og:title" :content="notice.title" />
             <meta property="og:description" :content="notice.meta_description || notice.title" />
-            <meta v-if="notice.notice_image_url" property="og:image" :content="notice.notice_image_url" />
+            <meta property="og:image" :content="ogImage" />
+            <meta property="og:type" content="article" />
+            <meta name="twitter:card" content="summary_large_image" />
+            <meta name="twitter:title" :content="notice.title" />
+            <meta name="twitter:description" :content="notice.meta_description || notice.title" />
+            <meta name="twitter:image" :content="ogImage" />
         </Head>
 
         <div class="min-h-screen bg-[var(--bg)] text-[var(--text)] pb-20">

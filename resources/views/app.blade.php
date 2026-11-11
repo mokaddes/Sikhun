@@ -55,15 +55,15 @@
 
     <title inertia>{{ app(\App\Services\SiteSettingService::class)->get('site_name', config('app.name', 'Sikhun.com')) }}</title>
 
-    @php
-        $favicon = app(\App\Services\SiteSettingService::class)->get('site_favicon');
-    @endphp
-    @if($favicon)
-        <link rel="icon" href="{{ asset('storage/'.$favicon) }}">
-        <link rel="apple-touch-icon" href="{{ asset('storage/'.$favicon) }}">
-    @else
-        <link rel="icon" type="image/svg+xml" href="{{ asset('images/sikhun-mark.svg') }}">
-    @endif
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ asset('favicon.svg') }}">
+
+    <!-- Default OpenGraph & Twitter for Crawlers / FB Debugger -->
+    <meta property="og:site_name" content="Sikhun.com - AI Powered Learning & Exam Preparation">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@sikhun_com">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
 

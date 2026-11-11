@@ -1,6 +1,7 @@
 <script setup>
 import { useForm, Head } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
+import StudentAvatar from '@/Components/UI/StudentAvatar.vue';
 import { useI18n } from '@/i18n';
 import { TrophyIcon, BellIcon } from '@heroicons/vue/24/outline';
 
@@ -22,9 +23,7 @@ function savePreferences() {
     <Head :title="t('profile_page.notification_settings')" />
     <StudentLayout>
         <header class="anim-rise mb-6 flex items-center gap-4">
-            <span class="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[var(--secondary)] to-[var(--primary)] text-xl font-bold text-white">
-                {{ student.name?.charAt(0) }}
-            </span>
+            <StudentAvatar :avatar="student.avatar" :name="student.name" size="lg" />
             <div>
                 <span class="eyebrow">{{ locale === 'en' ? 'Account' : 'অ্যাকাউন্ট' }}</span>
                 <h1 class="mt-0.5 font-heading text-2xl font-extrabold">{{ t('profile_page.notification_settings') }}</h1>

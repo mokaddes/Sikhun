@@ -448,6 +448,11 @@ HTML
         return 'public';
     }
 
+    public function categorizeUniversity(string $institution): string
+    {
+        return $this->detectUniversityType('', '', $institution);
+    }
+
     /**
      * Generate blog-style rich content matching professional standard
      */

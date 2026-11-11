@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\JobCircularController;
 use App\Http\Controllers\Admin\JobSourceController;
 use App\Http\Controllers\Admin\QuestionBankController;
 use App\Http\Controllers\Admin\QuestionImportController;
+use App\Http\Controllers\Admin\QuestionJsonImportController;
 use App\Http\Controllers\Admin\QuestionSourceController;
 use App\Http\Controllers\Admin\BookUploadController;
 use App\Http\Controllers\Admin\CategoryController;
@@ -161,6 +162,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('question-import/pdf', [QuestionImportController::class, 'showPdfUpload'])->name('question-import.pdf');
         Route::post('question-import/pdf', [QuestionImportController::class, 'processPdf'])->name('question-import.pdf.process');
+
+        Route::get('question-import/json', [QuestionJsonImportController::class, 'index'])->name('question-import.json');
+        Route::post('question-import/json/upload', [QuestionJsonImportController::class, 'upload'])->name('question-import.json.upload');
+        Route::post('question-import/json/server-file', [QuestionJsonImportController::class, 'importServerFile'])->name('question-import.json.server-file');
 
         Route::get('question-bank/generate', [QuestionBankController::class, 'generateForm'])->name('question-bank.generate-form');
         Route::post('question-bank/generate', [QuestionBankController::class, 'generateAndPublish'])->name('question-bank.generate');

@@ -146,8 +146,10 @@ const nav = computed(() => [
         items: [
             { label: locale.value === 'en' ? 'Question Archive' : 'প্রশ্ন ভাণ্ডার', href: '/admin/question-bank', icon: DocumentTextIcon },
             { label: locale.value === 'en' ? 'Add Question' : 'নতুন প্রশ্ন যুক্ত করুন', href: '/admin/question-bank/create', icon: PlusCircleIcon },
-            { label: locale.value === 'en' ? 'Sources & Permissions' : 'সোর্স ও অনুমতি ব্যবস্থাপনা', href: '/admin/question-sources', icon: ShieldCheckIcon },
+            { label: locale.value === 'en' ? 'Bulk JSON Import' : 'জেসন বাল্ক ইমপোর্ট', href: '/admin/question-import/json', icon: ArrowUpTrayIcon },
             { label: locale.value === 'en' ? 'PDF & OCR Ingestion' : 'পিডিএফ প্রশ্ন ও OCR ইমপোর্ট', href: '/admin/question-import/pdf', icon: ArrowUpTrayIcon },
+            { label: locale.value === 'en' ? 'AI Question Studio' : 'এআই প্রশ্ন স্টুডিও', href: '/admin/question-bank/generate', icon: SparklesIcon },
+            { label: locale.value === 'en' ? 'Sources & Permissions' : 'সোর্স ও অনুমতি ব্যবস্থাপনা', href: '/admin/question-sources', icon: ShieldCheckIcon },
         ],
     },
     {

@@ -138,6 +138,13 @@ function formatPlanIds(plans) {
                         <span>সোর্স ও অনুমতি</span>
                     </Link>
                     <Link
+                        href="/admin/question-import/json"
+                        class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 text-xs font-semibold hover:bg-orange-100 transition"
+                    >
+                        <ArrowUpTrayIcon class="w-4 h-4 text-orange-500" />
+                        <span>জেসন বাল্ক ইমপোর্ট</span>
+                    </Link>
+                    <Link
                         href="/admin/question-import/pdf"
                         class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-semibold hover:bg-purple-100 transition"
                     >

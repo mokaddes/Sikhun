@@ -141,7 +141,7 @@ class QuestionBank extends Model
 
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('status', 'published');
+        return $query->whereIn('status', ['published', 'active']);
     }
 
     public function scopeAdmission(Builder $query): Builder

@@ -218,7 +218,7 @@ function formatDeadline(dateStr) {
                     <div class="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-[11px]">
                         <div>
                             <span class="text-gray-400 block text-[10px]">শেষ তারিখ:</span>
-                            <span class="text-white font-medium">{{ formatDeadline(item.application_deadline) }}</span>
+                            <span class="text-white font-medium">{{ item.application_deadline_text || formatDeadline(item.application_deadline) }}</span>
                         </div>
                         <div>
                             <span class="text-gray-400 block text-[10px]">আবেদন ফি:</span>
@@ -313,7 +313,7 @@ function formatDeadline(dateStr) {
                                     </span>
                                 </td>
                                 <td class="p-3 whitespace-nowrap">
-                                    <div class="text-white font-medium">{{ formatDeadline(item.application_deadline) }}</div>
+                                    <div class="text-white font-medium">{{ item.application_deadline_text || formatDeadline(item.application_deadline) }}</div>
                                 </td>
                                 <td class="p-3 max-w-[170px]">
                                     <div class="text-gray-300 truncate text-[11px]" :title="item.total_gpa_required">{{ item.total_gpa_required || 'সার্কুলার দেখুন' }}</div>
@@ -415,7 +415,7 @@ function formatDeadline(dateStr) {
                     </div>
                     <div>
                         <span class="text-gray-400 block">শেষ তারিখ:</span>
-                        <strong class="text-red-400">{{ previewNotice.application_deadline || 'TBA' }}</strong>
+                        <strong class="text-red-400">{{ previewNotice.application_deadline_text || formatDeadline(previewNotice.application_deadline) }}</strong>
                     </div>
                     <div>
                         <span class="text-gray-400 block">আবেদন ফি:</span>

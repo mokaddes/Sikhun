@@ -4,6 +4,7 @@ namespace App\Services\Social;
 
 use App\Models\AdmissionNotice;
 use App\Models\BlogPost;
+use App\Models\Course;
 use App\Models\JobCircular;
 use App\Models\SiteSetting;
 use Illuminate\Support\Facades\Http;
@@ -11,6 +12,9 @@ use Illuminate\Support\Facades\Log;
 
 class PagePilotSocialService
 {
+    public function __construct(
+        protected SocialCardGeneratorService $cardGenerator
+    ) {}
     public function getWebhookUrl(): ?string
     {
         return SiteSetting::where('key', 'pagepilot_webhook_url')->value('value')
@@ -78,19 +82,28 @@ class PagePilotSocialService
 
     public function publishAdmissionNotice(AdmissionNotice $notice): array
     {
-        $imageUrl = $notice->featured_image
-            ? (str_starts_with($notice->featured_image, 'http') ? $notice->featured_image : asset('storage/' . $notice->featured_image))
-            : null;
+        $imageUrl = $notice->featured_image_url ?: $notice->notice_image_url;
+        if (! $imageUrl && $notice->featured_image) {
+            $imageUrl = str_starts_with($notice->featured_image, 'http')
+                ? $notice->featured_image
+                : asset('storage/' . $notice->featured_image);
+        }
+
+        // If no image is available, generate an SVG / photo card
+        if (! $imageUrl) {
+            $imageUrl = $this->cardGenerator->generateAdmissionCard($notice);
+        }
 
         $summary = "ভর্তি সংক্রান্ত গুরুত্বপূর্ণ সময়সূচি:\n"
             . ($notice->application_start_text ? "• আবেদন শুরু: {$notice->application_start_text}\n" : "")
-            . ($notice->application_deadline_text ? "• শেষ তারিখ: {$notice->application_deadline_text}\n" : "");
+            . ($notice->application_deadline_text ? "• শেষ তারিখ: {$notice->application_deadline_text}\n" : "")
+            . ($notice->application_fee ? "• আবেদন ফি: {$notice->application_fee}\n" : "");
 
         return $this->sendPost([
             'title' => $notice->title,
             'url' => url('/admission-notice/' . $notice->slug),
             'type' => 'admission',
-            'category' => $notice->category ?? 'বিশ্ববিদ্যালয় ভর্তি',
+            'category' => $notice->institution_name ?? 'বিশ্ববিদ্যালয় ভর্তি',
             'summary' => $summary,
             'image_url' => $imageUrl,
         ]);
@@ -101,6 +114,11 @@ class PagePilotSocialService
         $imageUrl = $job->image_url
             ? (str_starts_with($job->image_url, 'http') ? $job->image_url : asset('storage/' . $job->image_url))
             : null;
+
+        // If no image is available, generate an SVG / photo card
+        if (! $imageUrl) {
+            $imageUrl = $this->cardGenerator->generateJobCard($job);
+        }
 
         $summary = "প্রতিষ্ঠানের নাম: {$job->organization}\n"
             . ($job->job_type ? "ধরন: {$job->job_type} | " : "")
@@ -121,6 +139,11 @@ class PagePilotSocialService
     {
         $imageUrl = $post->featured_image_url;
 
+        // If no image is available, generate an SVG / photo card
+        if (! $imageUrl) {
+            $imageUrl = $this->cardGenerator->generateBlogCard($post);
+        }
+
         return $this->sendPost([
             'title' => $post->title,
             'url' => url('/blog/' . $post->slug),
@@ -131,14 +154,54 @@ class PagePilotSocialService
         ]);
     }
 
+    public function publishCourse(Course $course): array
+    {
+        $imageUrl = $course->cover_image
+            ? (str_starts_with($course->cover_image, 'http') ? $course->cover_image : asset('storage/' . $course->cover_image))
+            : null;
+
+        // If no image is available, generate an SVG / photo card
+        if (! $imageUrl) {
+            $imageUrl = $this->cardGenerator->generateCourseCard($course);
+        }
+
+        $priceText = $course->price ? '৳' . number_format($course->price) : 'ফ্রি';
+        $summary = "কোর্সের বিবরণ:\n"
+            . "• ইন্সট্রাক্টর: " . ($course->mentor?->name ?: 'শিখুন মেন্টরশিপ টিম') . "\n"
+            . "• কোর্স ফি: {$priceText}" . ($course->original_price ? " (পূর্বমূল্য ৳" . number_format($course->original_price) . ")" : "") . "\n"
+            . "• লেভেল: " . ($course->level ?: 'সকল লেভেলের জন্য') . "\n"
+            . ($course->short_description ? strip_tags($course->short_description) : '');
+
+        return $this->sendPost([
+            'title' => $course->title,
+            'url' => url('/courses/' . $course->slug),
+            'type' => 'course',
+            'category' => $course->category?->name ?? 'অনলাইন কোর্স',
+            'summary' => $summary,
+            'image_url' => $imageUrl,
+        ]);
+    }
+
     public function testConnection(): array
     {
+        // Generate a sample SVG/PNG card for test
+        $dummyNotice = new AdmissionNotice([
+            'id' => 999,
+            'title' => 'শিখুন (Sikhun.com) x PagePilotBD স্বয়ংক্রিয় ফেসবুক পোস্ট টেস্ট',
+            'slug' => 'test-integration',
+            'institution_name' => 'শিখুন একাডেমি',
+            'application_deadline_text' => now()->addDays(30)->format('d M Y'),
+            'application_fee' => 'ফ্রি / Free',
+        ]);
+        $testImageUrl = $this->cardGenerator->generateAdmissionCard($dummyNotice);
+
         return $this->sendPost([
             'title' => 'শিখুন (Sikhun.com) x PagePilotBD স্বয়ংক্রিয় ইন্টিগ্রেশন টেস্ট',
             'url' => 'https://sikhun.com',
             'type' => 'general',
             'category' => 'সিস্টেম টেস্ট',
             'summary' => 'এটি একটি টেস্ট পোস্ট। শিখুন.কম ওয়েবসাইট ও ফেসবুক পেজ স্বয়ংক্রিয়ভাবে সংযুক্ত হয়েছে।',
+            'image_url' => $testImageUrl,
         ]);
     }
 }

@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CourseRequest;
+use App\Jobs\DispatchPagePilotSocialPost;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\Mentor;
+use App\Services\Social\PagePilotSocialService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -60,6 +62,10 @@ class CourseController extends Controller
 
         $course = Course::create($data);
 
+        if ($course->is_active) {
+            DispatchPagePilotSocialPost::dispatch('course', $course->id);
+        }
+
         return redirect()->route('admin.courses.edit', $course)->with('success', 'Course created — now add sections and lessons.');
     }
 
@@ -91,9 +97,25 @@ class CourseController extends Controller
             $data['cover_image'] = $request->file('cover_image')->store('courses/covers', 'public');
         }
 
+        $wasActive = $course->is_active;
         $course->update($data);
 
+        if (! $wasActive && $course->is_active) {
+            DispatchPagePilotSocialPost::dispatch('course', $course->id);
+        }
+
         return back()->with('success', 'Course updated.');
+    }
+
+    public function shareToFacebook(Course $course, PagePilotSocialService $social): RedirectResponse
+    {
+        $result = $social->publishCourse($course);
+
+        if ($result['success'] ?? false) {
+            return back()->with('success', 'ফেসবুক পেজে সফলভাবে কোর্স পোস্ট এবং প্রথম কমেন্ট প্রকাশিত হয়েছে!');
+        }
+
+        return back()->with('error', 'ফেসবুক পোস্টে ব্যর্থ হয়েছে: ' . ($result['message'] ?? 'অজানা ত্রুটি'));
     }
 
     public function destroy(Course $course): RedirectResponse

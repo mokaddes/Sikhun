@@ -41,6 +41,12 @@ function submit() {
     }
 }
 
+function shareFacebook() {
+    if (confirm(`"${props.course.title}" কোর্সটি কি ফেসবুক পেজে পোস্ট করতে চান? এতে অটোমেটিক ফটো কার্ডসহ পোস্ট হবে এবং প্রথম কমেন্টে সরাসরি কোর্সের লিংক যুক্ত হবে।`)) {
+        router.post(`/admin/courses/${props.course.id}/share-facebook`);
+    }
+}
+
 // --- Chunked video upload -------------------------------------------------
 // Videos are far too large for a single request, so the file is sliced into
 // 5 MB chunks, uploaded one at a time, and merged server-side. Mirrors the
@@ -290,9 +296,19 @@ function saveLesson(sectionId, lessonId) {
             </div>
             <label class="flex items-center gap-2 text-sm"><input v-model="form.is_active" type="checkbox" class="rounded" /> {{ t('common.active') }}</label>
 
-            <button type="submit" :disabled="form.processing" class="px-5 py-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-semibold disabled:opacity-60">
-                {{ form.processing ? t('common.saving') : t('common.save') }}
-            </button>
+            <div class="flex items-center gap-3">
+                <button type="submit" :disabled="form.processing" class="px-5 py-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-semibold disabled:opacity-60">
+                    {{ form.processing ? t('common.saving') : t('common.save') }}
+                </button>
+                <button
+                    v-if="isEdit"
+                    type="button"
+                    @click="shareFacebook"
+                    class="px-4 py-2.5 rounded-lg border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 text-sm font-semibold transition"
+                >
+                    ফেসবুক পেজে পোস্ট করুন (PagePilotBD)
+                </button>
+            </div>
         </form>
 
         <!-- Sections & Lessons — video courses only -->

@@ -36,10 +36,17 @@ watch([search, status], () => {
     }, 300);
 });
 
+function shareFacebook(course) {
+    if (confirm(`"${course.title}" কোর্সটি কি ফেসবুক পেজে পোস্ট করতে চান? এতে ফটো কার্ড সহ পোস্ট হবে এবং প্রথম কমেন্টে সরাসরি কোর্সের লিংক যাবে।`)) {
+        router.post(`/admin/courses/${course.id}/share-facebook`);
+    }
+}
+
 function getCourseActions(course) {
     return [
         { label: t('common.edit'), href: `/admin/courses/${course.id}/edit`, icon: PencilSquareIcon },
         { label: locale.value === 'en' ? 'View Course' : 'কোর্স দেখুন', href: `/courses/${course.slug}`, icon: EyeIcon },
+        { label: 'Share to Facebook (PagePilotBD)', href: `/admin/courses/${course.id}/share-facebook`, method: 'post' },
         { divider: true },
         { label: t('common.delete'), href: `/admin/courses/${course.id}`, method: 'delete', danger: true, icon: TrashIcon },
     ];
@@ -180,6 +187,14 @@ function getCourseActions(course) {
 
                             <td class="px-5 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2">
+                                    <button
+                                        type="button"
+                                        @click="shareFacebook(course)"
+                                        class="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition"
+                                        title="ফেসবুক পেজে পোস্ট করুন (PagePilotBD)"
+                                    >
+                                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                    </button>
                                     <Link
                                         :href="`/admin/courses/${course.id}/edit`"
                                         class="hidden sm:inline-flex items-center gap-1 rounded-lg border border-transparent px-2.5 py-1 text-xs font-semibold text-[var(--primary)] hover:border-[var(--primary)]/20 hover:bg-[var(--primary)]/10 transition-colors"

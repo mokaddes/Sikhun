@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\AdmissionNotice;
 use App\Models\BlogPost;
+use App\Models\Course;
 use App\Models\JobCircular;
 use App\Services\Social\PagePilotSocialService;
 use Illuminate\Bus\Queueable;
@@ -35,6 +36,7 @@ class DispatchPagePilotSocialPost implements ShouldQueue
             'admission' => ($notice = AdmissionNotice::find($this->modelId)) ? $social->publishAdmissionNotice($notice) : null,
             'job' => ($job = JobCircular::find($this->modelId)) ? $social->publishJobCircular($job) : null,
             'blog' => ($post = BlogPost::find($this->modelId)) ? $social->publishBlogPost($post) : null,
+            'course' => ($course = Course::find($this->modelId)) ? $social->publishCourse($course) : null,
             default => null,
         };
 

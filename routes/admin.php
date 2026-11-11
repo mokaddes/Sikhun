@@ -87,6 +87,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('books/{book}/retry-processing', [BookController::class, 'retryProcessing'])->name('books.retry-processing');
 
         Route::resource('courses', CourseController::class)->except(['show']);
+        Route::post('courses/{course}/share-facebook', [CourseController::class, 'shareToFacebook'])->name('courses.share-facebook');
         Route::post('courses/{course}/sections', [CourseSectionController::class, 'store'])->name('courses.sections.store');
         Route::put('courses/{course}/sections/{section}', [CourseSectionController::class, 'update'])->name('courses.sections.update');
         Route::delete('courses/{course}/sections/{section}', [CourseSectionController::class, 'destroy'])->name('courses.sections.destroy');

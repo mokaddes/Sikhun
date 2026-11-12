@@ -61,7 +61,7 @@ class PageController extends Controller
                 ->get(['id', 'title', 'slug', 'excerpt', 'featured_image', 'blog_category_id', 'published_at', 'view_count']),
             'plans' => Plan::where('is_active', true)->orderBy('price_monthly')->get(),
             'featuredJobs' => \App\Models\JobCircular::orderByDesc('is_featured')->orderBy('deadline')->take(4)->get(),
-            'featuredAdmissions' => AdmissionNotice::published()->orderByDesc('is_featured')->orderBy('application_deadline')->take(4)->get(['id', 'title', 'slug', 'institution_name', 'university_type', 'application_deadline', 'target_countdown_iso', 'units']),
+            'featuredAdmissions' => AdmissionNotice::published()->orderByDesc('is_featured')->orderBy('application_deadline')->take(4)->get(['id', 'title', 'slug', 'institution_name', 'university_type', 'application_deadline', 'units']),
             'testimonials' => Testimonial::published()->get(['student_name', 'student_role', 'avatar', 'quote']),
             'seo' => $seo->forHome(),
         ]);

@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
+import SeoHead from '@/Components/Seo/SeoHead.vue';
 import { useI18n } from '@/i18n';
 import {
     BriefcaseIcon,
@@ -22,6 +23,7 @@ import {
 const props = defineProps({
     job: Object,
     relatedJobs: Array,
+    seo: Object,
 });
 
 const { locale } = useI18n();
@@ -65,7 +67,8 @@ const ogImage = computed(() => {
 </script>
 
 <template>
-    <Head>
+    <SeoHead v-if="seo" :seo="seo" />
+    <Head v-if="!seo">
         <title>{{ `${job.title} - ${en ? 'Job Circular 2026' : 'চাকরির সার্কুলার ২০২৬'} | Sikhun` }}</title>
         <meta name="description" :content="job.summary || `${job.organization} - ${job.title} নিয়োগ বিজ্ঞপ্তি ২০২৬। আবেদনের শেষ তারিখ: ${formatDate(job.deadline)}`" />
         <meta property="og:title" :content="job.title" />

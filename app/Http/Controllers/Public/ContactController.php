@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Public\ContactRequest;
 use App\Mail\ContactMessageMail;
+use App\Services\SeoService;
 use App\Services\SiteSettingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
@@ -13,9 +14,11 @@ use Inertia\Response;
 
 class ContactController extends Controller
 {
-    public function show(): Response
+    public function show(SeoService $seo): Response
     {
-        return Inertia::render('Public/Contact');
+        return Inertia::render('Public/Contact', [
+            'seo' => $seo->forContact(),
+        ]);
     }
 
     public function submit(ContactRequest $request, SiteSettingService $settings): RedirectResponse

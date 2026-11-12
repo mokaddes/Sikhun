@@ -1,5 +1,26 @@
+# robots.txt for https://sikhun.com
+# Sikhun.com — AI-Powered Education Platform in Bangladesh
+# Note: robots.txt is a public crawler directive, not an access-control or authentication mechanism.
+# Authenticated, private, and student dashboard pages enforce strict authentication and server-side noindex headers.
+
+# General search engine crawlers (Googlebot, Bingbot, Yahoo, DuckDuckGo, etc.)
 User-agent: *
 Allow: /
+Allow: /library
+Allow: /courses
+Allow: /blog
+Allow: /admission-notice
+Allow: /job-news
+Allow: /tools
+Allow: /contact
+Allow: /p/
+Allow: /build/
+Allow: /storage/
+Allow: /images/
+Allow: /favicon.ico
+Allow: /favicon.svg
+
+# Block internal authenticated student & admin portals from indexing
 Disallow: /admin/
 Disallow: /dashboard/
 Disallow: /bookshelf/
@@ -15,7 +36,32 @@ Disallow: /referrals/
 Disallow: /profile/
 Disallow: /notifications/
 Disallow: /reader/
-Disallow: /api/
+Disallow: /mistakes/
+Disallow: /question-bank/
 Disallow: /support/
+Disallow: /api/
+Disallow: /sanctum/
+Disallow: /horizon/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /*?*search=*
 
+# OpenAI Search Bot (ChatGPT Search engine retrieval)
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /exams/
+Disallow: /reader/
+Disallow: /mistakes/
+Disallow: /wallet/
+Disallow: /api/
+
+# OpenAI AI Model Training Scraper (disallow content scraping for model training)
+User-agent: GPTBot
+Disallow: /
+
+# Sitemap Index & Dynamic Endpoints
 Sitemap: https://sikhun.com/sitemap.xml

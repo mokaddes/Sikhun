@@ -36,6 +36,7 @@ use Illuminate\Support\Facades\Route;
 | Public routes
 |--------------------------------------------------------------------------
 */
+Route::get('/sitemap.xml', [\App\Http\Controllers\Public\SitemapController::class, 'index'])->name('sitemap');
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/contact', [\App\Http\Controllers\Public\ContactController::class, 'show'])->name('contact.show');
 Route::post('/contact', [\App\Http\Controllers\Public\ContactController::class, 'submit'])

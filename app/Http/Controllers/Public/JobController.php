@@ -4,12 +4,17 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\JobCircular;
+use App\Services\SeoService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class JobController extends Controller
 {
+    public function __construct(
+        private readonly SeoService $seo
+    ) {}
+
     public function index(Request $request): Response
     {
         $query = JobCircular::query();
@@ -49,6 +54,7 @@ class JobController extends Controller
                 'search' => $request->input('search', ''),
             ],
             'stats' => $stats,
+            'seo' => $this->seo->forJobIndex(),
         ]);
     }
 
@@ -69,6 +75,7 @@ class JobController extends Controller
         return Inertia::render('Public/Jobs/Show', [
             'job' => $job,
             'relatedJobs' => $relatedJobs,
+            'seo' => $this->seo->forJobCircular($job),
         ]);
     }
 }

@@ -18,7 +18,9 @@ const message = messages[props.status] ?? messages[500];
 </script>
 
 <template>
-    <Head :title="message.title" />
+    <Head :title="message.title">
+        <meta name="robots" content="noindex, nofollow" />
+    </Head>
     <div class="min-h-screen flex items-center justify-center bg-[var(--bg)] text-[var(--text)] px-5">
         <div class="text-center max-w-sm">
             <div class="font-heading text-6xl font-extrabold text-[var(--primary)] mb-4">{{ message.title }}</div>

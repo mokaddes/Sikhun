@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
+import SeoHead from '@/Components/Seo/SeoHead.vue';
 import { useI18n } from '@/i18n';
 import {
     CalendarDaysIcon,
@@ -41,6 +42,7 @@ import CurrencyConverter from './Components/CurrencyConverter.vue';
 
 const props = defineProps({
     recentJobs: Array,
+    seo: Object,
 });
 
 const { t, locale } = useI18n();
@@ -559,7 +561,8 @@ function convertText(mode) {
 </script>
 
 <template>
-    <Head :title="en ? 'Student & Tech Online Tools Hub | 100% Free Utilities - Sikhun' : 'স্টুডেন্ট ও টেক অনলাইন টুলস হাব | ১০০% ফ্রি ইউটিলিটি - শিখুন'" />
+    <SeoHead v-if="seo" :seo="seo" />
+    <Head v-else :title="en ? 'Student & Tech Online Tools Hub | 100% Free Utilities - Sikhun' : 'স্টুডেন্ট ও টেক অনলাইন টুলস হাব | ১০০% ফ্রি ইউটিলিটি - শিখুন'" />
 
     <PublicLayout>
         <!-- Hero Header -->

@@ -5,12 +5,17 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\AdmissionNotice;
 use App\Models\QuestionBank;
+use App\Services\SeoService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AdmissionController extends Controller
 {
+    public function __construct(
+        private readonly SeoService $seo
+    ) {}
+
     public function index(Request $request): Response
     {
         $query = AdmissionNotice::published();
@@ -48,6 +53,7 @@ class AdmissionController extends Controller
                 'search' => $request->input('search', ''),
             ],
             'stats' => $stats,
+            'seo' => $this->seo->forAdmissionIndex($request->input('type')),
         ]);
     }
 
@@ -74,6 +80,7 @@ class AdmissionController extends Controller
             'relatedNotices' => $relatedNotices,
             'practiceBridge' => $practiceBridge,
             'sampleQuestions' => $sampleQuestions,
+            'seo' => $this->seo->forAdmissionNotice($notice),
         ]);
     }
 

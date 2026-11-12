@@ -1,7 +1,12 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
+import SeoHead from '@/Components/Seo/SeoHead.vue';
 import { useI18n } from '@/i18n';
+
+defineProps({
+    seo: Object,
+});
 
 const { t } = useI18n();
 const form = useForm({ name: '', email: '', subject: '', message: '' });
@@ -12,7 +17,8 @@ function submit() {
 </script>
 
 <template>
-    <Head :title="t('nav.contact')" />
+    <SeoHead v-if="seo" :seo="seo" />
+    <Head v-else :title="t('nav.contact')" />
     <PublicLayout>
         <div class="max-w-xl mx-auto px-5 py-16">
             <h1 class="font-heading text-3xl font-extrabold mb-2">{{ t('contact_page.title') }}</h1>

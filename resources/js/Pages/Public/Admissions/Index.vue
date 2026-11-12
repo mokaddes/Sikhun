@@ -2,12 +2,14 @@
 import { ref, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
+import SeoHead from '@/Components/Seo/SeoHead.vue';
 import { useI18n } from '@/i18n';
 
 const props = defineProps({
     notices: Object,
     filters: Object,
     stats: Object,
+    seo: Object,
 });
 
 const { locale } = useI18n();
@@ -75,8 +77,9 @@ function getTypeBadge(type) {
 </script>
 
 <template>
+    <SeoHead v-if="seo" :seo="seo" />
     <PublicLayout>
-        <Head>
+        <Head v-if="!seo">
             <title>{{ en ? 'University Admission Notices & Circulars | Sikhun' : 'বিশ্ববিদ্যালয় ভর্তি বিজ্ঞপ্তি ও সার্কুলার ২০২৬-২০২৭ | Sikhun' }}</title>
             <meta name="description" :content="en ? 'Find all Public, Guccho Cluster, and Private university undergraduate admission notices in Bangladesh.' : 'বাংলাদেশের সকল পাবলিক, গুচ্ছ এবং শীর্ষ বেসরকারি বিশ্ববিদ্যালয়ের স্নাতক প্রথম বর্ষ ভর্তি বিজ্ঞপ্তি, যোগ্যতা, মানবণ্টন ও অনলাইন আবেদনের তথ্য।'" />
         </Head>

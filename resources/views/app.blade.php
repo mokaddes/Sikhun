@@ -53,17 +53,59 @@
         })();
     </script>
 
-    <title inertia>{{ app(\App\Services\SiteSettingService::class)->get('site_name', config('app.name', 'Sikhun.com')) }}</title>
+    @php
+        $seoService = app(\App\Services\SeoService::class);
+        $seoData = $seoService->resolveForRequest(request(), $page['props']['seo'] ?? null);
+    @endphp
+
+    <title inertia>{{ $seoData['title'] }}</title>
+    <meta name="description" content="{{ $seoData['description'] }}">
+    @if(!empty($seoData['keywords']))
+    <meta name="keywords" content="{{ $seoData['keywords'] }}">
+    @endif
+    <link rel="canonical" href="{{ $seoData['canonical'] }}">
+    <meta name="robots" content="{{ $seoData['robots'] ?? 'index, follow' }}">
 
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
     <link rel="apple-touch-icon" href="{{ asset('favicon.svg') }}">
 
-    <!-- Default OpenGraph & Twitter for Crawlers / FB Debugger -->
-    <meta property="og:site_name" content="Sikhun.com - AI Powered Learning & Exam Preparation">
-    <meta property="og:type" content="website">
+    <!-- OpenGraph & Twitter for Crawlers, AI Search Bots & Social Debuggers -->
+    <meta property="og:site_name" content="{{ $seoData['site_name'] }}">
+    <meta property="og:type" content="{{ $seoData['og_type'] ?? 'website' }}">
+    <meta property="og:title" content="{{ $seoData['title'] }}">
+    <meta property="og:description" content="{{ $seoData['description'] }}">
+    <meta property="og:url" content="{{ $seoData['canonical'] }}">
+    @if(!empty($seoData['og_image']))
+    <meta property="og:image" content="{{ $seoData['og_image'] }}">
+    @endif
+    <meta property="og:locale" content="{{ app()->getLocale() === 'bn' ? 'bn_BD' : 'en_US' }}">
+
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@sikhun_com">
+    <meta name="twitter:title" content="{{ $seoData['title'] }}">
+    <meta name="twitter:description" content="{{ $seoData['description'] }}">
+    @if(!empty($seoData['og_image']))
+    <meta name="twitter:image" content="{{ $seoData['og_image'] }}">
+    @endif
+
+    <!-- Bilingual alternate tags -->
+    <link rel="alternate" hreflang="bn" href="{{ $seoData['canonical'] }}">
+    <link rel="alternate" hreflang="en" href="{{ $seoData['canonical'] }}">
+    <link rel="alternate" hreflang="x-default" href="{{ $seoData['canonical'] }}">
+
+    <!-- Structured Data (JSON-LD) for Search & GEO Engine Citations -->
+    @if(!empty($seoData['json_ld']))
+    <script type="application/ld+json">
+    {!! json_encode($seoData['json_ld'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    </script>
+    @endif
+    @if(!empty($seoData['breadcrumb']))
+    <script type="application/ld+json">
+    {!! json_encode($seoData['breadcrumb'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    </script>
+    @endif
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
 

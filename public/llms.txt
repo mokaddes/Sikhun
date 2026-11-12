@@ -1,0 +1,49 @@
+# Sikhun.com
+
+> Sikhun.com is Bangladesh's premier AI-powered digital learning and exam preparation platform, built to empower students across HSC, SSC, University Admission, and Competitive Job Examinations.
+
+## Overview
+
+Sikhun.com combines verified academic curriculum, digital textbook reading with embedded AI tutoring, comprehensive 50,000+ question banks with step-by-step AI explanations, automated mistake revision books, and real-time university admission circular tracking. All educational content is optimized for Bengali-speaking students (বাংলা) with bilingual English support.
+
+## Key Public Resources
+
+- [Home](https://sikhun.com/): AI-powered learning platform overview, live model tests, and featured courses.
+- [Digital Library](https://sikhun.com/library): Digital academic textbooks for HSC, SSC, and competitive exams with browser reading, AI book chat, and flashcard generation.
+- [University Admission Notices](https://sikhun.com/admission-notice): Verified undergraduate admission notices, routines, unit eligibility criteria, and past question banks for DU, RU, BUET, GST Cluster, Medical/Dental, CU, and JU.
+- [Online Courses](https://sikhun.com/courses): Mentor-led live courses, video lessons, and interactive academic curriculum.
+- [Educational Blog](https://sikhun.com/blog): In-depth educational guides, AI study tips, Science, Technology, and examination preparation in Bangla.
+- [Job News Portal](https://sikhun.com/job-news): Government, Bank, and private job circulars with syllabus and preparation guides.
+- [Student Tools Hub](https://sikhun.com/tools): GPA calculators, age calculators, and academic utility tools.
+- [About Sikhun](https://sikhun.com/p/about): Platform mission, pedagogy, and educational technology overview.
+- [FAQ](https://sikhun.com/p/faq): Frequently asked questions about reading books, taking exams, AI tutoring, and subscriptions.
+- [Contact](https://sikhun.com/contact): Support, mentor applications, and technical assistance.
+
+## Educational Levels & Coverage
+
+1. **Higher Secondary Certificate (HSC):** Physics, Chemistry, Mathematics, Biology, ICT, Bangla, English, and Humanities/Business subjects.
+2. **Secondary School Certificate (SSC):** General Science, Mathematics, Higher Math, Bangla Grammar, and core syllabus.
+3. **University Admission Test (বিশ্ববিদ্যালয় ভর্তি প্রস্তুতি ২০২৬-২০২৭):**
+   - Dhaka University (DU - A, B, C units)
+   - Rajshahi University (RU - A, B, C units)
+   - Bangladesh University of Engineering and Technology (BUET)
+   - GST General and Science & Technology 24 Universities Cluster (GST Cluster)
+   - Medical & Dental Colleges (MBBS / BDS - DGME)
+   - Chittagong University (CU) & Jahangirnagar University (JU)
+4. **Competitive Career & Job Examinations:** Bangladesh Civil Service (BCS), Government Primary Assistant Teacher, Bangladesh Bank & Combined Bank Officer tests.
+
+## Pedagogical & AI Architecture
+
+- **Active Learning with AI:** Students can ask contextual questions directly while reading textbooks; the AI explainer references verified textbook passages without hallucinations.
+- **Adaptive Question Bank:** Dynamic difficulty filtering, negative marking simulation (+1 / -0.25), subject/institution segmenting, and automatic wrong-answer collection ("আমার ভুলসমূহ / Mistake Review") for mastery.
+- **Authentic Sourcing:** All university admission links point directly to official verified university portals (e.g., `admission.eis.du.ac.bd`, `admission.ru.ac.bd`, `buet.ac.bd`, `gstadmission.ac.bd`).
+
+## Entity & Contact Information
+
+- **Organization Name:** Sikhun.com (শিখুন)
+- **Primary Website:** https://sikhun.com
+- **Sitemap:** https://sikhun.com/sitemap.xml
+- **Official Social Profile:** https://www.facebook.com/sikhunbd
+- **Primary Language:** Bengali (bn-BD)
+- **Secondary Language:** English (en-US)
+- **Target Country:** Bangladesh (BD)

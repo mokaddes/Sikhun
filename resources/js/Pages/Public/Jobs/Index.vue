@@ -2,6 +2,7 @@
 import { ref, watch, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
+import SeoHead from '@/Components/Seo/SeoHead.vue';
 import { useI18n } from '@/i18n';
 import {
     BriefcaseIcon,
@@ -21,6 +22,7 @@ const props = defineProps({
     jobs: Object,
     filters: Object,
     stats: Object,
+    seo: Object,
 });
 
 const { locale } = useI18n();
@@ -102,7 +104,8 @@ function formatDate(d) {
 </script>
 
 <template>
-    <Head :title="en ? 'Job Circulars & Career 2026 - Govt, Bank & Top Jobs' : 'চাকরির খবর ও সার্কুলার ২০২৬ - সরকারি, ব্যাংক ও শীর্ষ জবস'" />
+    <SeoHead v-if="seo" :seo="seo" />
+    <Head v-else :title="en ? 'Job Circulars & Career 2026 - Govt, Bank & Top Jobs' : 'চাকরির খবর ও সার্কুলার ২০২৬ - সরকারি, ব্যাংক ও শীর্ষ জবস'" />
     <PublicLayout>
         <!-- Hero Header -->
         <section class="relative overflow-hidden bg-gradient-to-b from-gray-50 via-white to-gray-50 dark:from-[#0b0f19] dark:via-[#111827] dark:to-[var(--bg)] border-b border-gray-200 dark:border-white/5 py-12 md:py-16">

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
+import SeoHead from '@/Components/Seo/SeoHead.vue';
 import { useI18n } from '@/i18n';
 
 const props = defineProps({
@@ -9,6 +10,7 @@ const props = defineProps({
     relatedNotices: Array,
     practiceBridge: Object,
     sampleQuestions: Array,
+    seo: Object,
 });
 
 const { locale } = useI18n();
@@ -276,8 +278,9 @@ const typeLabel = computed(() => {
 </script>
 
 <template>
+    <SeoHead v-if="seo" :seo="seo" />
     <PublicLayout>
-        <Head>
+        <Head v-if="!seo">
             <title>{{ notice.title }} | Sikhun Admission Portal</title>
             <meta name="description" :content="notice.meta_description || notice.title" />
             <meta property="og:title" :content="notice.title" />

@@ -78,19 +78,38 @@ function formatType(t) {
     }
 }
 
-function formatDeadline(dateStr) {
-    if (!dateStr) return 'ঘোষণা সাপেক্ষে';
-    try {
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return dateStr;
-        return d.toLocaleDateString('bn-BD', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-        });
-    } catch (_) {
-        return dateStr;
+function toBengaliNumber(val) {
+    if (val === null || val === undefined) return '';
+    const enToBn = { '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪', '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯' };
+    return String(val).replace(/[0-9]/g, (d) => enToBn[d] || d);
+}
+
+function formatDateBn(val) {
+    if (!val) return 'ঘোষণা সাপেক্ষে';
+
+    const str = String(val).trim();
+    const isIsoOrSql = /^\d{4}-\d{2}-\d{2}/.test(str);
+    const hasBengali = /[\u0980-\u09FF]/.test(str);
+
+    if (hasBengali && !isIsoOrSql) {
+        return toBengaliNumber(str);
     }
+
+    try {
+        const d = new Date(str.includes(' ') && !str.includes('T') ? str.replace(' ', 'T') : str);
+        if (!isNaN(d.getTime())) {
+            const months = [
+                'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+                'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+            ];
+            const day = toBengaliNumber(d.getDate());
+            const month = months[d.getMonth()];
+            const year = toBengaliNumber(d.getFullYear());
+            return `${day} ${month} ${year}`;
+        }
+    } catch (_) {}
+
+    return toBengaliNumber(str);
 }
 </script>
 
@@ -218,7 +237,7 @@ function formatDeadline(dateStr) {
                     <div class="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-[11px]">
                         <div>
                             <span class="text-gray-400 block text-[10px]">শেষ তারিখ:</span>
-                            <span class="text-white font-medium">{{ item.application_deadline_text || formatDeadline(item.application_deadline) }}</span>
+                            <span class="text-white font-medium">{{ formatDateBn(item.application_deadline_text || item.application_deadline) }}</span>
                         </div>
                         <div>
                             <span class="text-gray-400 block text-[10px]">আবেদন ফি:</span>
@@ -313,7 +332,7 @@ function formatDeadline(dateStr) {
                                     </span>
                                 </td>
                                 <td class="p-3 whitespace-nowrap">
-                                    <div class="text-white font-medium">{{ item.application_deadline_text || formatDeadline(item.application_deadline) }}</div>
+                                    <div class="text-white font-medium">{{ formatDateBn(item.application_deadline_text || item.application_deadline) }}</div>
                                 </td>
                                 <td class="p-3 max-w-[170px]">
                                     <div class="text-gray-300 truncate text-[11px]" :title="item.total_gpa_required">{{ item.total_gpa_required || 'সার্কুলার দেখুন' }}</div>
@@ -415,7 +434,7 @@ function formatDeadline(dateStr) {
                     </div>
                     <div>
                         <span class="text-gray-400 block">শেষ তারিখ:</span>
-                        <strong class="text-red-400">{{ previewNotice.application_deadline_text || formatDeadline(previewNotice.application_deadline) }}</strong>
+                        <strong class="text-red-400">{{ formatDateBn(previewNotice.application_deadline_text || previewNotice.application_deadline) }}</strong>
                     </div>
                     <div>
                         <span class="text-gray-400 block">আবেদন ফি:</span>

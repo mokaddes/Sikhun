@@ -17,5 +17,6 @@ abstract class TestCase extends BaseTestCase
         // bootstrap the CSRF cookie/token pair. Production web middleware
         // remains enabled; only the test transport bypasses CSRF validation.
         $this->withoutMiddleware(ValidateCsrfToken::class);
+        $this->withoutVite();
     }
 }

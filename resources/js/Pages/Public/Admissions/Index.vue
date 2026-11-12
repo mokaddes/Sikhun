@@ -146,6 +146,89 @@ function getTypeBadge(type) {
                 </div>
             </section>
 
+            <!-- PRACTICE BRIDGE & QUESTION BANK HERO CARD -->
+            <section class="max-w-7xl mx-auto px-4 md:px-6 pt-8">
+                <div class="rounded-3xl border border-orange-500/25 bg-gradient-to-br from-[#101728] via-[#141b2c] to-[#0c1220] text-white p-6 md:p-8 shadow-xl relative overflow-hidden">
+                    <div class="pointer-events-none absolute -top-20 -right-20 w-80 h-80 bg-orange-500/15 rounded-full blur-3xl"></div>
+                    <div class="pointer-events-none absolute -bottom-20 -left-20 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl"></div>
+
+                    <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                        <div class="space-y-2 max-w-2xl">
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-400 text-xs font-bold uppercase tracking-wider">
+                                <span class="material-symbols-outlined !text-sm">verified</span>
+                                <span>{{ en ? 'SOLVED QUESTION ARCHIVE' : 'বিগত বছরের প্রশ্নব্যাংক ও প্রস্তুতি' }}</span>
+                            </div>
+                            <h2 class="text-xl sm:text-2xl font-black font-heading text-white">
+                                {{ en ? 'Practice Past Admission Questions with Instant AI Solutions' : 'এই বিশ্ববিদ্যালয়ের বিগত বছরের প্রশ্নব্যাংক অনুশীলন করুন' }}
+                            </h2>
+                            <p class="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                                {{ en ? '15,000+ authentic university admission questions for DU, RU, BUET, and GST cluster. Practice topic-wise or generate realistic model tests with negative marking.' : 'ঢাকা, রাজশাহী, বুয়েট ও গুচ্ছসহ সকল বিশ্ববিদ্যালয়ের বিগত ২৫ বছরের ১৫,০০০+ সলভড প্রশ্নব্যাংক। বিষয়ভিত্তিক অনুশীলন ও নেগেটিভ মার্কিং ফ্রি মডেল টেস্ট দিন।' }}
+                            </p>
+
+                            <!-- Unit Quick Links Strip -->
+                            <div class="pt-2 flex flex-wrap items-center gap-2 text-xs">
+                                <span class="text-gray-400 font-semibold">{{ en ? 'Quick Unit Access:' : 'ইউনিটভিত্তিক সরাসরি লিংক:' }}</span>
+                                <Link
+                                    href="/question-bank?segment=admission&origin=DU-A"
+                                    class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-orange-500/20 border border-white/10 hover:border-orange-500/40 text-gray-200 hover:text-orange-300 font-bold transition"
+                                >
+                                    ঢাবি ক (বিজ্ঞান)
+                                </Link>
+                                <Link
+                                    href="/question-bank?segment=admission&origin=DU-B"
+                                    class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-orange-500/20 border border-white/10 hover:border-orange-500/40 text-gray-200 hover:text-orange-300 font-bold transition"
+                                >
+                                    ঢাবি খ (মানবিক)
+                                </Link>
+                                <Link
+                                    href="/question-bank?segment=admission&origin=DU-C"
+                                    class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-orange-500/20 border border-white/10 hover:border-orange-500/40 text-gray-200 hover:text-orange-300 font-bold transition"
+                                >
+                                    ঢাবি গ (ব্যবসায়)
+                                </Link>
+                                <Link
+                                    href="/question-bank?segment=admission&origin=RU-A"
+                                    class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-orange-500/20 border border-white/10 hover:border-orange-500/40 text-gray-200 hover:text-orange-300 font-bold transition"
+                                >
+                                    রাবি A/B/C
+                                </Link>
+                                <Link
+                                    href="/question-bank?segment=admission&origin=BUET"
+                                    class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-orange-500/20 border border-white/10 hover:border-orange-500/40 text-gray-200 hover:text-orange-300 font-bold transition"
+                                >
+                                    বুয়েট ইঞ্জিনিয়ারিং
+                                </Link>
+                                <Link
+                                    href="/question-bank?segment=admission&origin=GST-C"
+                                    class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-orange-500/20 border border-white/10 hover:border-orange-500/40 text-gray-200 hover:text-orange-300 font-bold transition"
+                                >
+                                    গুচ্ছ ২৪ ভার্সিটি
+                                </Link>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
+                            <Link
+                                href="/question-bank?segment=admission"
+                                class="px-5 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-orange-500/30 transition flex items-center justify-center gap-2 hover:-translate-y-0.5 text-center"
+                            >
+                                <span class="material-symbols-outlined !text-base">menu_book</span>
+                                <span>{{ en ? 'Explore Question Bank' : 'ভর্তি প্রশ্নব্যাংক খুলুন' }}</span>
+                                <span>→</span>
+                            </Link>
+
+                            <Link
+                                href="/question-bank?segment=admission"
+                                class="px-5 py-3 rounded-xl bg-blue-600/90 hover:bg-blue-600 text-white font-bold text-xs sm:text-sm border border-blue-400/30 shadow-lg shadow-blue-500/20 transition flex items-center justify-center gap-2 hover:-translate-y-0.5 text-center"
+                            >
+                                <span class="material-symbols-outlined !text-base">quiz</span>
+                                <span>{{ en ? 'Take Free Model Test' : 'ফ্রি মডেল টেস্ট দিন' }}</span>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Circulars Grid -->
             <section class="max-w-7xl mx-auto px-4 md:px-6 py-10">
                 <div v-if="notices.data?.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

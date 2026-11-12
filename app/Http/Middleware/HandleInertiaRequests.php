@@ -34,6 +34,7 @@ class HandleInertiaRequests extends Middleware
                     'name' => $student->name,
                     'email' => $student->email,
                     'type' => $student->type,
+                    'education_type' => $student->type,
                     'avatar' => $student->avatar,
                     'theme_mode' => $student->theme_mode,
                     'email_verified' => $student->hasVerifiedEmail(),

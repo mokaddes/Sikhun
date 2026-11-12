@@ -29,19 +29,23 @@ class QuestionBankPracticeTest extends TestCase
         ], $attributes));
     }
 
+    private function createSubject(array $attributes = []): QuestionSubject
+    {
+        return QuestionSubject::create(array_merge([
+            'name_bn' => 'বাংলা',
+            'name_en' => 'Bangla',
+            'slug' => 'bangla-' . uniqid(),
+            'segment' => 'both',
+            'is_active' => true,
+        ], $attributes));
+    }
+
     public function test_student_can_view_question_bank_index(): void
     {
         $student = $this->createStudent(['type' => 'job']);
+        $subject = $this->createSubject();
 
-        $subject = QuestionSubject::create([
-            'name_bn' => 'বাংলা',
-            'name_en' => 'Bangla',
-            'slug' => 'bangla',
-            'segment' => 'both',
-            'is_active' => true,
-        ]);
-
-        $question = QuestionBank::create([
+        QuestionBank::create([
             'segment' => 'job',
             'allowed_student_types' => ['all'],
             'subject_id' => $subject->id,
@@ -79,17 +83,12 @@ class QuestionBankPracticeTest extends TestCase
     public function test_ai_explain_returns_existing_explanation_if_present(): void
     {
         $student = $this->createStudent();
-        $subject = QuestionSubject::create([
-            'name_bn' => 'বিজ্ঞান',
-            'name_en' => 'Science',
-            'slug' => 'science',
-            'segment' => 'both',
-        ]);
+        $subject = $this->createSubject();
 
         $question = QuestionBank::create([
             'segment' => 'job',
+            'origin_tag' => 'BCS-45',
             'subject_id' => $subject->id,
-            'origin_tag' => 'TEST-01',
             'question_text' => 'What is photosynthesis?',
             'question_type' => 'mcq',
             'options' => [['key' => 'A', 'text' => 'Process']],
@@ -111,17 +110,12 @@ class QuestionBankPracticeTest extends TestCase
     public function test_ai_explain_generates_and_persists_explanation_when_absent(): void
     {
         $student = $this->createStudent();
-        $subject = QuestionSubject::create([
-            'name_bn' => 'পদার্থবিজ্ঞান',
-            'name_en' => 'Physics',
-            'slug' => 'physics',
-            'segment' => 'both',
-        ]);
+        $subject = $this->createSubject();
 
         $question = QuestionBank::create([
             'segment' => 'job',
+            'origin_tag' => 'BCS-45',
             'subject_id' => $subject->id,
-            'origin_tag' => 'TEST-02',
             'question_text' => 'What is Newton second law?',
             'question_type' => 'mcq',
             'options' => [['key' => 'A', 'text' => 'F=ma']],
@@ -183,13 +177,7 @@ class QuestionBankPracticeTest extends TestCase
             'expires_at' => now()->addMonth(),
         ]);
 
-        $subject = QuestionSubject::create([
-            'name_bn' => 'সাধারণ জ্ঞান',
-            'name_en' => 'General Knowledge',
-            'slug' => 'gk',
-            'segment' => 'both',
-            'is_active' => true,
-        ]);
+        $subject = $this->createSubject(['name_bn' => 'সাধারণ জ্ঞান', 'name_en' => 'General Knowledge']);
 
         QuestionBank::create([
             'segment' => 'job',
@@ -228,5 +216,6 @@ class QuestionBankPracticeTest extends TestCase
         $this->assertEquals('in_progress', $session->status);
         $this->assertCount(1, $session->questions);
         $this->assertEquals(1, $session->total);
+        $this->assertStringContainsString('/exams/' . $session->id, $response->json('redirect_url'));
     }
 }

@@ -33,6 +33,11 @@ class DashboardController extends Controller
             ->take(3)
             ->get(['id', 'config', 'score', 'total', 'percentage', 'completed_at']);
 
+        $pendingOrder = $student->orders()
+            ->where('status', 'pending')
+            ->latest()
+            ->first(['id', 'order_number', 'orderable_type', 'amount', 'payment_method', 'gateway_transaction_id', 'created_at']);
+
         return Inertia::render('Student/Dashboard/Index', [
             'stats' => [
                 'wallet_balance' => $student->wallet_balance,
@@ -40,6 +45,7 @@ class DashboardController extends Controller
                 'exams_taken' => $student->examSessions()->where('status', 'completed')->count(),
                 'courses_enrolled' => $student->courseEnrollments()->count(),
             ],
+            'pendingOrder' => $pendingOrder,
             'continueReading' => $lastReading?->book,
             'continueCourse' => $lastCourse,
             'recentExams' => $recentExams,

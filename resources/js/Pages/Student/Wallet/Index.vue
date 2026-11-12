@@ -1,17 +1,42 @@
 <script setup>
-import { Head, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Head, useForm, Link } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import Pagination from '@/Components/UI/Pagination.vue';
 import { useI18n } from '@/i18n';
-import { BanknotesIcon, ArrowDownLeftIcon, ArrowUpRightIcon } from '@heroicons/vue/24/outline';
+import { BanknotesIcon, ArrowDownLeftIcon, ArrowUpRightIcon, ClockIcon, CheckCircleIcon } from '@heroicons/vue/24/outline';
 
-const props = defineProps({ balance: [String, Number], transactions: Object });
-const { t, locale } = useI18n();
+const props = defineProps({
+    balance: [String, Number],
+    transactions: Object,
+    pendingOrders: Array,
+});
+const { t, locale, money } = useI18n();
 
 const form = useForm({ amount: 500, method: 'mhpay', transaction_reference: '' });
 
 function submit() {
     form.post('/wallet/recharge', { onSuccess: () => form.reset('transaction_reference') });
+}
+
+// Verification form state for pending order
+const verifyingOrder = ref(null);
+const verifyForm = useForm({
+    transaction_id: '',
+});
+
+function openVerify(order) {
+    verifyingOrder.value = order;
+    verifyForm.transaction_id = order.gateway_transaction_id || '';
+}
+
+function submitVerify() {
+    if (!verifyingOrder.value) return;
+    verifyForm.post(`/wallet/orders/${verifyingOrder.value.id}/verify`, {
+        onSuccess: () => {
+            verifyingOrder.value = null;
+        },
+    });
 }
 </script>
 
@@ -22,6 +47,89 @@ function submit() {
             <span class="eyebrow">{{ locale === 'en' ? 'Account' : 'অ্যাকাউন্ট' }}</span>
             <h1 class="mt-1 font-heading text-2xl font-extrabold sm:text-3xl">{{ t('wallet.title') }}</h1>
         </header>
+
+        <!-- Pending Order Alert -->
+        <section
+            v-if="pendingOrders && pendingOrders.length"
+            class="anim-rise mb-6 space-y-3"
+        >
+            <div
+                v-for="order in pendingOrders"
+                :key="order.id"
+                class="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-[var(--surface)] p-5 shadow-sm"
+            >
+                <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div class="flex items-start gap-3.5">
+                        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500/20 text-xl text-amber-600 dark:text-amber-400">
+                            ⏳
+                        </span>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-heading font-bold text-[var(--text)]">
+                                    {{ locale === 'en' ? 'Pending Payment Order' : 'পেমেন্ট অপেক্ষমাণ রয়েছে' }}
+                                </span>
+                                <span class="rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                                    #{{ order.order_number }}
+                                </span>
+                            </div>
+                            <p class="mt-1 text-sm text-[var(--text)] leading-relaxed">
+                                {{ locale === 'en'
+                                    ? `You have a ৳${money(order.amount, 0)} payment pending. Verify your transaction ID to complete payment or contact support.`
+                                    : `আপনার একটি ৳${money(order.amount, 0)} পেমেন্ট অপেক্ষমাণ রয়েছে। পেমেন্ট সম্পন্ন করতে ট্রানজ্যাকশন আইডি যাচাই করুন অথবা সহায়তা পেতে যোগাযোগ করুন।`
+                                }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                        <button
+                            @click="openVerify(order)"
+                            class="btn btn-primary btn-sm rounded-xl px-4 py-2 text-xs font-bold shadow-xs"
+                        >
+                            {{ locale === 'en' ? 'Verify TrxID' : 'ট্রানজ্যাকশন আইডি যাচাই' }}
+                        </button>
+                        <Link
+                            href="/support/tickets"
+                            class="btn btn-secondary btn-sm rounded-xl px-3.5 py-2 text-xs font-semibold"
+                        >
+                            {{ locale === 'en' ? 'Contact Support' : 'সহায়তা পেতে যোগাযোগ করুন' }}
+                        </Link>
+                    </div>
+                </div>
+
+                <!-- Inline Verification Form when toggled -->
+                <div v-if="verifyingOrder?.id === order.id" class="mt-4 pt-4 border-t border-amber-500/30">
+                    <form @submit.prevent="submitVerify" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <div class="flex-1">
+                            <input
+                                v-model="verifyForm.transaction_id"
+                                type="text"
+                                placeholder="বিকাশ / নগদ / রকেট TrxID দিন (e.g. BL92XK49QA)"
+                                class="input text-xs py-2 font-mono w-full"
+                                required
+                            />
+                            <p v-if="verifyForm.errors.transaction_id" class="mt-1 text-xs text-rose-500">
+                                {{ verifyForm.errors.transaction_id }}
+                            </p>
+                        </div>
+                        <button
+                            type="submit"
+                            :disabled="verifyForm.processing"
+                            class="btn btn-primary btn-sm shrink-0 px-4 py-2 font-bold text-xs"
+                        >
+                            {{ verifyForm.processing ? 'যাচাই হচ্ছে...' : 'জমা দিন' }}
+                        </button>
+                        <button
+                            type="button"
+                            @click="verifyingOrder = null"
+                            class="btn btn-secondary btn-sm shrink-0 px-3 py-2 text-xs"
+                        >
+                            বাতিল
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
 
         <div class="card anim-rise sheen mb-6 flex items-center gap-4 rounded-2xl bg-gradient-to-br from-[var(--secondary)]/12 via-[var(--surface)] to-[var(--primary)]/10 p-6">
             <span class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary)]/15 text-[var(--primary)]">

@@ -36,8 +36,13 @@ function adjustDisplay(key, amount) {
 const nav = computed(() => [
     { label: t('nav.courses'), href: '/courses' },
     { label: t('nav.library'), href: '/library' },
+    {
+        label: locale.value === 'bn' ? 'ভর্তি প্রস্তুতি ২০২৬' : 'Admissions 2026',
+        href: '/admission-notice',
+        badge: locale.value === 'bn' ? 'চলছে' : 'Live',
+        highlight: true,
+    },
     { label: locale.value === 'bn' ? 'চাকরির খবর' : 'Job News', href: '/job-news' },
-    { label: locale.value === 'bn' ? 'ভর্তি বিজ্ঞপ্তি' : 'Admissions', href: '/admission-notice' },
     { label: locale.value === 'bn' ? 'টুলস' : 'Tools', href: '/tools' },
     { label: t('nav.blog'), href: '/blog' },
     { label: t('plans_page.title'), href: '/plans' },
@@ -55,8 +60,21 @@ const nav = computed(() => [
                         v-for="item in nav"
                         :key="item.href"
                         :href="item.href"
-                        class="px-3 py-2 rounded-lg hover:text-white hover:bg-white/5 transition-all"
-                    >{{ item.label }}</Link>
+                        :class="[
+                            'px-3 py-2 rounded-lg transition-all flex items-center gap-1.5',
+                            item.highlight
+                                ? 'text-white font-semibold bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/25 shadow-sm shadow-orange-500/10'
+                                : 'hover:text-white hover:bg-white/5'
+                        ]"
+                    >
+                        <span>{{ item.label }}</span>
+                        <span
+                            v-if="item.badge"
+                            class="px-1.5 py-0.5 text-[10px] font-black rounded-full bg-gradient-to-r from-rose-500 to-amber-500 text-white shadow-sm shadow-rose-500/30 animate-pulse tracking-wide"
+                        >
+                            {{ item.badge }}
+                        </span>
+                    </Link>
                 </nav>
 
                 <div class="flex items-center gap-2">
@@ -91,9 +109,20 @@ const nav = computed(() => [
                             v-for="item in nav"
                             :key="item.href"
                             :href="item.href"
-                            class="nav-link text-[var(--text-muted)] hover:text-[var(--text)]"
+                            :class="[
+                                'nav-link flex items-center justify-between',
+                                item.highlight ? 'text-orange-400 font-semibold' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                            ]"
                             @click="mobileOpen = false"
-                        >{{ item.label }}</Link>
+                        >
+                            <span>{{ item.label }}</span>
+                            <span
+                                v-if="item.badge"
+                                class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                            >
+                                {{ item.badge }}
+                            </span>
+                        </Link>
                         <Link href="/contact" class="nav-link text-[var(--text-muted)] hover:text-[var(--text)]" @click="mobileOpen = false">{{ t('nav.contact') }}</Link>
                         <div class="my-2 dot-seam"></div>
                         <Link v-if="!student" href="/login" class="btn btn-outline" @click="mobileOpen = false">{{ t('nav.login') }}</Link>
@@ -120,7 +149,7 @@ const nav = computed(() => [
                             <li><Link href="/courses" class="hover:text-[var(--primary)] transition-colors">{{ t('courses_page.title') }}</Link></li>
                             <li><Link href="/library" class="hover:text-[var(--primary)] transition-colors">{{ t('nav.library') }}</Link></li>
                             <li><Link href="/job-news" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'চাকরির খবর ও ক্যারিয়ার' : 'Job News' }}</Link></li>
-                            <li><Link href="/admission-notice" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'বিশ্ববিদ্যালয় ভর্তি বিজ্ঞপ্তি' : 'Admission Notices' }}</Link></li>
+                            <li><Link href="/admission-notice" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'বিশ্ববিদ্যালয় ভর্তি প্রস্তুতি ২০২৬' : 'University Admissions 2026' }}</Link></li>
                             <li><Link href="/tools" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'স্টুডেন্ট টুলস' : 'Student Tools' }}</Link></li>
                             <li><Link href="/blog" class="hover:text-[var(--primary)] transition-colors">{{ t('nav.blog') }}</Link></li>
                             <li><Link href="/plans" class="hover:text-[var(--primary)] transition-colors">{{ t('plans_page.title') }}</Link></li>

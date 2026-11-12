@@ -22,9 +22,15 @@ class WalletController extends Controller
     {
         $student = auth('web')->user();
 
+        $pendingOrders = $student->orders()
+            ->where('status', 'pending')
+            ->latest()
+            ->get(['id', 'order_number', 'orderable_type', 'amount', 'payment_method', 'gateway_transaction_id', 'created_at']);
+
         return Inertia::render('Student/Wallet/Index', [
             'balance' => $student->wallet_balance,
             'transactions' => $student->walletTransactions()->latest()->paginate(20),
+            'pendingOrders' => $pendingOrders,
         ]);
     }
 
@@ -167,5 +173,47 @@ class WalletController extends Controller
         }
 
         return redirect()->route('courses.index')->with($flashKey, $message);
+    }
+
+    /**
+     * Submit or verify transaction reference for a pending order.
+     */
+    public function verifyOrder(
+        Request $request,
+        Order $order,
+        PurchaseService $purchases,
+        MhpayService $mhpay,
+        ZinipayService $zinipay
+    ): RedirectResponse {
+        $student = auth('web')->user();
+        abort_unless($order->student_id === $student->id, 403);
+        abort_unless($order->status === 'pending', 400, 'Order is not pending.');
+
+        $request->validate([
+            'transaction_id' => ['required', 'string', 'min:3', 'max:100'],
+        ]);
+
+        $trxId = trim($request->input('transaction_id'));
+        $order->update(['gateway_transaction_id' => $trxId]);
+
+        // Attempt automated verification if invoice ID is present
+        if ($order->gateway_invoice_id) {
+            $verified = null;
+            if ($order->payment_method === 'mhpay') {
+                $verified = $mhpay->verifiedData($order->gateway_invoice_id);
+            } elseif ($order->payment_method === 'zinipay') {
+                $verified = $zinipay->verifiedData($order->gateway_invoice_id);
+            } else {
+                $verified = $mhpay->verifiedData($order->gateway_invoice_id)
+                    ?: $zinipay->verifiedData($order->gateway_invoice_id);
+            }
+
+            if ($verified) {
+                $purchases->completeGatewayOrder($order, $trxId);
+                return back()->with('success', 'পেমেন্ট সফলভাবে যাচাই হয়েছে এবং আপনার অর্ডারটি সম্পন্ন হয়েছে!');
+            }
+        }
+
+        return back()->with('success', "আপনার ট্রানজ্যাকশন আইডি ({$trxId}) সংরক্ষণ করা হয়েছে। এডমিন ভেরিফাই করে দ্রুত অনুমোদন করবেন।");
     }
 }

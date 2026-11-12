@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
@@ -15,10 +15,50 @@ const props = defineProps({
     testimonials: Array,
     seo: Object,
     featuredJobs: Array,
+    featuredAdmissions: Array,
 });
 
 const { locale } = useI18n();
 const en = computed(() => locale.value === 'en');
+
+// Target application deadlines for Admissions 2026
+const duDeadline = new Date('2026-11-25T23:59:59+06:00');
+const ruDeadline = new Date('2026-11-30T23:59:59+06:00');
+
+const duTimer = ref({ days: '00', hours: '00', minutes: '00', seconds: '00' });
+const ruTimer = ref({ days: '00', hours: '00', minutes: '00', seconds: '00' });
+let homeTimerInterval = null;
+
+function updateHomeTimers() {
+    const now = new Date().getTime();
+
+    // DU
+    const distDU = Math.max(0, duDeadline.getTime() - now);
+    duTimer.value = {
+        days: Math.floor(distDU / (1000 * 60 * 60 * 24)).toString().padStart(2, '0'),
+        hours: Math.floor((distDU % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0'),
+        minutes: Math.floor((distDU % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0'),
+        seconds: Math.floor((distDU % (1000 * 60)) / 1000).toString().padStart(2, '0'),
+    };
+
+    // RU
+    const distRU = Math.max(0, ruDeadline.getTime() - now);
+    ruTimer.value = {
+        days: Math.floor(distRU / (1000 * 60 * 60 * 24)).toString().padStart(2, '0'),
+        hours: Math.floor((distRU % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0'),
+        minutes: Math.floor((distRU % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0'),
+        seconds: Math.floor((distRU % (1000 * 60)) / 1000).toString().padStart(2, '0'),
+    };
+}
+
+onMounted(() => {
+    updateHomeTimers();
+    homeTimerInterval = setInterval(updateHomeTimers, 1000);
+});
+
+onUnmounted(() => {
+    if (homeTimerInterval) clearInterval(homeTimerInterval);
+});
 
 const steps = computed(() => en.value ? [
     { icon: 'person_add', title: 'Create your account', text: 'Choose a learning goal and set up your Sikhun account in a few simple steps.', meta: 'A clear place to begin' },
@@ -111,6 +151,277 @@ function formatDate(d) {
                                     <span class="text-gray-700 dark:text-gray-300">{{ en ? 'Job & Admission Bundles:' : 'চাকরি ও ভর্তি স্পেশাল বান্ডেল:' }}</span>
                                     <Link href="/#bundles" class="text-[var(--primary)] font-bold hover:underline">{{ en ? 'View details →' : 'বিস্তারিত দেখুন →' }}</Link>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION: Admissions 2026-2027 Live Countdown & Practice Hub -->
+            <section id="admissions-season" class="max-w-7xl mx-auto px-4 md:px-6 py-10 md:py-14 scroll-mt-24">
+                <div class="relative overflow-hidden rounded-3xl border border-orange-500/25 bg-gradient-to-br from-[#11192e] via-[#0d1424] to-[#161226] text-white p-6 sm:p-10 shadow-2xl">
+                    <!-- Glow effects -->
+                    <div class="pointer-events-none absolute -top-24 right-10 w-96 h-96 bg-orange-500/15 rounded-full blur-3xl"></div>
+                    <div class="pointer-events-none absolute -bottom-24 left-10 w-96 h-96 bg-blue-500/15 rounded-full blur-3xl"></div>
+
+                    <div class="relative z-10">
+                        <!-- Top Header Strip -->
+                        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/10">
+                            <div>
+                                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-400 text-xs font-bold uppercase tracking-wider mb-2">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                                    </span>
+                                    <span>{{ en ? 'ADMISSIONS 2026-2027' : 'ভর্তি সেশন ২০২৬-২০২৭ লাইভ' }}</span>
+                                </div>
+                                <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-heading text-white tracking-tight">
+                                    {{ en ? 'University Admission Preparation 2026-2027' : 'বিশ্ববিদ্যালয় ভর্তি প্রস্তুতি ২০২৬-২০২৭' }}
+                                </h2>
+                                <p class="mt-2 text-sm md:text-base text-gray-300 max-w-2xl leading-relaxed">
+                                    {{ en ? 'Live application deadlines, 15,000+ past year solved questions for DU, RU, BUET & GST with realistic model tests and instant AI explanations.' : 'ঢাকা, রাজশাহী, বুয়েট ও গুচ্ছসহ সকল বিশ্ববিদ্যালয়ের আবেদনের সময়সীমা, বিগত ২৫ বছরের ১৫,০০০+ সলভড প্রশ্নব্যাংক এবং এআই সমাধানসহ ফ্রি মডেল টেস্ট।' }}
+                                </p>
+                            </div>
+
+                            <!-- Direct CTA Buttons -->
+                            <div class="flex flex-wrap items-center gap-3">
+                                <Link
+                                    href="/question-bank?segment=admission"
+                                    class="px-5 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-orange-500/25 transition flex items-center gap-2 hover:-translate-y-0.5"
+                                >
+                                    <span class="material-symbols-outlined !text-base">menu_book</span>
+                                    <span>{{ en ? 'Admission Question Bank' : 'ভর্তি প্রশ্নব্যাংক' }}</span>
+                                    <span>→</span>
+                                </Link>
+
+                                <Link
+                                    href="/question-bank?segment=admission"
+                                    class="px-5 py-3 rounded-xl bg-blue-600/90 hover:bg-blue-600 text-white font-bold text-xs sm:text-sm border border-blue-400/30 shadow-lg shadow-blue-500/20 transition flex items-center gap-2 hover:-translate-y-0.5"
+                                >
+                                    <span class="material-symbols-outlined !text-base">quiz</span>
+                                    <span>{{ en ? 'Free Model Test' : 'ফ্রি মডেল টেস্ট' }}</span>
+                                    <span class="px-1.5 py-0.2 text-[10px] rounded bg-white/20 text-white font-bold">১০টি প্রশ্ন</span>
+                                </Link>
+
+                                <Link
+                                    href="/admission-notice"
+                                    class="px-4 py-3 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-gray-200 font-semibold text-xs sm:text-sm transition flex items-center gap-1.5"
+                                >
+                                    <span class="material-symbols-outlined !text-base">campaign</span>
+                                    <span>{{ en ? 'All Admission Circulars' : 'সকল ভর্তি সার্কুলার' }}</span>
+                                </Link>
+                            </div>
+                        </div>
+
+                        <!-- Open Application Countdown Cards Grid -->
+                        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <!-- DU Application Countdown Card -->
+                            <div class="p-6 rounded-2xl bg-[#141d33]/90 border border-blue-500/30 hover:border-blue-400/60 transition shadow-lg relative overflow-hidden group">
+                                <div class="flex items-start justify-between gap-3 mb-4">
+                                    <div>
+                                        <span class="px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 text-[11px] font-bold uppercase tracking-wider inline-block mb-1.5">
+                                            ঢাকা বিশ্ববিদ্যালয় (DU)
+                                        </span>
+                                        <h3 class="text-lg sm:text-xl font-bold font-heading text-white">
+                                            আন্ডারগ্র্যাজুয়েট ভর্তি পরীক্ষা ২০২৬
+                                        </h3>
+                                        <p class="text-xs text-blue-200/80 mt-0.5">
+                                            আবেদনের শেষ সময়: <strong class="text-rose-400 font-bold">২৫ নভেম্বর ২০২৬</strong>
+                                        </p>
+                                    </div>
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse">
+                                        আবেদন চলছে
+                                    </span>
+                                </div>
+
+                                <!-- Live 4-Block Countdown Timer -->
+                                <div class="py-3 px-4 rounded-xl bg-[#0d1424] border border-blue-400/20 flex items-center justify-around font-mono text-center mb-4">
+                                    <div>
+                                        <div class="text-xl sm:text-2xl font-black text-white">{{ duTimer.days }}</div>
+                                        <div class="text-[10px] text-blue-300 uppercase font-sans">দিন</div>
+                                    </div>
+                                    <span class="text-blue-500 font-bold text-lg">:</span>
+                                    <div>
+                                        <div class="text-xl sm:text-2xl font-black text-white">{{ duTimer.hours }}</div>
+                                        <div class="text-[10px] text-blue-300 uppercase font-sans">ঘণ্টা</div>
+                                    </div>
+                                    <span class="text-blue-500 font-bold text-lg">:</span>
+                                    <div>
+                                        <div class="text-xl sm:text-2xl font-black text-white">{{ duTimer.minutes }}</div>
+                                        <div class="text-[10px] text-blue-300 uppercase font-sans">মিনিট</div>
+                                    </div>
+                                    <span class="text-blue-500 font-bold text-lg">:</span>
+                                    <div>
+                                        <div class="text-xl sm:text-2xl font-black text-rose-400">{{ duTimer.seconds }}</div>
+                                        <div class="text-[10px] text-blue-300 uppercase font-sans">সেকেন্ড</div>
+                                    </div>
+                                </div>
+
+                                <!-- DU Units Direct Links -->
+                                <div class="space-y-2">
+                                    <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                                        ইউনিটভিত্তিক প্রশ্নব্যাংক অনুশীলন:
+                                    </div>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        <Link
+                                            href="/question-bank?segment=admission&origin=DU-A"
+                                            class="p-2 rounded-xl bg-white/5 hover:bg-orange-500/20 border border-white/5 hover:border-orange-500/40 text-center transition group/u"
+                                        >
+                                            <div class="text-xs font-bold text-white group-hover/u:text-orange-400">ক ইউনিট</div>
+                                            <div class="text-[10px] text-gray-400">১৬৯৩ প্রশ্ন</div>
+                                        </Link>
+                                        <Link
+                                            href="/question-bank?segment=admission&origin=DU-B"
+                                            class="p-2 rounded-xl bg-white/5 hover:bg-orange-500/20 border border-white/5 hover:border-orange-500/40 text-center transition group/u"
+                                        >
+                                            <div class="text-xs font-bold text-white group-hover/u:text-orange-400">খ ইউনিট</div>
+                                            <div class="text-[10px] text-gray-400">৮৪০ প্রশ্ন</div>
+                                        </Link>
+                                        <Link
+                                            href="/question-bank?segment=admission&origin=DU-C"
+                                            class="p-2 rounded-xl bg-white/5 hover:bg-orange-500/20 border border-white/5 hover:border-orange-500/40 text-center transition group/u"
+                                        >
+                                            <div class="text-xs font-bold text-white group-hover/u:text-orange-400">গ ইউনিট</div>
+                                            <div class="text-[10px] text-gray-400">১৩৯৫ প্রশ্ন</div>
+                                        </Link>
+                                        <Link
+                                            href="/question-bank?segment=admission&origin=DU-D"
+                                            class="p-2 rounded-xl bg-white/5 hover:bg-orange-500/20 border border-white/5 hover:border-orange-500/40 text-center transition group/u"
+                                        >
+                                            <div class="text-xs font-bold text-white group-hover/u:text-orange-400">ঘ / IBA</div>
+                                            <div class="text-[10px] text-gray-400">৮৩৭ প্রশ্ন</div>
+                                        </Link>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+                                    <Link href="/admission-notice" class="text-blue-300 hover:text-white font-medium flex items-center gap-1">
+                                        <span>অফিসিয়াল সার্কুলার দেখুন</span>
+                                        <span>→</span>
+                                    </Link>
+                                    <Link href="/question-bank?segment=admission&origin=DU-A" class="text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1">
+                                        <span>ঢাবি সম্পূর্ণ প্রশ্নব্যাংক</span>
+                                        <span class="material-symbols-outlined !text-xs">north_east</span>
+                                    </Link>
+                                </div>
+                            </div>
+
+                            <!-- RU Application Countdown Card -->
+                            <div class="p-6 rounded-2xl bg-[#141d33]/90 border border-purple-500/30 hover:border-purple-400/60 transition shadow-lg relative overflow-hidden group">
+                                <div class="flex items-start justify-between gap-3 mb-4">
+                                    <div>
+                                        <span class="px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 text-[11px] font-bold uppercase tracking-wider inline-block mb-1.5">
+                                            রাজশাহী বিশ্ববিদ্যালয় (RU)
+                                        </span>
+                                        <h3 class="text-lg sm:text-xl font-bold font-heading text-white">
+                                            স্নাতক প্রথম বর্ষ ভর্তি পরীক্ষা ২০২৬
+                                        </h3>
+                                        <p class="text-xs text-purple-200/80 mt-0.5">
+                                            আবেদনের শেষ সময়: <strong class="text-rose-400 font-bold">৩০ নভেম্বর ২০২৬</strong>
+                                        </p>
+                                    </div>
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse">
+                                        আবেদন চলছে
+                                    </span>
+                                </div>
+
+                                <!-- Live 4-Block Countdown Timer -->
+                                <div class="py-3 px-4 rounded-xl bg-[#0d1424] border border-purple-400/20 flex items-center justify-around font-mono text-center mb-4">
+                                    <div>
+                                        <div class="text-xl sm:text-2xl font-black text-white">{{ ruTimer.days }}</div>
+                                        <div class="text-[10px] text-purple-300 uppercase font-sans">দিন</div>
+                                    </div>
+                                    <span class="text-purple-500 font-bold text-lg">:</span>
+                                    <div>
+                                        <div class="text-xl sm:text-2xl font-black text-white">{{ ruTimer.hours }}</div>
+                                        <div class="text-[10px] text-purple-300 uppercase font-sans">ঘণ্টা</div>
+                                    </div>
+                                    <span class="text-purple-500 font-bold text-lg">:</span>
+                                    <div>
+                                        <div class="text-xl sm:text-2xl font-black text-white">{{ ruTimer.minutes }}</div>
+                                        <div class="text-[10px] text-purple-300 uppercase font-sans">মিনিট</div>
+                                    </div>
+                                    <span class="text-purple-500 font-bold text-lg">:</span>
+                                    <div>
+                                        <div class="text-xl sm:text-2xl font-black text-rose-400">{{ ruTimer.seconds }}</div>
+                                        <div class="text-[10px] text-purple-300 uppercase font-sans">সেকেন্ড</div>
+                                    </div>
+                                </div>
+
+                                <!-- RU Units Direct Links -->
+                                <div class="space-y-2">
+                                    <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                                        ইউনিটভিত্তিক প্রশ্নব্যাংক অনুশীলন:
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <Link
+                                            href="/question-bank?segment=admission&origin=RU-A"
+                                            class="p-2 rounded-xl bg-white/5 hover:bg-orange-500/20 border border-white/5 hover:border-orange-500/40 text-center transition group/u"
+                                        >
+                                            <div class="text-xs font-bold text-white group-hover/u:text-orange-400">A ইউনিট (মানবিক)</div>
+                                            <div class="text-[10px] text-gray-400">২৫২৯ প্রশ্ন</div>
+                                        </Link>
+                                        <Link
+                                            href="/question-bank?segment=admission&origin=RU-B"
+                                            class="p-2 rounded-xl bg-white/5 hover:bg-orange-500/20 border border-white/5 hover:border-orange-500/40 text-center transition group/u"
+                                        >
+                                            <div class="text-xs font-bold text-white group-hover/u:text-orange-400">B ইউনিট (বাণিজ্য)</div>
+                                            <div class="text-[10px] text-gray-400">৬৯৬ প্রশ্ন</div>
+                                        </Link>
+                                        <Link
+                                            href="/question-bank?segment=admission&origin=RU-C"
+                                            class="p-2 rounded-xl bg-white/5 hover:bg-orange-500/20 border border-white/5 hover:border-orange-500/40 text-center transition group/u"
+                                        >
+                                            <div class="text-xs font-bold text-white group-hover/u:text-orange-400">C ইউনিট (বিজ্ঞান)</div>
+                                            <div class="text-[10px] text-gray-400">১৯৩১ প্রশ্ন</div>
+                                        </Link>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+                                    <Link href="/admission-notice" class="text-purple-300 hover:text-white font-medium flex items-center gap-1">
+                                        <span>অফিসিয়াল সার্কুলার দেখুন</span>
+                                        <span>→</span>
+                                    </Link>
+                                    <Link href="/question-bank?segment=admission&origin=RU-A" class="text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1">
+                                        <span>রাবি সম্পূর্ণ প্রশ্নব্যাংক</span>
+                                        <span class="material-symbols-outlined !text-xs">north_east</span>
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick University Pills strip -->
+                        <div class="mt-6 pt-5 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+                            <span class="text-gray-400 font-semibold">{{ en ? 'More University Question Banks:' : 'অন্যান্য বিশ্ববিদ্যালয় প্রশ্নব্যাংক:' }}</span>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <Link
+                                    href="/question-bank?segment=admission&origin=BUET"
+                                    class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition flex items-center gap-1"
+                                >
+                                    <span>বুয়েট ও ইঞ্জিনিয়ারিং</span>
+                                    <span class="text-[10px] text-orange-400">১৭০০+</span>
+                                </Link>
+                                <Link
+                                    href="/question-bank?segment=admission&origin=GST-C"
+                                    class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition flex items-center gap-1"
+                                >
+                                    <span>জিএসটি গুচ্ছ (২৪ ভার্সিটি)</span>
+                                    <span class="text-[10px] text-orange-400">১৬০০+</span>
+                                </Link>
+                                <Link
+                                    href="/question-bank?segment=admission&search=মেডিকেল"
+                                    class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition flex items-center gap-1"
+                                >
+                                    <span>মেডিকেল ও ডেন্টাল</span>
+                                    <span class="text-[10px] text-orange-400">১২০০+</span>
+                                </Link>
+                                <Link
+                                    href="/admission-notice"
+                                    class="px-3 py-1.5 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/30 text-orange-300 font-bold transition flex items-center gap-1"
+                                >
+                                    <span>সকল সার্কুলার দেখুন →</span>
+                                </Link>
                             </div>
                         </div>
                     </div>

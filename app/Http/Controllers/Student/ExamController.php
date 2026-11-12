@@ -198,6 +198,8 @@ class ExamController extends Controller
             'time_taken_seconds' => $exam->started_at ? max(0, (int) now()->diffInSeconds($exam->started_at)) : null,
         ]);
 
+        app(\App\Services\ExamMistakeService::class)->recordExamAnswers($exam, $answers);
+
         $student = auth('web')->user();
 
         // Free campaign/coupon access is unlimited — never consume paid

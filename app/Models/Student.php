@@ -60,6 +60,7 @@ class Student extends Authenticatable implements MustVerifyEmail
     public function aiSessions() { return $this->hasMany(AiSession::class); }
     public function myBooks() { return $this->hasMany(MyBook::class); }
     public function examSessions() { return $this->hasMany(ExamSession::class); }
+    public function examAnswers() { return $this->hasMany(ExamAnswer::class); }
     public function flashcardSets() { return $this->hasMany(FlashcardSet::class); }
     public function essaySubmissions() { return $this->hasMany(EssaySubmission::class); }
     public function studySchedules() { return $this->hasMany(StudySchedule::class); }
@@ -302,6 +303,11 @@ class Student extends Authenticatable implements MustVerifyEmail
                 'hash' => sha1($this->getEmailForVerification()),
             ])
         ));
+    }
+
+    public function getEducationTypeAttribute(): ?string
+    {
+        return $this->type;
     }
 
     public function sendPasswordResetNotification($token): void

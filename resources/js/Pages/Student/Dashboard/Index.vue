@@ -1,6 +1,6 @@
 <script setup>
-import { computed } from 'vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Head, Link, usePage, useForm } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
 import {
@@ -14,6 +14,11 @@ import {
     ArrowRightIcon,
     FireIcon,
     TrophyIcon,
+    ExclamationTriangleIcon,
+    ClockIcon,
+    BuildingLibraryIcon,
+    SparklesIcon,
+    XMarkIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -26,9 +31,28 @@ const props = defineProps({
     activeSubscription: Object,
     access: Object,
     onboarding: Object,
+    pendingOrder: Object,
 });
 const { t, locale, money, n } = useI18n();
 const student = usePage().props.auth?.student;
+
+const isAdmission = computed(() => {
+    return student?.education_type === 'admission' || student?.type === 'admission';
+});
+
+const showVerifyModal = ref(false);
+const verifyForm = useForm({
+    transaction_id: props.pendingOrder?.gateway_transaction_id || '',
+});
+
+function submitVerify() {
+    if (!props.pendingOrder) return;
+    verifyForm.post(`/wallet/orders/${props.pendingOrder.id}/verify`, {
+        onSuccess: () => {
+            showVerifyModal.value = false;
+        },
+    });
+}
 
 function badge(rank) {
     if (rank === 1) return '🥇';
@@ -159,6 +183,145 @@ const today = computed(() => new Date().toLocaleDateString(locale.value === 'bn'
             <Link href="/access" class="btn btn-outline btn-sm shrink-0">{{ locale === 'en' ? 'View access' : 'অ্যাক্সেস দেখুন' }} →</Link>
         </div>
 
+        <!-- Pending Order Alert Banner -->
+        <section v-if="pendingOrder" class="anim-rise mb-6 overflow-hidden rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-[var(--surface)] p-5 shadow-sm">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div class="flex items-start gap-3.5">
+                    <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-500/20 text-xl text-amber-600 dark:text-amber-400">
+                        ⏳
+                    </span>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-heading font-bold text-[var(--text)]">
+                                {{ locale === 'en' ? 'Payment Pending' : 'পেমেন্ট অপেক্ষমাণ রয়েছে' }}
+                            </span>
+                            <span class="rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                                #{{ pendingOrder.order_number }}
+                            </span>
+                        </div>
+                        <p class="mt-1 text-sm text-[var(--text)] leading-relaxed">
+                            {{ locale === 'en'
+                                ? `You have a ৳${money(pendingOrder.amount, 0)} payment pending. Verify your transaction ID to complete payment or contact support.`
+                                : `আপনার একটি ৳${money(pendingOrder.amount, 0)} পেমেন্ট অপেক্ষমাণ রয়েছে। পেমেন্ট সম্পন্ন করতে ট্রানজ্যাকশন আইডি যাচাই করুন অথবা সহায়তা পেতে যোগাযোগ করুন।`
+                            }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                    <button
+                        @click="showVerifyModal = true"
+                        class="btn btn-primary btn-sm rounded-xl px-4 py-2 text-xs font-bold shadow-xs"
+                    >
+                        {{ locale === 'en' ? 'Verify TrxID' : 'ট্রানজ্যাকশন আইডি যাচাই' }}
+                    </button>
+                    <Link
+                        href="/support/tickets"
+                        class="btn btn-secondary btn-sm rounded-xl px-3.5 py-2 text-xs font-semibold"
+                    >
+                        {{ locale === 'en' ? 'Contact Support' : 'সহায়তা নিন' }}
+                    </Link>
+                    <Link
+                        href="/wallet"
+                        class="text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--primary)] px-2"
+                    >
+                        {{ locale === 'en' ? 'Wallet' : 'ওয়ালেট' }} →
+                    </Link>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admission Student Experience / Hub -->
+        <section v-if="isAdmission" class="anim-rise mb-6 rounded-3xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-[var(--surface)] p-6 shadow-sm">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-300">
+                        🎓 {{ locale === 'en' ? 'Admission Test Hub' : 'বিশ্ববিদ্যালয় ভর্তি পরীক্ষা প্রস্তুতি' }}
+                    </div>
+                    <h2 class="mt-2 font-heading text-xl font-extrabold sm:text-2xl text-[var(--text)]">
+                        {{ locale === 'en' ? 'Admission Candidate Quick Access' : 'ভর্তি পরীক্ষার্থী বিশেষ কর্নার' }}
+                    </h2>
+                    <p class="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
+                        {{ locale === 'en' ? 'Quickly access past question papers, live mock tests, mistake revision, and official notices.' : 'বিগত বছরের প্রশ্নব্যাংক, লাইভ মডেল টেস্ট, ভুল প্রশ্ন রিভিশন ও ভর্তি সার্কুলারে দ্রুত প্রবেশ করুন।' }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <Link
+                    href="/question-bank"
+                    class="group flex flex-col justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)]/90 p-4 transition-all hover:-translate-y-0.5 hover:border-amber-500/40 hover:shadow-md"
+                >
+                    <div class="flex items-center justify-between">
+                        <span class="grid h-10 w-10 place-items-center rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 text-lg">
+                            🏛️
+                        </span>
+                        <span class="rounded-full bg-[var(--surface2)] px-2 py-0.5 text-[10px] font-bold text-[var(--text-muted)]">বিগত প্রশ্ন</span>
+                    </div>
+                    <div class="mt-3">
+                        <h3 class="font-heading font-bold text-sm text-[var(--text)] group-hover:text-orange-600 transition-colors">
+                            বিগত বছরের প্রশ্নব্যাংক (DU/RU/GST/BUET/মেডিকেল)
+                        </h3>
+                        <p class="text-[11px] text-[var(--text-muted)] mt-1">ঢাবি, রাবি, গুচ্ছ, বুয়েট ও মেডিকেল বিগত প্রশ্ন সমাধান</p>
+                    </div>
+                </Link>
+
+                <Link
+                    href="/exams/create"
+                    class="group flex flex-col justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)]/90 p-4 transition-all hover:-translate-y-0.5 hover:border-blue-500/40 hover:shadow-md"
+                >
+                    <div class="flex items-center justify-between">
+                        <span class="grid h-10 w-10 place-items-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 text-lg">
+                            ⏱️
+                        </span>
+                        <span class="rounded-full bg-[var(--surface2)] px-2 py-0.5 text-[10px] font-bold text-[var(--text-muted)]">লাইভ টেস্ট</span>
+                    </div>
+                    <div class="mt-3">
+                        <h3 class="font-heading font-bold text-sm text-[var(--text)] group-hover:text-blue-600 transition-colors">
+                            দৈনিক লাইভ মডেল টেস্ট
+                        </h3>
+                        <p class="text-[11px] text-[var(--text-muted)] mt-1">নেগেটিভ মার্কিং সহ রিয়েল টাইম ভর্তি পরীক্ষা সিমুলেশন</p>
+                    </div>
+                </Link>
+
+                <Link
+                    href="/mistakes"
+                    class="group flex flex-col justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)]/90 p-4 transition-all hover:-translate-y-0.5 hover:border-rose-500/40 hover:shadow-md"
+                >
+                    <div class="flex items-center justify-between">
+                        <span class="grid h-10 w-10 place-items-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-lg">
+                            💡
+                        </span>
+                        <span class="rounded-full bg-[var(--surface2)] px-2 py-0.5 text-[10px] font-bold text-rose-500">রিভিশন বুক</span>
+                    </div>
+                    <div class="mt-3">
+                        <h3 class="font-heading font-bold text-sm text-[var(--text)] group-hover:text-rose-600 transition-colors">
+                            আমার ভুল প্রশ্নসমূহ (Mistake Review)
+                        </h3>
+                        <p class="text-[11px] text-[var(--text-muted)] mt-1">ভুল প্রশ্নগুলো পুনরায় প্র্যাকটিস করে মাস্টার্ড করুন</p>
+                    </div>
+                </Link>
+
+                <Link
+                    href="/admission-notice"
+                    class="group flex flex-col justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)]/90 p-4 transition-all hover:-translate-y-0.5 hover:border-emerald-500/40 hover:shadow-md"
+                >
+                    <div class="flex items-center justify-between">
+                        <span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-lg">
+                            📢
+                        </span>
+                        <span class="rounded-full bg-[var(--surface2)] px-2 py-0.5 text-[10px] font-bold text-emerald-500">অফিসিয়াল</span>
+                    </div>
+                    <div class="mt-3">
+                        <h3 class="font-heading font-bold text-sm text-[var(--text)] group-hover:text-emerald-600 transition-colors">
+                            অফিসিয়াল ভর্তি সার্কুলার
+                        </h3>
+                        <p class="text-[11px] text-[var(--text-muted)] mt-1">সকল পাবলিক, প্রাইভেট ও গুচ্ছ বিশ্ববিদ্যালয় সার্কুলার</p>
+                    </div>
+                </Link>
+            </div>
+        </section>
+
         <div class="grid gap-6 lg:grid-cols-3">
             <!-- Continue learning -->
             <div class="space-y-4 lg:col-span-2">
@@ -262,6 +425,77 @@ const today = computed(() => new Date().toLocaleDateString(locale.value === 'bn'
                         </Link>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- TrxID Verification Modal -->
+        <div
+            v-if="showVerifyModal && pendingOrder"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+        >
+            <div class="card w-full max-w-md rounded-3xl p-6 sm:p-7 shadow-2xl anim-rise">
+                <div class="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+                    <div class="flex items-center gap-2">
+                        <span class="grid h-9 w-9 place-items-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                            💳
+                        </span>
+                        <div>
+                            <h3 class="font-heading font-extrabold text-lg text-[var(--text)]">
+                                {{ locale === 'en' ? 'Verify Payment TrxID' : 'ট্রানজ্যাকশন আইডি যাচাই' }}
+                            </h3>
+                            <p class="text-xs text-[var(--text-muted)]">
+                                {{ locale === 'en' ? `Order #${pendingOrder.order_number} · ৳${money(pendingOrder.amount, 0)}` : `অর্ডার #${pendingOrder.order_number} · ৳${money(pendingOrder.amount, 0)}` }}
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        @click="showVerifyModal = false"
+                        class="rounded-lg p-1 text-[var(--text-muted)] hover:bg-[var(--surface2)]"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitVerify" class="mt-4 space-y-4">
+                    <div>
+                        <label class="label text-xs">
+                            {{ locale === 'en' ? 'bKash / Nagad / Rocket Transaction ID (TrxID)' : 'বিকাশ / নগদ / রকেট ট্রানজ্যাকশন আইডি (TrxID)' }}
+                        </label>
+                        <input
+                            v-model="verifyForm.transaction_id"
+                            type="text"
+                            placeholder="e.g. BL92XK49QA"
+                            class="input text-sm py-2 font-mono"
+                            required
+                        />
+                        <p v-if="verifyForm.errors.transaction_id" class="mt-1 text-xs text-rose-500">
+                            {{ verifyForm.errors.transaction_id }}
+                        </p>
+                        <p class="mt-1.5 text-[11px] text-[var(--text-muted)]">
+                            {{ locale === 'en'
+                                ? 'Enter the transaction ID received from your payment SMS/app.'
+                                : 'পেমেন্ট সম্পন্ন হওয়ার পর প্রাপ্ত এসএমএস অথবা অ্যাপের ট্রানজ্যাকশন আইডি দিন।'
+                            }}
+                        </p>
+                    </div>
+
+                    <div class="pt-2 flex items-center justify-end gap-2">
+                        <button
+                            type="button"
+                            @click="showVerifyModal = false"
+                            class="btn btn-secondary text-xs px-4 py-2"
+                        >
+                            {{ locale === 'en' ? 'Cancel' : 'বাতিল' }}
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="verifyForm.processing"
+                            class="btn btn-primary text-xs px-5 py-2 font-bold"
+                        >
+                            {{ verifyForm.processing ? (locale === 'en' ? 'Verifying...' : 'যাচাই হচ্ছে...') : (locale === 'en' ? 'Submit TrxID' : 'যাচাই করুন') }}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </StudentLayout>

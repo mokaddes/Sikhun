@@ -78,9 +78,12 @@ class AdmissionScraperService
 
             $slug = 'rajshahi-university-undergraduate-admission-circular-2026-2027';
 
-            return AdmissionNotice::updateOrCreate(
-                ['slug' => $slug],
-                [
+            $existing = AdmissionNotice::where('slug', $slug)->first();
+            if ($existing) {
+                return $existing;
+            }
+
+            return AdmissionNotice::create([
                     'title' => 'রাজশাহী বিশ্ববিদ্যালয় আন্ডারগ্র্যাজুয়েট ভর্তি বিজ্ঞপ্তি ২০২৬-২০২৭ (RU Admission)',
                     'slug' => $slug,
                     'institution_name' => 'রাজশাহী বিশ্ববিদ্যালয় (RU)',
@@ -143,8 +146,7 @@ class AdmissionScraperService
     <li>মোবাইল ব্যাংকিং (bKash/Nagad/Rocket) এর মাধ্যমে প্রাথমিক আবেদন ফি ৫৫ টাকা পরিশোধ করে স্লিপ সংরক্ষণ করুন।</li>
 </ol>
 HTML
-                ]
-            );
+            ]);
         } catch (\Throwable $e) {
             Log::warning('RU live scraper error: ' . $e->getMessage());
             return null;
@@ -240,6 +242,48 @@ HTML
     }
 
     /**
+     * Check if a given URL belongs to a 3rd party aggregator or non-official portal.
+     */
+    public static function isThirdPartyAggregator(?string $url): bool
+    {
+        if (empty($url)) {
+            return false;
+        }
+
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        if (empty($host)) {
+            $host = strtolower(explode('/', preg_replace('#^https?://#i', '', $url))[0] ?? '');
+        }
+
+        $aggregators = [
+            'students.bd',
+            'studyonlinebd.com',
+            'eduresultbd.com',
+            'bdcircularjobs.com',
+            'allresultbd.com',
+            'resultsbd.com',
+            'teletalkresult.com',
+            'jobcircularbd.com',
+            'bdjobs.com',
+            'chakrirkhobor.net',
+            'facebook.com',
+            'fb.com',
+            'banglanews24.com',
+            'prothomalo.com',
+            'jagonews24.com',
+            'thedailycampus.com',
+        ];
+
+        foreach ($aggregators as $aggregator) {
+            if ($host === $aggregator || str_ends_with($host, '.' . $aggregator)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Detect institution name from title or description text
      */
     public function detectInstitution(string $title, string $desc = ''): string
@@ -252,26 +296,33 @@ HTML
             '/\b(CU|চবি|চট্টগ্রাম বিশ্ববিদ্যালয়|চট্টগ্রাম বিশ্ববিদ্যালয়|Chittagong University)\b/iu' => 'চট্টগ্রাম বিশ্ববিদ্যালয় (CU)',
             '/\b(JU|জাবি|জাহাঙ্গীরনগর বিশ্ববিদ্যালয়|জাহাঙ্গীরনগর বিশ্ববিদ্যালয়|Jahangirnagar)\b/iu' => 'জাহাঙ্গীরনগর বিশ্ববিদ্যালয় (JU)',
             '/\b(BUET|বুয়েট|বাংলাদেশ প্রকৌশল)\b/iu' => 'বাংলাদেশ প্রকৌশল বিশ্ববিদ্যালয় (BUET)',
+            '/\b(CKRUET|প্রকৌশল গুচ্ছ|ইঞ্জিনিয়ারিং গুচ্ছ)\b/iu' => 'প্রকৌশল গুচ্ছ (CKRUET)',
             '/\b(KUET|কুয়েট|Khulna University of Engineering)\b/iu' => 'খুলনা প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (KUET)',
             '/\b(RUET|রুয়েট|Rajshahi University of Engineering)\b/iu' => 'রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (RUET)',
             '/\b(CUET|চুয়েট|Chittagong University of Engineering)\b/iu' => 'চট্টগ্রাম প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (CUET)',
+            '/\b(BUTEX|বুটেক্স|টেক্সটাইল বিশ্ববিদ্যালয়|টেক্সটাইল বিশ্ববিদ্যালয়)\b/iu' => 'বাংলাদেশ টেক্সটাইল বিশ্ববিদ্যালয় (BUTEX)',
+            '/\b(BUP|বিইউপি|বাংলাদেশ ইউনিভার্সিটি অব প্রফেশনালস)\b/iu' => 'বাংলাদেশ ইউনিভার্সিটি অব প্রফেশনালস (BUP)',
             '/\b(SUST|সাস্ট|শাহজালাল বিজ্ঞান|Shahjalal University)\b/iu' => 'শাহজালাল বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (SUST)',
+            '/\b(JnU|জবি|জগন্নাথ বিশ্ববিদ্যালয়|জগন্নাথ বিশ্ববিদ্যালয়|Jagannath)\b/iu' => 'জগন্নাথ বিশ্ববিদ্যালয় (JnU)',
+            '/\b(KU|খুবি|খুলনা বিশ্ববিদ্যালয়|খুলনা বিশ্ববিদ্যালয়|Khulna University)\b/iu' => 'খুলনা বিশ্ববিদ্যালয় (KU)',
+            '/\b(IU|ইবি|ইসলামী বিশ্ববিদ্যালয়|ইসলামী বিশ্ববিদ্যালয়|Islamic University)\b/iu' => 'ইসলামী বিশ্ববিদ্যালয় (IU)',
             '/\b(GST|গুচ্ছ|ক্লাস্টার)\b/iu' => 'জিএসটি গুচ্ছ বিশ্ববিদ্যালয় (GST Cluster)',
             '/\b(কৃষি গুচ্ছ|Agri Cluster|কৃষি বিশ্ববিদ্যালয়)\b/iu' => 'সমন্বিত কৃষি গুচ্ছ বিশ্ববিদ্যালয় (Agri Cluster)',
             '/\b(NU|জাতীয় বিশ্ববিদ্যালয়|জাতীয় বিশ্ববিদ্যালয়|National University)\b/iu' => 'জাতীয় বিশ্ববিদ্যালয় (NU)',
             '/\b(BOU|উন্মুক্ত বিশ্ববিদ্যালয়|উন্মুক্ত বিশ্ববিদ্যালয়|Open University)\b/iu' => 'বাংলাদেশ উন্মুক্ত বিশ্ববিদ্যালয় (BOU)',
             '/\b(BTEB|কারিগরি|কারিগরি শিক্ষা বোর্ড|Technical Education Board)\b/iu' => 'বাংলাদেশ কারিগরি শিক্ষা বোর্ড (BTEB)',
-            '/\b(MBBS|BDS|মেডিকেল|ডেন্টাল|PTAP)\b/iu' => 'মেডিকেল ও ডেন্টাল কলেজ (MBBS/BDS)',
+            '/\b(MBBS|BDS|মেডিকেল|ডেন্টাল|PTAP|DGME)\b/iu' => 'মেডিকেল ও ডেন্টাল কলেজ (MBBS/BDS)',
             '/\b(BRACU|BRAC|ব্র্যাক বিশ্ববিদ্যালয়|ব্র্যাক বিশ্ববিদ্যালয়)\b/iu' => 'ব্র্যাক বিশ্ববিদ্যালয় (BRACU)',
             '/\b(NSU|নর্থ সাউথ|North South)\b/iu' => 'নর্থ সাউথ বিশ্ববিদ্যালয় (NSU)',
             '/\b(AIUB|আমেরিকান ইন্টারন্যাশনাল)\b/iu' => 'আমেরিকান ইন্টারন্যাশনাল ইউনিভার্সিটি (AIUB)',
             '/\b(UIU|ইউনাইটেড ইন্টারন্যাশনাল)\b/iu' => 'ইউনাইটেড ইন্টারন্যাশনাল ইউনিভার্সিটি (UIU)',
             '/\b(DIU|ড্যাফোডিল|Daffodil)\b/iu' => 'ড্যাফোডিল ইন্টারন্যাশনাল ইউনিভার্সিটি (DIU)',
             '/\b(IUB|ইন্ডিপেন্ডেন্ট)\b/iu' => 'ইন্ডিপেন্ডেন্ট ইউনিভার্সিটি (IUB)',
+            '/\b(AUST|আহছানউল্লা)\b/iu' => 'আহছানউল্লা বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (AUST)',
         ];
 
         foreach ($patterns as $pattern => $instName) {
-            if (preg_match($pattern, $text)) {
+            if ($preg = preg_match($pattern, $text)) {
                 return $instName;
             }
         }
@@ -281,28 +332,28 @@ HTML
 
     /**
      * Resolve genuine official website and application portal URLs for a university.
-     * Prevents 3rd party aggregator sites (like students.bd) from ever appearing as official.
+     * Prevents 3rd party aggregator sites (like students.bd, studyonlinebd.com) from ever appearing as official.
      */
     public function resolveOfficialUrls(string $institution, ?string $fallbackLink = null): array
     {
         $registry = [
             'ঢাকা বিশ্ববিদ্যালয় (DU)' => [
-                'aliases' => ['DU', 'ঢাকা বিশ্ববিদ্যালয়', 'Dhaka University'],
+                'aliases' => ['DU', 'ঢাকা বিশ্ববিদ্যালয়', 'Dhaka University', 'ঢাবি'],
                 'official_website_url' => 'https://du.ac.bd',
                 'apply_url' => 'https://admission.eis.du.ac.bd',
             ],
             'রাজশাহী বিশ্ববিদ্যালয় (RU)' => [
-                'aliases' => ['RU', 'রাজশাহী বিশ্ববিদ্যালয়', 'Rajshahi University'],
+                'aliases' => ['RU', 'রাজশাহী বিশ্ববিদ্যালয়', 'Rajshahi University', 'রাবি'],
                 'official_website_url' => 'https://ru.ac.bd',
                 'apply_url' => 'https://admission.ru.ac.bd',
             ],
             'চট্টগ্রাম বিশ্ববিদ্যালয় (CU)' => [
-                'aliases' => ['CU', 'চট্টগ্রাম বিশ্ববিদ্যালয়', 'Chittagong University'],
+                'aliases' => ['CU', 'চট্টগ্রাম বিশ্ববিদ্যালয়', 'Chittagong University', 'চবি'],
                 'official_website_url' => 'https://cu.ac.bd',
                 'apply_url' => 'https://admission.cu.ac.bd',
             ],
             'জাহাঙ্গীরনগর বিশ্ববিদ্যালয় (JU)' => [
-                'aliases' => ['JU', 'জাহাঙ্গীরনগর বিশ্ববিদ্যালয়', 'Jahangirnagar University'],
+                'aliases' => ['JU', 'জাহাঙ্গীরনগর বিশ্ববিদ্যালয়', 'Jahangirnagar University', 'জাবি'],
                 'official_website_url' => 'https://juniv.edu',
                 'apply_url' => 'https://admission.juniv.edu',
             ],
@@ -310,6 +361,11 @@ HTML
                 'aliases' => ['BUET', 'বাংলাদেশ প্রকৌশল', 'বুয়েট'],
                 'official_website_url' => 'https://buet.ac.bd',
                 'apply_url' => 'https://www.buet.ac.bd/web/#/admission',
+            ],
+            'প্রকৌশল গুচ্ছ (CKRUET)' => [
+                'aliases' => ['CKRUET', 'প্রকৌশল গুচ্ছ', 'ইঞ্জিনিয়ারিং গুচ্ছ'],
+                'official_website_url' => 'https://admissionckruet.ac.bd',
+                'apply_url' => 'https://admissionckruet.ac.bd',
             ],
             'খুলনা প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (KUET)' => [
                 'aliases' => ['KUET', 'খুলনা প্রকৌশল', 'কুয়েট'],
@@ -326,13 +382,38 @@ HTML
                 'official_website_url' => 'https://ruet.ac.bd',
                 'apply_url' => 'https://admission.ruet.ac.bd',
             ],
+            'বাংলাদেশ টেক্সটাইল বিশ্ববিদ্যালয় (BUTEX)' => [
+                'aliases' => ['BUTEX', 'বুটেক্স', 'টেক্সটাইল বিশ্ববিদ্যালয়'],
+                'official_website_url' => 'https://butex.edu.bd',
+                'apply_url' => 'https://butex.teletalk.com.bd',
+            ],
+            'বাংলাদেশ ইউনিভার্সিটি অব প্রফেশনালস (BUP)' => [
+                'aliases' => ['BUP', 'বিইউপি', 'বাংলাদেশ ইউনিভার্সিটি অব প্রফেশনালস'],
+                'official_website_url' => 'https://bup.edu.bd',
+                'apply_url' => 'https://admission.bup.edu.bd',
+            ],
+            'জগন্নাথ বিশ্ববিদ্যালয় (JnU)' => [
+                'aliases' => ['JnU', 'জবি', 'জগন্নাথ বিশ্ববিদ্যালয়'],
+                'official_website_url' => 'https://jnu.ac.bd',
+                'apply_url' => 'https://admission.jnu.ac.bd',
+            ],
+            'ইসলামী বিশ্ববিদ্যালয় (IU)' => [
+                'aliases' => ['IU', 'ইবি', 'ইসলামী বিশ্ববিদ্যালয়'],
+                'official_website_url' => 'https://iu.ac.bd',
+                'apply_url' => 'https://admission.iu.ac.bd',
+            ],
+            'খুলনা বিশ্ববিদ্যালয় (KU)' => [
+                'aliases' => ['KU', 'খুবি', 'খুলনা বিশ্ববিদ্যালয়'],
+                'official_website_url' => 'https://ku.ac.bd',
+                'apply_url' => 'https://ku.ac.bd/admission',
+            ],
             'শাহজালাল বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (SUST)' => [
                 'aliases' => ['SUST', 'শাহজালাল বিজ্ঞান', 'সাস্ট'],
                 'official_website_url' => 'https://sust.edu',
                 'apply_url' => 'https://admission.sust.edu',
             ],
             'জিএসটি গুচ্ছ বিশ্ববিদ্যালয় (GST Cluster)' => [
-                'aliases' => ['GST', 'গুচ্ছ বিশ্ববিদ্যালয়', 'জিএসটি গুচ্ছ'],
+                'aliases' => ['GST', 'গুচ্ছ বিশ্ববিদ্যালয়', 'জিএসটি গুচ্ছ', 'GST Cluster'],
                 'official_website_url' => 'https://gstadmission.ac.bd',
                 'apply_url' => 'https://gstadmission.ac.bd',
             ],
@@ -342,7 +423,7 @@ HTML
                 'apply_url' => 'https://acas.edu.bd',
             ],
             'মেডিকেল ও ডেন্টাল কলেজ (MBBS/BDS)' => [
-                'aliases' => ['MBBS', 'BDS', 'মেডিকেল', 'ডেন্টাল'],
+                'aliases' => ['MBBS', 'BDS', 'মেডিকেল', 'ডেন্টাল', 'DGME'],
                 'official_website_url' => 'https://dgme.gov.bd',
                 'apply_url' => 'https://dgme.teletalk.com.bd',
             ],
@@ -391,6 +472,11 @@ HTML
                 'official_website_url' => 'https://iub.edu.bd',
                 'apply_url' => 'https://admission.iub.edu.bd',
             ],
+            'আহছানউল্লা বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (AUST)' => [
+                'aliases' => ['AUST', 'আহছানউল্লা'],
+                'official_website_url' => 'https://aust.edu',
+                'apply_url' => 'https://aust.edu/admission',
+            ],
         ];
 
         foreach ($registry as $instKey => $data) {
@@ -418,9 +504,9 @@ HTML
             }
         }
 
-        // If fallback link is a 3rd party scraper aggregator, do not treat it as official
+        // If fallback link is a 3rd party scraper aggregator, NEVER treat it as official
         $clean = $fallbackLink;
-        if ($clean && (str_contains($clean, 'students.bd') || str_contains($clean, 'facebook.com'))) {
+        if ($clean && self::isThirdPartyAggregator($clean)) {
             $clean = null;
         }
 
@@ -467,13 +553,13 @@ HTML
 
         // Ensure 3rd-party domains are NEVER shown as official apply website
         $validApplyUrl = null;
-        if ($applyUrl && ! str_contains($applyUrl, 'students.bd') && ! str_contains($applyUrl, 'facebook.com')) {
+        if ($applyUrl && ! self::isThirdPartyAggregator($applyUrl)) {
             $validApplyUrl = $applyUrl;
         }
 
         $applyStepHtml = $validApplyUrl
-            ? 'অফিসিয়াল ভর্তি ওয়েবসাইট <a href="' . e($validApplyUrl) . '" target="_blank" class="text-orange-500 font-bold">' . e($validApplyUrl) . '</a> এ প্রবেশ করুন।'
-            : 'সংশ্লিষ্ট বিশ্ববিদ্যালয়ের অফিসিয়াল ভর্তি ওয়েবসাইটে প্রবেশ করে অনলাইন আবেদন সম্পন্ন করুন।';
+            ? 'সংশ্লিষ্ট বিশ্ববিদ্যালয়ের অফিসিয়াল ভর্তি ওয়েবসাইট <a href="' . e($validApplyUrl) . '" target="_blank" class="text-orange-500 font-bold">' . e($validApplyUrl) . '</a> এ প্রবেশ করে অনলাইনে আবেদন ফরম পূরণ করুন।'
+            : 'সংশ্লিষ্ট বিশ্ববিদ্যালয়ের অফিসিয়াল ভর্তি ওয়েবসাইটে প্রবেশ করে অনলাইন আবেদন ফরম পূরণ করুন।';
 
         return <<<HTML
 <h2>১. ভর্তি পরীক্ষার সারসংক্ষেপ (Overview)</h2>
@@ -845,17 +931,186 @@ HTML
     <li>রসায়ন: ২০০ নম্বর</li>
     <li>মুক্তহস্ত অঙ্কন (স্থাপত্য বিভাগের জন্য): ৪০০ নম্বর</li>
 </ul>
+
+<h2>৩. কীভাবে অনলাইনে আবেদন করবেন</h2>
+<ol>
+    <li>বুয়েটের অফিসিয়াল ভর্তি ওয়েবসাইট <a href="https://www.buet.ac.bd/web/#/admission" target="_blank" class="text-orange-500 font-bold">buet.ac.bd</a>-এ যান।</li>
+    <li>আবেদন ফরম সঠিকভাবে পূরণ করে সাম্প্রতিক পাসপোর্ট সাইজের রঙিন ছবি ও স্বাক্ষর আপলোড করুন।</li>
+    <li>অনলাইনে মোবাইল ব্যাংকিং বা ব্যাংকের মাধ্যমে আবেদন ফি পরিশোধ করে নিশ্চিতকরণ রশিদ প্রিন্ট নিন।</li>
+</ol>
+HTML
+            ],
+            [
+                'title' => 'মেডিকেল ও ডেন্টাল কলেজ এমবিবিএস/বিডিএস ভর্তি বিজ্ঞপ্তি ২০২৬-২০২৭ (Medical MBBS/BDS)',
+                'slug' => 'mbbs-bds-medical-dental-admission-circular-2026-2027',
+                'institution_name' => 'মেডিকেল ও ডেন্টাল কলেজ (MBBS/BDS)',
+                'university_type' => 'public',
+                'academic_year' => '2026-2027',
+                'units' => [
+                    ['name' => 'MBBS (সরকারি ও বেসরকারি মেডিকেল)', 'faculty' => 'চিকিৎসা বিজ্ঞান অনুষদ', 'min_gpa' => '9.00', 'fee' => '১০০০ টাকা', 'exam_date' => '২০২৭-০১-১৫'],
+                    ['name' => 'BDS (সরকারি ও বেসরকারি ডেন্টাল)', 'faculty' => 'ডেন্টাল অনুষদ', 'min_gpa' => '9.00', 'fee' => '১০০০ টাকা', 'exam_date' => '২০২৭-০২-২০'],
+                ],
+                'application_start' => '2026-12-05 10:00:00',
+                'application_start_text' => '০৫ ডিসেম্বর ২০২৬, শনিবার • সকাল ১০:০০টা',
+                'application_deadline' => '2026-12-20 23:59:00',
+                'application_deadline_text' => '২০ ডিসেম্বর ২০২৬, রবিবার • রাত ১১:৫৯টা',
+                'admit_card_date_text' => 'পরীক্ষার ৫ দিন পূর্ব থেকে',
+                'minimum_gpa_ssc' => '4.00',
+                'minimum_gpa_hsc' => '4.00',
+                'total_gpa_required' => 'এসএসসি ও এইচএসসি মিলিয়ে মোট জিপিএ ৯.০০ (উপজাতীয়দের জন্য ৮.০০) এবং জীববিজ্ঞানে ন্যূনতম জিপিএ ৪.০০',
+                'application_fee' => '১,০০০ টাকা',
+                'apply_url' => 'https://dgme.teletalk.com.bd',
+                'official_website_url' => 'https://dgme.gov.bd',
+                'notice_image_url' => 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1200&auto=format&fit=crop&q=80',
+                'featured_image_url' => 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&auto=format&fit=crop&q=80',
+                'eligibility_criteria' => 'এসএসসি ও এইচএসসি উভয় পরীক্ষায় বিজ্ঞান বিভাগ থেকে উত্তীর্ণ এবং ন্যূনতম জিপিএ ৪.০০ সহ মোট ৯.০০ থাকতে হবে। জীববিজ্ঞানে ন্যূনতম জিপিএ ৪.০০ বাধ্যতামূলক।',
+                'marks_distribution' => 'লিখিত পরীক্ষা (MCQ) ১০০ নম্বর: জীববিজ্ঞান ৩০, রসায়ন ২৫, পদার্থবিজ্ঞান ২০, ইংরেজি ১৫, সাধারণ জ্ঞান ১০। সময় ১ ঘণ্টা। প্রতিটি ভুল উত্তরের জন্য ০.২৫ নম্বর কাটা যাবে।',
+                'status' => 'published',
+                'is_featured' => true,
+                'source_name' => 'স্বাস্থ্য শিক্ষা অধিদপ্তর (DGME)',
+                'source_url' => 'https://dgme.teletalk.com.bd',
+                'meta_title' => 'মেডিকেল ভর্তি বিজ্ঞপ্তি ২০২৬-২০২৭ | MBBS BDS Admission Circular',
+                'meta_description' => 'সরকারি ও বেসরকারি মেডিকেল কলেজসমূহের ২০২৬-২০২৭ শিক্ষাবর্ষের এমবিবিএস ও বিডিএস ভর্তি বিজ্ঞপ্তি ও অনলাইন আবেদনের নিয়মাবলী।',
+                'published_at' => now(),
+                'description' => <<<HTML
+<h2>১. ভর্তি সংক্রান্ত গুরুত্বপূর্ণ তথ্য ও সময়সূচি</h2>
+<table class="w-full border-collapse border border-gray-300 dark:border-gray-700 my-4 text-sm">
+    <tr class="bg-gray-100 dark:bg-gray-800"><th class="p-2 border border-gray-300 dark:border-gray-700">কার্যক্রম</th><th class="p-2 border border-gray-300 dark:border-gray-700">তারিখ ও সময়</th></tr>
+    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">অনলাইন আবেদন শুরু</td><td class="p-2 border border-gray-300 dark:border-gray-700 font-bold text-emerald-600 dark:text-emerald-400">০৫ ডিসেম্বর ২০২৬ • সকাল ১০:০০টা</td></tr>
+    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">আবেদনের শেষ তারিখ</td><td class="p-2 border border-gray-300 dark:border-gray-700 font-bold text-red-600 dark:text-red-400">২০ ডিসেম্বর ২০২৬ • রাত ১১:৫৯টা</td></tr>
+    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">আবেদন ফি</td><td class="p-2 border border-gray-300 dark:border-gray-700 font-semibold text-blue-600">১,০০০ টাকা (টেলিটক প্রিপেইড)</td></tr>
+    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">এমবিবিএস ভর্তি পরীক্ষা</td><td class="p-2 border border-gray-300 dark:border-gray-700 font-bold">১৫ জানুয়ারি ২০২৭, সকাল ১০:০০ - ১১:০০</td></tr>
+</table>
+
+<h2>২. আবেদনের যোগ্যতা</h2>
+<ul>
+    <li>প্রার্থীকে বিজ্ঞান বিভাগে এসএসসি ও এইচএসসি বা সমমান পরীক্ষায় উত্তীর্ণ হতে হবে।</li>
+    <li>উভয় পরীক্ষায় ন্যূনতম জিপিএ ৪.০০ সহ মোট জিপিএ ৯.০০ থাকতে হবে।</li>
+    <li>এইচএসসি পরীক্ষায় জীববিজ্ঞানে (Biology) ন্যূনতম গ্রেড পয়েন্ট ৪.০০ থাকতে হবে।</li>
+</ul>
+
+<h2>৩. অনলাইনে আবেদনের নিয়মাবলী</h2>
+<ol>
+    <li>স্বাস্থ্য শিক্ষা অধিদপ্তরের অফিসিয়াল ভর্তি পোর্টাল <a href="https://dgme.teletalk.com.bd" target="_blank" class="text-orange-500 font-bold">dgme.teletalk.com.bd</a> এ প্রবেশ করুন।</li>
+    <li>প্রার্থীর এসএসসি ও এইচএসসি পরীক্ষার রোল, রেজিস্ট্রেশন ও বোর্ড প্রদান করে আবেদন ফরম পূরণ করুন।</li>
+    <li>টেলিটক প্রিপেইড সিমের মাধ্যমে এসএমএস পাঠিয়ে নির্ধারিত ১,০০০ টাকা আবেদন ফি পরিশোধ করুন।</li>
+</ol>
+HTML
+            ],
+            [
+                'title' => 'চট্টগ্রাম বিশ্ববিদ্যালয় আন্ডারগ্র্যাজুয়েট ভর্তি বিজ্ঞপ্তি ২০২৬-২০২৭ (CU Admission)',
+                'slug' => 'chittagong-university-undergraduate-admission-circular-2026-2027',
+                'institution_name' => 'চট্টগ্রাম বিশ্ববিদ্যালয় (CU)',
+                'university_type' => 'public',
+                'academic_year' => '2026-2027',
+                'units' => [
+                    ['name' => 'A Unit (বিজ্ঞান)', 'faculty' => 'বিজ্ঞান, জীববিজ্ঞান, ইঞ্জিনিয়ারিং অনুষদ', 'min_gpa' => '8.00', 'fee' => '৯৫০ টাকা', 'exam_date' => '২০২৭-০২-০৫'],
+                    ['name' => 'B Unit (কলা ও মানববিদ্যা)', 'faculty' => 'কলা ও মানববিদ্যা অনুষদ', 'min_gpa' => '7.50', 'fee' => '৯৫০ টাকা', 'exam_date' => '২০২৭-০২-১২'],
+                    ['name' => 'C Unit (ব্যবসায় প্রশাসন)', 'faculty' => 'ব্যবসায় প্রশাসন অনুষদ', 'min_gpa' => '7.50', 'fee' => '৯৫০ টাকা', 'exam_date' => '২০২৭-০২-১৯'],
+                    ['name' => 'D Unit (সমাজবিজ্ঞান ও আইন)', 'faculty' => 'সমাজবিজ্ঞান, আইন ও শিক্ষা অনুষদ', 'min_gpa' => '7.50', 'fee' => '৯৫০ টাকা', 'exam_date' => '২০২৭-০২-২৬'],
+                ],
+                'application_start' => '2026-11-25 10:00:00',
+                'application_start_text' => '২৫ নভেম্বর ২০২৬, বুধবার • সকাল ১০:০০টা',
+                'application_deadline' => '2026-12-15 23:59:00',
+                'application_deadline_text' => '১৫ ডিসেম্বর ২০২৬, মঙ্গলবার • রাত ১১:৫৯টা',
+                'admit_card_date_text' => 'পরীক্ষার ৭ দিন পূর্ব থেকে',
+                'minimum_gpa_ssc' => '3.00',
+                'minimum_gpa_hsc' => '3.00',
+                'total_gpa_required' => '৭.৫০ - ৮.০০',
+                'application_fee' => '৯৫০ টাকা',
+                'apply_url' => 'https://admission.cu.ac.bd',
+                'official_website_url' => 'https://cu.ac.bd',
+                'notice_image_url' => 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1200&auto=format&fit=crop&q=80',
+                'featured_image_url' => 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200&auto=format&fit=crop&q=80',
+                'eligibility_criteria' => 'এসএসসি ও এইচএসসি উভয় পরীক্ষায় ন্যূনতম জিপিএ ৩.০০ এবং মোট জিপিএ বিজ্ঞান ইউনিটে ৮.০০, অন্যান্য ইউনিটে ৭.৫০।',
+                'marks_distribution' => '১০০ নম্বরের বহুনির্বাচনী পরীক্ষা (MCQ), সময় ১ ঘণ্টা। প্রতিটি ভুল উত্তরের জন্য ০.২৫ নম্বর কর্তন। জিপিএ-র ওপর ২০ নম্বর।',
+                'status' => 'published',
+                'is_featured' => true,
+                'source_name' => 'চট্টগ্রাম বিশ্ববিদ্যালয় ভর্তি কমিটি',
+                'source_url' => 'https://admission.cu.ac.bd',
+                'meta_title' => 'চট্টগ্রাম বিশ্ববিদ্যালয় ভর্তি সার্কুলার ২০২৬-২০২৭ | CU Admission Guide',
+                'meta_description' => 'চট্টগ্রাম বিশ্ববিদ্যালয় আন্ডারগ্র্যাজুয়েট ভর্তি বিজ্ঞপ্তি ২০২৬-২০২৭। সকল ইউনিটের যোগ্যতা, মানবণ্টন ও অনলাইন আবেদন।',
+                'published_at' => now(),
+                'description' => <<<HTML
+<h2>১. ভর্তি পরীক্ষার বিস্তারিত সময়সূচি</h2>
+<table class="w-full border-collapse border border-gray-300 dark:border-gray-700 my-4 text-sm">
+    <tr class="bg-gray-100 dark:bg-gray-800"><th class="p-2 border border-gray-300 dark:border-gray-700">কার্যক্রম</th><th class="p-2 border border-gray-300 dark:border-gray-700">তারিখ ও সময়</th></tr>
+    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">অনলাইন আবেদন শুরু</td><td class="p-2 border border-gray-300 dark:border-gray-700 font-bold text-emerald-600 dark:text-emerald-400">২৫ নভেম্বর ২০২৬ • সকাল ১০:০০টা</td></tr>
+    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">অনলাইন আবেদন শেষ</td><td class="p-2 border border-gray-300 dark:border-gray-700 font-bold text-red-600 dark:text-red-400">১৫ ডিসেম্বর ২০২৬ • রাত ১১:৫৯টা</td></tr>
+    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">আবেদন ফি</td><td class="p-2 border border-gray-300 dark:border-gray-700 font-semibold">৯৫০ টাকা</td></tr>
+</table>
+
+<h2>২. অনলাইনে আবেদন পদ্ধতি</h2>
+<ol>
+    <li>চট্টগ্রাম বিশ্ববিদ্যালয়ের অফিসিয়াল ভর্তি ওয়েবসাইট <a href="https://admission.cu.ac.bd" target="_blank" class="text-orange-500 font-bold">admission.cu.ac.bd</a>-এ যান।</li>
+    <li>এসএসসি ও এইচএসসি রোল ও বোর্ড দিয়ে প্রোফাইল তৈরি করুন।</li>
+    <li>পাসপোর্ট সাইজের ছবি আপলোড করে বিকাশ/রকেট/নগদ এর মাধ্যমে ফি পরিশোধ করুন।</li>
+</ol>
+HTML
+            ],
+            [
+                'title' => 'জাহাঙ্গীরনগর বিশ্ববিদ্যালয় স্নাতক ভর্তি বিজ্ঞপ্তি ২০২৬-২০২৭ (JU Admission)',
+                'slug' => 'jahangirnagar-university-undergraduate-admission-circular-2026-2027',
+                'institution_name' => 'জাহাঙ্গীরনগর বিশ্ববিদ্যালয় (JU)',
+                'university_type' => 'public',
+                'academic_year' => '2026-2027',
+                'units' => [
+                    ['name' => 'A Unit (গাণিতিক ও পদার্থবিজ্ঞান)', 'faculty' => 'গাণিতিক ও পদার্থবিষয়ক অনুষদ এবং আইআইটি', 'min_gpa' => '8.50', 'fee' => '১১০০ টাকা', 'exam_date' => '২০২৭-০২-১৮'],
+                    ['name' => 'B Unit (সমাজবিজ্ঞান ও আইন)', 'faculty' => 'সমাজবিজ্ঞান অনুষদ ও আইন অনুষদ', 'min_gpa' => '8.00', 'fee' => '১১০০ টাকা', 'exam_date' => '২০২৭-০২-১৯'],
+                    ['name' => 'C Unit (কলা ও মানবিক)', 'faculty' => 'কলা ও মানবিকী অনুষদ', 'min_gpa' => '8.00', 'fee' => '১১০০ টাকা', 'exam_date' => '২০২৭-০২-২০'],
+                    ['name' => 'D Unit (জীববিজ্ঞান)', 'faculty' => 'জীববিজ্ঞান অনুষদ', 'min_gpa' => '8.50', 'fee' => '১১০০ টাকা', 'exam_date' => '২০২৭-০২-২১'],
+                    ['name' => 'E Unit (ব্যবসায় শিক্ষা)', 'faculty' => 'ব্যবসায় শিক্ষা অনুষদ ও আইবিএ', 'min_gpa' => '8.00', 'fee' => '১১০০ টাকা', 'exam_date' => '২০২৭-০২-২২'],
+                ],
+                'application_start' => '2026-12-01 10:00:00',
+                'application_start_text' => '০১ ডিসেম্বর ২০২৬, মঙ্গলবার • সকাল ১০:০০টা',
+                'application_deadline' => '2026-12-24 23:59:00',
+                'application_deadline_text' => '২৪ ডিসেম্বর ২০২৬, বৃহস্পতিবার • রাত ১১:৫৯টা',
+                'admit_card_date_text' => 'পরীক্ষার দিন পর্যন্ত',
+                'minimum_gpa_ssc' => '3.50',
+                'minimum_gpa_hsc' => '3.50',
+                'total_gpa_required' => '৮.০০ - ৮.৫০',
+                'application_fee' => '১,১০০ টাকা',
+                'apply_url' => 'https://admission.juniv.edu',
+                'official_website_url' => 'https://juniv.edu',
+                'notice_image_url' => 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1200&auto=format&fit=crop&q=80',
+                'featured_image_url' => 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200&auto=format&fit=crop&q=80',
+                'eligibility_criteria' => 'এসএসসি ও এইচএসসি উভয় পরীক্ষায় ন্যূনতম জিপিএ ৩.৫০ এবং মোট জিপিএ ইউনিটভেদে ৮.০০ থেকে ৮.৫০।',
+                'marks_distribution' => '৮০ নম্বরের বহুনির্বাচনী পরীক্ষা (MCQ), সময় ৫৫ মিনিট। ওএমআর শিটে পরীক্ষা নেওয়া হবে। এসএসসি ও এইচএসসি ফলাফলের ওপর ২০ নম্বর।',
+                'status' => 'published',
+                'is_featured' => true,
+                'source_name' => 'জাহাঙ্গীরনগর বিশ্ববিদ্যালয় কেন্দ্রীয় ভর্তি পরিচালনা কমিটি',
+                'source_url' => 'https://admission.juniv.edu',
+                'meta_title' => 'জাহাঙ্গীরনগর বিশ্ববিদ্যালয় ভর্তি সার্কুলার ২০২৬-২০২৭ | JU Admission Circular',
+                'meta_description' => 'জাহাঙ্গীরনগর বিশ্ববিদ্যালয় স্নাতক প্রথম বর্ষ ভর্তি বিজ্ঞপ্তি ২০২৬-২০২৭। ইউনিটভিত্তিক বিস্তারিত যোগ্যতা ও আবেদন।',
+                'published_at' => now(),
+                'description' => <<<HTML
+<h2>১. জাহাঙ্গীরনগর বিশ্ববিদ্যালয় ভর্তি পরীক্ষার গুরুত্বপূর্ণ তথ্য</h2>
+<table class="w-full border-collapse border border-gray-300 dark:border-gray-700 my-4 text-sm">
+    <tr class="bg-gray-100 dark:bg-gray-800"><th class="p-2 border border-gray-300 dark:border-gray-700">কার্যক্রম</th><th class="p-2 border border-gray-300 dark:border-gray-700">তারিখ ও সময়</th></tr>
+    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">অনলাইন আবেদন শুরু</td><td class="p-2 border border-gray-300 dark:border-gray-700 font-bold text-emerald-600 dark:text-emerald-400">০১ ডিসেম্বর ২০২৬ • সকাল ১০:০০টা</td></tr>
+    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">আবেদনের শেষ তারিখ</td><td class="p-2 border border-gray-300 dark:border-gray-700 font-bold text-red-600 dark:text-red-400">২৪ ডিসেম্বর ২০২৬ • রাত ১১:৫৯টা</td></tr>
+    <tr><td class="p-2 border border-gray-300 dark:border-gray-700">আবেদন ফি (প্রতি ইউনিট)</td><td class="p-2 border border-gray-300 dark:border-gray-700 font-semibold">১,১০০ টাকা</td></tr>
+</table>
+
+<h2>২. আবেদন পদ্ধতি</h2>
+<ol>
+    <li>অফিসিয়াল ভর্তি পোর্টাল <a href="https://admission.juniv.edu" target="_blank" class="text-orange-500 font-bold">admission.juniv.edu</a> এ প্রবেশ করুন।</li>
+    <li>প্রয়োজনীয় শিক্ষাগত ও ব্যক্তিগত তথ্য দিয়ে ফরম পূরণ করুন।</li>
+    <li>মোবাইল ব্যাংকিংয়ের মাধ্যমে ফি পরিশোধ করে প্রবেশপত্র ডাউনলোডের স্লিপ সংরক্ষণ করুন।</li>
+</ol>
 HTML
             ],
         ];
 
         $imported = 0;
         foreach ($circulars as $item) {
-            $notice = AdmissionNotice::updateOrCreate(
+            $notice = AdmissionNotice::firstOrCreate(
                 ['slug' => $item['slug']],
                 $item
             );
-            $imported++;
+            if ($notice->wasRecentlyCreated) {
+                $imported++;
+            }
         }
 
         return $imported;
@@ -887,30 +1142,43 @@ HTML
             $officialWebsite = $resolved['official_website_url'];
             $officialApply = $resolved['apply_url'];
 
-            // Synchronize with verified official URLs
-            if (! empty($officialApply) && $notice->apply_url !== $officialApply) {
+            // Never let 3rd-party aggregator domains remain as apply_url or official_website_url
+            if (self::isThirdPartyAggregator($notice->apply_url)) {
+                $notice->apply_url = $officialApply;
+                $changed = true;
+            } elseif (! empty($officialApply) && $notice->apply_url !== $officialApply) {
                 $notice->apply_url = $officialApply;
                 $changed = true;
             }
-            if (! empty($officialWebsite) && $notice->official_website_url !== $officialWebsite) {
+
+            if (self::isThirdPartyAggregator($notice->official_website_url)) {
+                $notice->official_website_url = $officialWebsite;
+                $changed = true;
+            } elseif (! empty($officialWebsite) && $notice->official_website_url !== $officialWebsite) {
                 $notice->official_website_url = $officialWebsite;
                 $changed = true;
             }
 
-            // Clean description HTML: remove any students.bd links or mentions
-            if ($notice->description && str_contains($notice->description, 'students.bd')) {
+            // Clean description HTML: remove any aggregator links or mentions (students.bd, studyonlinebd, eduresultbd, etc.)
+            if ($notice->description && (
+                str_contains($notice->description, 'students.bd') ||
+                str_contains($notice->description, 'studyonlinebd') ||
+                str_contains($notice->description, 'eduresultbd') ||
+                str_contains($notice->description, 'allresultbd') ||
+                str_contains($notice->description, 'bdcircularjobs')
+            )) {
                 $targetUrl = $officialApply ?: ($officialWebsite ?: '#');
 
-                // Replace anchor tags pointing to students.bd
+                // Replace anchor tags pointing to aggregators
                 $cleanedDesc = preg_replace(
-                    '/<a\s+[^>]*href=["\']https?:\/\/[^"\']*students\.bd[^"\']*["\'][^>]*>(.*?)<\/a>/iu',
+                    '/<a\s+[^>]*href=["\']https?:\/\/[^"\']*(?:students\.bd|studyonlinebd|eduresultbd|allresultbd|bdcircularjobs)[^"\']*["\'][^>]*>(.*?)<\/a>/iu',
                     '<a href="' . $targetUrl . '" target="_blank" class="text-orange-500 font-bold">' . ($targetUrl !== '#' ? $targetUrl : '$1') . '</a>',
                     $notice->description
                 );
 
-                // Replace any raw plain text URLs of students.bd
+                // Replace any raw plain text URLs of aggregators
                 $cleanedDesc = preg_replace(
-                    '/https?:\/\/[^\s<"\'\)]*students\.bd[^\s<"\'\)]*/iu',
+                    '/https?:\/\/[^\s<"\'\)]*(?:students\.bd|studyonlinebd|eduresultbd|allresultbd|bdcircularjobs)[^\s<"\'\)]*/iu',
                     $targetUrl,
                     $cleanedDesc
                 );

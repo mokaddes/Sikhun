@@ -88,6 +88,7 @@ const nav = computed(() => [
         icon: ClipboardDocumentCheckIcon,
         items: [
             { label: t('nav.question_bank'), href: '/question-bank', icon: AcademicCapIcon },
+            { label: locale.value === 'en' ? 'Mistake Review' : 'আমার ভুলসমূহ (Mistakes)', href: '/mistakes', icon: SparklesIcon },
             { label: t('nav.exams'), href: '/exams', icon: ClipboardDocumentCheckIcon },
             { label: t('nav.flashcards'), href: '/flashcards', icon: RectangleStackIcon },
             { label: t('nav.essays'), href: '/essays', icon: PencilSquareIcon },

@@ -199,14 +199,28 @@ async function handleGenerateTest() {
                     </p>
                 </div>
 
-                <!-- Action Button: Generate Mock Test -->
-                <div class="flex items-center gap-3">
+                <!-- Action Buttons: Generate Mock Test, Mistakes, Circulars -->
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <Link
+                        href="/mistakes"
+                        class="flex items-center gap-1.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-3 font-heading text-sm font-bold text-white transition-all shadow-sm"
+                    >
+                        <SparklesIcon class="h-4.5 w-4.5 text-amber-300" />
+                        <span>আমার ভুলসমূহ</span>
+                    </Link>
+                    <Link
+                        v-if="studentType === 'admission'"
+                        href="/admission-notice"
+                        class="flex items-center gap-1.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-3 font-heading text-sm font-bold text-white transition-all shadow-sm"
+                    >
+                        <span>📢 ভর্তি সার্কুলার</span>
+                    </Link>
                     <button
                         @click="showTestModal = true"
                         class="group flex items-center gap-2 rounded-2xl bg-white px-5 py-3 font-heading text-sm font-bold text-gray-900 shadow-lg shadow-black/10 transition-all hover:bg-white/95 hover:shadow-xl active:scale-95"
                     >
                         <BoltIcon class="h-5 w-5 text-amber-500 transition-transform group-hover:rotate-12" />
-                        <span>কাস্টম মক টেস্ট তৈরি করুন</span>
+                        <span>কাস্টম মক টেস্ট</span>
                         <span v-if="!isPaid" class="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-700">
                             <LockClosedIcon class="h-3 w-3" /> Pro
                         </span>

@@ -180,6 +180,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     // Wallet
     Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
     Route::post('/wallet/recharge', [WalletController::class, 'recharge'])->name('wallet.recharge');
+    Route::post('/wallet/orders/{order}/verify', [WalletController::class, 'verifyOrder'])->name('wallet.orders.verify');
 
     // Support tickets and feedback
     Route::get('/support/tickets', [StudentTicketController::class, 'index'])->name('support.tickets.index');
@@ -231,6 +232,10 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/question-bank', [QuestionBankPracticeController::class, 'index'])->name('student.question-bank.index');
     Route::post('/question-bank/{id}/ai-explain', [QuestionBankPracticeController::class, 'aiExplain'])->name('student.question-bank.ai-explain');
     Route::post('/question-bank/generate-test', [QuestionBankPracticeController::class, 'generateTest'])->name('student.question-bank.generate-test');
+
+    // Mistake Review & Revision Book ("আমার ভুলসমূহ")
+    Route::get('/mistakes', [\App\Http\Controllers\Student\MistakeReviewController::class, 'index'])->name('student.mistakes.index');
+    Route::post('/mistakes/practice', [\App\Http\Controllers\Student\MistakeReviewController::class, 'practice'])->name('student.mistakes.practice');
 
     // AI Flashcard Generator
     Route::get('/flashcards', [FlashcardController::class, 'index'])->name('flashcards.index');

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Noto+Serif+Bengali:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 
 @import 'tailwindcss';
@@ -25,103 +25,57 @@
     --button-scale: 1;
     --primary: #f97316;
     --primary-hover: #ea580c;
-    --secondary: #2757cc;
-    --accent: #dc4c43;
-    --tertiary: #0891b2;
-    --bg: #f5f7fb;
+    --secondary: #0284c7;
+    --secondary-hover: #0369a1;
+    --accent: #f97316;
+    --tertiary: #0284c7;
+    --bg: #f8fafc;
     --surface: #ffffff;
-    --surface2: #edf1f8;
-    --border: #dce3ee;
-    --text: #172033;
-    --text-muted: #657188;
-    --shadow: 0 1px 2px rgb(18 31 53 / 0.04), 0 12px 32px -12px rgb(18 31 53 / 0.14);
-    --shadow-lg: 0 2px 4px rgb(18 31 53 / 0.05), 0 24px 48px -16px rgb(18 31 53 / 0.2);
+    --surface2: #f1f5f9;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --text-muted: #475569;
+    --shadow: 0 1px 3px 0 rgb(15 23 42 / 0.05), 0 1px 2px -1px rgb(15 23 42 / 0.05);
+    --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.05);
 }
 
 .dark {
-    --primary: #ff9a52;
-    --primary-hover: #ffb273;
-    --secondary: #9ab5ff;
-    --accent: #ff8178;
-    --tertiary: #4cd7f6;
-    --bg: #0f131d;
-    --surface: #171b26;
-    --surface2: #1c1f2a;
-    --border: #303644;
-    --text: #dfe2f1;
-    --text-muted: #a2aabc;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.25), 0 12px 32px -12px rgb(0 0 0 / 0.55);
-    --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.35), 0 24px 48px -16px rgb(0 0 0 / 0.7);
+    --primary: #f97316;
+    --primary-hover: #fb923c;
+    --secondary: #38bdf8;
+    --secondary-hover: #0284c7;
+    --accent: #f97316;
+    --tertiary: #38bdf8;
+    --bg: #0b0f19;
+    --surface: #111827;
+    --surface2: #162032;
+    --border: #1e293b;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.35);
+    --shadow-lg: 0 10px 25px -5px rgb(0 0 0 / 0.6);
 }
 
-/* The marketing home follows the active color mode, including surfaces that
-   intentionally use the deep obsidian values from its visual reference. */
-html:not(.dark) .home-design [class*="bg-[#0a0e18]"] { background-color: var(--bg) !important; }
-html:not(.dark) .home-design [class*="bg-[#171b26]"] { background-color: var(--surface2) !important; }
-html:not(.dark) .home-design [class*="bg-[#1c1f2a]"] { background-color: var(--surface) !important; }
-html:not(.dark) .home-design [class*="bg-[#262a35]"],
-html:not(.dark) .home-design [class*="bg-[#313540]"],
-html:not(.dark) .home-design [class*="bg-[#3b404d]"] { background-color: var(--surface2) !important; }
-html:not(.dark) .home-design [class*="bg-[#f97316]/"],
-html:not(.dark) .home-design [class*="bg-[#2563eb]/"] { background-color: color-mix(in srgb, var(--primary) 12%, var(--surface)) !important; }
-html:not(.dark) .home-design [class*="bg-[#0e513d]/"] { background-color: color-mix(in srgb, #10b981 14%, var(--surface)) !important; }
-html:not(.dark) .home-design [class*="text-[#a2aabc]"],
-html:not(.dark) .home-design [class*="text-[#7e8799]"] { color: var(--text-muted) !important; }
-html:not(.dark) .home-design [class*="text-[#dfe2f1]"] { color: var(--text) !important; }
-html:not(.dark) .home-design [class*="text-[#ff9a52]"],
-html:not(.dark) .home-design [class*="text-[#ffb690]"] { color: var(--primary) !important; }
-html:not(.dark) .home-design [class*="text-[#4cd7f6]"] { color: var(--tertiary) !important; }
-html:not(.dark) .home-design [class*="text-[#b4c5ff]"] { color: var(--secondary) !important; }
-html:not(.dark) .home-design [class*="text-[#6ee7b7]"] { color: #047857 !important; }
-html:not(.dark) .home-design [class*="bg-[#1a202f]"],
-html:not(.dark) .home-design [class*="bg-[#171c28]"],
-html:not(.dark) .home-design [class*="bg-[#161a26]"],
-html:not(.dark) .home-design [class*="bg-[#1c2233]"],
-html:not(.dark) .home-design [class*="bg-[#0e121d]"],
-html:not(.dark) .home-design [class*="bg-[#0e1320]"],
-html:not(.dark) .home-design [class*="bg-[#141824]"],
-html:not(.dark) .home-design [class*="bg-[#121622]"],
-html:not(.dark) .home-design [class*="bg-[#202738]"] { background-color: var(--surface) !important; }
-html:not(.dark) .home-design [class*="border-white/"] { border-color: var(--border) !important; }
-html:not(.dark) .home-design [class*="from-[#1c1f2a]"] {
-    --tw-gradient-from: var(--surface) !important;
-    --tw-gradient-via: var(--surface2) !important;
-    --tw-gradient-to: var(--surface) !important;
+/* Classical Bengali & Serif Typography Utility Classes */
+.font-bangla-classic {
+    font-family: 'Noto Serif Bengali', 'Hind Siliguri', serif;
 }
-html:not(.dark) .home-design [class*="from-[#111827]"] {
-    --tw-gradient-from: var(--surface2) !important;
-    --tw-gradient-to: var(--surface) !important;
+
+.font-serif-classic {
+    font-family: 'Cinzel', 'Playfair Display', serif;
 }
-html:not(.dark) .home-design [class*="from-[#1d1f2e]"],
-html:not(.dark) .home-design [class*="from-[#162524]"],
-html:not(.dark) .home-design [class*="from-[#1a202f]"] {
-    --tw-gradient-from: var(--surface) !important;
-    --tw-gradient-via: var(--surface2) !important;
-    --tw-gradient-to: var(--surface) !important;
+
+.font-bangla-num {
+    font-family: 'Noto Serif Bengali', 'Hind Siliguri', serif;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
 }
-html:not(.dark) .public-header,
-html:not(.dark) .public-footer { background-color: var(--surface) !important; color: var(--text) !important; border-color: var(--border) !important; }
-html:not(.dark) .public-header [class*="bg-[#171b26]"],
-html:not(.dark) .public-header [class*="bg-[#111827]"],
-html:not(.dark) .public-header [class*="bg-[#0b0f19]"] { background-color: var(--surface) !important; }
-html:not(.dark) .public-header [class*="text-[#a2aabc]"],
-html:not(.dark) .public-footer [class*="text-[#a2aabc]"] { color: var(--text-muted) !important; }
-html:not(.dark) .public-header [class*="text-[#dfe2f1]"],
-html:not(.dark) .public-footer [class*="text-[#dfe2f1]"] { color: var(--text) !important; }
-html:not(.dark) .public-header > div > button { color: var(--text) !important; }
-html:not(.dark) .public-footer [class*="text-[#ffb690]"] { color: var(--primary) !important; }
-html:not(.dark) .public-header [class*="border-white/"],
-html:not(.dark) .public-footer [class*="border-white/"] { border-color: var(--border) !important; }
-html:not(.dark) .public-header nav a:hover,
-html:not(.dark) .public-footer a:hover { color: var(--primary) !important; }
-html:not(.dark) .home-design [class*="text-white/20"] { color: color-mix(in srgb, var(--text) 18%, transparent) !important; }
-html:not(.dark) .home-design [class*="text-white/60"] { color: var(--text-muted) !important; }
 
 html { background-color: var(--bg); scroll-behavior: smooth; }
 html { font-size: calc(16px * var(--text-scale, 1)); }
 
 body {
-    font-family: 'DM Sans', 'Hind Siliguri', sans-serif;
+    font-family: 'Plus Jakarta Sans', 'DM Sans', 'Hind Siliguri', sans-serif;
     background-color: var(--bg);
     color: var(--text);
     transition: background-color 0.2s ease, color 0.2s ease;
@@ -129,7 +83,7 @@ body {
 }
 
 h1, h2, h3, h4, .font-heading {
-    font-family: 'DM Sans', 'Hind Siliguri', sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Noto Serif Bengali', sans-serif;
 }
 
 .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 1.25em; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; direction: ltr; font-feature-settings: 'liga'; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }

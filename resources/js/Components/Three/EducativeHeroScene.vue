@@ -9,11 +9,17 @@ let scene = null;
 let camera = null;
 let clock = null;
 
-// Track mouse for responsive interactive tilt
+// Track mouse & scroll for responsive interactive tilt
 let mouseX = 0;
 let mouseY = 0;
 let targetX = 0;
 let targetY = 0;
+let scrollY = 0;
+let targetScrollY = 0;
+
+function onScroll() {
+    targetScrollY = window.scrollY || 0;
+}
 
 // Reusable animated groups
 let mainRig = null;
@@ -284,6 +290,7 @@ function initScene() {
     // Event listeners
     window.addEventListener('resize', onResize);
     window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('scroll', onScroll, { passive: true });
 
     // Start Animation Loop
     animate();
@@ -319,14 +326,16 @@ function animate() {
     const delta = Math.min(clock.getDelta(), 0.05);
     const time = clock.getElapsedTime();
 
-    // 1. Interactive Mouse Parallax (Damped spring follow)
+    // 1. Interactive Mouse & Scroll Parallax (Damped spring follow)
     mouseX += (targetX - mouseX) * 0.05;
     mouseY += (targetY - mouseY) * 0.05;
+    scrollY += (targetScrollY - scrollY) * 0.06;
 
     if (mainRig) {
-        mainRig.rotation.y = (time * 0.25) + (mouseX * 0.8);
-        mainRig.rotation.x = (mouseY * 0.5) + (Math.sin(time * 0.8) * 0.05);
-        mainRig.position.y = Math.sin(time * 1.4) * 0.12; // Natural floating breath
+        // Rotates smoothly on mouse hover and scrolls with user journey
+        mainRig.rotation.y = (time * 0.22) + (mouseX * 0.7) + (scrollY * 0.0012);
+        mainRig.rotation.x = (mouseY * 0.4) + (Math.sin(time * 0.8) * 0.04) + Math.min(scrollY * 0.0004, 0.2);
+        mainRig.position.y = (Math.sin(time * 1.4) * 0.1) - Math.min(scrollY * 0.0008, 0.5); // Natural floating breath + scroll sink
     }
 
     // 2. Book Breathing & Subtle Page Waves (Overlapping Secondary Action)
@@ -379,6 +388,7 @@ onUnmounted(() => {
     }
     window.removeEventListener('resize', onResize);
     window.removeEventListener('mousemove', onMouseMove);
+    window.removeEventListener('scroll', onScroll);
 
     // Deep disposal of geometries & materials to prevent memory leaks
     if (scene) {
@@ -408,26 +418,26 @@ onUnmounted(() => {
 <template>
     <div
         ref="container"
-        class="relative w-full h-[380px] sm:h-[440px] md:h-[480px] flex items-center justify-center pointer-events-auto select-none"
+        class="relative w-full h-[360px] sm:h-[420px] md:h-[460px] flex items-center justify-center pointer-events-auto select-none"
         aria-label="Interactive 3D Knowledge Universe"
     >
         <!-- Ambient glowing backdrop spotlight -->
         <div class="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
-            <div class="w-72 h-72 sm:w-88 sm:h-88 rounded-full bg-gradient-to-tr from-[#00f2fe]/20 via-[#6366f1]/20 to-[#f59e0b]/20 blur-3xl opacity-75"></div>
+            <div class="w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-gradient-to-tr from-[#00d2ff]/15 via-[#6366f1]/15 to-[#ff9e00]/15 blur-3xl opacity-60"></div>
         </div>
 
         <!-- Floating Interactive Badges / Tooltips around the 3D scene -->
-        <div class="pointer-events-none absolute top-4 right-4 sm:top-8 sm:right-6 px-3 py-1.5 rounded-xl bg-[#0f172a]/80 border border-cyan-400/30 backdrop-blur text-[11px] font-bold text-cyan-300 shadow-lg flex items-center gap-1.5 animate-bounce">
-            <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+        <div class="pointer-events-none absolute top-3 right-3 sm:top-6 sm:right-6 px-3 py-1.5 rounded-xl bg-white/90 dark:bg-[#0f172a]/90 border border-slate-200/90 dark:border-cyan-400/30 backdrop-blur text-[11px] font-bold text-cyan-600 dark:text-cyan-300 shadow-md flex items-center gap-1.5 animate-bounce">
+            <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
             <span>AI বুক রিডার ও স্মার্ট চ্যাট</span>
         </div>
 
-        <div class="pointer-events-none absolute bottom-6 left-4 sm:bottom-8 sm:left-6 px-3 py-1.5 rounded-xl bg-[#0f172a]/80 border border-amber-400/30 backdrop-blur text-[11px] font-bold text-amber-300 shadow-lg flex items-center gap-1.5">
+        <div class="pointer-events-none absolute bottom-5 left-3 sm:bottom-7 sm:left-6 px-3 py-1.5 rounded-xl bg-white/90 dark:bg-[#0f172a]/90 border border-slate-200/90 dark:border-amber-400/30 backdrop-blur text-[11px] font-bold text-amber-600 dark:text-amber-300 shadow-md flex items-center gap-1.5">
             <span>🎯</span>
-            <span>২০,০০০+ সলভড প্রশ্নব্যাংক</span>
+            <span class="font-bangla-num">২০,০০০+ সলভড প্রশ্নব্যাংক</span>
         </div>
 
-        <div class="pointer-events-none absolute bottom-4 right-6 sm:bottom-6 sm:right-10 px-3 py-1.5 rounded-xl bg-[#0f172a]/80 border border-indigo-400/30 backdrop-blur text-[11px] font-bold text-indigo-300 shadow-lg flex items-center gap-1.5">
+        <div class="pointer-events-none absolute bottom-3 right-4 sm:bottom-5 sm:right-8 px-3 py-1.5 rounded-xl bg-white/90 dark:bg-[#0f172a]/90 border border-slate-200/90 dark:border-indigo-400/30 backdrop-blur text-[11px] font-bold text-indigo-600 dark:text-indigo-300 shadow-md flex items-center gap-1.5">
             <span>⚡</span>
             <span>ভুল উত্তরের স্বয়ংক্রিয় খাতা</span>
         </div>

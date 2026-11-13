@@ -37,7 +37,7 @@ const nav = computed(() => [
     { label: t('nav.courses'), href: '/courses' },
     { label: t('nav.library'), href: '/library' },
     {
-        label: locale.value === 'bn' ? 'ভর্তি প্রস্তুতি ২০২৬' : 'Admissions 2026',
+        label: locale.value === 'bn' ? 'ভর্তি ২০২৬' : 'Admissions 2026',
         href: '/admission-notice',
         badge: locale.value === 'bn' ? 'চলছে' : 'Live',
         highlight: true,
@@ -50,27 +50,28 @@ const nav = computed(() => [
 </script>
 
 <template>
-    <div class="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text)]">
-        <header class="public-header sticky top-0 z-40 border-b border-white/5 bg-[#0b0f19]/90 text-[#dfe2f1] backdrop-blur-xl shadow-[0_1px_12px_rgba(0,0,0,.12)]">
-            <div class="max-w-7xl mx-auto px-4 md:px-6 h-16 xl:h-20 flex items-center justify-between gap-4">
+    <div class="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-200">
+        <!-- Classical Nav Header -->
+        <header class="public-header sticky top-0 z-40 border-b border-slate-200/80 dark:border-white/5 bg-white/95 dark:bg-[#0b0f19]/95 text-slate-900 dark:text-[#dfe2f1] backdrop-blur-xl shadow-xs transition-colors duration-200">
+            <div class="max-w-7xl mx-auto px-4 md:px-6 h-16 xl:h-18 flex items-center justify-between gap-4">
                 <BrandLogo href="/" />
 
-                <nav class="hidden xl:flex items-center gap-1 text-sm font-medium text-[#a2aabc]">
+                <nav class="hidden xl:flex items-center gap-1 text-sm font-medium">
                     <Link
                         v-for="item in nav"
                         :key="item.href"
                         :href="item.href"
                         :class="[
-                            'px-3 py-2 rounded-lg transition-all flex items-center gap-1.5',
+                            'px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5',
                             item.highlight
-                                ? 'text-white font-semibold bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/25 shadow-sm shadow-orange-500/10'
-                                : 'hover:text-white hover:bg-white/5'
+                                ? 'text-orange-600 dark:text-orange-400 font-semibold bg-orange-500/10 hover:bg-orange-500/15 border border-orange-500/30 shadow-xs'
+                                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/5'
                         ]"
                     >
                         <span>{{ item.label }}</span>
                         <span
                             v-if="item.badge"
-                            class="px-1.5 py-0.5 text-[10px] font-black rounded-full bg-gradient-to-r from-rose-500 to-amber-500 text-white shadow-sm shadow-rose-500/30 animate-pulse tracking-wide"
+                            class="px-1.5 py-0.5 text-[9.5px] font-black rounded-full bg-gradient-to-r from-rose-500 to-amber-500 text-white shadow-xs animate-pulse tracking-wide"
                         >
                             {{ item.badge }}
                         </span>
@@ -78,21 +79,21 @@ const nav = computed(() => [
                 </nav>
 
                 <div class="flex items-center gap-2">
-                    <div class="hidden sm:flex items-center gap-1 rounded-full bg-[#171b26] p-1">
+                    <div class="hidden sm:flex items-center gap-1 rounded-full bg-slate-100 dark:bg-[#171b26] border border-slate-200/80 dark:border-white/5 p-1">
                         <LanguageSwitcher />
                     </div>
                     <ThemeToggle />
                     <template v-if="student">
-                        <Link href="/dashboard" class="btn btn-primary hidden sm:inline-flex h-10 px-5 text-[13px]">
+                        <Link href="/dashboard" class="btn btn-primary hidden sm:inline-flex h-9 px-4 text-xs font-bold rounded-xl">
                             {{ t('nav.dashboard') }}
                         </Link>
                     </template>
                     <template v-else>
-                        <Link href="/login" class="btn btn-ghost hidden md:inline-flex h-10 px-4 text-[#dfe2f1]">{{ t('nav.login') }}</Link>
-                        <Link href="/register" class="btn btn-primary h-10 px-5 rounded-full shadow-[0_0_22px_rgba(249,115,22,.25)]">{{ locale === 'bn' ? 'ফ্রি শুরু করুন' : 'Get Started Free' }}</Link>
+                        <Link href="/login" class="btn btn-ghost hidden md:inline-flex h-9 px-3 text-xs text-slate-700 dark:text-[#dfe2f1] hover:text-slate-900 dark:hover:text-white">{{ t('nav.login') }}</Link>
+                        <Link href="/register" class="btn btn-primary h-9 px-4 text-xs font-bold rounded-xl shadow-xs">{{ locale === 'bn' ? 'ফ্রি শুরু করুন' : 'Get Started Free' }}</Link>
                     </template>
                     <button
-                        class="xl:hidden flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white"
+                        class="xl:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-800 dark:text-white"
                         :aria-label="mobileOpen ? 'Close menu' : 'Open menu'"
                         @click="mobileOpen = !mobileOpen"
                     >
@@ -103,29 +104,32 @@ const nav = computed(() => [
             </div>
 
             <transition name="fade">
-                <div v-if="mobileOpen" class="xl:hidden border-t border-white/10 px-5 py-4 bg-[#111827] text-[var(--text)]">
+                <div v-if="mobileOpen" class="xl:hidden border-t border-slate-200 dark:border-white/10 px-5 py-4 bg-white dark:bg-[#111827] text-slate-900 dark:text-slate-100 shadow-xl">
                     <div class="flex flex-col gap-1 text-sm">
                         <Link
                             v-for="item in nav"
                             :key="item.href"
                             :href="item.href"
                             :class="[
-                                'nav-link flex items-center justify-between',
-                                item.highlight ? 'text-orange-400 font-semibold' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                                'px-3 py-2 rounded-lg flex items-center justify-between font-medium',
+                                item.highlight ? 'text-orange-600 dark:text-orange-400 font-semibold bg-orange-500/10' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
                             ]"
                             @click="mobileOpen = false"
                         >
                             <span>{{ item.label }}</span>
                             <span
                                 v-if="item.badge"
-                                class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                                class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/15 text-rose-500 dark:text-rose-400 border border-rose-500/20"
                             >
                                 {{ item.badge }}
                             </span>
                         </Link>
-                        <Link href="/contact" class="nav-link text-[var(--text-muted)] hover:text-[var(--text)]" @click="mobileOpen = false">{{ t('nav.contact') }}</Link>
-                        <div class="my-2 dot-seam"></div>
-                        <Link v-if="!student" href="/login" class="btn btn-outline" @click="mobileOpen = false">{{ t('nav.login') }}</Link>
+                        <Link href="/contact" class="px-3 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 font-medium" @click="mobileOpen = false">{{ t('nav.contact') }}</Link>
+                        <div class="my-2 border-t border-slate-200 dark:border-white/10"></div>
+                        <div class="flex items-center gap-2 pt-1">
+                            <LanguageSwitcher />
+                            <Link v-if="!student" href="/login" class="flex-1 btn btn-outline h-9 text-xs" @click="mobileOpen = false">{{ t('nav.login') }}</Link>
+                        </div>
                     </div>
                 </div>
             </transition>
@@ -135,63 +139,64 @@ const nav = computed(() => [
             <slot />
         </main>
 
-        <footer class="public-footer border-t border-white/5 bg-[#111827] text-[#dfe2f1]">
-            <div class="max-w-7xl mx-auto px-5 md:px-6 py-14 md:py-16">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 xl:gap-14 pb-12">
-                    <div class="sm:col-span-2 flex flex-col gap-5">
-                        <BrandLogo href="/" compact size="text-lg" />
-                        <p class="text-sm leading-relaxed text-[#a2aabc] max-w-sm">{{ locale === 'bn' ? 'বই, মেন্টর পরিচালিত কোর্স এবং AI-সহায়ক স্টাডি টুল—আপনার শেখার প্রতিটি ধাপকে আরও পরিষ্কার ও সহজ করতে এক জায়গায়।' : 'Books, mentor-led courses, and AI-supported study tools—together in one focused space to make every step of learning clearer.' }}</p>
-                        <div class="flex items-center gap-2 text-xs font-mono text-[#a2aabc]"><span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>{{ locale === 'bn' ? 'আপনার শেখার যাত্রা এখান থেকেই শুরু' : 'YOUR LEARNING JOURNEY STARTS HERE' }}</div>
+        <footer class="public-footer border-t border-slate-200/80 dark:border-white/5 bg-slate-50/90 dark:bg-[#0c101c] text-slate-800 dark:text-[#dfe2f1] transition-colors duration-200">
+            <div class="max-w-7xl mx-auto px-5 md:px-6 py-10 md:py-12">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 xl:gap-12 pb-8">
+                    <div class="sm:col-span-2 flex flex-col gap-4">
+                        <BrandLogo href="/" compact size="normal" />
+                        <p class="text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-400 max-w-sm">
+                            {{ locale === 'bn' ? 'বই, মেন্টর পরিচালিত কোর্স এবং AI-সহায়ক স্টাডি টুল—আপনার পড়াশোনার প্রতিটি ধাপকে আরও কার্যকর ও সহজ করতে এক জায়গায়।' : 'Books, mentor-led courses, and AI study tools—together in one focused space to make every step of learning clearer.' }}
+                        </p>
+                        <div class="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
+                            <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>{{ locale === 'bn' ? 'আপনার সফলতার প্রস্তুতি এখান থেকেই শুরু' : 'YOUR AI STUDY DESK' }}</span>
+                        </div>
                     </div>
                     <div>
-                        <div class="font-semibold mb-4">{{ locale === 'bn' ? 'প্ল্যাটফর্ম' : 'Platform' }}</div>
-                        <ul class="space-y-3 text-sm text-[#a2aabc]">
-                            <li><Link href="/courses" class="hover:text-[var(--primary)] transition-colors">{{ t('courses_page.title') }}</Link></li>
-                            <li><Link href="/library" class="hover:text-[var(--primary)] transition-colors">{{ t('nav.library') }}</Link></li>
-                            <li><Link href="/job-news" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'চাকরির খবর ও ক্যারিয়ার' : 'Job News' }}</Link></li>
-                            <li><Link href="/admission-notice" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'বিশ্ববিদ্যালয় ভর্তি প্রস্তুতি ২০২৬' : 'University Admissions 2026' }}</Link></li>
-                            <li><Link href="/tools" class="hover:text-[var(--primary)] transition-colors">{{ locale === 'bn' ? 'স্টুডেন্ট টুলস' : 'Student Tools' }}</Link></li>
-                            <li><Link href="/blog" class="hover:text-[var(--primary)] transition-colors">{{ t('nav.blog') }}</Link></li>
-                            <li><Link href="/plans" class="hover:text-[var(--primary)] transition-colors">{{ t('plans_page.title') }}</Link></li>
+                        <div class="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-white mb-3">{{ locale === 'bn' ? 'প্ল্যাটফর্ম' : 'Platform' }}</div>
+                        <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                            <li><Link href="/courses" class="hover:text-orange-500 transition-colors">{{ t('courses_page.title') }}</Link></li>
+                            <li><Link href="/library" class="hover:text-orange-500 transition-colors">{{ t('nav.library') }}</Link></li>
+                            <li><Link href="/question-bank" class="hover:text-orange-500 transition-colors">{{ locale === 'bn' ? 'প্রশ্নব্যাংক' : 'Question Bank' }}</Link></li>
+                            <li><Link href="/admission-notice" class="hover:text-orange-500 transition-colors">{{ locale === 'bn' ? 'ভর্তি নোটিশ ২০২৬' : 'Admissions 2026' }}</Link></li>
+                            <li><Link href="/job-news" class="hover:text-orange-500 transition-colors">{{ locale === 'bn' ? 'চাকরির খবর' : 'Job News' }}</Link></li>
+                            <li><Link href="/tools" class="hover:text-orange-500 transition-colors">{{ locale === 'bn' ? 'স্টুডেন্ট টুলস' : 'Student Tools' }}</Link></li>
+                            <li><Link href="/plans" class="hover:text-orange-500 transition-colors">{{ t('plans_page.title') }}</Link></li>
                         </ul>
                     </div>
                     <div>
-                        <div class="font-semibold mb-4">{{ locale === 'bn' ? 'আরও জানুন' : 'Explore Sikhun' }}</div>
-                        <ul class="space-y-3 text-sm text-[#a2aabc]"><li><Link href="/p/how-it-works" class="hover:text-[var(--primary)] transition-colors">{{ t('nav.how_it_works') }}</Link></li><li><Link href="/p/about" class="hover:text-[var(--primary)] transition-colors">{{ t('nav.about') }}</Link></li><li><Link href="/p/faq" class="hover:text-[var(--primary)] transition-colors">{{ t('nav.faq') }}</Link></li><li><Link href="/contact" class="hover:text-[var(--primary)] transition-colors">{{ t('nav.contact') }}</Link></li></ul>
+                        <div class="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-white mb-3">{{ locale === 'bn' ? 'শিখুন সম্পর্কে' : 'About' }}</div>
+                        <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                            <li><Link href="/p/how-it-works" class="hover:text-orange-500 transition-colors">{{ t('nav.how_it_works') }}</Link></li>
+                            <li><Link href="/p/about" class="hover:text-orange-500 transition-colors">{{ t('nav.about') }}</Link></li>
+                            <li><Link href="/p/faq" class="hover:text-orange-500 transition-colors">{{ t('nav.faq') }}</Link></li>
+                            <li><Link href="/contact" class="hover:text-orange-500 transition-colors">{{ t('nav.contact') }}</Link></li>
+                        </ul>
                     </div>
                     <div>
-                        <div class="font-semibold mb-4">{{ locale === 'bn' ? 'যোগাযোগ রাখুন' : 'Stay Connected' }}</div>
-                        <p class="text-sm text-[#a2aabc] leading-relaxed mb-4">{{ locale === 'bn' ? 'প্ল্যাটফর্ম সম্পর্কে জানতে বা সহায়তা পেতে আমাদের সাথে যোগাযোগ করুন।' : 'Questions about learning with Sikhun? Our team is here to help.' }}</p>
-                        <Link href="/contact" class="inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)] hover:text-[#ffb690]">{{ locale === 'bn' ? 'যোগাযোগ করুন' : 'Contact our team' }} <span>→</span></Link>
+                        <div class="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-white mb-3">{{ locale === 'bn' ? 'যোগাযোগ' : 'Contact' }}</div>
+                        <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-3">{{ locale === 'bn' ? 'যেকোনো সহায়তায় আমাদের সাথে যোগাযোগ করুন।' : 'Questions about learning with Sikhun? Our team is here to help.' }}</p>
+                        <Link href="/contact" class="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 dark:text-orange-400 hover:underline">
+                            <span>{{ locale === 'bn' ? 'যোগাযোগ পেজ' : 'Contact our team' }}</span>
+                            <span>→</span>
+                        </Link>
                     </div>
                 </div>
-                <div class="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-5">
-                    <span class="text-xs text-[#a2aabc]">© {{ new Date().getFullYear() }} {{ site?.name || 'Sikhun.com' }} — {{ t('footer.rights') }}</span>
-                    <div class="flex flex-wrap items-center justify-center gap-4 text-xs text-[#a2aabc]"><Link href="/p/terms" class="hover:text-white">{{ t('footer.terms') }}</Link><Link href="/p/privacy" class="hover:text-white">{{ t('footer.privacy') }}</Link><Link href="/p/faq" class="hover:text-white">{{ locale === 'bn' ? 'নিরাপত্তা ও সহায়তা' : 'Help & safety' }}</Link></div>
-                </div>
-            </div>
-            <div class="max-w-7xl mx-auto px-5 pb-6 flex flex-wrap items-center justify-center gap-3 text-xs text-[#a2aabc]">
-                <span>{{ locale === 'bn' ? 'দেখার আকার' : 'Display size' }}</span>
-                <div class="inline-flex items-center gap-1 rounded-full border border-[var(--border)] p-1">
-                    <span class="px-2">{{ locale === 'bn' ? 'লেখা' : 'Text' }}</span>
-                    <button class="display-control" aria-label="Decrease text size" @click="adjustDisplay('text', -0.05)">A−</button>
-                    <button class="display-control" aria-label="Increase text size" @click="adjustDisplay('text', 0.05)">A+</button>
-                </div>
-                <div class="inline-flex items-center gap-1 rounded-full border border-[var(--border)] p-1">
-                    <span class="px-2">{{ locale === 'bn' ? 'বাটন' : 'Buttons' }}</span>
-                    <button class="display-control" aria-label="Decrease button size" @click="adjustDisplay('buttons', -0.05)">−</button>
-                    <button class="display-control" aria-label="Increase button size" @click="adjustDisplay('buttons', 0.05)">+</button>
+                <div class="pt-5 border-t border-slate-200 dark:border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
+                    <span>© {{ new Date().getFullYear() }} {{ site?.name || 'Sikhun.com' }} — {{ t('footer.rights') }}</span>
+                    <div class="flex flex-wrap items-center justify-center gap-4">
+                        <Link href="/p/terms" class="hover:text-slate-900 dark:hover:text-white">{{ t('footer.terms') }}</Link>
+                        <Link href="/p/privacy" class="hover:text-slate-900 dark:hover:text-white">{{ t('footer.privacy') }}</Link>
+                        <Link href="/p/faq" class="hover:text-slate-900 dark:hover:text-white">{{ locale === 'bn' ? 'সহায়তা' : 'Help' }}</Link>
+                    </div>
                 </div>
             </div>
         </footer>
     </div>
     <SupportWidget />
-
-
 </template>
+
 <style scoped>
 .fade-enter-active, .fade-leave-active { transition: opacity 0.18s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
-.display-control { min-width: 2rem; height: 2rem; border-radius: 9999px; color: var(--text); background: var(--surface2); font-weight: 700; }
-.display-control:hover { background: var(--primary); color: white; }
 </style>

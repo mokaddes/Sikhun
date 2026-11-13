@@ -95,29 +95,29 @@ function formatDate(d) {
             <div class="pointer-events-none absolute top-[2900px] -left-40 -z-10 h-[640px] w-[640px] rounded-full bg-[var(--primary)]/10 blur-[160px]"></div>
 
             <!-- Hero Section -->
-            <section class="max-w-7xl mx-auto px-4 md:px-6 pt-10 md:pt-14 pb-16 md:pb-20">
+            <section class="max-w-7xl mx-auto px-4 md:px-6 pt-5 sm:pt-7 pb-10 sm:pb-14">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 xl:gap-14 items-center">
                     <div class="lg:col-span-7 flex flex-col items-start">
-                        <div class="inline-flex items-center gap-2.5 rounded-full border border-white/5 bg-[#1c1f2a]/80 px-4 py-2 shadow-sm backdrop-blur">
+                        <div class="inline-flex items-center gap-2.5 rounded-full border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-[#1c1f2a]/80 px-3.5 py-1.5 shadow-xs backdrop-blur">
                             <span class="relative flex h-2.5 w-2.5"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff7a00] opacity-60"></span><span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#ff7a00]"></span></span>
-                            <span class="font-mono text-[10px] md:text-[11px] font-semibold uppercase tracking-[.11em] text-[var(--primary)]">{{ en ? 'Learning tools for every next step' : 'আপনার শেখার প্রতিটি পরবর্তী ধাপে' }}</span>
-                            <span class="hidden sm:inline rounded bg-[#0a0e18] px-2 py-0.5 font-mono text-[9px] text-[var(--text-muted)]">SSC · HSC · ADMISSION · JOB</span>
+                            <span class="font-mono text-[10px] sm:text-[11px] font-semibold uppercase tracking-[.11em] text-orange-600 dark:text-orange-400">{{ en ? 'Learning tools for every next step' : 'আপনার শেখার প্রতিটি পরবর্তী ধাপে' }}</span>
+                            <span class="hidden sm:inline rounded bg-slate-100 dark:bg-[#0a0e18] px-2 py-0.5 font-mono text-[9px] text-slate-600 dark:text-[var(--text-muted)]">SSC · HSC · ADMISSION · JOB</span>
                         </div>
-                        <h1 class="mt-6 font-heading text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.08] text-[var(--text)]">
+                        <h1 class="mt-4 sm:mt-5 font-serif-classic sm:font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.12] text-slate-900 dark:text-white">
                             {{ en ? 'A clearer way to read, practice, and learn.' : 'পড়াশোনা, চাকরি ও ভর্তি প্রস্তুতির সহজ মাধ্যম।' }}
                         </h1>
-                        <p class="mt-5 max-w-xl text-base md:text-lg leading-relaxed text-[var(--text-muted)]">
+                        <p class="mt-3 sm:mt-4 max-w-xl text-sm sm:text-base md:text-lg leading-relaxed text-slate-600 dark:text-slate-300">
                             {{ en ? 'Access digitized textbooks, mentor-led courses, real-time AI companions, job circulars, and academic calculators—all in one place.' : 'ডিজিটাল পাঠ্যবই, মেন্টর পরিচালিত কোর্স, লক্ষ্যভিত্তিক এআই স্টাডি সহায়তা, প্রতিদিনের চাকরির সার্কুলার ও ক্যালকুলেটর—সবকিছু এক জায়গায়।' }}
                         </p>
                         <div class="mt-8 flex flex-wrap items-center gap-3 w-full sm:w-auto">
                             <Link href="/register" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff7a00] to-[#f97316] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#f97316]/25 transition hover:shadow-[0_0_32px_rgba(249,115,22,.4)] hover:-translate-y-0.5">
                                 {{ en ? 'Get started free' : 'বিনামূল্যে শুরু করুন' }} <span aria-hidden="true">→</span>
                             </Link>
-                            <Link href="/job-news" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#1c1f2a] px-5 py-3.5 text-sm font-semibold text-[var(--text)] transition hover:bg-[#262a35] hover:border-white/20">
+                            <Link href="/job-news" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1c1f2a] px-4 sm:px-5 py-3 text-sm font-semibold text-slate-800 dark:text-white transition hover:bg-slate-50 dark:hover:bg-[#262a35] shadow-xs">
                                 <span>{{ en ? 'Job News' : 'চাকরির খবর' }}</span>
                                 <span class="material-symbols-outlined !text-sm">work</span>
                             </Link>
-                            <Link href="/calculators" class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-[#1c1f2a] px-4 py-3.5 text-sm font-semibold text-[var(--text)] transition hover:bg-[#262a35]">
+                            <Link href="/calculators" class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1c1f2a] px-4 py-3 text-sm font-semibold text-slate-800 dark:text-white transition hover:bg-slate-50 dark:hover:bg-[#262a35] shadow-xs">
                                 <span>{{ en ? 'Calculators' : 'ক্যালকুলেটর' }}</span>
                                 <span class="material-symbols-outlined !text-sm">calculate</span>
                             </Link>
@@ -126,17 +126,17 @@ function formatDate(d) {
 
                     <!-- Hero Visual / 3D Scene + Floating Stats -->
                     <div class="lg:col-span-5 relative">
-                        <div class="relative overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-b from-[#131b2e]/95 via-[#0d1322] to-[#0a0e1a] p-3 sm:p-5 shadow-2xl backdrop-blur">
+                        <div class="relative overflow-hidden rounded-3xl border border-slate-200/90 dark:border-cyan-500/20 bg-gradient-to-b from-slate-100/90 via-white to-slate-50/90 dark:from-[#131b2e]/95 dark:via-[#0d1322] dark:to-[#0a0e1a] p-3 sm:p-5 shadow-xl dark:shadow-2xl backdrop-blur">
                             <!-- 3D Three.js Classic Animation Centerpiece -->
                             <EducativeHeroScene />
 
                             <!-- Floating Glassmorphic Quick Highlights -->
                             <div class="grid grid-cols-2 gap-2 text-center text-xs">
-                                <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+                                <div class="p-2.5 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/5 shadow-xs">
                                     <div class="font-heading text-lg font-black text-cyan-400">{{ stats?.students?.toLocaleString(en ? 'en-US' : 'bn-BD') || (en ? '12,000+' : '১২,০০০+') }}</div>
                                     <div class="text-[10px] text-gray-400 mt-0.5">{{ en ? 'Active Students' : 'সক্রিয় শিক্ষার্থী' }}</div>
                                 </div>
-                                <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+                                <div class="p-2.5 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/5 shadow-xs">
                                     <div class="font-heading text-lg font-black text-amber-400">{{ en ? '20,000+ MCQ' : '২০,০০০+ সলভড প্রশ্ন' }}</div>
                                     <div class="text-[10px] text-gray-400 mt-0.5">{{ en ? 'Question Bank' : 'বিগত বছরের প্রশ্নব্যাংক' }}</div>
                                 </div>
@@ -147,17 +147,17 @@ function formatDate(d) {
             </section>
 
             <!-- SECTION: আমরা কী করি? (What Sikhun Does & How It Works) -->
-            <section id="what-we-do" class="max-w-7xl mx-auto px-4 md:px-6 py-12 md:py-16 scroll-mt-20">
+            <section id="what-we-do" class="max-w-7xl mx-auto px-4 md:px-6 py-8 sm:py-12 scroll-mt-20">
                 <!-- Section Header -->
                 <div class="text-center max-w-3xl mx-auto mb-12">
                     <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/25 text-cyan-400 text-xs font-bold uppercase tracking-wider mb-3">
                         <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
                         <span>{{ en ? 'HOW SIKHUN EMPOWERS STUDENTS' : 'আমরা কী করি এবং কীভাবে পড়াশোনা সহজ করি' }}</span>
                     </div>
-                    <h2 class="text-3xl sm:text-4xl lg:text-5xl font-black font-heading text-white tracking-tight">
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-heading text-slate-900 dark:text-white tracking-tight">
                         {{ en ? 'Everything you need to master exams with AI' : 'পড়াশোনা, বিশ্ববিদ্যালয় ভর্তি ও চাকরির পূর্ণাঙ্গ স্মার্ট প্রস্তুতি' }}
                     </h2>
-                    <p class="mt-4 text-base md:text-lg text-gray-400 leading-relaxed">
+                    <p class="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed">
                         {{ en
                             ? 'Sikhun combines interactive digital textbooks, 20,000+ university past papers, an automated mistake notebook, and live AI tutors into one focused study cockpit.'
                             : 'শিখুন কেবল সাধারণ কোনো ওয়েবসাইট নয়—এটি আপনার প্রতিদিনের পার্সোনাল AI শিক্ষক। বই পড়া থেকে শুরু করে মডেল টেস্ট দেওয়া ও ভুল সংশোধন, সবকিছু এখন এক প্ল্যাটফর্মে।'
@@ -168,16 +168,16 @@ function formatDate(d) {
                 <!-- 4 Main Pillars Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                     <!-- Pillar 1 -->
-                    <div class="group relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#182138] to-[#0e1424] p-6 hover:border-cyan-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/10 flex flex-col justify-between">
+                    <div class="group relative overflow-hidden rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-gradient-to-b dark:from-[#182138] dark:to-[#0e1424] p-5 sm:p-6 shadow-xs hover:border-cyan-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/10 flex flex-col justify-between">
                         <div>
                             <div class="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-2xl text-cyan-400 mb-5 group-hover:scale-110 transition-transform">
                                 📖
                             </div>
                             <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-400 font-mono">Pillar 01</span>
-                            <h3 class="text-xl font-bold font-heading text-white mt-1 group-hover:text-cyan-300 transition-colors">
+                            <h3 class="text-lg font-bold font-heading text-slate-900 dark:text-white mt-1 group-hover:text-cyan-300 transition-colors">
                                 {{ en ? 'AI Book Reader & Chat' : 'AI বুক রিডার ও স্মার্ট চ্যাট' }}
                             </h3>
-                            <p class="text-xs sm:text-sm text-gray-400 mt-2.5 leading-relaxed">
+                            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
                                 {{ en ? 'Read textbooks and highlight any tricky paragraph. Sikhun AI explains it in simple Bangla with examples.' : 'পাঠ্যবই পড়ার সময় যেকোনো প্যারাগ্রাফে সরাসরি AI-কে বাংলায় প্রশ্ন করুন। কঠিন সংজ্ঞা, গাণিতিক নিয়ম বা চ্যাপ্টার সামারি চোখের পলকে বুঝে নিন।' }}
                             </p>
                         </div>
@@ -188,16 +188,16 @@ function formatDate(d) {
                     </div>
 
                     <!-- Pillar 2 -->
-                    <div class="group relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#182138] to-[#0e1424] p-6 hover:border-amber-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/10 flex flex-col justify-between">
+                    <div class="group relative overflow-hidden rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-gradient-to-b dark:from-[#182138] dark:to-[#0e1424] p-5 sm:p-6 shadow-xs hover:border-amber-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/10 flex flex-col justify-between">
                         <div>
                             <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-2xl text-amber-400 mb-5 group-hover:scale-110 transition-transform">
                                 🎯
                             </div>
                             <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400 font-mono">Pillar 02</span>
-                            <h3 class="text-xl font-bold font-heading text-white mt-1 group-hover:text-amber-300 transition-colors">
+                            <h3 class="text-lg font-bold font-heading text-slate-900 dark:text-white mt-1 group-hover:text-amber-300 transition-colors">
                                 {{ en ? '20,000+ Question Bank & Explainer' : 'বিশাল প্রশ্নব্যাংক ও AI ব্যাখ্যা' }}
                             </h3>
-                            <p class="text-xs sm:text-sm text-gray-400 mt-2.5 leading-relaxed">
+                            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
                                 {{ en ? 'Practice 25 years of DU, RU, BUET, GST, Medical & BCS questions with instant negative-mark calculations.' : 'ঢাবি, রাবি, বুয়েট, মেডিকেল, গুচ্ছ ও বিসিএস-এর বিগত ২৫ বছরের প্রশ্ন। ভুল উত্তর দিলে AI সাথে সাথে বিস্তারিত নিয়ম বুঝিয়ে দেবে।' }}
                             </p>
                         </div>
@@ -208,16 +208,16 @@ function formatDate(d) {
                     </div>
 
                     <!-- Pillar 3 -->
-                    <div class="group relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#182138] to-[#0e1424] p-6 hover:border-rose-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-rose-500/10 flex flex-col justify-between">
+                    <div class="group relative overflow-hidden rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-gradient-to-b dark:from-[#182138] dark:to-[#0e1424] p-5 sm:p-6 shadow-xs hover:border-rose-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-rose-500/10 flex flex-col justify-between">
                         <div>
                             <div class="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-2xl text-rose-400 mb-5 group-hover:scale-110 transition-transform">
                                 📝
                             </div>
                             <span class="text-[10px] font-bold uppercase tracking-wider text-rose-400 font-mono">Pillar 03</span>
-                            <h3 class="text-xl font-bold font-heading text-white mt-1 group-hover:text-rose-300 transition-colors">
+                            <h3 class="text-lg font-bold font-heading text-slate-900 dark:text-white mt-1 group-hover:text-rose-300 transition-colors">
                                 {{ en ? 'Automated Mistake Notebook' : 'ভুল উত্তরের স্বয়ংক্রিয় খাতা' }}
                             </h3>
-                            <p class="text-xs sm:text-sm text-gray-400 mt-2.5 leading-relaxed">
+                            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
                                 {{ en ? 'Never repeat a mistake. Tests automatically save your incorrect answers into a dedicated revision notebook.' : 'মডেল টেস্টে আপনি যে যে প্রশ্নে ভুল করবেন, সেগুলো আলাদা খাতায় জমা থাকে। পরীক্ষার আগের রাতে শুধু ভুলের খাতা রিভিশন দিন।' }}
                             </p>
                         </div>
@@ -228,16 +228,16 @@ function formatDate(d) {
                     </div>
 
                     <!-- Pillar 4 -->
-                    <div class="group relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#182138] to-[#0e1424] p-6 hover:border-emerald-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10 flex flex-col justify-between">
+                    <div class="group relative overflow-hidden rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-gradient-to-b dark:from-[#182138] dark:to-[#0e1424] p-5 sm:p-6 shadow-xs hover:border-emerald-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10 flex flex-col justify-between">
                         <div>
                             <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-2xl text-emerald-400 mb-5 group-hover:scale-110 transition-transform">
                                 🎓
                             </div>
                             <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 font-mono">Pillar 04</span>
-                            <h3 class="text-xl font-bold font-heading text-white mt-1 group-hover:text-emerald-300 transition-colors">
+                            <h3 class="text-lg font-bold font-heading text-slate-900 dark:text-white mt-1 group-hover:text-emerald-300 transition-colors">
                                 {{ en ? 'Official Circular Tracker' : 'ভর্তি ও চাকরির নোটিশ ট্র্যাকার' }}
                             </h3>
-                            <p class="text-xs sm:text-sm text-gray-400 mt-2.5 leading-relaxed">
+                            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
                                 {{ en ? 'Direct links to official application portals, deadlines, GPA requirements, and admission eligibility rules.' : 'সকল পাবলিক, প্রাইভেট ও গুচ্ছ বিশ্ববিদ্যালয়ের অফিসিয়াল সার্কুলার, লাইভ কাউন্টডাউন এবং ৩য় পক্ষের বিভ্রান্তি ছাড়া সরাসরি আবেদন।' }}
                             </p>
                         </div>
@@ -249,17 +249,17 @@ function formatDate(d) {
                 </div>
 
                 <!-- Interactive "Live Demo Box": Try AI Explainer Right Now -->
-                <div class="mt-10 overflow-hidden rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-[#10172a] via-[#0d1424] to-[#151226] p-6 sm:p-8 shadow-2xl">
+                <div class="mt-8 overflow-hidden rounded-3xl border border-slate-200 dark:border-cyan-500/30 bg-slate-50/90 dark:bg-gradient-to-br dark:from-[#10172a] dark:via-[#0d1424] dark:to-[#151226] p-5 sm:p-7 shadow-lg dark:shadow-2xl">
                     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-white/10">
                         <div>
                             <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-bold mb-2">
                                 <span>⚡</span>
                                 <span>ইন্টারেক্টিভ ডেমো: নিজে ট্রাই করে দেখুন</span>
                             </div>
-                            <h3 class="text-xl sm:text-2xl font-bold text-white font-heading">
+                            <h3 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white font-heading">
                                 কীভাবে শিখুন AI এক্সপ্লেনার কাজ করে?
                             </h3>
-                            <p class="text-xs sm:text-sm text-gray-300 mt-1">
+                            <p class="text-xs sm:text-sm text-slate-600 dark:text-gray-300 mt-0.5">
                                 নিচের প্রশ্নটিতে যেকোনো একটি অপশনে ক্লিক করুন এবং দেখুন এআই কীভাবে মুহূর্তেই বিস্তারিত নিয়ম বুঝিয়ে দেয়:
                             </p>
                         </div>
@@ -274,9 +274,9 @@ function formatDate(d) {
                     <div class="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                         <!-- Left Question & Options -->
                         <div class="lg:col-span-7 space-y-4">
-                            <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+                            <div class="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-xs">
                                 <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider font-mono">নমুনা প্রশ্ন</span>
-                                <p class="text-base sm:text-lg font-bold text-white mt-1">
+                                <p class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1">
                                     "বাংলা বর্ণমালায় অর্ধমাত্রা বর্ণ কয়টি?"
                                 </p>
                             </div>
@@ -289,10 +289,10 @@ function formatDate(d) {
                                         'p-3.5 rounded-xl text-left font-semibold text-sm transition-all border flex items-center justify-between cursor-pointer',
                                         selectedDemoOption === 'A'
                                             ? 'bg-rose-500/20 border-rose-500 text-rose-300'
-                                            : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10 hover:border-white/20'
+                                            : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/10 shadow-xs'
                                     ]"
                                 >
-                                    <span>ক. ৭টি</span>
+                                    <span class="font-bangla-num font-semibold text-sm sm:text-base">ক. ৭টি</span>
                                     <span v-if="selectedDemoOption === 'A'" class="text-rose-400 text-xs font-bold">ভুল উত্তর ✕</span>
                                 </button>
 
@@ -303,10 +303,10 @@ function formatDate(d) {
                                         'p-3.5 rounded-xl text-left font-semibold text-sm transition-all border flex items-center justify-between cursor-pointer',
                                         selectedDemoOption === 'B'
                                             ? 'bg-emerald-500/25 border-emerald-500 text-emerald-300 shadow-lg shadow-emerald-500/20'
-                                            : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10 hover:border-white/20'
+                                            : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/10 shadow-xs'
                                     ]"
                                 >
-                                    <span>খ. ৮টি</span>
+                                    <span class="font-bangla-num font-semibold text-sm sm:text-base">খ. ৮টি</span>
                                     <span v-if="selectedDemoOption === 'B'" class="text-emerald-400 text-xs font-bold">সঠিক উত্তর ✓</span>
                                     <span v-else-if="selectedDemoOption && selectedDemoOption !== 'B'" class="text-emerald-400 text-xs font-bold">সঠিক উত্তর ✓</span>
                                 </button>
@@ -318,10 +318,10 @@ function formatDate(d) {
                                         'p-3.5 rounded-xl text-left font-semibold text-sm transition-all border flex items-center justify-between cursor-pointer',
                                         selectedDemoOption === 'C'
                                             ? 'bg-rose-500/20 border-rose-500 text-rose-300'
-                                            : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10 hover:border-white/20'
+                                            : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/10 shadow-xs'
                                     ]"
                                 >
-                                    <span>গ. ১০টি</span>
+                                    <span class="font-bangla-num font-semibold text-sm sm:text-base">গ. ১০টি</span>
                                     <span v-if="selectedDemoOption === 'C'" class="text-rose-400 text-xs font-bold">ভুল উত্তর ✕</span>
                                 </button>
 
@@ -332,10 +332,10 @@ function formatDate(d) {
                                         'p-3.5 rounded-xl text-left font-semibold text-sm transition-all border flex items-center justify-between cursor-pointer',
                                         selectedDemoOption === 'D'
                                             ? 'bg-rose-500/20 border-rose-500 text-rose-300'
-                                            : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10 hover:border-white/20'
+                                            : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/10 shadow-xs'
                                     ]"
                                 >
-                                    <span>ঘ. ১১টি</span>
+                                    <span class="font-bangla-num font-semibold text-sm sm:text-base">ঘ. ১১টি</span>
                                     <span v-if="selectedDemoOption === 'D'" class="text-rose-400 text-xs font-bold">ভুল উত্তর ✕</span>
                                 </button>
                             </div>
@@ -343,13 +343,13 @@ function formatDate(d) {
 
                         <!-- Right AI Explainer Box (Animated on Option Click) -->
                         <div class="lg:col-span-5">
-                            <div class="h-full rounded-2xl border border-indigo-500/30 bg-[#161b33]/90 p-5 relative overflow-hidden flex flex-col justify-between">
+                            <div class="h-full rounded-2xl border border-cyan-500/30 dark:border-cyan-500/30 bg-cyan-500/5 dark:bg-[#161b33]/90 p-4 sm:p-5 relative overflow-hidden flex flex-col justify-between shadow-xs">
                                 <div>
                                     <div class="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-wider mb-2">
                                         <span class="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span>
                                         <span>✨ Sikhun AI Explainer</span>
                                     </div>
-                                    <div v-if="selectedDemoOption" class="text-xs sm:text-sm text-indigo-100 leading-relaxed space-y-2">
+                                    <div v-if="selectedDemoOption" class="text-xs sm:text-sm text-slate-800 dark:text-indigo-100 leading-relaxed space-y-2 font-bangla-num">
                                         <p class="font-bold text-emerald-400">
                                             সঠিক উত্তর: (খ) ৮টি
                                         </p>
@@ -361,7 +361,7 @@ function formatDate(d) {
                                             💡 মনে রাখার টিপস: পূর্ণমাত্রা ৩২টি, অর্ধমাত্রা ৮টি এবং মাত্রাহীন বর্ণ ১০টি (মোট ৫০টি)।
                                         </p>
                                     </div>
-                                    <div v-else class="text-xs text-gray-400 py-6 text-center">
+                                    <div v-else class="text-xs text-slate-500 dark:text-gray-400 py-6 text-center">
                                         <span class="text-2xl block mb-2">👆</span>
                                         বামের যেকোনো একটি অপশনে ক্লিক করলেই AI Explainer এর রিয়েল-টাইম ব্যাখ্যা চালু হবে।
                                     </div>

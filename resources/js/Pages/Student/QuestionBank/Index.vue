@@ -3,7 +3,7 @@ import { ref, computed } from 'vue';
 import { Head, router, Link } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import Pagination from '@/Components/UI/Pagination.vue';
-import { renderMath } from '@/utils/renderMath';
+import { renderMath } from '@/Utils/renderMath';
 import axios from 'axios';
 import {
     AcademicCapIcon,

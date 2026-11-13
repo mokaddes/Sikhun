@@ -5,7 +5,7 @@ import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import Pagination from '@/Components/UI/Pagination.vue';
 import TableDropdown from '@/Components/UI/TableDropdown.vue';
 import { useI18n } from '@/i18n';
-import { formatMoney } from '@/utils/format';
+import { formatMoney } from '@/Utils/format';
 import {
     PlusIcon,
     MagnifyingGlassIcon,

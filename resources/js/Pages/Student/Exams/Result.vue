@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
-import { formatNumber } from '@/utils/format';
+import { formatNumber } from '@/Utils/format';
 import {
     ArrowLeftIcon,
     ArrowDownTrayIcon,

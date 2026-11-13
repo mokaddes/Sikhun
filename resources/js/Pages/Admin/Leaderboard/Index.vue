@@ -4,7 +4,7 @@ import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import ConfirmButton from '@/Components/UI/ConfirmButton.vue';
 import Pagination from '@/Components/UI/Pagination.vue';
 import { useI18n } from '@/i18n';
-import { formatNumber } from '@/utils/format';
+import { formatNumber } from '@/Utils/format';
 
 defineProps({ entries: Object });
 const { locale } = useI18n();

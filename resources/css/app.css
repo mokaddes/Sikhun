@@ -25,35 +25,35 @@
 :root {
     --text-scale: 1;
     --button-scale: 1;
-    --primary: #f97316;
-    --primary-hover: #ea580c;
-    --secondary: #0284c7;
-    --secondary-hover: #0369a1;
-    --accent: #f97316;
-    --tertiary: #0284c7;
-    --bg: #f8fafc;
-    --surface: #ffffff;
-    --surface2: #f1f5f9;
-    --border: #e2e8f0;
-    --text: #0f172a;
-    --text-muted: #475569;
+    --primary: #8a5a32;
+    --primary-hover: #704525;
+    --secondary: #80684c;
+    --secondary-hover: #665139;
+    --accent: #8a5a32;
+    --tertiary: #80684c;
+    --bg: #faf8f4;
+    --surface: #fffefa;
+    --surface2: #f1ede6;
+    --border: #e5ded2;
+    --text: #29251f;
+    --text-muted: #625b51;
     --shadow: 0 1px 3px 0 rgb(15 23 42 / 0.05), 0 1px 2px -1px rgb(15 23 42 / 0.05);
     --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.05);
 }
 
 .dark {
-    --primary: #f97316;
-    --primary-hover: #fb923c;
-    --secondary: #38bdf8;
-    --secondary-hover: #0284c7;
-    --accent: #f97316;
-    --tertiary: #38bdf8;
-    --bg: #0b0f19;
-    --surface: #111827;
-    --surface2: #162032;
-    --border: #1e293b;
-    --text: #f8fafc;
-    --text-muted: #94a3b8;
+    --primary: #d2ad7c;
+    --primary-hover: #e0c297;
+    --secondary: #c4ab87;
+    --secondary-hover: #dac39f;
+    --accent: #d2ad7c;
+    --tertiary: #c4ab87;
+    --bg: #171613;
+    --surface: #211f1a;
+    --surface2: #2a2721;
+    --border: #38342c;
+    --text: #eee9df;
+    --text-muted: #b9b1a4;
     --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.35);
     --shadow-lg: 0 10px 25px -5px rgb(0 0 0 / 0.6);
 }
@@ -75,6 +75,82 @@
 
 html { background-color: var(--bg); scroll-behavior: smooth; }
 html { font-size: calc(16px * var(--text-scale, 1)); }
+
+/* Public pages and the student dashboard share the same quiet, editorial voice. */
+.public-shell main,
+.dashboard-page {
+    --primary: #8a5a32;
+    --secondary: #80684c;
+    --accent: #8a5a32;
+}
+.dark .public-shell main,
+.dark .dashboard-page {
+    --primary: #d2ad7c;
+    --secondary: #c4ab87;
+    --accent: #d2ad7c;
+}
+.public-shell main h1,
+.public-shell main h2,
+.public-shell main h3,
+.dashboard-page h1,
+.dashboard-page h2,
+.dashboard-page h3 {
+    font-family: 'Playfair Display', 'Noto Serif Bengali', Georgia, serif;
+    letter-spacing: -.02em;
+}
+.public-shell main section[class*="py-"] {
+    padding-block: clamp(2.25rem, 5vw, 4rem);
+}
+.dashboard-page > section:first-child {
+    margin-bottom: 1.25rem;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border-radius: 1.25rem;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, var(--surface)), var(--surface));
+}
+.dashboard-page [class*="bg-gradient-to-r"],
+.dashboard-page [class*="bg-gradient-to-br"] {
+    background-image: linear-gradient(120deg, color-mix(in srgb, var(--primary) 7%, var(--surface)), var(--surface)) !important;
+}
+.public-shell main [class*="text-orange-"],
+.public-shell main [class*="text-cyan-"],
+.public-shell main [class*="text-blue-"],
+.public-shell main [class*="text-indigo-"],
+.public-shell main [class*="text-purple-"],
+.dashboard-page [class*="text-orange-"],
+.dashboard-page [class*="text-cyan-"],
+.dashboard-page [class*="text-blue-"],
+.dashboard-page [class*="text-indigo-"],
+.dashboard-page [class*="text-purple-"] {
+    color: var(--primary) !important;
+}
+.public-shell main [class*="bg-orange-"],
+.public-shell main [class*="bg-cyan-"],
+.public-shell main [class*="bg-blue-"],
+.public-shell main [class*="bg-indigo-"],
+.public-shell main [class*="bg-purple-"],
+.dashboard-page [class*="bg-orange-"],
+.dashboard-page [class*="bg-cyan-"],
+.dashboard-page [class*="bg-blue-"],
+.dashboard-page [class*="bg-indigo-"],
+.dashboard-page [class*="bg-purple-"] {
+    background-color: color-mix(in srgb, var(--primary) 9%, var(--surface)) !important;
+}
+.public-shell main [class*="border-orange-"],
+.public-shell main [class*="border-cyan-"],
+.public-shell main [class*="border-blue-"],
+.public-shell main [class*="border-indigo-"],
+.public-shell main [class*="border-purple-"],
+.dashboard-page [class*="border-orange-"],
+.dashboard-page [class*="border-cyan-"],
+.dashboard-page [class*="border-blue-"],
+.dashboard-page [class*="border-indigo-"],
+.dashboard-page [class*="border-purple-"] {
+    border-color: color-mix(in srgb, var(--primary) 22%, var(--border)) !important;
+}
+.dashboard-page [class*="text-gray-400"],
+.public-shell main [class*="text-gray-400"] {
+    color: var(--text-muted) !important;
+}
 
 body {
     font-family: 'Plus Jakarta Sans', 'DM Sans', 'Hind Siliguri', sans-serif;

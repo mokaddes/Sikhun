@@ -1,1056 +1,174 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
 import EducativeHeroScene from '@/Components/Three/EducativeHeroScene.vue';
 import { useI18n } from '@/i18n';
 
-const selectedDemoOption = ref(null);
-
 const props = defineProps({
-    stats: Object,
-    categories: Array,
-    topCourses: Array,
-    popularBooks: Array,
-    latestBlogs: Array,
-    plans: Array,
-    testimonials: Array,
-    seo: Object,
-    featuredJobs: Array,
-    featuredAdmissions: Array,
+    stats: Object, categories: Array, topCourses: Array, popularBooks: Array,
+    latestBlogs: Array, plans: Array, testimonials: Array, seo: Object,
+    featuredJobs: Array, featuredAdmissions: Array,
 });
 
 const { locale } = useI18n();
 const en = computed(() => locale.value === 'en');
+let revealObserver;
 
-// Target application deadlines for Admissions 2026
-const duDeadline = new Date('2026-11-25T23:59:59+06:00');
-const ruDeadline = new Date('2026-11-30T23:59:59+06:00');
-
-const duTimer = ref({ days: '00', hours: '00', minutes: '00', seconds: '00' });
-const ruTimer = ref({ days: '00', hours: '00', minutes: '00', seconds: '00' });
-let homeTimerInterval = null;
-
-function updateHomeTimers() {
-    const now = new Date().getTime();
-
-    // DU
-    const distDU = Math.max(0, duDeadline.getTime() - now);
-    duTimer.value = {
-        days: Math.floor(distDU / (1000 * 60 * 60 * 24)).toString().padStart(2, '0'),
-        hours: Math.floor((distDU % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0'),
-        minutes: Math.floor((distDU % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0'),
-        seconds: Math.floor((distDU % (1000 * 60)) / 1000).toString().padStart(2, '0'),
-    };
-
-    // RU
-    const distRU = Math.max(0, ruDeadline.getTime() - now);
-    ruTimer.value = {
-        days: Math.floor(distRU / (1000 * 60 * 60 * 24)).toString().padStart(2, '0'),
-        hours: Math.floor((distRU % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0'),
-        minutes: Math.floor((distRU % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0'),
-        seconds: Math.floor((distRU % (1000 * 60)) / 1000).toString().padStart(2, '0'),
-    };
-}
-
-onMounted(() => {
-    updateHomeTimers();
-    homeTimerInterval = setInterval(updateHomeTimers, 1000);
-});
-
-onUnmounted(() => {
-    if (homeTimerInterval) clearInterval(homeTimerInterval);
-});
-
-const steps = computed(() => en.value ? [
-    { icon: 'person_add', title: 'Create your account', text: 'Choose a learning goal and set up your Sikhun account in a few simple steps.', meta: 'A clear place to begin' },
-    { icon: 'travel_explore', title: 'Find your resources', text: 'Explore books and mentor-led courses by subject, level, and category.', meta: 'Books and courses' },
-    { icon: 'psychology', title: 'Study actively', text: 'Ask questions, practice with AI study tools, and revisit difficult ideas.', meta: 'Learn by doing' },
-    { icon: 'trending_up', title: 'Build your momentum', text: 'Keep track of your learning and return to your goals whenever you are ready.', meta: 'Progress at your pace' },
+const paths = computed(() => en.value ? [
+    { number: '01', title: 'Read with clarity', detail: 'Books, made easier to understand.', href: '/library', action: 'Open the library' },
+    { number: '02', title: 'Practice with purpose', detail: 'Past questions. Useful explanations.', href: '/question-bank', action: 'Try a question' },
+    { number: '03', title: 'Learn with guidance', detail: 'Thoughtful lessons from mentors.', href: '/courses', action: 'Explore courses' },
 ] : [
-    { icon: 'person_add', title: 'অ্যাকাউন্ট তৈরি করুন', text: 'আপনার শেখার লক্ষ্য বেছে নিয়ে কয়েকটি সহজ ধাপে Sikhun অ্যাকাউন্ট তৈরি করুন।', meta: 'শুরু হোক পরিষ্কারভাবে' },
-    { icon: 'travel_explore', title: 'উপকরণ খুঁজে নিন', text: 'বিষয়, লেভেল ও ক্যাটাগরি অনুযায়ী বই এবং মেন্টর পরিচালিত কোর্স দেখুন।', meta: 'বই ও কোর্স' },
-    { icon: 'psychology', title: 'সক্রিয়ভাবে শিখুন', text: 'প্রশ্ন করুন, AI স্টাডি টুলে অনুশীলন করুন এবং কঠিন বিষয় আবার দেখুন।', meta: 'অনুশীলনে শেখা' },
-    { icon: 'trending_up', title: 'এগিয়ে চলুন', text: 'নিজের শেখার অগ্রগতি দেখুন এবং প্রস্তুত হলে আবার লক্ষ্যে ফিরে আসুন।', meta: 'নিজের গতিতে' },
+    { number: '০১', title: 'বুঝে পড়ুন', detail: 'বই হোক আরও সহজবোধ্য।', href: '/library', action: 'লাইব্রেরি দেখুন' },
+    { number: '০২', title: 'উদ্দেশ্য নিয়ে অনুশীলন', detail: 'বিগত প্রশ্ন, প্রয়োজনীয় ব্যাখ্যা।', href: '/question-bank', action: 'প্রশ্ন অনুশীলন করুন' },
+    { number: '০৩', title: 'পরামর্শ নিয়ে শিখুন', detail: 'অভিজ্ঞ মেন্টরের সাজানো পাঠ।', href: '/courses', action: 'কোর্স দেখুন' },
 ]);
 
-const pathwayLabel = computed(() => en.value ? 'Find a subject to explore' : 'পছন্দের বিষয় খুঁজে নিন');
-const coursePalette = ['from-[#0e513d] to-[#0a0e18]', 'from-[#7c3d13] to-[#171b26]', 'from-[#123859] to-[#0a0e18]'];
-const bookPalette = ['from-[#123858] to-[#0a0e18]', 'from-[#0e513d] to-[#0a0e18]', 'from-[#5b2f22] to-[#0a0e18]', 'from-[#40336e] to-[#0a0e18]', 'from-[#77521c] to-[#0a0e18]'];
+onMounted(() => {
+    const nodes = document.querySelectorAll('.home-reveal');
+    if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        nodes.forEach((node) => node.classList.add('is-visible'));
+        return;
+    }
+    revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('is-visible');
+            revealObserver.unobserve(entry.target);
+        });
+    }, { threshold: 0.12, rootMargin: '0px 0px -32px 0px' });
+    nodes.forEach((node) => revealObserver.observe(node));
+});
 
-function formatDate(d) {
-    if (!d) return en.value ? 'Soon' : 'শীঘ্রই';
-    return new Date(d).toLocaleDateString(en.value ? 'en-US' : 'bn-BD', { year: 'numeric', month: 'short', day: 'numeric' });
-}
+onUnmounted(() => revealObserver?.disconnect());
 </script>
 
 <template>
     <SeoHead :seo="seo" />
     <PublicLayout>
-        <div class="home-design relative isolate overflow-hidden bg-[var(--bg)]">
-            <!-- Ambient color fields -->
-            <div class="pointer-events-none absolute -top-48 left-[20%] -z-10 h-[620px] w-[620px] rounded-full bg-[var(--primary)]/10 blur-[140px]"></div>
-            <div class="pointer-events-none absolute top-[1120px] -right-48 -z-10 h-[560px] w-[560px] rounded-full bg-[var(--secondary)]/10 blur-[150px]"></div>
-            <div class="pointer-events-none absolute top-[2900px] -left-40 -z-10 h-[640px] w-[640px] rounded-full bg-[var(--primary)]/10 blur-[160px]"></div>
-
-            <!-- Hero Section -->
-            <section class="max-w-7xl mx-auto px-4 md:px-6 pt-5 sm:pt-7 pb-10 sm:pb-14">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 xl:gap-14 items-center">
-                    <div class="lg:col-span-7 flex flex-col items-start">
-                        <div class="inline-flex items-center gap-2.5 rounded-full border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-[#1c1f2a]/80 px-3.5 py-1.5 shadow-xs backdrop-blur">
-                            <span class="relative flex h-2.5 w-2.5"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff7a00] opacity-60"></span><span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#ff7a00]"></span></span>
-                            <span class="font-mono text-[10px] sm:text-[11px] font-semibold uppercase tracking-[.11em] text-orange-600 dark:text-orange-400">{{ en ? 'Learning tools for every next step' : 'আপনার শেখার প্রতিটি পরবর্তী ধাপে' }}</span>
-                            <span class="hidden sm:inline rounded bg-slate-100 dark:bg-[#0a0e18] px-2 py-0.5 font-mono text-[9px] text-slate-600 dark:text-[var(--text-muted)]">SSC · HSC · ADMISSION · JOB</span>
-                        </div>
-                        <h1 class="mt-4 sm:mt-5 font-serif-classic sm:font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.12] text-slate-900 dark:text-white">
-                            {{ en ? 'A clearer way to read, practice, and learn.' : 'পড়াশোনা, চাকরি ও ভর্তি প্রস্তুতির সহজ মাধ্যম।' }}
-                        </h1>
-                        <p class="mt-3 sm:mt-4 max-w-xl text-sm sm:text-base md:text-lg leading-relaxed text-slate-600 dark:text-slate-300">
-                            {{ en ? 'Access digitized textbooks, mentor-led courses, real-time AI companions, job circulars, and academic calculators—all in one place.' : 'ডিজিটাল পাঠ্যবই, মেন্টর পরিচালিত কোর্স, লক্ষ্যভিত্তিক এআই স্টাডি সহায়তা, প্রতিদিনের চাকরির সার্কুলার ও ক্যালকুলেটর—সবকিছু এক জায়গায়।' }}
-                        </p>
-                        <div class="mt-8 flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                            <Link href="/register" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff7a00] to-[#f97316] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#f97316]/25 transition hover:shadow-[0_0_32px_rgba(249,115,22,.4)] hover:-translate-y-0.5">
-                                {{ en ? 'Get started free' : 'বিনামূল্যে শুরু করুন' }} <span aria-hidden="true">→</span>
-                            </Link>
-                            <Link href="/job-news" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1c1f2a] px-4 sm:px-5 py-3 text-sm font-semibold text-slate-800 dark:text-white transition hover:bg-slate-50 dark:hover:bg-[#262a35] shadow-xs">
-                                <span>{{ en ? 'Job News' : 'চাকরির খবর' }}</span>
-                                <span class="material-symbols-outlined !text-sm">work</span>
-                            </Link>
-                            <Link href="/calculators" class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1c1f2a] px-4 py-3 text-sm font-semibold text-slate-800 dark:text-white transition hover:bg-slate-50 dark:hover:bg-[#262a35] shadow-xs">
-                                <span>{{ en ? 'Calculators' : 'ক্যালকুলেটর' }}</span>
-                                <span class="material-symbols-outlined !text-sm">calculate</span>
-                            </Link>
-                        </div>
+        <div class="home-design">
+            <section class="home-hero mx-auto grid max-w-7xl items-center gap-5 px-5 pb-12 pt-12 sm:px-8 sm:pb-16 sm:pt-16 lg:grid-cols-2 lg:gap-12 lg:pt-20">
+                <div class="relative z-10 home-reveal">
+                    <p class="home-kicker">{{ en ? 'A quieter way to make progress' : 'মনোযোগ দিয়ে শেখার একটি সহজ ঠিকানা' }}</p>
+                    <h1 class="home-title mt-5 max-w-2xl">{{ en ? 'Make room for deeper learning.' : 'শেখার জন্য একটু মনোযোগী পরিসর।' }}</h1>
+                    <p class="home-lede mt-5 max-w-xl">{{ en ? 'Read, practice and ask better questions—with a study companion that keeps the important things together.' : 'পড়ুন, অনুশীলন করুন, প্রশ্ন করুন—পড়াশোনার দরকারি সবকিছু থাকুক একই পরিসরে।' }}</p>
+                    <div class="mt-7 flex flex-wrap items-center gap-3">
+                        <Link href="/register" class="home-primary">{{ en ? 'Begin studying' : 'শেখা শুরু করুন' }} <span aria-hidden="true">↗</span></Link>
+                        <Link href="/courses" class="home-secondary">{{ en ? 'Explore learning' : 'শেখার উপকরণ দেখুন' }}</Link>
                     </div>
-
-                    <!-- Hero Visual / 3D Scene + Floating Stats -->
-                    <div class="lg:col-span-5 relative">
-                        <div class="relative overflow-hidden rounded-3xl border border-slate-200/90 dark:border-cyan-500/20 bg-gradient-to-b from-slate-100/90 via-white to-slate-50/90 dark:from-[#131b2e]/95 dark:via-[#0d1322] dark:to-[#0a0e1a] p-3 sm:p-5 shadow-xl dark:shadow-2xl backdrop-blur">
-                            <!-- 3D Three.js Classic Animation Centerpiece -->
-                            <EducativeHeroScene />
-
-                            <!-- Floating Glassmorphic Quick Highlights -->
-                            <div class="grid grid-cols-2 gap-2 text-center text-xs">
-                                <div class="p-2.5 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/5 shadow-xs">
-                                    <div class="font-heading text-lg font-black text-cyan-400">{{ stats?.students?.toLocaleString(en ? 'en-US' : 'bn-BD') || (en ? '12,000+' : '১২,০০০+') }}</div>
-                                    <div class="text-[10px] text-gray-400 mt-0.5">{{ en ? 'Active Students' : 'সক্রিয় শিক্ষার্থী' }}</div>
-                                </div>
-                                <div class="p-2.5 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/5 shadow-xs">
-                                    <div class="font-heading text-lg font-black text-amber-400">{{ en ? '20,000+ MCQ' : '২০,০০০+ সলভড প্রশ্ন' }}</div>
-                                    <div class="text-[10px] text-gray-400 mt-0.5">{{ en ? 'Question Bank' : 'বিগত বছরের প্রশ্নব্যাংক' }}</div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[var(--text-muted)]">
+                        <span>{{ en ? 'Books' : 'বই' }}</span><span class="home-dot">·</span>
+                        <span>{{ en ? 'Mentor-led courses' : 'মেন্টর পরিচালিত কোর্স' }}</span><span class="home-dot">·</span>
+                        <span>{{ en ? 'AI study tools' : 'AI স্টাডি টুল' }}</span>
                     </div>
+                </div>
+                <div class="home-scene home-reveal" aria-label="Animated study scene">
+                    <EducativeHeroScene :locale="locale" />
+                    <div class="home-note"><span class="home-note-mark">✳</span>{{ en ? 'A little progress, every day.' : 'প্রতিদিন একটু করে এগিয়ে চলুন।' }}</div>
                 </div>
             </section>
 
-            <!-- SECTION: আমরা কী করি? (What Sikhun Does & How It Works) -->
-            <section id="what-we-do" class="max-w-7xl mx-auto px-4 md:px-6 py-8 sm:py-12 scroll-mt-20">
-                <!-- Section Header -->
-                <div class="text-center max-w-3xl mx-auto mb-12">
-                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/25 text-cyan-600 dark:text-cyan-400 text-xs font-bold uppercase tracking-wider mb-3">
-                        <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
-                        <span>{{ en ? 'HOW SIKHUN EMPOWERS STUDENTS' : 'আমরা কী করি এবং কীভাবে পড়াশোনা সহজ করি' }}</span>
-                    </div>
-                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-heading text-slate-900 dark:text-white tracking-tight">
-                        {{ en ? 'Everything you need to master exams with AI' : 'পড়াশোনা, বিশ্ববিদ্যালয় ভর্তি ও চাকরির পূর্ণাঙ্গ স্মার্ট প্রস্তুতি' }}
-                    </h2>
-                    <p class="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-                        {{ en
-                            ? 'Sikhun combines interactive digital textbooks, 20,000+ university past papers, an automated mistake notebook, and live AI tutors into one focused study cockpit.'
-                            : 'শিখুন কেবল সাধারণ কোনো ওয়েবসাইট নয়—এটি আপনার প্রতিদিনের পার্সোনাল AI শিক্ষক। বই পড়া থেকে শুরু করে মডেল টেস্ট দেওয়া ও ভুল সংশোধন, সবকিছু এখন এক প্ল্যাটফর্মে।'
-                        }}
-                    </p>
+            <section class="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+                <div class="home-section-head home-reveal">
+                    <p class="home-kicker">{{ en ? 'A thoughtful study rhythm' : 'পড়াশোনার সহজ ছন্দ' }}</p>
+                    <h2 class="home-heading mt-2">{{ en ? 'Start where you are.' : 'যেখান থেকে শুরু করতে চান।' }}</h2>
                 </div>
-
-                <!-- 4 Main Pillars Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                    <!-- Pillar 1 -->
-                    <div class="group relative overflow-hidden rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-gradient-to-b dark:from-[#182138] dark:to-[#0e1424] p-5 sm:p-6 shadow-xs hover:border-cyan-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/10 flex flex-col justify-between">
-                        <div>
-                            <div class="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-2xl text-cyan-400 mb-5 group-hover:scale-110 transition-transform">
-                                📖
-                            </div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 font-mono">Pillar 01</span>
-                            <h3 class="text-lg font-bold font-heading text-slate-900 dark:text-white mt-1 group-hover:text-cyan-300 transition-colors">
-                                {{ en ? 'AI Book Reader & Chat' : 'AI বুক রিডার ও স্মার্ট চ্যাট' }}
-                            </h3>
-                            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                                {{ en ? 'Read textbooks and highlight any tricky paragraph. Sikhun AI explains it in simple Bangla with examples.' : 'পাঠ্যবই পড়ার সময় যেকোনো প্যারাগ্রাফে সরাসরি AI-কে বাংলায় প্রশ্ন করুন। কঠিন সংজ্ঞা, গাণিতিক নিয়ম বা চ্যাপ্টার সামারি চোখের পলকে বুঝে নিন।' }}
-                            </p>
-                        </div>
-                        <Link href="/library" class="mt-5 inline-flex items-center gap-1.5 text-xs font-bold text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 group-hover:translate-x-1 transition-transform">
-                            <span>{{ en ? 'Browse Library' : 'বই লাইব্রেরি দেখুন' }}</span>
-                            <span>→</span>
-                        </Link>
-                    </div>
-
-                    <!-- Pillar 2 -->
-                    <div class="group relative overflow-hidden rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-gradient-to-b dark:from-[#182138] dark:to-[#0e1424] p-5 sm:p-6 shadow-xs hover:border-amber-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/10 flex flex-col justify-between">
-                        <div>
-                            <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-2xl text-amber-400 mb-5 group-hover:scale-110 transition-transform">
-                                🎯
-                            </div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 font-mono">Pillar 02</span>
-                            <h3 class="text-lg font-bold font-heading text-slate-900 dark:text-white mt-1 group-hover:text-amber-300 transition-colors">
-                                {{ en ? '20,000+ Question Bank & Explainer' : 'বিশাল প্রশ্নব্যাংক ও AI ব্যাখ্যা' }}
-                            </h3>
-                            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                                {{ en ? 'Practice 25 years of DU, RU, BUET, GST, Medical & BCS questions with instant negative-mark calculations.' : 'ঢাবি, রাবি, বুয়েট, মেডিকেল, গুচ্ছ ও বিসিএস-এর বিগত ২৫ বছরের প্রশ্ন। ভুল উত্তর দিলে AI সাথে সাথে বিস্তারিত নিয়ম বুঝিয়ে দেবে।' }}
-                            </p>
-                        </div>
-                        <Link href="/question-bank" class="mt-5 inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 group-hover:translate-x-1 transition-transform">
-                            <span>{{ en ? 'Practice Question Bank' : 'প্রশ্নব্যাংক সলভ করুন' }}</span>
-                            <span>→</span>
-                        </Link>
-                    </div>
-
-                    <!-- Pillar 3 -->
-                    <div class="group relative overflow-hidden rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-gradient-to-b dark:from-[#182138] dark:to-[#0e1424] p-5 sm:p-6 shadow-xs hover:border-rose-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-rose-500/10 flex flex-col justify-between">
-                        <div>
-                            <div class="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-2xl text-rose-400 mb-5 group-hover:scale-110 transition-transform">
-                                📝
-                            </div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 font-mono">Pillar 03</span>
-                            <h3 class="text-lg font-bold font-heading text-slate-900 dark:text-white mt-1 group-hover:text-rose-300 transition-colors">
-                                {{ en ? 'Automated Mistake Notebook' : 'ভুল উত্তরের স্বয়ংক্রিয় খাতা' }}
-                            </h3>
-                            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                                {{ en ? 'Never repeat a mistake. Tests automatically save your incorrect answers into a dedicated revision notebook.' : 'মডেল টেস্টে আপনি যে যে প্রশ্নে ভুল করবেন, সেগুলো আলাদা খাতায় জমা থাকে। পরীক্ষার আগের রাতে শুধু ভুলের খাতা রিভিশন দিন।' }}
-                            </p>
-                        </div>
-                        <Link href="/mistakes" class="mt-5 inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 group-hover:translate-x-1 transition-transform">
-                            <span>{{ en ? 'Open Mistake Book' : 'ভুলের খাতা দেখুন' }}</span>
-                            <span>→</span>
-                        </Link>
-                    </div>
-
-                    <!-- Pillar 4 -->
-                    <div class="group relative overflow-hidden rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-gradient-to-b dark:from-[#182138] dark:to-[#0e1424] p-5 sm:p-6 shadow-xs hover:border-emerald-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10 flex flex-col justify-between">
-                        <div>
-                            <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-2xl text-emerald-400 mb-5 group-hover:scale-110 transition-transform">
-                                🎓
-                            </div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-mono">Pillar 04</span>
-                            <h3 class="text-lg font-bold font-heading text-slate-900 dark:text-white mt-1 group-hover:text-emerald-300 transition-colors">
-                                {{ en ? 'Official Circular Tracker' : 'ভর্তি ও চাকরির নোটিশ ট্র্যাকার' }}
-                            </h3>
-                            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-                                {{ en ? 'Direct links to official application portals, deadlines, GPA requirements, and admission eligibility rules.' : 'সকল পাবলিক, প্রাইভেট ও গুচ্ছ বিশ্ববিদ্যালয়ের অফিসিয়াল সার্কুলার, লাইভ কাউন্টডাউন এবং ৩য় পক্ষের বিভ্রান্তি ছাড়া সরাসরি আবেদন।' }}
-                            </p>
-                        </div>
-                        <Link href="/admission-notice" class="mt-5 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 group-hover:translate-x-1 transition-transform">
-                            <span>{{ en ? 'View Circulars' : 'ভর্তি সার্কুলারসমূহ' }}</span>
-                            <span>→</span>
-                        </Link>
-                    </div>
-                </div>
-
-                <!-- Interactive "Live Demo Box": Try AI Explainer Right Now -->
-                <div class="mt-8 overflow-hidden rounded-3xl border border-slate-200 dark:border-cyan-500/30 bg-white dark:bg-gradient-to-br dark:from-[#10172a] dark:via-[#0d1424] dark:to-[#151226] p-5 sm:p-7 shadow-lg dark:shadow-2xl">
-                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-white/10">
-                        <div>
-                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-bold mb-2">
-                                <span>⚡</span>
-                                <span>ইন্টারেক্টিভ ডেমো: নিজে ট্রাই করে দেখুন</span>
-                            </div>
-                            <h3 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white font-heading">
-                                কীভাবে শিখুন AI এক্সপ্লেনার কাজ করে?
-                            </h3>
-                            <p class="text-xs sm:text-sm text-slate-600 dark:text-gray-300 mt-0.5">
-                                নিচের প্রশ্নটিতে যেকোনো একটি অপশনে ক্লিক করুন এবং দেখুন এআই কীভাবে মুহূর্তেই বিস্তারিত নিয়ম বুঝিয়ে দেয়:
-                            </p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="px-3 py-1.5 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-400 text-xs font-bold">
-                                ঢাবি ও বিসিএস বিগত প্রশ্ন
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Interactive MCQ Question Card -->
-                    <div class="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                        <!-- Left Question & Options -->
-                        <div class="lg:col-span-7 space-y-4">
-                            <div class="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-xs">
-                                <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider font-mono">নমুনা প্রশ্ন</span>
-                                <p class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1">
-                                    "বাংলা বর্ণমালায় অর্ধমাত্রা বর্ণ কয়টি?"
-                                </p>
-                            </div>
-
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <button
-                                    type="button"
-                                    @click="selectedDemoOption = 'A'"
-                                    :class="[
-                                        'p-3.5 rounded-xl text-left font-semibold text-sm transition-all border flex items-center justify-between cursor-pointer',
-                                        selectedDemoOption === 'A'
-                                            ? 'bg-rose-500/20 border-rose-500 text-rose-300'
-                                            : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/10 shadow-xs'
-                                    ]"
-                                >
-                                    <span class="font-bangla-num font-semibold text-sm sm:text-base">ক. ৭টি</span>
-                                    <span v-if="selectedDemoOption === 'A'" class="text-rose-400 text-xs font-bold">ভুল উত্তর ✕</span>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    @click="selectedDemoOption = 'B'"
-                                    :class="[
-                                        'p-3.5 rounded-xl text-left font-semibold text-sm transition-all border flex items-center justify-between cursor-pointer',
-                                        selectedDemoOption === 'B'
-                                            ? 'bg-emerald-500/25 border-emerald-500 text-emerald-300 shadow-lg shadow-emerald-500/20'
-                                            : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/10 shadow-xs'
-                                    ]"
-                                >
-                                    <span class="font-bangla-num font-semibold text-sm sm:text-base">খ. ৮টি</span>
-                                    <span v-if="selectedDemoOption === 'B'" class="text-emerald-400 text-xs font-bold">সঠিক উত্তর ✓</span>
-                                    <span v-else-if="selectedDemoOption && selectedDemoOption !== 'B'" class="text-emerald-400 text-xs font-bold">সঠিক উত্তর ✓</span>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    @click="selectedDemoOption = 'C'"
-                                    :class="[
-                                        'p-3.5 rounded-xl text-left font-semibold text-sm transition-all border flex items-center justify-between cursor-pointer',
-                                        selectedDemoOption === 'C'
-                                            ? 'bg-rose-500/20 border-rose-500 text-rose-300'
-                                            : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/10 shadow-xs'
-                                    ]"
-                                >
-                                    <span class="font-bangla-num font-semibold text-sm sm:text-base">গ. ১০টি</span>
-                                    <span v-if="selectedDemoOption === 'C'" class="text-rose-400 text-xs font-bold">ভুল উত্তর ✕</span>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    @click="selectedDemoOption = 'D'"
-                                    :class="[
-                                        'p-3.5 rounded-xl text-left font-semibold text-sm transition-all border flex items-center justify-between cursor-pointer',
-                                        selectedDemoOption === 'D'
-                                            ? 'bg-rose-500/20 border-rose-500 text-rose-300'
-                                            : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/10 shadow-xs'
-                                    ]"
-                                >
-                                    <span class="font-bangla-num font-semibold text-sm sm:text-base">ঘ. ১১টি</span>
-                                    <span v-if="selectedDemoOption === 'D'" class="text-rose-400 text-xs font-bold">ভুল উত্তর ✕</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Right AI Explainer Box (Animated on Option Click) -->
-                        <div class="lg:col-span-5">
-                            <div class="h-full rounded-2xl border border-cyan-300 dark:border-cyan-500/30 bg-cyan-50/60 dark:bg-[#161b33]/90 p-4 sm:p-5 relative overflow-hidden flex flex-col justify-between shadow-xs">
-                                <div>
-                                    <div class="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs uppercase tracking-wider mb-2">
-                                        <span class="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></span>
-                                        <span>✨ Sikhun AI Explainer</span>
-                                    </div>
-                                    <div v-if="selectedDemoOption" class="text-xs sm:text-sm text-slate-800 dark:text-indigo-100 leading-relaxed space-y-2 font-bangla-num">
-                                        <p class="font-bold text-emerald-400">
-                                            সঠিক উত্তর: (খ) ৮টি
-                                        </p>
-                                        <p>
-                                            বাংলা বর্ণমালায় অর্ধমাত্রা বর্ণ মোট <strong>৮টি</strong>।
-                                            এর মধ্যে স্বরবর্ণে ১টি: <em>ঋ</em>, এবং ব্যঞ্জনবর্ণে ৭টি: <em>খ, গ, ণ, থ, ধ, প, শ</em>।
-                                        </p>
-                                        <p class="text-[11px] text-gray-400 pt-1 border-t border-slate-200 dark:border-indigo-400/20">
-                                            💡 মনে রাখার টিপস: পূর্ণমাত্রা ৩২টি, অর্ধমাত্রা ৮টি এবং মাত্রাহীন বর্ণ ১০টি (মোট ৫০টি)।
-                                        </p>
-                                    </div>
-                                    <div v-else class="text-xs text-slate-500 dark:text-gray-400 py-6 text-center">
-                                        <span class="text-2xl block mb-2">👆</span>
-                                        বামের যেকোনো একটি অপশনে ক্লিক করলেই AI Explainer এর রিয়েল-টাইম ব্যাখ্যা চালু হবে।
-                                    </div>
-                                </div>
-
-                                <div class="mt-4 pt-3 border-t border-slate-200 dark:border-white/5 flex items-center justify-between">
-                                    <span class="text-[11px] text-gray-400">সকল প্রশ্নে এমন ব্যাখ্যা চান?</span>
-                                    <Link href="/question-bank" class="text-xs font-bold text-cyan-400 hover:underline">
-                                        প্রশ্নব্যাংকে যান →
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- SECTION: Admissions 2026-2027 Live Countdown & Practice Hub -->
-            <section id="admissions-season" class="max-w-7xl mx-auto px-4 md:px-6 py-10 md:py-14 scroll-mt-24">
-                <div class="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-orange-500/25 bg-gradient-to-br from-slate-50 via-white to-orange-50/20 dark:from-[#11192e] dark:via-[#0d1424] dark:to-[#161226] text-slate-900 dark:text-white p-6 sm:p-10 shadow-lg dark:shadow-2xl">
-                    <!-- Glow effects -->
-                    <div class="pointer-events-none absolute -top-24 right-10 w-96 h-96 bg-orange-500/15 rounded-full blur-3xl"></div>
-                    <div class="pointer-events-none absolute -bottom-24 left-10 w-96 h-96 bg-blue-500/15 rounded-full blur-3xl"></div>
-
-                    <div class="relative z-10">
-                        <!-- Top Header Strip -->
-                        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/10">
-                            <div>
-                                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-400 text-xs font-bold uppercase tracking-wider mb-2">
-                                    <span class="relative flex h-2 w-2">
-                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-                                    </span>
-                                    <span>{{ en ? 'ADMISSIONS 2026-2027' : 'ভর্তি সেশন ২০২৬-২০২৭ লাইভ' }}</span>
-                                </div>
-                                <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-heading text-slate-900 dark:text-white tracking-tight">
-                                    {{ en ? 'University Admission Preparation 2026-2027' : 'বিশ্ববিদ্যালয় ভর্তি প্রস্তুতি ২০২৬-২০২৭' }}
-                                </h2>
-                                <p class="mt-2 text-sm md:text-base text-slate-600 dark:text-gray-300 max-w-2xl leading-relaxed">
-                                    {{ en ? 'Live application deadlines, 15,000+ past year solved questions for DU, RU, BUET & GST with realistic model tests and instant AI explanations.' : 'ঢাকা, রাজশাহী, বুয়েট ও গুচ্ছসহ সকল বিশ্ববিদ্যালয়ের আবেদনের সময়সীমা, বিগত ২৫ বছরের ১৫,০০০+ সলভড প্রশ্নব্যাংক এবং এআই সমাধানসহ ফ্রি মডেল টেস্ট।' }}
-                                </p>
-                            </div>
-
-                            <!-- Direct CTA Buttons -->
-                            <div class="flex flex-wrap items-center gap-3">
-                                <Link
-                                    href="/question-bank?segment=admission"
-                                    class="px-5 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-orange-500/25 transition flex items-center gap-2 hover:-translate-y-0.5"
-                                >
-                                    <span class="material-symbols-outlined !text-base">menu_book</span>
-                                    <span>{{ en ? 'Admission Question Bank' : 'ভর্তি প্রশ্নব্যাংক' }}</span>
-                                    <span>→</span>
-                                </Link>
-
-                                <Link
-                                    href="/question-bank?segment=admission"
-                                    class="px-5 py-3 rounded-xl bg-blue-600/90 hover:bg-blue-600 text-white font-bold text-xs sm:text-sm border border-blue-400/30 shadow-lg shadow-blue-500/20 transition flex items-center gap-2 hover:-translate-y-0.5"
-                                >
-                                    <span class="material-symbols-outlined !text-base">quiz</span>
-                                    <span>{{ en ? 'Free Model Test' : 'ফ্রি মডেল টেস্ট' }}</span>
-                                    <span class="px-1.5 py-0.2 text-[10px] rounded bg-white/20 text-white font-bold">১০টি প্রশ্ন</span>
-                                </Link>
-
-                                <Link
-                                    href="/admission-notice"
-                                    class="px-4 py-3 rounded-xl border border-slate-200 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-800 dark:text-gray-200 font-semibold text-xs sm:text-sm transition flex items-center gap-1.5"
-                                >
-                                    <span class="material-symbols-outlined !text-base">campaign</span>
-                                    <span>{{ en ? 'All Admission Circulars' : 'সকল ভর্তি সার্কুলার' }}</span>
-                                </Link>
-                            </div>
-                        </div>
-
-                        <!-- Open Application Countdown Cards Grid -->
-                        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <!-- DU Application Countdown Card -->
-                            <div class="p-6 rounded-2xl bg-white dark:bg-[#141d33]/90 border border-slate-200 dark:border-blue-500/30 hover:border-blue-400/60 transition shadow-sm dark:shadow-lg relative overflow-hidden group">
-                                <div class="flex items-start justify-between gap-3 mb-4">
-                                    <div>
-                                        <span class="px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 text-[11px] font-bold uppercase tracking-wider inline-block mb-1.5">
-                                            ঢাকা বিশ্ববিদ্যালয় (DU)
-                                        </span>
-                                        <h3 class="text-lg sm:text-xl font-bold font-heading text-slate-900 dark:text-white">
-                                            আন্ডারগ্র্যাজুয়েট ভর্তি পরীক্ষা ২০২৬
-                                        </h3>
-                                        <p class="text-xs text-slate-500 dark:text-blue-200/80 mt-0.5">
-                                            আবেদনের শেষ সময়: <strong class="text-rose-400 font-bold">২৫ নভেম্বর ২০২৬</strong>
-                                        </p>
-                                    </div>
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse">
-                                        আবেদন চলছে
-                                    </span>
-                                </div>
-
-                                <!-- Live 4-Block Countdown Timer -->
-                                <div class="py-3 px-4 rounded-xl bg-slate-50 dark:bg-[#0d1424] border border-slate-200 dark:border-blue-400/20 flex items-center justify-around font-mono text-center mb-4">
-                                    <div>
-                                        <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{{ duTimer.days }}</div>
-                                        <div class="text-[10px] text-slate-500 dark:text-blue-300 uppercase font-sans font-bold">দিন</div>
-                                    </div>
-                                    <span class="text-blue-500 font-bold text-lg">:</span>
-                                    <div>
-                                        <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{{ duTimer.hours }}</div>
-                                        <div class="text-[10px] text-slate-500 dark:text-blue-300 uppercase font-sans font-bold">ঘণ্টা</div>
-                                    </div>
-                                    <span class="text-blue-500 font-bold text-lg">:</span>
-                                    <div>
-                                        <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{{ duTimer.minutes }}</div>
-                                        <div class="text-[10px] text-slate-500 dark:text-blue-300 uppercase font-sans font-bold">মিনিট</div>
-                                    </div>
-                                    <span class="text-blue-500 font-bold text-lg">:</span>
-                                    <div>
-                                        <div class="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400">{{ duTimer.seconds }}</div>
-                                        <div class="text-[10px] text-slate-500 dark:text-blue-300 uppercase font-sans font-bold">সেকেন্ড</div>
-                                    </div>
-                                </div>
-
-                                <!-- DU Units Direct Links -->
-                                <div class="space-y-2">
-                                    <div class="text-[11px] font-semibold text-slate-600 dark:text-gray-400 uppercase tracking-wider">
-                                        ইউনিটভিত্তিক প্রশ্নব্যাংক অনুশীলন:
-                                    </div>
-                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                        <Link
-                                            href="/question-bank?segment=admission&origin=DU-A"
-                                            class="p-2 rounded-xl bg-slate-50 hover:bg-orange-50 dark:bg-white/5 dark:hover:bg-orange-500/20 border border-slate-200 dark:border-white/5 hover:border-orange-400 text-center transition group/u shadow-xs"
-                                        >
-                                            <div class="text-xs font-bold text-slate-800 dark:text-white group-hover/u:text-orange-600 dark:group-hover/u:text-orange-400">ক ইউনিট</div>
-                                            <div class="text-[10px] text-slate-500 dark:text-gray-400">১৬৯৩ প্রশ্ন</div>
-                                        </Link>
-                                        <Link
-                                            href="/question-bank?segment=admission&origin=DU-B"
-                                            class="p-2 rounded-xl bg-slate-50 hover:bg-orange-50 dark:bg-white/5 dark:hover:bg-orange-500/20 border border-slate-200 dark:border-white/5 hover:border-orange-400 text-center transition group/u shadow-xs"
-                                        >
-                                            <div class="text-xs font-bold text-slate-800 dark:text-white group-hover/u:text-orange-600 dark:group-hover/u:text-orange-400">খ ইউনিট</div>
-                                            <div class="text-[10px] text-slate-500 dark:text-gray-400">৮৪০ প্রশ্ন</div>
-                                        </Link>
-                                        <Link
-                                            href="/question-bank?segment=admission&origin=DU-C"
-                                            class="p-2 rounded-xl bg-slate-50 hover:bg-orange-50 dark:bg-white/5 dark:hover:bg-orange-500/20 border border-slate-200 dark:border-white/5 hover:border-orange-400 text-center transition group/u shadow-xs"
-                                        >
-                                            <div class="text-xs font-bold text-slate-800 dark:text-white group-hover/u:text-orange-600 dark:group-hover/u:text-orange-400">গ ইউনিট</div>
-                                            <div class="text-[10px] text-slate-500 dark:text-gray-400">১৩৯৫ প্রশ্ন</div>
-                                        </Link>
-                                        <Link
-                                            href="/question-bank?segment=admission&origin=DU-D"
-                                            class="p-2 rounded-xl bg-slate-50 hover:bg-orange-50 dark:bg-white/5 dark:hover:bg-orange-500/20 border border-slate-200 dark:border-white/5 hover:border-orange-400 text-center transition group/u shadow-xs"
-                                        >
-                                            <div class="text-xs font-bold text-slate-800 dark:text-white group-hover/u:text-orange-600 dark:group-hover/u:text-orange-400">ঘ / IBA</div>
-                                            <div class="text-[10px] text-slate-500 dark:text-gray-400">৮৩৭ প্রশ্ন</div>
-                                        </Link>
-                                    </div>
-                                </div>
-
-                                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-white/10 flex items-center justify-between text-xs">
-                                    <Link href="/admission-notice" class="text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-white font-medium flex items-center gap-1">
-                                        <span>অফিসিয়াল সার্কুলার দেখুন</span>
-                                        <span>→</span>
-                                    </Link>
-                                    <Link href="/question-bank?segment=admission&origin=DU-A" class="text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1">
-                                        <span>ঢাবি সম্পূর্ণ প্রশ্নব্যাংক</span>
-                                        <span class="material-symbols-outlined !text-xs">north_east</span>
-                                    </Link>
-                                </div>
-                            </div>
-
-                            <!-- RU Application Countdown Card -->
-                            <div class="p-6 rounded-2xl bg-white dark:bg-[#141d33]/90 border border-slate-200 dark:border-purple-500/30 hover:border-purple-400/60 transition shadow-sm dark:shadow-lg relative overflow-hidden group">
-                                <div class="flex items-start justify-between gap-3 mb-4">
-                                    <div>
-                                        <span class="px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 text-[11px] font-bold uppercase tracking-wider inline-block mb-1.5">
-                                            রাজশাহী বিশ্ববিদ্যালয় (RU)
-                                        </span>
-                                        <h3 class="text-lg sm:text-xl font-bold font-heading text-white">
-                                            স্নাতক প্রথম বর্ষ ভর্তি পরীক্ষা ২০২৬
-                                        </h3>
-                                        <p class="text-xs text-slate-500 dark:text-purple-200/80 mt-0.5">
-                                            আবেদনের শেষ সময়: <strong class="text-rose-400 font-bold">৩০ নভেম্বর ২০২৬</strong>
-                                        </p>
-                                    </div>
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse">
-                                        আবেদন চলছে
-                                    </span>
-                                </div>
-
-                                <!-- Live 4-Block Countdown Timer -->
-                                <div class="py-3 px-4 rounded-xl bg-slate-50 dark:bg-[#0d1424] border border-slate-200 dark:border-purple-400/20 flex items-center justify-around font-mono text-center mb-4">
-                                    <div>
-                                        <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{{ ruTimer.days }}</div>
-                                        <div class="text-[10px] text-slate-500 dark:text-purple-300 uppercase font-sans font-bold">দিন</div>
-                                    </div>
-                                    <span class="text-purple-500 font-bold text-lg">:</span>
-                                    <div>
-                                        <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{{ ruTimer.hours }}</div>
-                                        <div class="text-[10px] text-slate-500 dark:text-purple-300 uppercase font-sans font-bold">ঘণ্টা</div>
-                                    </div>
-                                    <span class="text-purple-500 font-bold text-lg">:</span>
-                                    <div>
-                                        <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{{ ruTimer.minutes }}</div>
-                                        <div class="text-[10px] text-slate-500 dark:text-purple-300 uppercase font-sans font-bold">মিনিট</div>
-                                    </div>
-                                    <span class="text-purple-500 font-bold text-lg">:</span>
-                                    <div>
-                                        <div class="text-xl sm:text-2xl font-black text-rose-400">{{ ruTimer.seconds }}</div>
-                                        <div class="text-[10px] text-purple-300 uppercase font-sans">সেকেন্ড</div>
-                                    </div>
-                                </div>
-
-                                <!-- RU Units Direct Links -->
-                                <div class="space-y-2">
-                                    <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                                        ইউনিটভিত্তিক প্রশ্নব্যাংক অনুশীলন:
-                                    </div>
-                                    <div class="grid grid-cols-3 gap-2">
-                                        <Link
-                                            href="/question-bank?segment=admission&origin=RU-A"
-                                            class="p-2 rounded-xl bg-slate-50 hover:bg-orange-50 dark:bg-white/5 dark:hover:bg-orange-500/20 border border-slate-200 dark:border-white/5 hover:border-orange-400 text-center transition group/u shadow-xs"
-                                        >
-                                            <div class="text-xs font-bold text-slate-800 dark:text-white group-hover/u:text-orange-600 dark:group-hover/u:text-orange-400">A ইউনিট (মানবিক)</div>
-                                            <div class="text-[10px] text-slate-500 dark:text-gray-400">২৫২৯ প্রশ্ন</div>
-                                        </Link>
-                                        <Link
-                                            href="/question-bank?segment=admission&origin=RU-B"
-                                            class="p-2 rounded-xl bg-slate-50 hover:bg-orange-50 dark:bg-white/5 dark:hover:bg-orange-500/20 border border-slate-200 dark:border-white/5 hover:border-orange-400 text-center transition group/u shadow-xs"
-                                        >
-                                            <div class="text-xs font-bold text-slate-800 dark:text-white group-hover/u:text-orange-600 dark:group-hover/u:text-orange-400">B ইউনিট (বাণিজ্য)</div>
-                                            <div class="text-[10px] text-slate-500 dark:text-gray-400">৬৯৬ প্রশ্ন</div>
-                                        </Link>
-                                        <Link
-                                            href="/question-bank?segment=admission&origin=RU-C"
-                                            class="p-2 rounded-xl bg-slate-50 hover:bg-orange-50 dark:bg-white/5 dark:hover:bg-orange-500/20 border border-slate-200 dark:border-white/5 hover:border-orange-400 text-center transition group/u shadow-xs"
-                                        >
-                                            <div class="text-xs font-bold text-slate-800 dark:text-white group-hover/u:text-orange-600 dark:group-hover/u:text-orange-400">C ইউনিট (বিজ্ঞান)</div>
-                                            <div class="text-[10px] text-slate-500 dark:text-gray-400">১৯৩১ প্রশ্ন</div>
-                                        </Link>
-                                    </div>
-                                </div>
-
-                                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-white/10 flex items-center justify-between text-xs">
-                                    <Link href="/admission-notice" class="text-purple-600 dark:text-purple-300 hover:text-purple-800 dark:hover:text-white font-medium flex items-center gap-1">
-                                        <span>অফিসিয়াল সার্কুলার দেখুন</span>
-                                        <span>→</span>
-                                    </Link>
-                                    <Link href="/question-bank?segment=admission&origin=RU-A" class="text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1">
-                                        <span>রাবি সম্পূর্ণ প্রশ্নব্যাংক</span>
-                                        <span class="material-symbols-outlined !text-xs">north_east</span>
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Quick University Pills strip -->
-                        <div class="mt-6 pt-5 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
-                            <span class="text-gray-400 font-semibold">{{ en ? 'More University Question Banks:' : 'অন্যান্য বিশ্ববিদ্যালয় প্রশ্নব্যাংক:' }}</span>
-                            <div class="flex flex-wrap items-center gap-2">
-                                <Link
-                                    href="/question-bank?segment=admission&origin=BUET"
-                                    class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition flex items-center gap-1"
-                                >
-                                    <span>বুয়েট ও ইঞ্জিনিয়ারিং</span>
-                                    <span class="text-[10px] text-orange-400">১৭০০+</span>
-                                </Link>
-                                <Link
-                                    href="/question-bank?segment=admission&origin=GST-C"
-                                    class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition flex items-center gap-1"
-                                >
-                                    <span>জিএসটি গুচ্ছ (২৪ ভার্সিটি)</span>
-                                    <span class="text-[10px] text-orange-400">১৬০০+</span>
-                                </Link>
-                                <Link
-                                    href="/question-bank?segment=admission&search=মেডিকেল"
-                                    class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white font-medium transition flex items-center gap-1"
-                                >
-                                    <span>মেডিকেল ও ডেন্টাল</span>
-                                    <span class="text-[10px] text-orange-400">১২০০+</span>
-                                </Link>
-                                <Link
-                                    href="/admission-notice"
-                                    class="px-3 py-1.5 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/30 text-orange-300 font-bold transition flex items-center gap-1"
-                                >
-                                    <span>সকল সার্কুলার দেখুন →</span>
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- SECTION: Public Student Tools & Calculators Hub -->
-            <section id="tools" class="max-w-7xl mx-auto px-4 md:px-6 py-12 md:py-16 scroll-mt-24">
-                <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-                    <div>
-                        <span class="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-amber-500 dark:text-amber-400">{{ en ? 'FREE STUDENT & JOB UTILITIES' : 'ফ্রি স্টুডেন্ট ও জব ইউটিলিটিস' }}</span>
-                        <h2 class="mt-2 font-heading text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
-                            {{ en ? 'Student Tools & Calculators' : 'স্টুডেন্ট টুলস ও ক্যালকুলেটর' }}
-                        </h2>
-                        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-muted)]">
-                            {{ en ? 'Free government job age calculator, SSC/HSC GPA calculation, and board exam result checker without login.' : 'কোনো রেজিস্ট্রেশন বা লগইন ছাড়াই ব্যবহার করুন সরকারি চাকরির বয়স ক্যালকুলেটর, জিপিএ ও রেজাল্ট চেকার।' }}
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <Link href="/calculators" class="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-500 dark:text-amber-400 hover:text-[var(--primary)] transition">
-                            <span>{{ en ? 'All Calculators & Tools' : 'সকল ক্যালকুলেটর ও টুলস' }}</span> <span class="material-symbols-outlined !text-sm">arrow_forward</span>
-                        </Link>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <!-- Tool 1: Job Age Calculator -->
-                    <Link
-                        href="/calculators"
-                        class="group p-6 rounded-3xl border border-slate-200 dark:border-white/5 bg-white dark:bg-gradient-to-br dark:from-[#1a202f] dark:to-[#141824] hover:border-amber-500/40 transition-all duration-300 hover:-translate-y-1 shadow-xs dark:shadow-lg"
-                    >
-                        <div class="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-500 dark:text-amber-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
-                            <span class="material-symbols-outlined">badge</span>
-                        </div>
-                        <h3 class="font-heading text-lg font-bold text-slate-900 dark:text-white group-hover:text-amber-500 dark:group-hover:text-amber-400 transition">
-                            {{ en ? 'Govt Job Age Calculator' : 'সরকারি চাকরির বয়স ক্যালকুলেটর' }}
-                        </h3>
-                        <p class="mt-2 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                            {{ en ? 'Calculate exact age in years, months, and days with general (30 yrs) and quota (32 yrs) eligibility checks.' : 'জন্মতারিখ ও সার্কুলার দিয়ে সাধারণ (৩০ বছর) ও কোটা (৩২ বছর) অনুযায়ী বছর, মাস ও দিনে নির্ভুল বয়স যাচাই করুন।' }}
-                        </p>
-                        <span class="mt-4 inline-flex items-center gap-1 text-xs font-bold text-amber-500 dark:text-amber-400 group-hover:translate-x-1 transition-transform">
-                            <span>{{ en ? 'Calculate Age' : 'বয়স হিসাব করুন' }}</span> <span>→</span>
-                        </span>
-                    </Link>
-
-                    <!-- Tool 2: GPA & CGPA Calculator -->
-                    <Link
-                        href="/calculators"
-                        class="group p-6 rounded-3xl border border-slate-200 dark:border-white/5 bg-white dark:bg-gradient-to-br dark:from-[#1a202f] dark:to-[#141824] hover:border-blue-500/40 transition-all duration-300 hover:-translate-y-1 shadow-xs dark:shadow-lg"
-                    >
-                        <div class="w-12 h-12 rounded-2xl bg-blue-500/15 text-blue-500 dark:text-blue-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
-                            <span class="material-symbols-outlined">calculate</span>
-                        </div>
-                        <h3 class="font-heading text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-500 dark:group-hover:text-blue-400 transition">
-                            {{ en ? 'SSC / HSC GPA & NU CGPA' : 'SSC / HSC GPA ও NU CGPA' }}
-                        </h3>
-                        <p class="mt-2 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                            {{ en ? 'Calculate secondary and higher secondary GPA with 4th subject bonus points, plus National University honours CGPA.' : 'শিক্ষাবোর্ডের নিয়মানুযায়ী ৪র্থ বিষয়ের বোনাস পয়েন্টসহ জিপিএ এবং জাতীয় বিশ্ববিদ্যালয়ের অনার্স সিজিপিএ বের করুন।' }}
-                        </p>
-                        <span class="mt-4 inline-flex items-center gap-1 text-xs font-bold text-blue-500 dark:text-blue-400 group-hover:translate-x-1 transition-transform">
-                            <span>{{ en ? 'Calculate GPA' : 'জিপিএ হিসাব করুন' }}</span> <span>→</span>
-                        </span>
-                    </Link>
-
-                    <!-- Tool 3: University Admission Notices -->
-                    <Link
-                        href="/admission-notice"
-                        class="group p-6 rounded-3xl border border-slate-200 dark:border-white/5 bg-white dark:bg-gradient-to-br dark:from-[#1a202f] dark:to-[#141824] hover:border-emerald-500/40 transition-all duration-300 hover:-translate-y-1 shadow-xs dark:shadow-lg"
-                    >
-                        <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
-                            <span class="material-symbols-outlined">account_balance</span>
-                        </div>
-                        <h3 class="font-heading text-lg font-bold text-slate-900 dark:text-white group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition">
-                            {{ en ? 'University Admission Notices' : 'বিশ্ববিদ্যালয় ভর্তি বিজ্ঞপ্তি' }}
-                        </h3>
-                        <p class="mt-2 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                            {{ en ? 'Public, Guccho, and Private university admission circulars, eligibility, units, and deadlines.' : 'পাবলিক, গুচ্ছ ও শীর্ষ বেসরকারি বিশ্ববিদ্যালয়ের ভর্তি বিজ্ঞপ্তি, যোগ্যতা, ইউনিট ও সময়সূচির সম্পূর্ণ গাইড।' }}
-                        </p>
-                        <span class="mt-4 inline-flex items-center gap-1 text-xs font-bold text-emerald-500 dark:text-emerald-400 group-hover:translate-x-1 transition-transform">
-                            <span>{{ en ? 'View Notices' : 'ভর্তি বিজ্ঞপ্তি দেখুন' }}</span> <span>→</span>
-                        </span>
+                <div class="mt-6 grid gap-3 md:grid-cols-3">
+                    <Link v-for="path in paths" :key="path.number" :href="path.href" class="home-path home-reveal">
+                        <span class="home-path-number">{{ path.number }}</span>
+                        <h3>{{ path.title }}</h3>
+                        <p>{{ path.detail }}</p>
+                        <span class="home-path-action">{{ path.action }} <span aria-hidden="true">→</span></span>
                     </Link>
                 </div>
             </section>
 
-            <!-- SECTION: Latest Job Circulars Preview -->
-            <section id="jobs" class="max-w-7xl mx-auto px-4 md:px-6 py-12 md:py-16 scroll-mt-24 border-t border-slate-200 dark:border-white/5">
-                <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-                    <div>
-                        <span class="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-emerald-500 dark:text-emerald-400">{{ en ? 'CAREERS & RECRUITMENT' : 'ক্যারিয়ার ও নিয়োগ বিজ্ঞপ্তি' }}</span>
-                        <h2 class="mt-2 font-heading text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
-                            {{ en ? 'Latest Job News' : 'সর্বশেষ চাকরির খবর ও সার্কুলার' }}
-                        </h2>
-                        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-muted)]">
-                            {{ en ? 'Verified circulars from BCS, Bangladesh Bank, Government departments, and leading private organizations.' : 'বিসিএস, বাংলাদেশ ব্যাংক, সরকারি বিভিন্ন দপ্তর ও শীর্ষ বেসরকারি প্রতিষ্ঠানের সাম্প্রতিক নিয়োগ বিজ্ঞপ্তি।' }}
-                        </p>
-                    </div>
-                    <Link href="/job-news" class="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-500 dark:text-emerald-400 hover:text-[var(--primary)] transition">
-                        <span>{{ en ? 'All Job News' : 'সকল চাকরির খবর' }}</span> <span class="material-symbols-outlined !text-sm">arrow_forward</span>
-                    </Link>
+            <section v-if="topCourses?.length" class="home-shelf mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+                <div class="flex flex-wrap items-end justify-between gap-3 home-reveal">
+                    <div><p class="home-kicker">{{ en ? 'Learn with a mentor' : 'মেন্টরের সঙ্গে শিখুন' }}</p><h2 class="home-heading mt-2">{{ en ? 'A good place to continue.' : 'এগিয়ে যাওয়ার ভালো সঙ্গী।' }}</h2></div>
+                    <Link href="/courses" class="home-text-link">{{ en ? 'All courses' : 'সব কোর্স' }} →</Link>
                 </div>
-
-                <div v-if="featuredJobs?.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <article
-                        v-for="job in featuredJobs"
-                        :key="job.id"
-                        class="p-5 rounded-3xl border border-slate-200 dark:border-white/5 bg-white dark:bg-[#171c28] hover:border-[var(--primary)]/40 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between shadow-sm dark:shadow-none"
-                    >
-                        <div>
-                            <div class="flex items-center justify-between text-[11px] mb-2">
-                                <span class="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold uppercase">
-                                    {{ job.category }}
-                                </span>
-                                <span class="text-rose-500 dark:text-rose-400 font-semibold text-[10px]">{{ en ? 'Ends:' : 'শেষ:' }} {{ formatDate(job.deadline) }}</span>
-                            </div>
-                            <span class="text-xs font-semibold text-[var(--primary)] truncate block mb-1">{{ job.organization }}</span>
-                            <Link :href="`/job-news/${job.slug}`">
-                                <h3 class="font-heading text-sm font-bold text-slate-900 dark:text-white line-clamp-2 hover:text-[var(--primary)] transition">
-                                    {{ job.title }}
-                                </h3>
-                            </Link>
-                            <div class="mt-3 text-[11px] text-gray-600 dark:text-gray-400 space-y-1">
-                                <div v-if="job.vacancy">{{ en ? 'Vacancy:' : 'পদ:' }} <strong>{{ job.vacancy }}</strong></div>
-                                <div v-if="job.salary" class="truncate">{{ en ? 'Salary:' : 'বেতন:' }} {{ job.salary }}</div>
-                            </div>
-                        </div>
-                        <div class="mt-4 pt-3 border-t border-gray-100 dark:border-white/5 flex items-center justify-between text-xs">
-                            <Link :href="`/job-news/${job.slug}`" class="font-bold text-slate-900 dark:text-white hover:text-[var(--primary)]">{{ en ? 'Details →' : 'বিস্তারিত →' }}</Link>
-                            <a v-if="job.apply_url" :href="job.apply_url" target="_blank" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px]">{{ en ? 'Apply ↗' : 'আবেদন ↗' }}</a>
-                        </div>
-                    </article>
-                </div>
-                <div v-else class="text-center py-8 rounded-2xl bg-gray-50 dark:bg-[#171c28] border border-gray-200 dark:border-white/5 text-xs text-gray-500 dark:text-gray-400">
-                    <Link href="/job-news" class="text-[var(--primary)] font-bold">{{ en ? 'Visit job circulars page to view all circulars →' : 'চাকরির পেজে গিয়ে সকল সার্কুলার দেখুন →' }}</Link>
-                </div>
-            </section>
-
-            <!-- SECTION: Target-Based Preparation Bundles (Admission & Job 3 / 6 Months) -->
-            <section id="bundles" class="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20 scroll-mt-24 border-t border-gray-200 dark:border-white/5">
-                <div class="mx-auto mb-10 max-w-3xl text-center">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--primary)]/15 border border-[var(--primary)]/30 text-[var(--primary)] text-xs font-bold uppercase tracking-wider mb-3">
-                        {{ en ? 'SPECIAL PREPARATION BUNDLES' : 'লক্ষ্যভিত্তিক স্পেশাল বান্ডেল' }}
-                    </span>
-                    <h2 class="font-heading text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                        {{ en ? 'Goal-Oriented Preparation Bundles' : 'লক্ষ্যভিত্তিক স্পেশাল প্রিপারেশন বান্ডেল' }}
-                    </h2>
-                    <p class="mt-3 text-sm md:text-base leading-relaxed text-[var(--text-muted)]">
-                        {{ en ? 'Complete 3-month and 6-month specialized preparation packages for university admission, BCS, and bank exams.' : 'এইচএসসি পরবর্তী ভর্তি পরীক্ষা এবং বিসিএস ও ব্যাংক জব প্রস্তুতির জন্য ৩ মাস বা ৬ মাসের কমপ্লিট প্যাকেজ।' }}
-                    </p>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-                    <!-- BUNDLE 1: ADMISSION PREPARATION (BUET, Medical, DU) -->
-                    <div class="rounded-3xl border border-amber-200 dark:border-amber-500/30 bg-white dark:bg-gradient-to-b dark:from-[#1d1f2e] dark:via-[#161a26] dark:to-[#0e121d] p-7 md:p-9 shadow-sm dark:shadow-xl relative flex flex-col justify-between overflow-hidden">
-                        <div class="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-500/10 blur-[80px]"></div>
-
-                        <div>
-                            <div class="flex items-center justify-between gap-3 mb-4">
-                                <span class="px-3 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300 font-mono text-xs font-bold uppercase tracking-wider">
-                                    {{ en ? 'Admission Special (3 & 6 Months)' : 'ভর্তি পরীক্ষা স্পেশাল (৩ ও ৬ মাস)' }}
-                                </span>
-                                <span class="text-xs font-bold text-slate-700 dark:text-white bg-slate-100 dark:bg-white/10 px-3 py-1 rounded-full">BUET · Medical · DU · GST</span>
-                            </div>
-
-                            <h3 class="font-heading text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white">
-                                {{ en ? 'University Admission Bundle' : 'অ্যাডমিশন প্রিপারেশন বান্ডেল' }}
-                            </h3>
-                            <p class="mt-2 text-xs md:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                                {{ en ? 'Continuous top-tier AI reasoning and problem breakdown for tricky equations in engineering and medical entrance tests.' : 'শীর্ষ প্রকৌশল ও মেডিকেল ভর্তি পরীক্ষার কঠিন সমীকরণ এবং ট্রিকি প্রশ্ন সমাধানে টপ-টায়ার হাই-রিজনিং AI মডেলের সার্বক্ষণিক সহায়তা।' }}
-                            </p>
-
-                            <!-- Features List -->
-                            <div class="mt-6 space-y-3 text-xs md:text-sm text-slate-700 dark:text-slate-200">
-                                <div class="flex items-start gap-2.5">
-                                    <span class="material-symbols-outlined !text-base text-amber-500 dark:text-amber-400 mt-0.5">check_circle</span>
-                                    <span><strong>{{ en ? '25-Year Solved Archive:' : 'বিগত ২৫ বছরের প্রশ্নব্যাংক:' }}</strong> {{ en ? 'Solved questions from BUET, DU A-Unit, and Medical.' : 'বুয়েট, ঢাবি ‘ক’ ইউনিট ও মেডিকেল ভর্তি পরীক্ষার সমাধান।' }}</span>
-                                </div>
-                                <div class="flex items-start gap-2.5">
-                                    <span class="material-symbols-outlined !text-base text-amber-500 dark:text-amber-400 mt-0.5">check_circle</span>
-                                    <span><strong>{{ en ? 'High-Reasoning AI Model:' : 'টপ-টায়ার হাই-রিজনিং AI মডেল:' }}</strong> {{ en ? 'Step-by-step reasoning for tough physics and advanced math equations.' : 'গাণিতিক ও পদার্থবিজ্ঞানের জটিল স্টেপ-বাই-স্টেপ ব্যাখ্যা।' }}</span>
-                                </div>
-                                <div class="flex items-start gap-2.5">
-                                    <span class="material-symbols-outlined !text-base text-amber-500 dark:text-amber-400 mt-0.5">check_circle</span>
-                                    <span><strong>{{ en ? 'Unlimited Model Tests:' : 'আনলিমিটেড পূর্ণাঙ্গ মডেল টেস্ট:' }}</strong> {{ en ? 'Realistic exam experience with negative marking and timer.' : 'নেগেটিভ মার্কিংসহ বাস্তবসম্মত ভর্তি পরীক্ষার অভিজ্ঞতা।' }}</span>
-                                </div>
-                                <div class="flex items-start gap-2.5">
-                                    <span class="material-symbols-outlined !text-base text-amber-500 dark:text-amber-400 mt-0.5">check_circle</span>
-                                    <span><strong>{{ en ? 'Concept Mastery Tracker:' : 'চ্যাপ্টারভিত্তিক কনসেপ্ট ট্র্যাকার:' }}</strong> {{ en ? 'AI recommendations detecting and fixing weak chapters.' : 'দুর্বল অধ্যায় চিহ্নিত করে এআই রিকমেন্ডেশন।' }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-8 pt-6 border-t border-gray-200 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <div>
-                                <span class="text-xs text-amber-600 dark:text-amber-400 font-bold block">{{ en ? '10% OFF on 3 months & 20% MEGA OFF on 6 months!' : '৩ মাসে ১০% এবং ৬ মাসে ২০% মেগা ছাড়!' }}</span>
-                                <span class="font-heading text-lg font-bold text-slate-900 dark:text-white">{{ en ? 'Included in Pro and Elite Plans' : 'প্রো ও এলিট প্যাকেজে অন্তর্ভুক্ত' }}</span>
-                            </div>
-                            <Link
-                                href="/plans"
-                                class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-xs font-bold shadow-lg shadow-orange-500/20 text-center"
-                            >
-                                {{ en ? 'Start Admission Bundle →' : 'অ্যাডমিশন বান্ডেল শুরু করুন →' }}
-                            </Link>
-                        </div>
-                    </div>
-
-                    <!-- BUNDLE 2: JOB & BCS PREPARATION -->
-                    <div class="rounded-3xl border border-emerald-200 dark:border-emerald-500/30 bg-white dark:bg-gradient-to-b dark:from-[#162524] dark:via-[#121c22] dark:to-[#0e121d] p-7 md:p-9 shadow-sm dark:shadow-xl relative flex flex-col justify-between overflow-hidden">
-                        <div class="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-[80px]"></div>
-
-                        <div>
-                            <div class="flex items-center justify-between gap-3 mb-4">
-                                <span class="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 font-mono text-xs font-bold uppercase tracking-wider">
-                                    {{ en ? 'Job Exam Special (3 & 6 Months)' : 'চাকরি পরীক্ষা স্পেশাল (৩ ও ৬ মাস)' }}
-                                </span>
-                                <span class="text-xs font-bold text-slate-700 dark:text-white bg-slate-100 dark:bg-white/10 px-3 py-1 rounded-full">BCS · Bank · Primary · Govt</span>
-                            </div>
-
-                            <h3 class="font-heading text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white">
-                                {{ en ? 'Job & BCS Preparation Bundle' : 'জব ও বিসিএস প্রিপারেশন বান্ডেল' }}
-                            </h3>
-                            <p class="mt-2 text-xs md:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                                {{ en ? 'Targeted question bank and daily practice for BCS preliminary, written, state bank, and primary teacher recruitment.' : 'বিসিএস প্রিলিমিনারি, রিটেন, রাষ্ট্রায়ত্ত ব্যাংক ও প্রাথমিক সহকারী শিক্ষক নিয়োগ পরীক্ষার প্রশ্নব্যাংক ও স্পেশাল ডেইলি প্র্যাকটিস।' }}
-                            </p>
-
-                            <!-- Features List -->
-                            <div class="mt-6 space-y-3 text-xs md:text-sm text-slate-700 dark:text-slate-200">
-                                <div class="flex items-start gap-2.5">
-                                    <span class="material-symbols-outlined !text-base text-emerald-500 dark:text-emerald-400 mt-0.5">check_circle</span>
-                                    <span><strong>{{ en ? '20-Year BCS & Bank Archives:' : 'বিগত ২০ বছরের বিসিএস ও ব্যাংক জব প্রশ্নব্যাংক:' }}</strong> {{ en ? 'Subject-wise solved questions with detailed explanations.' : 'ব্যাখ্যাসহ বিষয়ভিত্তিক সমাধান।' }}</span>
-                                </div>
-                                <div class="flex items-start gap-2.5">
-                                    <span class="material-symbols-outlined !text-base text-emerald-500 dark:text-emerald-400 mt-0.5">check_circle</span>
-                                    <span><strong>{{ en ? 'Written Paper AI Feedback:' : 'লিখিত সৃজনশীল খাতার AI মূল্যায়ন:' }}</strong> {{ en ? 'Constructive feedback on English essays, translations, and composition.' : 'ইংরেজি রচনা, অনুবাদ ও বাংলা সাহিত্যের গঠনমূলক ফিডব্যাক।' }}</span>
-                                </div>
-                                <div class="flex items-start gap-2.5">
-                                    <span class="material-symbols-outlined !text-base text-emerald-500 dark:text-emerald-400 mt-0.5">check_circle</span>
-                                    <span><strong>{{ en ? 'Job Alerts & Age Calculator:' : 'জব সার্কুলার এলার্ট ও বয়স ক্যালকুলেটর:' }}</strong> {{ en ? 'Track deadlines, age eligibility, and application guidelines.' : 'আবেদনের শেষ তারিখ ও বয়সসীমা ট্র্যাকিং।' }}</span>
-                                </div>
-                                <div class="flex items-start gap-2.5">
-                                    <span class="material-symbols-outlined !text-base text-emerald-500 dark:text-emerald-400 mt-0.5">check_circle</span>
-                                    <span><strong>{{ en ? 'Recent GK & Monthly Digest:' : 'সাম্প্রতিক সাধারণ জ্ঞান ও মাসিক ডাইজেস্ট:' }}</strong> {{ en ? 'Quizzes on Bangladesh and international current affairs.' : 'বাংলাদেশ ও আন্তর্জাতিক বিষয়ক কুইজ।' }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-8 pt-6 border-t border-gray-200 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <div>
-                                <span class="text-xs text-emerald-600 dark:text-emerald-400 font-bold block">{{ en ? '10% OFF on 3 months & 20% MEGA OFF on 6 months!' : '৩ মাসে ১০% এবং ৬ মাসে ২০% মেগা ছাড়!' }}</span>
-                                <span class="font-heading text-lg font-bold text-slate-900 dark:text-white">{{ en ? 'Affordable Monthly & Multi-Month Plans' : 'সাশ্রয়ী মাসিক ও কোয়ার্টারলি প্ল্যান' }}</span>
-                            </div>
-                            <Link
-                                href="/plans"
-                                class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-500/20 text-center"
-                            >
-                                {{ en ? 'Start Job Bundle →' : 'জব বান্ডেল শুরু করুন →' }}
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Latest courses -->
-            <section id="courses" class="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20 scroll-mt-24 border-t border-slate-200 dark:border-white/5">
-                <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-                    <div>
-                        <span class="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-[var(--primary)]">{{ en ? 'Mentor-led learning · Courses' : 'মেন্টর পরিচালিত · অনলাইন কোর্স' }}</span>
-                        <h2 class="mt-2 font-heading text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">{{ en ? 'Top courses' : 'সেরা কোর্সসমূহ' }}</h2>
-                        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-muted)]">{{ en ? 'Follow courses taught by experienced mentors who explain each step clearly and keep lessons grounded in practice.' : 'অভিজ্ঞ মেন্টরদের পরিচালিত কোর্স করে প্রতিটি বিষয় সহজে ও বাস্তব অনুশীলনের মাধ্যমে আয়ত্ত করুন।' }}</p>
-                    </div>
-                    <Link href="/courses" class="inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)] transition hover:text-orange-600 dark:hover:text-[#ffb690]">{{ en ? 'Explore all courses' : 'সব কোর্স দেখুন' }} <span class="material-symbols-outlined">arrow_forward</span></Link>
-                </div>
-                <div v-if="topCourses.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    <article v-for="(course, i) in topCourses" :key="course.id" class="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-[#1c1f2a]/80 shadow-xs dark:shadow-lg transition duration-300 hover:-translate-y-1.5 hover:border-slate-300 dark:hover:border-white/10 hover:shadow-md dark:hover:shadow-2xl">
-                        <div>
-                            <div class="relative h-44 overflow-hidden bg-gradient-to-br" :class="coursePalette[i % coursePalette.length]">
-                                <img v-if="course.cover_image_url" :src="course.cover_image_url" :alt="course.title" loading="lazy" class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105">
-                                <div v-else class="absolute inset-0 grid place-items-center text-5xl text-white/60"><span class="material-symbols-outlined !text-5xl">school</span></div>
-                                <span class="absolute left-3 top-3 rounded-full bg-[#0a0e18]/80 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-[#ff9a52] backdrop-blur">{{ course.level || (en ? 'COURSE' : 'কোর্স') }}</span>
-                            </div>
-                            <div class="p-4 md:p-5">
-                                <div class="font-mono text-[10px] uppercase tracking-wider text-[var(--primary)]">{{ course.mentor?.name || (en ? 'Experienced mentor' : 'অভিজ্ঞ মেন্টর') }}</div>
-                                <h3 class="mt-1.5 line-clamp-2 min-h-12 text-base font-bold leading-snug text-slate-900 dark:text-white transition group-hover:text-orange-600 dark:group-hover:text-orange-400">{{ course.title }}</h3>
-                            </div>
-                        </div>
-                        <div class="border-t border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#171b26]/60 px-4 py-3 md:px-5 flex items-center justify-between">
-                            <span class="font-heading text-lg font-bold text-blue-600 dark:text-[#4cd7f6]">{{ Number(course.price) === 0 ? (en ? 'Free' : 'ফ্রি') : `৳${course.price}` }}</span>
-                            <Link :href="`/courses/${course.slug}`" class="text-xs font-semibold text-slate-800 dark:text-white transition hover:text-orange-600 dark:hover:text-orange-400">{{ en ? 'View course' : 'কোর্স দেখুন' }} →</Link>
-                        </div>
-                    </article>
-                </div>
-            </section>
-
-            <!-- Latest books -->
-            <section id="library" class="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20 scroll-mt-24 border-t border-slate-200 dark:border-white/5">
-                <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-                    <div>
-                        <span class="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-blue-600 dark:text-[#4cd7f6]">{{ en ? 'Digital library · Read and explore' : 'ডিজিটাল লাইব্রেরি · পড়ুন ও জানুন' }}</span>
-                        <h2 class="mt-2 font-heading text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">{{ en ? 'Latest books' : 'সর্বশেষ বই' }}</h2>
-                        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-muted)]">{{ en ? 'Find a new book to read, revisit a familiar subject, or explore a topic that caught your attention.' : 'নতুন বই পড়ুন, পরিচিত বিষয় আবার দেখুন কিংবা আগ্রহ জাগানো কোনো বিষয় ঘুরে দেখুন।' }}</p>
-                    </div>
-                    <Link href="/library" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-[#4cd7f6] transition hover:text-blue-800 dark:hover:text-white">{{ en ? 'Browse the library' : 'লাইব্রেরি দেখুন' }} <span class="material-symbols-outlined">arrow_forward</span></Link>
-                </div>
-                <div v-if="popularBooks.length" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
-                    <Link v-for="(book, i) in popularBooks.slice(0, 5)" :key="book.id" :href="`/library/${book.slug}`" class="group overflow-hidden rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-[#1c1f2a]/80 shadow-xs dark:shadow-lg transition duration-300 hover:-translate-y-1 hover:border-slate-300 dark:hover:border-white/10 hover:shadow-md dark:hover:shadow-2xl">
-                        <div class="relative aspect-[3/4] overflow-hidden bg-gradient-to-br" :class="bookPalette[i % bookPalette.length]"><img v-if="book.cover_image_url" :src="book.cover_image_url" :alt="book.title" loading="lazy" class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"><div v-else class="absolute inset-0 grid place-items-center text-5xl text-white/60"><span class="material-symbols-outlined !text-5xl">menu_book</span></div><span v-if="book.is_free" class="absolute left-2.5 top-2.5 rounded-full bg-[#0e513d]/90 px-2.5 py-1 font-mono text-[9px] font-bold uppercase tracking-wide text-[#6ee7b7]">{{ en ? 'Free' : 'ফ্রি' }}</span><span class="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0a0e18]/80 to-transparent"></span></div>
-                        <div class="p-3.5 md:p-4"><div class="font-mono text-[9px] uppercase tracking-wider text-[#4cd7f6]">{{ book.level || (en ? 'DIGITAL BOOK' : 'ডিজিটাল বই') }}</div><h3 class="mt-1.5 line-clamp-2 min-h-10 text-sm font-semibold leading-snug text-slate-900 dark:text-white transition group-hover:text-orange-600 dark:group-hover:text-orange-400">{{ book.title }}</h3><div class="mt-2 truncate text-[10px] text-[var(--text-muted)]">{{ book.author?.name || (en ? 'Sikhun library' : 'Sikhun লাইব্রেরি') }}</div><div v-if="book.total_pages" class="mt-1 text-[10px] text-[var(--text-muted)]">{{ book.total_pages }} {{ en ? 'pages' : 'পৃষ্ঠা' }}</div></div>
+                <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <Link v-for="course in topCourses.slice(0, 3)" :key="course.id" :href="`/courses/${course.slug}`" class="home-course home-reveal">
+                        <img v-if="course.cover_image_url" :src="course.cover_image_url" :alt="course.title" loading="lazy" />
+                        <div v-else class="home-course-cover"><span>✳</span></div>
+                        <div class="p-4"><p class="home-course-meta">{{ course.mentor?.name || (en ? 'Mentor-led course' : 'মেন্টর পরিচালিত কোর্স') }}</p><h3>{{ course.title }}</h3><p class="home-course-price">{{ Number(course.price) === 0 ? (en ? 'Free' : 'বিনামূল্যে') : `৳${course.price}` }}</p></div>
                     </Link>
                 </div>
             </section>
 
-            <!-- 4 Subscription Plans Section -->
-            <section id="pricing" class="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20 scroll-mt-24 border-t border-slate-200 dark:border-white/5">
-                <div class="mx-auto mb-10 max-w-2xl text-center">
-                    <div class="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold text-emerald-400 mb-3">
-                        <span class="material-symbols-outlined !text-sm text-emerald-400">verified</span>
-                        <span>{{ en ? 'Start with Free Plan — No payment required' : 'বিনামূল্যে ফ্রি প্ল্যান দিয়ে শুরু করুন — কোনো পেমেন্ট ছাড়াই ইনস্ট্যান্ট অ্যাক্টিভেশন' }}</span>
-                    </div>
-                    <h2 class="mt-2 font-heading text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">{{ en ? 'Choose the support that fits you' : 'আপনার উপযোগী সহায়তা বেছে নিন' }}</h2>
-                    <p class="mt-3 text-sm leading-relaxed text-[var(--text-muted)]">{{ en ? 'Compare the available plans and choose what works for your learning goals.' : 'উপলভ্য ৪টি প্ল্যান দেখে আপনার প্রয়োজন অনুযায়ী সেরা প্ল্যানটি বেছে নিন।' }}</p>
+            <section v-if="popularBooks?.length" class="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+                <div class="flex flex-wrap items-end justify-between gap-3 home-reveal">
+                    <div><p class="home-kicker">{{ en ? 'From the library' : 'লাইব্রেরি থেকে' }}</p><h2 class="home-heading mt-2">{{ en ? 'Keep a good book close.' : 'পছন্দের বই পাশে রাখুন।' }}</h2></div>
+                    <Link href="/library" class="home-text-link">{{ en ? 'Browse books' : 'বই দেখুন' }} →</Link>
                 </div>
-
-                <div v-if="plans.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
-                    <article
-                        v-for="(plan, i) in plans"
-                        :key="plan.id"
-                        class="relative flex flex-col justify-between rounded-3xl border p-5 md:p-6 shadow-lg transition duration-300 hover:-translate-y-1"
-                        :class="[
-                            (plan.slug === 'pro' || Number(plan.price_monthly) === 199) ? 'border-orange-500/50 bg-white dark:bg-[#262a35] shadow-md dark:shadow-[0_24px_60px_rgba(0,0,0,.35)] ring-2 ring-orange-500' : 'border-slate-200 dark:border-white/5 bg-white dark:bg-[#1c1f2a]/75 shadow-xs dark:shadow-lg'
-                        ]"
-                    >
-                        <div>
-                            <div class="flex items-center justify-between gap-2 mb-2">
-                                <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ plan.name }}</h3>
-                                <span class="rounded bg-slate-100 dark:bg-[#0a0e18] px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider" :class="(plan.slug === 'pro' || Number(plan.price_monthly) === 199) ? 'text-[#ff9a52]' : 'text-[var(--text-muted)]'">
-                                    {{ Number(plan.price_monthly) === 0 ? 'FREE' : Number(plan.price_monthly) === 99 ? 'STARTER' : Number(plan.price_monthly) === 199 ? 'POPULAR' : 'ELITE' }}
-                                </span>
-                            </div>
-                            <p v-if="plan.description" class="mt-1 min-h-8 text-xs leading-relaxed text-[var(--text-muted)]">{{ plan.description }}</p>
-                            <div class="my-4 flex flex-col">
-                                <div class="flex items-baseline gap-1">
-                                    <span class="font-heading text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white" :class="(plan.slug === 'pro' || Number(plan.price_monthly) === 199) ? 'text-orange-600 dark:text-[#ff9a52]' : ''">৳{{ plan.price_monthly }}</span>
-                                    <span class="text-xs text-[var(--text-muted)]">{{ en ? '/ month' : '/ মাস' }}</span>
-                                </div>
-                                <span class="text-[10px] font-medium text-emerald-400 mt-1">
-                                    ✓ {{ Number(plan.price_monthly) === 0 ? (en ? 'Lifetime Free Access' : 'লাইফটাইম ফ্রি অ্যাক্সেস') : (en ? 'Instant activation & full access' : 'ইনস্ট্যান্ট অ্যাক্টিভেশন ও ফুল অ্যাক্সেস') }}
-                                </span>
-                            </div>
-
-                            <!-- Quotas summary -->
-                            <div class="mb-4 grid grid-cols-2 gap-1.5 text-[11px]">
-                                <div class="p-1.5 rounded-lg bg-slate-50 dark:bg-[#0e1320] text-slate-800 dark:text-slate-300 border border-slate-100 dark:border-transparent">
-                                    <span class="text-[9px] text-gray-500 block font-bold">AI CHAT</span>
-                                    <strong>{{ plan.ai_chat_minutes }} {{ en ? 'mins' : 'মিনিট' }}</strong>
-                                </div>
-                                <div class="p-1.5 rounded-lg bg-slate-50 dark:bg-[#0e1320] text-slate-800 dark:text-slate-300 border border-slate-100 dark:border-transparent">
-                                    <span class="text-[9px] text-gray-500 block font-bold">VISION SOLVER</span>
-                                    <strong>{{ plan.ai_vision_limit || 0 }} {{ en ? 'images' : 'টি ছবি' }}</strong>
-                                </div>
-                            </div>
-
-                            <div class="flex flex-col gap-2 text-xs text-[var(--text-muted)] pt-2 border-t border-slate-100 dark:border-white/5">
-                                <div v-for="feature in (Array.isArray(plan.features) ? plan.features.slice(0, 5) : [])" :key="feature" class="flex items-start gap-2">
-                                    <span class="material-symbols-outlined !text-sm text-[#10b981] mt-0.5">check_circle</span>
-                                    <span class="leading-tight">{{ feature }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <Link
-                            :href="Number(plan.price_monthly) === 0 ? `/register?plan_id=${plan.id}` : '/plans'"
-                            class="mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition"
-                            :class="(plan.slug === 'pro' || Number(plan.price_monthly) === 199) ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/25' : 'bg-slate-100 hover:bg-slate-200 dark:bg-[#313540] dark:hover:bg-[#3b404d] text-slate-900 dark:text-white border border-slate-200 dark:border-transparent'"
-                        >
-                            {{ Number(plan.price_monthly) === 0 ? (en ? 'Start for free' : 'বিনামূল্যে শুরু করুন') : (en ? 'Choose Plan' : 'প্ল্যান বেছে নিন') }} <span>→</span>
-                        </Link>
-                    </article>
+                <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Link v-for="book in popularBooks.slice(0, 4)" :key="book.id" :href="`/library/${book.slug}`" class="home-book home-reveal">
+                        <img v-if="book.cover_image_url" :src="book.cover_image_url" :alt="book.title" loading="lazy" />
+                        <span v-else class="home-book-placeholder">{{ en ? 'READ' : 'পড়ুন' }}</span>
+                        <span class="home-book-title">{{ book.title }}</span>
+                    </Link>
                 </div>
             </section>
 
-            <!-- Latest Blog Posts -->
-            <section v-if="latestBlogs?.length" id="blog" class="max-w-7xl mx-auto px-4 md:px-6 py-14 md:py-20 scroll-mt-24 border-t border-slate-200 dark:border-white/5">
-                <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-                    <div>
-                        <span class="font-mono text-[10px] font-bold uppercase tracking-[.16em] text-emerald-600 dark:text-[#10b981]">{{ en ? 'Insights · Science · AI · Education' : 'বিজ্ঞান · প্রযুক্তি · AI · শিক্ষা' }}</span>
-                        <h2 class="mt-2 font-heading text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">{{ en ? 'Latest from the blog' : 'সর্বশেষ ব্লগ আর্টিকেল' }}</h2>
-                        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-muted)]">{{ en ? 'Read Bengali articles on science, technology, artificial intelligence, and study tips.' : 'বিজ্ঞান, প্রযুক্তি, কৃত্রিম বুদ্ধিমত্তা ও পড়াশোনার কৌশল নিয়ে আমাদের সাম্প্রতিক বাংলা আর্টিকেলগুলো পড়ুন।' }}</p>
-                    </div>
-                    <Link href="/blog" class="inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)] transition hover:text-[#ffb690]">{{ en ? 'Read all articles' : 'সব ব্লগ পড়ুন' }} <span class="material-symbols-outlined">arrow_forward</span></Link>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <Link v-for="(post, i) in latestBlogs.slice(0, 3)" :key="post.id" :href="`/blog/${post.slug}`" class="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-[#1c1f2a]/80 shadow-xs dark:shadow-lg transition duration-300 hover:-translate-y-1.5 hover:border-slate-300 dark:hover:border-white/10 hover:shadow-md dark:hover:shadow-2xl">
-                        <div class="relative h-44 overflow-hidden bg-gradient-to-br" :class="coursePalette[i % coursePalette.length]">
-                            <img v-if="post.featured_image_url" :src="post.featured_image_url" :alt="post.title" loading="lazy" class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                            <div v-else class="absolute inset-0 grid place-items-center text-5xl text-white/60"><span class="material-symbols-outlined !text-5xl">article</span></div>
-                        </div>
-                        <div class="p-4 md:p-5 flex flex-col flex-1 justify-between">
-                            <div>
-                                <span class="text-[10px] font-bold text-[var(--primary)] uppercase tracking-wider">{{ post.category?.name_bn || post.category?.name_en || (en ? 'Article' : 'আর্টিকেল') }}</span>
-                                <h3 class="mt-1 text-sm font-bold text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition line-clamp-2">{{ post.title }}</h3>
-                                <p class="mt-2 text-xs text-gray-400 line-clamp-2 leading-relaxed">{{ post.excerpt }}</p>
-                            </div>
-                            <span class="mt-4 text-[11px] text-gray-400 font-semibold flex items-center gap-1">{{ en ? 'Read' : 'পড়ুন' }} <span class="material-symbols-outlined !text-xs">arrow_forward</span></span>
-                        </div>
-                    </Link>
+            <section class="home-closing mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
+                <div class="home-closing-inner home-reveal">
+                    <div><p class="home-kicker">{{ en ? 'Your next chapter starts here' : 'আপনার পরের অধ্যায় শুরু হোক' }}</p><h2 class="home-heading mt-2">{{ en ? 'One focused step at a time.' : 'একবারে একটি মনোযোগী পদক্ষেপ।' }}</h2></div>
+                    <Link href="/register" class="home-primary">{{ en ? 'Create a free account' : 'বিনামূল্যে অ্যাকাউন্ট খুলুন' }} <span aria-hidden="true">↗</span></Link>
                 </div>
             </section>
         </div>
     </PublicLayout>
 </template>
+
+<style>
+.home-design {
+    --home-accent: #8a5a32;
+    --home-accent-soft: color-mix(in srgb, var(--home-accent) 10%, var(--surface));
+    background: var(--bg);
+    color: var(--text);
+}
+.dark .home-design { --home-accent: #d2ad7c; }
+.home-hero { min-height: 480px; }
+.home-title, .home-heading { font-family: 'Playfair Display', 'Noto Serif Bengali', Georgia, serif; }
+.home-title { max-width: 12ch; font-size: clamp(2.7rem, 6vw, 5.2rem); font-weight: 600; letter-spacing: -.045em; line-height: 1.06; }
+.home-heading { font-size: clamp(1.65rem, 3.2vw, 2.5rem); font-weight: 600; letter-spacing: -.025em; line-height: 1.2; }
+.home-lede { color: var(--text-muted); font-size: clamp(1rem, 1.4vw, 1.12rem); line-height: 1.8; }
+.home-kicker { color: var(--home-accent); font-size: .72rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.home-primary, .home-secondary { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; gap: .65rem; border-radius: 999px; padding: .7rem 1.25rem; font-size: .9rem; font-weight: 650; transition: transform .2s ease, background .2s ease; }
+.home-primary { background: var(--text); color: var(--bg); }
+.home-primary:hover, .home-secondary:hover { transform: translateY(-2px); }
+.home-secondary { border: 1px solid var(--border); color: var(--text); }
+.home-secondary:hover { background: var(--surface2); }
+.home-dot { color: var(--home-accent); }
+.home-scene { position: relative; min-width: 0; }
+.home-scene > div:first-child { height: clamp(290px, 39vw, 440px); }
+.home-note { position: absolute; bottom: 7%; left: 8%; display: flex; align-items: center; gap: .6rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); padding: .65rem .9rem; color: var(--text); font-size: .8rem; box-shadow: var(--shadow); }
+.home-note-mark { color: var(--home-accent); }
+.home-section-head { max-width: 40rem; }
+.home-path { display: flex; min-height: 206px; flex-direction: column; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); padding: 1.2rem; transition: border-color .2s ease, transform .2s ease, background .2s ease; }
+.home-path:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--home-accent) 38%, var(--border)); background: var(--home-accent-soft); }
+.home-path-number, .home-course-meta { color: var(--home-accent); font-size: .72rem; font-weight: 700; letter-spacing: .12em; }
+.home-path h3 { margin-top: 1.5rem; font-family: 'Playfair Display', 'Noto Serif Bengali', Georgia, serif; font-size: 1.25rem; font-weight: 600; }
+.home-path p { margin-top: .35rem; color: var(--text-muted); font-size: .9rem; }
+.home-path-action { margin-top: auto; padding-top: 1.1rem; color: var(--text); font-size: .8rem; font-weight: 650; }
+.home-text-link { color: var(--home-accent); font-size: .9rem; font-weight: 650; }
+.home-shelf, .home-closing { border-top: 1px solid var(--border); }
+.home-course { overflow: hidden; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); transition: transform .2s ease, box-shadow .2s ease; }
+.home-course:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.home-course > img, .home-course-cover { width: 100%; height: 150px; object-fit: cover; background: var(--surface2); }
+.home-course-cover { display: grid; place-items: center; color: var(--home-accent); font-size: 2.5rem; }
+.home-course h3 { margin-top: .45rem; color: var(--text); font-size: 1rem; font-weight: 650; line-height: 1.5; }
+.home-course-price { margin-top: .55rem; color: var(--text-muted); font-size: .83rem; }
+.home-book { display: flex; min-height: 100px; align-items: center; gap: .9rem; border-bottom: 1px solid var(--border); padding: .6rem; }
+.home-book img, .home-book-placeholder { width: 56px; height: 74px; flex: none; border-radius: .35rem; object-fit: cover; }
+.home-book-placeholder { display: grid; place-items: center; background: var(--surface2); color: var(--home-accent); font-family: 'Playfair Display', serif; font-size: .75rem; }
+.home-book-title { color: var(--text); font-size: .9rem; font-weight: 600; line-height: 1.45; }
+.home-closing-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.5rem; border-radius: 1.25rem; background: var(--surface2); padding: clamp(1.25rem, 4vw, 2.5rem); }
+.home-reveal { opacity: 0; transform: translateY(16px); transition: opacity .65s ease, transform .65s cubic-bezier(.2,.75,.25,1); }
+.home-reveal.is-visible { opacity: 1; transform: translateY(0); }
+@media (max-width: 640px) { .home-hero { min-height: unset; } .home-title { max-width: 11ch; } .home-note { left: 2%; bottom: 4%; font-size: .72rem; } }
+@media (prefers-reduced-motion: reduce) { .home-reveal { opacity: 1; transform: none; transition: none; } }
+</style>

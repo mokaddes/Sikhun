@@ -90,6 +90,7 @@ const today = computed(() => new Date().toLocaleDateString(locale.value === 'bn'
 <template>
     <Head :title="t('nav.dashboard')" />
     <StudentLayout>
+        <div class="dashboard-page">
         <!-- Hero with embedded stats and subscription status -->
         <section class="sheen anim-rise relative mb-8 overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-[var(--secondary)]/12 via-[var(--surface)] to-[var(--primary)]/10 p-6 sm:p-8 shadow-sm">
             <div class="hero-glow pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full"></div>
@@ -514,6 +515,7 @@ const today = computed(() => new Date().toLocaleDateString(locale.value === 'bn'
                     </div>
                 </form>
             </div>
+        </div>
         </div>
     </StudentLayout>
 </template>

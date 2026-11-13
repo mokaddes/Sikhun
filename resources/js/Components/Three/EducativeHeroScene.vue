@@ -2,6 +2,8 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import * as THREE from 'three';
 
+const props = defineProps({ locale: { type: String, default: 'bn' } });
+
 const container = ref(null);
 let animationFrameId = null;
 let renderer = null;
@@ -66,7 +68,7 @@ function initScene() {
     keyLight.position.set(4, 5, 4);
     scene.add(keyLight);
 
-    const cyanRimLight = new THREE.DirectionalLight(0x00f2fe, 3.0);
+    const cyanRimLight = new THREE.DirectionalLight(0xc5a675, 2.0);
     cyanRimLight.position.set(-4, -2, -3);
     scene.add(cyanRimLight);
 
@@ -120,8 +122,8 @@ function initScene() {
     const pageMat = new THREE.MeshStandardMaterial({
         color: 0xf8fafc,
         roughness: 0.4,
-        emissive: 0x0284c7,
-        emissiveIntensity: 0.08,
+        emissive: 0x8a5a32,
+        emissiveIntensity: 0.025,
     });
 
     const pageBlockGeo = new THREE.BoxGeometry(0.96, 0.1, 1.45);
@@ -139,7 +141,7 @@ function initScene() {
     // Gold Trim on Page Edges
     const trimGeo = new THREE.BoxGeometry(0.04, 0.09, 1.46);
     const trimMat = new THREE.MeshStandardMaterial({
-        color: 0xf59e0b,
+        color: 0xb78b52,
         roughness: 0.2,
         metalness: 0.8,
     });
@@ -155,7 +157,7 @@ function initScene() {
 
     // Silk Ribbon Bookmark (Orange flame)
     const ribbonMat = new THREE.MeshStandardMaterial({
-        color: 0xf97316,
+        color: 0x8a5a32,
         roughness: 0.4,
         metalness: 0.2,
     });
@@ -175,9 +177,9 @@ function initScene() {
     // Outer Primary Ring (Cyan glow)
     const ringGeo1 = new THREE.TorusGeometry(1.4, 0.022, 16, 80);
     const ringMat1 = new THREE.MeshStandardMaterial({
-        color: 0x00f2fe,
-        emissive: 0x00f2fe,
-        emissiveIntensity: 0.6,
+        color: 0xb78b52,
+        emissive: 0xb78b52,
+        emissiveIntensity: 0.22,
         roughness: 0.2,
         metalness: 0.8,
     });
@@ -189,9 +191,9 @@ function initScene() {
     // Secondary Cross Ring (Purple/Indigo)
     const ringGeo2 = new THREE.TorusGeometry(1.65, 0.016, 16, 80);
     const ringMat2 = new THREE.MeshStandardMaterial({
-        color: 0x818cf8,
-        emissive: 0x6366f1,
-        emissiveIntensity: 0.4,
+        color: 0x80684c,
+        emissive: 0x80684c,
+        emissiveIntensity: 0.12,
         roughness: 0.3,
         metalness: 0.7,
     });
@@ -204,8 +206,8 @@ function initScene() {
     const sparkGeo = new THREE.SphereGeometry(0.12, 24, 24);
     const sparkMat = new THREE.MeshStandardMaterial({
         color: 0xffedd5,
-        emissive: 0xf59e0b,
-        emissiveIntensity: 1.8,
+        emissive: 0xb78b52,
+        emissiveIntensity: 0.8,
         roughness: 0.1,
     });
     sparkSphere = new THREE.Mesh(sparkGeo, sparkMat);
@@ -238,9 +240,9 @@ function initScene() {
 
     // Golden Tassel
     const tasselMat = new THREE.MeshStandardMaterial({
-        color: 0xfbbf24,
-        emissive: 0xd97706,
-        emissiveIntensity: 0.5,
+        color: 0xc5a675,
+        emissive: 0x8a5a32,
+        emissiveIntensity: 0.25,
         roughness: 0.2,
         metalness: 0.8,
     });
@@ -259,13 +261,13 @@ function initScene() {
     // FLOATING KNOWLEDGE CRYSTALS (Subtle Secondary Action)
     // ----------------------------------------------------
     const crystalGeo = new THREE.OctahedronGeometry(0.09, 0);
-    const crystalColors = [0x00f2fe, 0xf97316, 0xa855f7, 0x10b981, 0x38bdf8];
+    const crystalColors = [0xb78b52, 0xc5a675, 0x80684c, 0xd4c1a1, 0x8a5a32];
 
     for (let i = 0; i < 7; i++) {
         const cMat = new THREE.MeshStandardMaterial({
             color: crystalColors[i % crystalColors.length],
             emissive: crystalColors[i % crystalColors.length],
-            emissiveIntensity: 0.8,
+            emissiveIntensity: 0.16,
             roughness: 0.2,
             metalness: 0.9,
         });
@@ -423,23 +425,23 @@ onUnmounted(() => {
     >
         <!-- Ambient glowing backdrop spotlight -->
         <div class="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
-            <div class="w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-gradient-to-tr from-[#00d2ff]/15 via-[#6366f1]/15 to-[#ff9e00]/15 blur-3xl opacity-60"></div>
+            <div class="w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-[radial-gradient(circle,rgba(183,139,82,.18),transparent_70%)] blur-2xl"></div>
         </div>
 
         <!-- Floating Interactive Badges / Tooltips around the 3D scene -->
-        <div class="pointer-events-none absolute top-3 right-3 sm:top-6 sm:right-6 px-3 py-1.5 rounded-xl bg-white/90 dark:bg-[#0f172a]/90 border border-slate-200/90 dark:border-cyan-400/30 backdrop-blur text-[11px] font-bold text-cyan-600 dark:text-cyan-300 shadow-md flex items-center gap-1.5 animate-bounce">
-            <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
-            <span>AI বুক রিডার ও স্মার্ট চ্যাট</span>
+        <div class="pointer-events-none absolute top-3 right-3 sm:top-6 sm:right-6 px-3 py-1.5 rounded-xl bg-[var(--surface)]/95 border border-[var(--border)] backdrop-blur text-[11px] font-semibold text-[var(--text)] shadow-sm flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
+            <span>{{ props.locale === 'en' ? 'AI book companion' : 'AI বুক সহায়ক' }}</span>
         </div>
 
-        <div class="pointer-events-none absolute bottom-5 left-3 sm:bottom-7 sm:left-6 px-3 py-1.5 rounded-xl bg-white/90 dark:bg-[#0f172a]/90 border border-slate-200/90 dark:border-amber-400/30 backdrop-blur text-[11px] font-bold text-amber-600 dark:text-amber-300 shadow-md flex items-center gap-1.5">
-            <span>🎯</span>
-            <span class="font-bangla-num">২০,০০০+ সলভড প্রশ্নব্যাংক</span>
+        <div class="pointer-events-none absolute bottom-5 left-3 sm:bottom-7 sm:left-6 px-3 py-1.5 rounded-xl bg-[var(--surface)]/95 border border-[var(--border)] backdrop-blur text-[11px] font-semibold text-[var(--text)] shadow-sm flex items-center gap-1.5">
+            <span class="text-[var(--primary)]">✳</span>
+            <span>{{ props.locale === 'en' ? 'A library for every goal' : 'লক্ষ্য অনুযায়ী বইয়ের সংগ্রহ' }}</span>
         </div>
 
-        <div class="pointer-events-none absolute bottom-3 right-4 sm:bottom-5 sm:right-8 px-3 py-1.5 rounded-xl bg-white/90 dark:bg-[#0f172a]/90 border border-slate-200/90 dark:border-indigo-400/30 backdrop-blur text-[11px] font-bold text-indigo-600 dark:text-indigo-300 shadow-md flex items-center gap-1.5">
-            <span>⚡</span>
-            <span>ভুল উত্তরের স্বয়ংক্রিয় খাতা</span>
+        <div class="pointer-events-none absolute bottom-3 right-4 sm:bottom-5 sm:right-8 px-3 py-1.5 rounded-xl bg-[var(--surface)]/95 border border-[var(--border)] backdrop-blur text-[11px] font-semibold text-[var(--text)] shadow-sm flex items-center gap-1.5">
+            <span class="text-[var(--primary)]">✦</span>
+            <span>{{ props.locale === 'en' ? 'Practice that remembers' : 'ভুল থেকে শেখার অনুশীলন' }}</span>
         </div>
     </div>
 </template>

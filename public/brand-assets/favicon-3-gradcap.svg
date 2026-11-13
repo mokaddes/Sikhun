@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="fav3-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="fav3-cap" x1="8" y1="18" x2="56" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#06B6D4"/>
+      <stop offset="60%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="fav3-gold" x1="36" y1="12" x2="56" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#fav3-bg)" stroke="#38BDF8" stroke-opacity="0.35" stroke-width="1.5"/>
+
+  <!-- Growth Chevron -->
+  <path d="M14 47L32 55L50 47" stroke="#00F2FE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Mortarboard Diamond -->
+  <path d="M32 14L56 25L32 36L8 25L32 14Z" fill="url(#fav3-cap)" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="2"/>
+  <path d="M18 31V41C18 45 24 47.5 32 47.5C40 47.5 46 45 46 41V31" fill="#1E293B" stroke="#38BDF8" stroke-width="1.8"/>
+
+  <!-- Tassel -->
+  <circle cx="32" cy="25" r="2.8" fill="#FDE047"/>
+  <path d="M32 25C40 26 46 30 46 37V42" stroke="url(#fav3-gold)" stroke-width="2.2" stroke-linecap="round"/>
+  <rect x="44" y="40" width="4.5" height="5.5" rx="1" fill="#F59E0B"/>
+
+  <circle cx="56" cy="25" r="2.5" fill="#00F2FE"/>
+</svg>

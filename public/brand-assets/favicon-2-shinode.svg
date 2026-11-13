@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="fav2-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E1B4B"/>
+      <stop offset="100%" stop-color="#090514"/>
+    </linearGradient>
+    <linearGradient id="fav2-stroke" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00F2FE"/>
+      <stop offset="50%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#F43F5E"/>
+    </linearGradient>
+    <linearGradient id="fav2-amber" x1="42" y1="12" x2="58" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#fav2-bg)" stroke="#818CF8" stroke-opacity="0.35" stroke-width="1.5"/>
+
+  <!-- Stylized "শি" Neural Node -->
+  <!-- Outer Swoosh -->
+  <path d="M14 38C12 25 20 13 34 11C44 10 50 15 53 22" stroke="url(#fav2-stroke)" stroke-width="4.2" stroke-linecap="round"/>
+  <!-- 'শ' Body -->
+  <path d="M21 49V28C21 23 25 20 29.5 20C34 20 38 23 38 28V49" stroke="url(#fav2-stroke)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M29.5 35H46C50 35 53 38.5 53 43.5V49" stroke="url(#fav2-stroke)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Top Bridge -->
+  <path d="M17 20H42" stroke="#00F2FE" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- AI Spark Node -->
+  <circle cx="53" cy="20" r="4.5" fill="url(#fav2-amber)"/>
+  <circle cx="53" cy="20" r="1.8" fill="#FFFFFF"/>
+</svg>

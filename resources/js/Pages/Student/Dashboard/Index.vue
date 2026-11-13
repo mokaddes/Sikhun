@@ -231,92 +231,109 @@ const today = computed(() => new Date().toLocaleDateString(locale.value === 'bn'
             </div>
         </section>
 
-        <!-- Admission Student Experience / Hub -->
-        <section v-if="isAdmission" class="anim-rise mb-6 rounded-3xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-[var(--surface)] p-6 shadow-sm">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <!-- Educative Study Cockpit: 4 Main Pillars for ALL Students -->
+        <section class="anim-rise mb-6 rounded-3xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 via-blue-500/5 to-[var(--surface)] p-6 shadow-sm">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
                 <div>
-                    <div class="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-300">
-                        🎓 {{ locale === 'en' ? 'Admission Test Hub' : 'বিশ্ববিদ্যালয় ভর্তি পরীক্ষা প্রস্তুতি' }}
+                    <div class="inline-flex items-center gap-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 px-3 py-1 text-xs font-bold text-cyan-600 dark:text-cyan-300">
+                        <span>🚀</span>
+                        <span>{{ isAdmission ? (locale === 'en' ? 'Admission 2026 Test Hub' : 'বিশ্ববিদ্যালয় ভর্তি পরীক্ষা প্রস্তুতি ২০২৬') : (locale === 'en' ? 'Smart Study Cockpit' : 'স্মার্ট স্টাডি ও এক্সাম হাব') }}</span>
                     </div>
                     <h2 class="mt-2 font-heading text-xl font-extrabold sm:text-2xl text-[var(--text)]">
-                        {{ locale === 'en' ? 'Admission Candidate Quick Access' : 'ভর্তি পরীক্ষার্থী বিশেষ কর্নার' }}
+                        {{ locale === 'en' ? 'Your Personal Learning Command Center' : 'আপনার পার্সোনাল স্টাডি ও প্রস্তুতি হাব' }}
                     </h2>
                     <p class="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
-                        {{ locale === 'en' ? 'Quickly access past question papers, live mock tests, mistake revision, and official notices.' : 'বিগত বছরের প্রশ্নব্যাংক, লাইভ মডেল টেস্ট, ভুল প্রশ্ন রিভিশন ও ভর্তি সার্কুলারে দ্রুত প্রবেশ করুন।' }}
+                        {{ locale === 'en' ? 'Practice question banks, take live timed exams, review mistakes with AI, and track official university notices.' : 'বিগত বছরের প্রশ্নব্যাংক, লাইভ মডেল টেস্ট, ভুল প্রশ্নের খাতা রিভিশন ও ভর্তি সার্কুলারে দ্রুত প্রবেশ করুন।' }}
                     </p>
+                </div>
+                <div v-if="props.stats?.unresolved_mistakes > 0" class="shrink-0">
+                    <Link
+                        href="/mistakes"
+                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-500/20 transition"
+                    >
+                        <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                        <span>{{ props.stats?.unresolved_mistakes }}টি ভুল প্রশ্ন সংশোধনের বাকি</span>
+                        <span>→</span>
+                    </Link>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <!-- Card 1: Question Bank -->
                 <Link
                     href="/question-bank"
-                    class="group flex flex-col justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)]/90 p-4 transition-all hover:-translate-y-0.5 hover:border-amber-500/40 hover:shadow-md"
+                    class="group flex flex-col justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)]/95 p-4 transition-all hover:-translate-y-1 hover:border-amber-500/40 hover:shadow-lg"
                 >
                     <div class="flex items-center justify-between">
-                        <span class="grid h-10 w-10 place-items-center rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 text-lg">
+                        <span class="grid h-11 w-11 place-items-center rounded-xl bg-amber-500/15 text-amber-500 text-xl group-hover:scale-110 transition-transform">
                             🏛️
                         </span>
-                        <span class="rounded-full bg-[var(--surface2)] px-2 py-0.5 text-[10px] font-bold text-[var(--text-muted)]">বিগত প্রশ্ন</span>
+                        <span class="rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-400">২০,০০০+ প্রশ্ন</span>
                     </div>
                     <div class="mt-3">
-                        <h3 class="font-heading font-bold text-sm text-[var(--text)] group-hover:text-orange-600 transition-colors">
-                            বিগত বছরের প্রশ্নব্যাংক (DU/RU/GST/BUET/মেডিকেল)
+                        <h3 class="font-heading font-bold text-sm text-[var(--text)] group-hover:text-amber-500 transition-colors">
+                            বিগত প্রশ্নব্যাংক (DU/RU/GST/BUET/BCS)
                         </h3>
-                        <p class="text-[11px] text-[var(--text-muted)] mt-1">ঢাবি, রাবি, গুচ্ছ, বুয়েট ও মেডিকেল বিগত প্রশ্ন সমাধান</p>
+                        <p class="text-[11px] text-[var(--text-muted)] mt-1 leading-relaxed">বিশ্ববিদ্যালয় ভর্তি, মেডিকেল ও বিসিএস বিগত প্রশ্নের সমাধান ও AI ব্যাখ্যা</p>
                     </div>
                 </Link>
 
+                <!-- Card 2: Live Exam -->
                 <Link
                     href="/exams/create"
-                    class="group flex flex-col justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)]/90 p-4 transition-all hover:-translate-y-0.5 hover:border-blue-500/40 hover:shadow-md"
+                    class="group flex flex-col justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)]/95 p-4 transition-all hover:-translate-y-1 hover:border-blue-500/40 hover:shadow-lg"
                 >
                     <div class="flex items-center justify-between">
-                        <span class="grid h-10 w-10 place-items-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 text-lg">
+                        <span class="grid h-11 w-11 place-items-center rounded-xl bg-blue-500/15 text-blue-500 text-xl group-hover:scale-110 transition-transform">
                             ⏱️
                         </span>
-                        <span class="rounded-full bg-[var(--surface2)] px-2 py-0.5 text-[10px] font-bold text-[var(--text-muted)]">লাইভ টেস্ট</span>
+                        <span class="rounded-full bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[10px] font-bold text-blue-400">টাইমড এক্সাম</span>
                     </div>
                     <div class="mt-3">
-                        <h3 class="font-heading font-bold text-sm text-[var(--text)] group-hover:text-blue-600 transition-colors">
-                            দৈনিক লাইভ মডেল টেস্ট
+                        <h3 class="font-heading font-bold text-sm text-[var(--text)] group-hover:text-blue-500 transition-colors">
+                            লাইভ মডেল টেস্ট ও কুইজ
                         </h3>
-                        <p class="text-[11px] text-[var(--text-muted)] mt-1">নেগেটিভ মার্কিং সহ রিয়েল টাইম ভর্তি পরীক্ষা সিমুলেশন</p>
+                        <p class="text-[11px] text-[var(--text-muted)] mt-1 leading-relaxed">নেগেটিভ মার্কিং সহ রিয়েল-টাইম গতি ও পারফর্মেন্স যাচাই করুন</p>
                     </div>
                 </Link>
 
+                <!-- Card 3: Mistake Review -->
                 <Link
                     href="/mistakes"
-                    class="group flex flex-col justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)]/90 p-4 transition-all hover:-translate-y-0.5 hover:border-rose-500/40 hover:shadow-md"
+                    class="group flex flex-col justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)]/95 p-4 transition-all hover:-translate-y-1 hover:border-rose-500/40 hover:shadow-lg"
                 >
                     <div class="flex items-center justify-between">
-                        <span class="grid h-10 w-10 place-items-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-lg">
+                        <span class="grid h-11 w-11 place-items-center rounded-xl bg-rose-500/15 text-rose-500 text-xl group-hover:scale-110 transition-transform">
                             💡
                         </span>
-                        <span class="rounded-full bg-[var(--surface2)] px-2 py-0.5 text-[10px] font-bold text-rose-500">রিভিশন বুক</span>
+                        <span class="rounded-full bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 text-[10px] font-bold text-rose-400">
+                            {{ props.stats?.unresolved_mistakes ? `${props.stats.unresolved_mistakes}টি বাকি` : 'রিভিশন বুক' }}
+                        </span>
                     </div>
                     <div class="mt-3">
-                        <h3 class="font-heading font-bold text-sm text-[var(--text)] group-hover:text-rose-600 transition-colors">
+                        <h3 class="font-heading font-bold text-sm text-[var(--text)] group-hover:text-rose-500 transition-colors">
                             আমার ভুল প্রশ্নসমূহ (Mistake Review)
                         </h3>
-                        <p class="text-[11px] text-[var(--text-muted)] mt-1">ভুল প্রশ্নগুলো পুনরায় প্র্যাকটিস করে মাস্টার্ড করুন</p>
+                        <p class="text-[11px] text-[var(--text-muted)] mt-1 leading-relaxed">ভুল হওয়া প্রশ্নগুলো আলাদা করে নিয়ে পুনরায় প্র্যাকটিস করুন</p>
                     </div>
                 </Link>
 
+                <!-- Card 4: Book Library & Reader -->
                 <Link
-                    href="/admission-notice"
-                    class="group flex flex-col justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)]/90 p-4 transition-all hover:-translate-y-0.5 hover:border-emerald-500/40 hover:shadow-md"
+                    href="/library"
+                    class="group flex flex-col justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)]/95 p-4 transition-all hover:-translate-y-1 hover:border-cyan-500/40 hover:shadow-lg"
                 >
                     <div class="flex items-center justify-between">
-                        <span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-lg">
-                            📢
+                        <span class="grid h-11 w-11 place-items-center rounded-xl bg-cyan-500/15 text-cyan-500 text-xl group-hover:scale-110 transition-transform">
+                            📖
                         </span>
-                        <span class="rounded-full bg-[var(--surface2)] px-2 py-0.5 text-[10px] font-bold text-emerald-500">অফিসিয়াল</span>
+                        <span class="rounded-full bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 text-[10px] font-bold text-cyan-400">AI রিডার</span>
                     </div>
                     <div class="mt-3">
-                        <h3 class="font-heading font-bold text-sm text-[var(--text)] group-hover:text-emerald-600 transition-colors">
-                            অফিসিয়াল ভর্তি সার্কুলার
+                        <h3 class="font-heading font-bold text-sm text-[var(--text)] group-hover:text-cyan-500 transition-colors">
+                            ডিজিটাল বই লাইব্রেরি ও নোটস
                         </h3>
-                        <p class="text-[11px] text-[var(--text-muted)] mt-1">সকল পাবলিক, প্রাইভেট ও গুচ্ছ বিশ্ববিদ্যালয় সার্কুলার</p>
+                        <p class="text-[11px] text-[var(--text-muted)] mt-1 leading-relaxed">বইয়ের চ্যাপ্টার পড়ুন ও AI টিউটরের সাথে তাৎক্ষণিক চ্যাট করুন</p>
                     </div>
                 </Link>
             </div>

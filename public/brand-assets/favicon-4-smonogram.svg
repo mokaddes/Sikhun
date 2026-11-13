@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="fav4-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="fav4-grad1" x1="12" y1="12" x2="48" y2="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00F2FE"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="fav4-grad2" x1="16" y1="30" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#EF4444"/>
+    </linearGradient>
+    <linearGradient id="fav4-spark" x1="44" y1="6" x2="56" y2="18" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#fav4-bg)" stroke="#38BDF8" stroke-opacity="0.35" stroke-width="1.5"/>
+
+  <!-- 'S' Ribbon -->
+  <path d="M44 19C44 14 38.5 10.5 31 10.5C20.5 10.5 14 16.5 14 24.5C14 33 22.5 37 31 40L33 41" stroke="url(#fav4-grad1)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M31 40L33 41C41.5 44.5 49 48 49 56C49 63.5 42 67.5 32 67.5C21.5 67.5 15 63 15 57" stroke="url(#fav4-grad2)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <circle cx="32" cy="40.5" r="3" fill="#FFFFFF"/>
+  <path d="M51 7L52.5 11.5L57 13L52.5 14.5L51 19L49.5 14.5L45 13L49.5 11.5Z" fill="url(#fav4-spark)"/>
+</svg>

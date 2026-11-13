@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" fill="none">
+  <defs>
+    <linearGradient id="og2-bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="40%" stop-color="#0B1329"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+
+    <radialGradient id="og2-glow-cyan" cx="15%" cy="25%" r="45%">
+      <stop offset="0%" stop-color="#00F2FE" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#00F2FE" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="og2-glow-purple" cx="80%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="og2-title-grad" x1="0" y1="0" x2="650" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="60%" stop-color="#E2E8F0"/>
+      <stop offset="100%" stop-color="#93C5FD"/>
+    </linearGradient>
+
+    <filter id="og2-blur">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#og2-bg)"/>
+  <rect width="1200" height="630" fill="url(#og2-glow-cyan)"/>
+  <rect width="1200" height="630" fill="url(#og2-glow-purple)"/>
+
+  <!-- Geometric Grid & Constellation lines -->
+  <g opacity="0.1" stroke="#38BDF8" stroke-width="1">
+    <circle cx="200" cy="180" r="160" stroke-dasharray="4 4"/>
+    <circle cx="1000" cy="450" r="220" stroke-dasharray="6 6"/>
+    <line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="520" x2="1200" y2="520"/>
+  </g>
+
+  <!-- BRAND TOP HEADER -->
+  <g transform="translate(80, 50)">
+    <!-- Glowing Badge -->
+    <rect x="0" y="0" width="220" height="42" rx="12" fill="#00F2FE" fill-opacity="0.12" stroke="#00F2FE" stroke-opacity="0.4" stroke-width="1.5"/>
+    <circle cx="24" cy="21" r="5" fill="#00F2FE"/>
+    <text x="38" y="27" font-family="'Plus Jakarta Sans', sans-serif" font-size="14" font-weight="800" fill="#38BDF8" letter-spacing="1">
+      AI STUDY PARTNER
+    </text>
+  </g>
+
+  <!-- MAIN HEADLINES (CENTER-LEFT) -->
+  <g transform="translate(80, 160)">
+    <text x="0" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="64" font-weight="900" letter-spacing="-1.5" fill="url(#og2-title-grad)">
+      Master Any Book &amp; Exam
+    </text>
+    <text x="0" y="130" font-family="'Plus Jakarta Sans', sans-serif" font-size="64" font-weight="900" letter-spacing="-1.5" fill="#00F2FE">
+      Powered by Generative AI.
+    </text>
+    
+    <!-- Bengali Sub-heading -->
+    <text x="0" y="200" font-family="'Hind Siliguri', sans-serif" font-size="26" font-weight="600" fill="#E2E8F0">
+      বইয়ের যে কোনো পৃষ্ঠার সাথে সরাসরি চ্যাট করুন ও কঠিন টপিক বাংলায় বুঝুন।
+    </text>
+    <text x="0" y="240" font-family="'Hind Siliguri', sans-serif" font-size="20" font-weight="500" fill="#94A3B8">
+      স্মার্ট এমসিকিউ প্র্যাকটিস • ভুল উত্তর বিশ্লেষণ • রিয়েল-টাইম পারফর্মেন্স ট্র্যাকিং
+    </text>
+
+    <!-- CTAs & Pill Badges -->
+    <g transform="translate(0, 290)">
+      <rect x="0" y="0" width="210" height="52" rx="14" fill="#2563EB" stroke="#60A5FA" stroke-width="1.5"/>
+      <text x="32" y="32" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="800" fill="#FFFFFF">
+        Start Free Trial →
+      </text>
+
+      <rect x="230" y="0" width="180" height="52" rx="14" fill="#0F172A" stroke="#334155" stroke-width="1.5"/>
+      <text x="254" y="32" font-family="'Hind Siliguri', sans-serif" font-size="16" font-weight="700" fill="#E2E8F0">
+        📖 লাইব্রেরি ব্রাউজ করুন
+      </text>
+    </g>
+  </g>
+
+  <!-- RIGHT SIDE: AI INTERACTION VISUAL -->
+  <g transform="translate(740, 140)">
+    <!-- Back Glow -->
+    <circle cx="180" cy="180" r="160" fill="#8B5CF6" opacity="0.2" filter="url(#og2-blur)"/>
+
+    <!-- Device / Window Frame Mockup -->
+    <rect x="0" y="0" width="380" height="380" rx="24" fill="#0F172A" fill-opacity="0.85" stroke="#38BDF8" stroke-opacity="0.3" stroke-width="2"/>
+    
+    <!-- Window Bar -->
+    <rect x="0" y="0" width="380" height="42" rx="24" fill="#1E293B"/>
+    <circle cx="24" cy="21" r="5" fill="#EF4444"/>
+    <circle cx="40" cy="21" r="5" fill="#F59E0B"/>
+    <circle cx="56" cy="21" r="5" fill="#10B981"/>
+    <text x="80" y="26" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600" fill="#94A3B8">
+      sikhun.com/reader • HSC ICT Chapter 3
+    </text>
+
+    <!-- Book Page Snippet -->
+    <g transform="translate(24, 60)">
+      <rect x="0" y="0" width="332" height="110" rx="12" fill="#020617" stroke="#1E293B" stroke-width="1"/>
+      <text x="16" y="28" font-family="'Hind Siliguri', sans-serif" font-size="14" font-weight="700" fill="#F8FAFC">
+        অধ্যায় ৩: সংখ্যা পদ্ধতি ও ডিজিটাল ডিভাইস
+      </text>
+      <text x="16" y="52" font-family="'Hind Siliguri', sans-serif" font-size="12" font-weight="500" fill="#94A3B8">
+        বাইনারি, অক্টাল, ডেসিমাল এবং হেক্সাডেসিমাল রূপান্তরের নিয়ম...
+      </text>
+      <rect x="16" y="68" width="130" height="26" rx="6" fill="#3B82F6" fill-opacity="0.2"/>
+      <text x="24" y="86" font-family="'Hind Siliguri', sans-serif" font-size="11" font-weight="700" fill="#60A5FA">
+        ✨ AI দিয়ে সহজ ভাষায় বুঝাও
+      </text>
+    </g>
+
+    <!-- Chat Interaction Bubble -->
+    <g transform="translate(24, 185)">
+      <rect x="0" y="0" width="332" height="150" rx="14" fill="#1E1B4B" stroke="#6366F1" stroke-opacity="0.5" stroke-width="1.5"/>
+      <text x="16" y="28" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="800" fill="#A5B4FC">
+        🤖 Sikhun AI Tutor
+      </text>
+      <text x="16" y="54" font-family="'Hind Siliguri', sans-serif" font-size="13" font-weight="500" fill="#E0E7FF">
+        বাইনারি থেকে ডেসিমাল করতে প্রতি ডিজিটকে
+      </text>
+      <text x="16" y="78" font-family="'Hind Siliguri', sans-serif" font-size="13" font-weight="500" fill="#E0E7FF">
+        2^n দিয়ে গুণ করে যোগ করুন। যেমন: (101)₂ = 5₁₀
+      </text>
+      <!-- Quick Quiz Button inside AI -->
+      <rect x="16" y="98" width="140" height="32" rx="8" fill="#F97316"/>
+      <text x="26" y="119" font-family="'Hind Siliguri', sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">
+        🎯 কুইজ দিয়ে যাচাই করুন
+      </text>
+    </g>
+  </g>
+
+  <!-- BOTTOM BAR -->
+  <g transform="translate(80, 560)">
+    <line x1="0" y1="0" x2="1040" y2="0" stroke="#334155" stroke-width="1"/>
+    <text x="0" y="32" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="800" fill="#FFFFFF">
+      Sikhun.com
+    </text>
+    <text x="120" y="32" font-family="'Hind Siliguri', sans-serif" font-size="14" font-weight="600" fill="#94A3B8">
+      • বাংলাদেশের প্রতিটি শিক্ষার্থীর পার্সোনাল AI শিক্ষক
+    </text>
+    <text x="890" y="32" font-family="'Plus Jakarta Sans', sans-serif" font-size="14" font-weight="700" fill="#38BDF8">
+      https://sikhun.com
+    </text>
+  </g>
+</svg>

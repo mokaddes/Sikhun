@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 80" fill="none">
+  <defs>
+    <linearGradient id="c2-stroke" x1="10" y1="10" x2="70" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00F2FE"/>
+      <stop offset="45%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+    <linearGradient id="c2-amber" x1="45" y1="20" x2="65" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FCD34D"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+    <filter id="c2-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- ICON: The Stylized "শি" Neural Node -->
+  <g transform="translate(6, 6)">
+    <!-- Tech background glow -->
+    <circle cx="34" cy="34" r="30" fill="#6366F1" opacity="0.15" filter="url(#c2-glow)"/>
+    <circle cx="34" cy="34" r="32" stroke="#6366F1" stroke-opacity="0.25" stroke-dasharray="3 3"/>
+    
+    <!-- Outer Orbit Ring / Hroshokar Swoop -->
+    <path d="M14 42C12 28 20 14 36 12C46 11 54 16 57 24" stroke="url(#c2-stroke)" stroke-width="4.5" stroke-linecap="round"/>
+    
+    <!-- Modern Bengali 'শ' Geometric Body -->
+    <path d="M22 52V30C22 25 26 21 31 21C36 21 40 25 40 30V52" stroke="url(#c2-stroke)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M31 38H49C54 38 57 42 57 47V52" stroke="url(#c2-stroke)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Top Matra / Neural Bridge -->
+    <path d="M18 21H45" stroke="#00F2FE" stroke-width="3.5" stroke-linecap="round"/>
+    
+    <!-- AI Spark Accent Node -->
+    <circle cx="57" cy="22" r="5" fill="url(#c2-amber)" filter="url(#c2-glow)"/>
+    <circle cx="57" cy="22" r="2" fill="#FFFFFF"/>
+    <path d="M57 14V17M57 27V30M49 22H52M62 22H65" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+
+  <!-- WORDMARK: SIKHUN -->
+  <g transform="translate(94, 0)">
+    <text x="0" y="46" font-family="'Plus Jakarta Sans', 'Inter', sans-serif" font-size="34" font-weight="900" letter-spacing="-0.5" fill="#FFFFFF">
+      Sikhun<tspan fill="#6366F1">.</tspan><tspan fill="#EC4899" font-size="28" font-weight="700">ai</tspan>
+    </text>
+    <rect x="0" y="55" width="175" height="18" rx="4" fill="#6366F1" fill-opacity="0.12" stroke="#6366F1" stroke-opacity="0.3" stroke-width="1"/>
+    <text x="8" y="67" font-family="'Plus Jakarta Sans', 'Inter', sans-serif" font-size="9.5" font-weight="700" letter-spacing="1.2" fill="#A5B4FC" text-transform="uppercase">
+      NEURAL STUDY SYSTEM
+    </text>
+  </g>
+</svg>

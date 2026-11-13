@@ -44,6 +44,7 @@ class DashboardController extends Controller
                 'books_owned' => $student->books()->count(),
                 'exams_taken' => $student->examSessions()->where('status', 'completed')->count(),
                 'courses_enrolled' => $student->courseEnrollments()->count(),
+                'unresolved_mistakes' => $student->examAnswers()->where('is_correct', false)->where('resolved', false)->count(),
             ],
             'pendingOrder' => $pendingOrder,
             'continueReading' => $lastReading?->book,

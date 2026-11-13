@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" fill="none">
+  <defs>
+    <radialGradient id="og3-spot" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="50%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#030712"/>
+    </radialGradient>
+
+    <radialGradient id="og3-glow" cx="50%" cy="38%" r="35%">
+      <stop offset="0%" stop-color="#00F2FE" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#F97316" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="og3-cyan" x1="10" y1="35" x2="45" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00F2FE"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="og3-amber" x1="75" y1="35" x2="40" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFB24A"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+    <linearGradient id="og3-spark" x1="36" y1="12" x2="44" y2="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFE08A"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+
+    <filter id="og3-blur">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+  </defs>
+
+  <!-- Deep Obsidian Canvas -->
+  <rect width="1200" height="630" fill="url(#og3-spot)"/>
+  <rect width="1200" height="630" fill="url(#og3-glow)"/>
+
+  <!-- Centered Circular Radar Lines -->
+  <g opacity="0.12" stroke="#38BDF8" stroke-width="1.2">
+    <circle cx="600" cy="240" r="140"/>
+    <circle cx="600" cy="240" r="220" stroke-dasharray="4 4"/>
+    <circle cx="600" cy="240" r="300" stroke-dasharray="8 8"/>
+  </g>
+
+  <!-- CENTER LOGO MARK (Enlarged 2.2x) -->
+  <g transform="translate(512, 140) scale(2.2)">
+    <path d="M16 34C19 21 28 12 40 9" stroke="#38BDF8" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M60 20C63.5 24.5 65 30 65 36" stroke="#F97316" stroke-width="4.5" stroke-linecap="round"/>
+    
+    <path d="M11 44C19 38 28 39 39 45.5v19.5c-10-6-19-6.5-28-.8V44Z" fill="url(#og3-cyan)"/>
+    <path d="M69 44C61 38 52 39 41 45.5v19.5c10-6 19-6.5 28-.8V44Z" fill="url(#og3-amber)"/>
+    
+    <path d="M11 44C19 38 28 39 39 45.5c10-6.5 19-7.5 30-1.5v20.2c-10-6-19-5.5-29 .5-10-6-19-6.5-29-.7V44Z" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M40 45v19" stroke="#0B0F19" stroke-opacity="0.4" stroke-width="2.2" stroke-linecap="round"/>
+
+    <path d="M40 13c2.2 6.2 4.4 9.2 8.5 12-4.1 2-6.3 5-8.5 10.5-2.2-5.5-4.4-8.5-8.5-10.5 4.1-2.8 6.3-5.8 8.5-12Z" fill="url(#og3-spark)"/>
+    <circle cx="53" cy="15" r="2.5" fill="#00F2FE"/>
+  </g>
+
+  <!-- BIG TYPOGRAPHY (CENTERED) -->
+  <g transform="translate(600, 360)">
+    <text x="0" y="0" text-anchor="middle" font-family="'Plus Jakarta Sans', 'Inter', sans-serif" font-size="68" font-weight="900" letter-spacing="-1.5" fill="#FFFFFF">
+      Sikhun<tspan fill="#F97316">.com</tspan>
+    </text>
+    <text x="0" y="52" text-anchor="middle" font-family="'Hind Siliguri', 'Kalpurush', sans-serif" font-size="34" font-weight="700" fill="#00F2FE">
+      শিখুন • বাংলাদেশের স্মার্ট স্টাডি প্ল্যাটফর্ম
+    </text>
+    <text x="0" y="100" text-anchor="middle" font-family="'Hind Siliguri', sans-serif" font-size="20" font-weight="500" fill="#94A3B8">
+      এআই বুক রিডার • বিশ্ববিদ্যালয় ভর্তি ২০২৬ • প্রশ্নব্যাংক ও লাইভ এক্সাম
+    </text>
+
+    <!-- Pill Badges -->
+    <g transform="translate(0, 140)">
+      <rect x="-240" y="0" width="480" height="42" rx="21" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+      <text x="0" y="27" text-anchor="middle" font-family="'Plus Jakarta Sans', 'Hind Siliguri', sans-serif" font-size="15" font-weight="700" fill="#E2E8F0">
+        🌐 HTTPS://SIKHUN.COM • সবার জন্য আধুনিক শিক্ষা
+      </text>
+    </g>
+  </g>
+</svg>

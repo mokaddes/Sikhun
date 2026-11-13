@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 80" fill="none">
+  <defs>
+    <linearGradient id="c3b-cap" x1="10" y1="20" x2="70" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#06B6D4"/>
+      <stop offset="50%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1E40AF"/>
+    </linearGradient>
+    <linearGradient id="c3b-gold" x1="40" y1="10" x2="65" y2="45" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="50%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+    <filter id="c3b-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- ICON -->
+  <g transform="translate(6, 6)">
+    <circle cx="34" cy="34" r="32" fill="#06B6D4" opacity="0.12"/>
+    <path d="M14 47L34 57L54 47" stroke="#00F2FE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M20 53L34 60L48 53" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+    <path d="M34 16L60 27L34 38L8 27L34 16Z" fill="url(#c3b-cap)" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="2"/>
+    <path d="M19 33.5V45C19 49 25.5 52 34 52C42.5 52 49 49 49 45V33.5" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
+    <circle cx="34" cy="27" r="3" fill="#FDE047"/>
+    <path d="M34 27C44 28 50 33 50 40V46" stroke="url(#c3b-gold)" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="47.5" y="44" width="5" height="7" rx="1.5" fill="#F59E0B"/>
+    <circle cx="60" cy="27" r="3" fill="#00F2FE" filter="url(#c3b-glow)"/>
+  </g>
+
+  <!-- WORDMARK: শিখুন -->
+  <g transform="translate(94, 0)">
+    <text x="0" y="47" font-family="'Hind Siliguri', 'Kalpurush', sans-serif" font-size="38" font-weight="800" fill="#FFFFFF">
+      শিখুন<tspan fill="#F59E0B">.</tspan><tspan fill="#38BDF8" font-size="28" font-weight="700">কম</tspan>
+    </text>
+    <rect x="0" y="55" width="200" height="19" rx="4" fill="#F59E0B" fill-opacity="0.12" stroke="#F59E0B" stroke-opacity="0.3" stroke-width="1"/>
+    <text x="8" y="68" font-family="'Hind Siliguri', 'Kalpurush', sans-serif" font-size="11" font-weight="600" fill="#FDE047">
+      ভর্তি ও একাডেমিক সফলতার সঙ্গী
+    </text>
+  </g>
+</svg>

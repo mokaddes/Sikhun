@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="fav1-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#030712"/>
+    </linearGradient>
+    <linearGradient id="fav1-cyan" x1="10" y1="32" x2="34" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00F2FE"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="fav1-amber" x1="54" y1="32" x2="30" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFB24A"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+    <linearGradient id="fav1-spark" x1="28" y1="8" x2="36" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFE08A"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+    <linearGradient id="fav1-orbit" x1="10" y1="48" x2="54" y2="14" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="50%" stop-color="#00F2FE"/>
+      <stop offset="100%" stop-color="#FF9A32"/>
+    </linearGradient>
+  </defs>
+
+  <!-- High-contrast rounded squircle background for browser tab clarity -->
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#fav1-bg)" stroke="#38BDF8" stroke-opacity="0.3" stroke-width="1.5"/>
+
+  <!-- Orbit Track -->
+  <path d="M12 28C15 16 23 8 34 6" stroke="url(#fav1-orbit)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M51 16C54 20 55.5 25 55.5 30" stroke="url(#fav1-orbit)" stroke-width="3.5" stroke-linecap="round"/>
+
+  <!-- Left Page (Cyan) -->
+  <path d="M9 36C16 31 24 32 32 37.5V52C23.5 46.5 16 46 9 51V36Z" fill="url(#fav1-cyan)"/>
+  <!-- Right Page (Amber) -->
+  <path d="M55 36C48 31 40 32 32 37.5V52C40.5 46.5 48 46 55 51V36Z" fill="url(#fav1-amber)"/>
+  <!-- Outer Stroke -->
+  <path d="M9 36C16 31 24 32 32 37.5C40 32 48 31 55 36V51C48 46 40.5 46.5 32 52C23.5 46.5 16 46 9 51V36Z" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M32 37.5V52" stroke="#0B0F19" stroke-opacity="0.45" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- AI Spark -->
+  <path d="M32 9.5c1.8 5 3.6 7.5 7 9.8-3.4 1.6-5.2 4.1-7 8.7-1.8-4.6-3.6-7.1-7-8.7 3.4-2.3 5.2-4.8 7-9.8Z" fill="url(#fav1-spark)"/>
+  <circle cx="43" cy="11.5" r="2" fill="#00F2FE"/>
+</svg>

@@ -4,6 +4,8 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
  * Sikhun Design System — "Uday (উদয়) — the Rising Sun"
  * -------------------------------------------------------------------

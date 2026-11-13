@@ -335,47 +335,47 @@ const typeLabel = computed(() => {
                             </div>
 
                             <!-- Real-Time Countdown Hero Banner (Matching official portal admission.eis.du.ac.bd) -->
-                            <div class="my-6 rounded-3xl overflow-hidden border border-blue-500/25 bg-gradient-to-br from-[#0c1938] via-[#101e42] to-[#0c1630] text-white p-6 md:p-8 shadow-xl relative">
+                            <div class="my-6 rounded-3xl overflow-hidden border border-blue-200 dark:border-blue-500/25 bg-gradient-to-br from-blue-50/70 via-white to-slate-50 dark:from-[#0c1938] dark:via-[#101e42] dark:to-[#0c1630] text-slate-900 dark:text-white p-6 md:p-8 shadow-sm dark:shadow-xl relative">
                                 <div class="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl"></div>
 
                                 <div class="relative z-10 text-center max-w-xl mx-auto">
-                                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-bold mb-2">
+                                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/20 dark:border-blue-400/30 text-blue-600 dark:text-blue-300 text-xs font-bold mb-2">
                                         <span class="material-symbols-outlined !text-sm">hourglass_top</span>
                                         <span>{{ countdownTitle }}</span>
                                     </div>
 
-                                    <div class="text-[11px] font-semibold text-blue-200/80 uppercase tracking-widest mb-3">
+                                    <div class="text-[11px] font-semibold text-slate-500 dark:text-blue-200/80 uppercase tracking-widest mb-3">
                                         {{ countdownSubTitle }}
                                     </div>
 
                                     <!-- 4-Block Live Countdown Timer (দিন : ঘণ্টা : মিনিট : সেকেন্ড) -->
                                     <div v-if="!isExpired" class="flex items-center justify-center gap-2 sm:gap-4 my-4 font-mono">
                                         <div class="flex flex-col items-center">
-                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-[#172554]/95 border border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-white shadow-inner">
+                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-white dark:bg-[#172554]/95 border border-blue-200 dark:border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-slate-900 dark:text-white shadow-xs dark:shadow-inner">
                                                 {{ timer.days }}
                                             </div>
-                                            <span class="text-[10px] sm:text-xs font-bold text-blue-300 mt-1.5">{{ en ? 'Days' : 'দিন' }}</span>
+                                            <span class="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-blue-300 mt-1.5">{{ en ? 'Days' : 'দিন' }}</span>
                                         </div>
-                                        <span class="text-xl sm:text-3xl font-bold text-blue-400 -mt-5">:</span>
+                                        <span class="text-xl sm:text-3xl font-bold text-blue-500 dark:text-blue-400 -mt-5">:</span>
                                         <div class="flex flex-col items-center">
-                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-[#172554]/95 border border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-white shadow-inner">
+                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-white dark:bg-[#172554]/95 border border-blue-200 dark:border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-slate-900 dark:text-white shadow-xs dark:shadow-inner">
                                                 {{ timer.hours }}
                                             </div>
-                                            <span class="text-[10px] sm:text-xs font-bold text-blue-300 mt-1.5">{{ en ? 'Hours' : 'ঘণ্টা' }}</span>
+                                            <span class="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-blue-300 mt-1.5">{{ en ? 'Hours' : 'ঘণ্টা' }}</span>
                                         </div>
-                                        <span class="text-xl sm:text-3xl font-bold text-blue-400 -mt-5">:</span>
+                                        <span class="text-xl sm:text-3xl font-bold text-blue-500 dark:text-blue-400 -mt-5">:</span>
                                         <div class="flex flex-col items-center">
-                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-[#172554]/95 border border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-white shadow-inner">
+                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-white dark:bg-[#172554]/95 border border-blue-200 dark:border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-slate-900 dark:text-white shadow-xs dark:shadow-inner">
                                                 {{ timer.minutes }}
                                             </div>
-                                            <span class="text-[10px] sm:text-xs font-bold text-blue-300 mt-1.5">{{ en ? 'Minutes' : 'মিনিট' }}</span>
+                                            <span class="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-blue-300 mt-1.5">{{ en ? 'Minutes' : 'মিনিট' }}</span>
                                         </div>
-                                        <span class="text-xl sm:text-3xl font-bold text-blue-400 -mt-5">:</span>
+                                        <span class="text-xl sm:text-3xl font-bold text-blue-500 dark:text-blue-400 -mt-5">:</span>
                                         <div class="flex flex-col items-center">
-                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-[#172554]/95 border border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-white shadow-inner">
+                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-white dark:bg-[#172554]/95 border border-blue-200 dark:border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-slate-900 dark:text-white shadow-xs dark:shadow-inner">
                                                 {{ timer.seconds }}
                                             </div>
-                                            <span class="text-[10px] sm:text-xs font-bold text-blue-300 mt-1.5">{{ en ? 'Seconds' : 'সেকেন্ড' }}</span>
+                                            <span class="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-blue-300 mt-1.5">{{ en ? 'Seconds' : 'সেকেন্ড' }}</span>
                                         </div>
                                     </div>
                                     <div v-else class="my-3 py-2 px-4 rounded-xl bg-red-500/20 border border-red-500/40 text-red-300 font-bold text-xs inline-block">
@@ -384,16 +384,16 @@ const typeLabel = computed(() => {
 
                                     <!-- 2 Official Date Boxes (Matching Image 1) -->
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 pt-5 border-t border-blue-500/20 text-left">
-                                        <div class="p-3.5 rounded-2xl bg-[#142145]/90 border border-blue-400/25">
-                                            <span class="text-[11px] font-bold text-blue-300 uppercase block mb-1">
+                                        <div class="p-3.5 rounded-2xl bg-white dark:bg-[#142145]/90 border border-blue-200 dark:border-blue-400/25 shadow-xs">
+                                            <span class="text-[11px] font-bold text-blue-600 dark:text-blue-300 uppercase block mb-1">
                                                 {{ en ? 'Application Starting' : 'আবেদন শুরু' }}
                                             </span>
-                                            <div class="text-xs sm:text-sm font-extrabold text-white">
+                                            <div class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
                                                 {{ notice.application_start_text || formatDateTimeBn(notice.application_start) }}
                                             </div>
                                         </div>
-                                        <div class="p-3.5 rounded-2xl bg-[#142145]/90 border border-blue-400/25">
-                                            <span class="text-[11px] font-bold text-blue-300 uppercase block mb-1">
+                                        <div class="p-3.5 rounded-2xl bg-white dark:bg-[#142145]/90 border border-blue-200 dark:border-blue-400/25 shadow-xs">
+                                            <span class="text-[11px] font-bold text-blue-600 dark:text-blue-300 uppercase block mb-1">
                                                 {{ en ? 'Application Deadline' : 'শেষ তারিখ' }}
                                             </span>
                                             <div class="text-xs sm:text-sm font-extrabold text-red-400">
@@ -504,14 +504,14 @@ const typeLabel = computed(() => {
                                                 </div>
                                                 <div>
                                                     <div class="flex items-center gap-2">
-                                                        <h3 class="text-base sm:text-lg font-black text-white">
+                                                        <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white">
                                                             {{ en ? 'Free Sample Test (10 Questions)' : 'ফ্রি স্যাম্পল টেস্ট দিন (১০টি প্রশ্ন)' }}
                                                         </h3>
                                                         <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                                                             {{ en ? 'No Login Required' : 'লগইন ছাড়াই ফ্রি' }}
                                                         </span>
                                                     </div>
-                                                    <p class="text-xs text-gray-300">
+                                                    <p class="text-xs text-slate-600 dark:text-gray-300">
                                                         {{ en ? 'Instant evaluation with negative marking (-0.25) & detailed explanations.' : 'নেগেটিভ মার্কিংসহ তাৎক্ষণিক মূল্যায়ন ও স্টেপ-বাই-স্টেপ সমাধান।' }}
                                                     </p>
                                                 </div>
@@ -543,7 +543,7 @@ const typeLabel = computed(() => {
                                                             ? 'bg-orange-500 text-white border-orange-400 shadow-md shadow-orange-500/30 scale-105'
                                                             : userAnswers[q.id]
                                                                 ? 'bg-blue-600/30 border-blue-400/40 text-blue-300'
-                                                                : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
+                                                                : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10'
                                                     ]"
                                                 >
                                                     {{ idx + 1 }}
@@ -551,7 +551,7 @@ const typeLabel = computed(() => {
                                             </div>
 
                                             <!-- Current Question Card -->
-                                            <div v-if="currentQ" class="p-5 rounded-2xl bg-[#0e1424] border border-blue-500/25 space-y-4 shadow-inner">
+                                            <div v-if="currentQ" class="p-5 rounded-2xl bg-slate-50 dark:bg-[#0e1424] border border-slate-200 dark:border-blue-500/25 space-y-4 shadow-xs dark:shadow-inner">
                                                 <!-- Question Header -->
                                                 <div class="flex items-center justify-between text-xs text-gray-400">
                                                     <span class="font-bold text-orange-400 uppercase tracking-wider">
@@ -563,7 +563,7 @@ const typeLabel = computed(() => {
                                                 </div>
 
                                                 <!-- Question Text -->
-                                                <div class="text-sm sm:text-base font-bold text-white leading-relaxed">
+                                                <div class="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-relaxed">
                                                     {{ currentQ.question_text }}
                                                 </div>
 
@@ -577,7 +577,7 @@ const typeLabel = computed(() => {
                                                             'p-3 rounded-xl border text-left text-xs sm:text-sm font-medium transition flex items-center gap-3',
                                                             userAnswers[currentQ.id] === opt.key
                                                                 ? 'bg-orange-500/20 border-orange-500 text-white ring-2 ring-orange-500/30 shadow-md'
-                                                                : 'bg-white/5 border-white/10 hover:border-white/20 text-gray-200 hover:bg-white/10'
+                                                                : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-orange-400 text-slate-800 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-white/10 shadow-xs'
                                                         ]"
                                                     >
                                                         <span

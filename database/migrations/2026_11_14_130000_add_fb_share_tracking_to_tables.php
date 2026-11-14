@@ -14,13 +14,13 @@ return new class extends Migration
             if (Schema::hasTable($tableName)) {
                 Schema::table($tableName, function (Blueprint $table) use ($tableName) {
                     if (!Schema::hasColumn($tableName, 'fb_shared_count')) {
-                        $table->unsignedInteger('fb_shared_count')->default(0)->after('status');
+                        $table->unsignedInteger('fb_shared_count')->default(0);
                     }
                     if (!Schema::hasColumn($tableName, 'fb_last_shared_at')) {
-                        $table->timestamp('fb_last_shared_at')->nullable()->after('fb_shared_count');
+                        $table->timestamp('fb_last_shared_at')->nullable();
                     }
                     if (!Schema::hasColumn($tableName, 'fb_post_id')) {
-                        $table->string('fb_post_id')->nullable()->after('fb_last_shared_at');
+                        $table->string('fb_post_id')->nullable();
                     }
                 });
             }

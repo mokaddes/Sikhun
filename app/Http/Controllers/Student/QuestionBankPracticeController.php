@@ -19,7 +19,7 @@ class QuestionBankPracticeController extends Controller
     /**
      * Display student question bank practice index with filters and counts.
      */
-    public function index(Request $request): Response
+    public function index(Request $request): Response|\Illuminate\Http\RedirectResponse
     {
         $student = auth('web')->user();
         $studentType = $student->type ?? 'admission';
@@ -32,21 +32,27 @@ class QuestionBankPracticeController extends Controller
             'ssc' => QuestionBank::published()->where('segment', 'ssc')->count(),
         ];
 
-        // Determine active sector
-        $requestedSector = $request->input('sector');
-        if ($requestedSector && in_array($requestedSector, ['admission', 'job', 'hsc', 'ssc'])) {
-            $activeSector = $requestedSector;
-        } else {
+        // Determine active sector strictly based on student education goal when logged in
+        if ($student) {
             if ($studentType === 'job') {
                 $activeSector = 'job';
             } elseif ($studentType === 'admission') {
                 $activeSector = 'admission';
-            } elseif (in_array($studentType, ['hsc', 'ssc']) && ($sectorCounts[$studentType] ?? 0) > 0) {
+            } elseif (in_array($studentType, ['hsc', 'ssc'])) {
                 $activeSector = $studentType;
             } else {
-                // If student is hsc/ssc or unknown, default to admission (active question bank)
                 $activeSector = 'admission';
             }
+
+            // If user requested another sector via query string, strip it to maintain strict goal isolation
+            if ($request->filled('sector') && $request->input('sector') !== $activeSector) {
+                return redirect()->route('student.question-bank.index', $request->except('sector'));
+            }
+        } else {
+            $requestedSector = $request->input('sector');
+            $activeSector = ($requestedSector && in_array($requestedSector, ['admission', 'job', 'hsc', 'ssc']))
+                ? $requestedSector
+                : 'admission';
         }
 
         $query = QuestionBank::query()
@@ -129,6 +135,8 @@ class QuestionBankPracticeController extends Controller
             ]),
             'isPaid' => $isPaid,
             'studentType' => $studentType,
+            'lockedToGoal' => (bool) $student,
+            'studentGoal' => $student?->type,
             'activeSector' => $activeSector,
             'sectorCounts' => $sectorCounts,
         ]);

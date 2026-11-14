@@ -17,6 +17,7 @@ import {
 
 const props = defineProps({
     plans: Array,
+    customPlanConfig: Object,
     activeSubscription: Object,
 });
 
@@ -27,6 +28,10 @@ const student = computed(() => page.props.auth?.student);
 const activeTab = ref('general'); // general | admission | job | custom
 const months = ref(1);
 
+const generalPlans = computed(() => (props.plans || []).filter(p => !p.target_segment || p.target_segment === 'all' || p.target_segment === 'custom'));
+const admissionPlans = computed(() => (props.plans || []).filter(p => p.target_segment === 'admission'));
+const jobPlans = computed(() => (props.plans || []).filter(p => p.target_segment === 'job'));
+
 // Custom Plan Configurator State
 const customMinutes = ref(350);
 const customImages = ref(40);
@@ -34,15 +39,16 @@ const customBooks = ref(5);
 const customReuploads = ref(5);
 const customQuizzes = ref(20);
 
-// Custom Plan Pricing (Slightly higher unit rate than fixed bundles, giving flexibility)
+// Custom Plan Pricing calculated dynamically from Admin Custom Plan Settings
 const customTotalMonthly = computed(() => {
-    const minCost = customMinutes.value * 0.22;
-    const imgCost = customImages.value * 1.10;
-    const bookCost = customBooks.value * 14.0;
-    const reuploadCost = customReuploads.value * 5.0;
-    const quizCost = customQuizzes.value * 2.5;
-    const baseFee = 35.0;
-    return Math.max(149, Math.round(minCost + imgCost + bookCost + reuploadCost + quizCost + baseFee));
+    const minCost = customMinutes.value * (props.customPlanConfig?.rate_minute ?? 0.22);
+    const imgCost = customImages.value * (props.customPlanConfig?.rate_image ?? 1.10);
+    const bookCost = customBooks.value * (props.customPlanConfig?.rate_book ?? 14.0);
+    const reuploadCost = customReuploads.value * (props.customPlanConfig?.rate_reupload ?? 5.0);
+    const quizCost = customQuizzes.value * (props.customPlanConfig?.rate_quiz ?? 2.5);
+    const baseFee = props.customPlanConfig?.base_fee ?? 35.0;
+    const minMonthly = props.customPlanConfig?.min_monthly ?? 149;
+    return Math.max(minMonthly, Math.round(minCost + imgCost + bookCost + reuploadCost + quizCost + baseFee));
 });
 
 function isCurrentPlan(plan) {
@@ -130,6 +136,18 @@ function subscribeCustom(method) {
             quizzes: customQuizzes.value,
             total_price: customTotalMonthly.value,
         },
+    });
+}
+
+function subscribePlan(plan, method) {
+    if (!student.value) {
+        router.visit('/login?redirect=/plans');
+        return;
+    }
+    router.post('/plans/purchase', {
+        plan_id: plan.id,
+        months: plan.duration_months || months.value || 1,
+        payment_method: method,
     });
 }
 
@@ -287,7 +305,7 @@ function subscribeSpecial(pack, method) {
             <!-- 4 Plans Grid -->
             <div class="stagger grid gap-5 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 items-stretch">
                 <div
-                    v-for="plan in plans"
+                    v-for="plan in generalPlans"
                     :key="plan.id"
                     class="card card-hover relative flex flex-col rounded-3xl p-5 border transition-all duration-200"
                     :class="[
@@ -419,106 +437,64 @@ function subscribeSpecial(pack, method) {
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-                <!-- 3 Months Admission Crash Bundle -->
-                <div class="card p-6 rounded-3xl border border-amber-500/40 bg-[var(--surface)] shadow-md relative flex flex-col justify-between">
-                    <div>
-                        <span class="badge bg-amber-500 text-white text-xs font-bold px-3 py-0.5 rounded-full inline-block mb-3">
-                            {{ locale === 'en' ? '3 Months Crash Course' : '৩ মাস স্পেশাল ক্র্যাশ কোর্স' }}
-                        </span>
-                        <h3 class="font-heading text-xl font-bold text-[var(--text)]">
-                            {{ locale === 'en' ? 'Admission Crash Pack (3 Months)' : 'অ্যাডমিশন ক্র্যাশ প্যাক (৩ মাস)' }}
-                        </h3>
-                        <p class="text-xs text-[var(--text-muted)] mt-1">
-                            {{ locale === 'en' ? 'Intensive revision and full-length exam model test package for final preparation.' : 'শেষ মুহূর্তের নিবিড় রিভিশন ও পূর্ণাঙ্গ মডেল টেস্ট প্যাকেজ।' }}
-                        </p>
-
-                        <div class="my-4 flex items-baseline gap-2">
-                            <span class="font-heading text-3xl font-extrabold text-[var(--text)]">৳৪৫০</span>
-                            <span class="text-sm text-[var(--text-muted)] line-through">৳৫০০</span>
-                            <span class="text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
-                                {{ locale === 'en' ? '10% OFF' : '১০% ছাড়' }}
-                            </span>
-                        </div>
-
-                        <ul class="space-y-2 text-xs text-[var(--text)] border-t border-[var(--border)] pt-3 mb-6">
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? '500 mins top-tier high-reasoning AI chat' : '৫০০ মিনিট টপ-টায়ার হাই-রিজনিং AI চ্যাট' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? '120 AI Vision math & formula solvers' : '১২০টি AI Vision গাণিতিক ছবি সমাধান' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? 'Past 25 years BUET, Medical & DU question bank' : 'বিগত ২৫ বছরের বুয়েট, মেডিকেল ও ঢাবি প্রশ্নব্যাংক' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? '60 Admission model tests with negative marking' : 'নেগেটিভ মার্কিংসহ ৬০টি অ্যাডমিশন মডেল টেস্ট' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? '5 Personal book/note upload slots' : '৫টি নিজস্ব বই/নোট আপলোড স্লট' }}</li>
-                        </ul>
-                    </div>
-
-                    <div class="space-y-2">
-                        <button
-                            @click="subscribeSpecial({ title: locale === 'en' ? 'Admission Crash Pack (3 Months)' : 'অ্যাডমিশন ক্র্যাশ প্যাক (৩ মাস)', price: 450, months: 3, minutes: 500, images: 120, books: 5, reuploads: 5, quizzes: 60 }, 'mhpay')"
-                            class="btn btn-primary w-full shadow-md shadow-pink-500/20 bg-gradient-to-r from-rose-600 to-pink-600 border-0 text-xs py-2.5 font-bold"
-                        >
-                            {{ locale === 'en' ? 'Start 3 Months with bKash / Nagad' : 'বিকাশ / নগদ দিয়ে ৩ মাস শুরু করুন' }}
-                        </button>
-                        <button
-                            v-if="student"
-                            @click="subscribeSpecial({ title: locale === 'en' ? 'Admission Crash Pack (3 Months)' : 'অ্যাডমিশন ক্র্যাশ প্যাক (৩ মাস)', price: 450, months: 3, minutes: 500, images: 120, books: 5, reuploads: 5, quizzes: 60 }, 'wallet')"
-                            class="btn btn-outline w-full text-xs py-2 font-bold"
-                        >
-                            {{ locale === 'en' ? 'Pay with Wallet (৳450)' : 'ওয়ালেট দিয়ে পরিশোধ (৳৪৫০)' }}
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 6 Months Complete Admission Pass -->
-                <div class="card p-6 rounded-3xl border-2 border-[var(--primary)] bg-[var(--surface)] shadow-lg shadow-[var(--primary)]/10 relative flex flex-col justify-between">
+            <!-- Dynamic Admission Bundles Grid -->
+            <div v-if="admissionPlans.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+                <div
+                    v-for="plan in admissionPlans"
+                    :key="plan.id"
+                    class="card p-6 rounded-3xl border border-amber-500/40 bg-[var(--surface)] shadow-md relative flex flex-col justify-between"
+                >
                     <div>
                         <div class="flex items-center justify-between mb-3">
-                            <span class="badge bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold px-3 py-0.5 rounded-full inline-block">
-                                {{ locale === 'en' ? '6 Months Complete Success Pass' : '৬ মাস কমপ্লিট সাকসেস পাস' }}
+                            <span v-if="plan.badge_text" class="badge bg-amber-500 text-white text-xs font-bold px-3 py-0.5 rounded-full inline-block">
+                                {{ plan.badge_text }}
                             </span>
-                            <span class="text-xs font-bold text-rose-500 bg-rose-500/10 px-2.5 py-0.5 rounded-full">
-                                {{ locale === 'en' ? '20% Mega Savings' : '২০% মেগা সাশ্রয়' }}
+                            <span v-else class="badge bg-orange-500/10 text-orange-600 dark:text-orange-400 text-xs font-bold px-3 py-0.5 rounded-full inline-block">
+                                {{ (plan.duration_months || 1) > 1 ? plan.duration_months + ' মাস মেয়াদ' : '১ মাস' }}
                             </span>
                         </div>
 
                         <h3 class="font-heading text-xl font-bold text-[var(--text)]">
-                            {{ locale === 'en' ? 'Admission Success Pass (6 Months)' : 'অ্যাডমিশন সাকসেস পাস (৬ মাস)' }}
+                            {{ plan.name }}
                         </h3>
-                        <p class="text-xs text-[var(--text-muted)] mt-1">
-                            {{ locale === 'en' ? 'Complete end-to-end coverage from post-HSC to university admission.' : 'এইচএসসি পরবর্তী বিশ্ববিদ্যালয় ভর্তি পরীক্ষার শুরু থেকে শেষ পর্যন্ত সম্পূর্ণ কভার্ড।' }}
+                        <p v-if="plan.description" class="text-xs text-[var(--text-muted)] mt-1">
+                            {{ plan.description }}
                         </p>
 
                         <div class="my-4 flex items-baseline gap-2">
-                            <span class="font-heading text-3xl font-extrabold text-[var(--text)]">৳৮৫০</span>
-                            <span class="text-sm text-[var(--text-muted)] line-through">৳১,০৫০</span>
-                            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                                {{ locale === 'en' ? 'Save ৳200' : 'সাশ্রয় ৳২০০' }}
+                            <span class="font-heading text-3xl font-extrabold text-[var(--text)]">৳{{ Math.round(plan.price_total || plan.price_monthly) }}</span>
+                            <span v-if="(plan.duration_months || 1) > 1" class="text-xs font-bold text-[var(--text-muted)]">
+                                ({{ plan.duration_months }} মাসের মোট ফি)
                             </span>
                         </div>
 
                         <ul class="space-y-2 text-xs text-[var(--text)] border-t border-[var(--border)] pt-3 mb-6">
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? '1,200 mins top-tier AI study chat' : '১,২০০ মিনিট টপ-টায়ার AI স্টাডি চ্যাট' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? '350 AI Vision formula & math solvers' : '৩৫০টি AI Vision গাণিতিক সমীকরণ সমাধান' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? 'Unlimited negative-marking model tests' : 'আনলিমিটেড নেগেটিভ মার্কিং মডেল টেস্ট' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? 'Chapter-wise weakness tracking & AI recommendations' : 'চ্যাপ্টারভিত্তিক দুর্বলতা ট্র্যাকার ও এআই রিকমেন্ডেশন' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? '15 Personal book & question bank upload slots' : '১৫টি নিজস্ব বই ও প্রশ্নব্যাংক আপলোড স্লট' }}</li>
+                            <li v-for="feat in plan.features" :key="feat" class="flex items-center gap-2">
+                                <CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" />
+                                <span>{{ feat }}</span>
+                            </li>
                         </ul>
                     </div>
 
                     <div class="space-y-2">
                         <button
-                            @click="subscribeSpecial({ title: locale === 'en' ? 'Admission Success Pass (6 Months)' : 'অ্যাডমিশন সাকসেস পাস (৬ মাস)', price: 850, months: 6, minutes: 1200, images: 350, books: 15, reuploads: 15, quizzes: 150 }, 'mhpay')"
-                            class="btn btn-primary w-full shadow-md shadow-pink-500/20 bg-gradient-to-r from-rose-600 to-pink-600 border-0 text-xs py-2.5 font-bold"
+                            @click="subscribePlan(plan, 'mhpay')"
+                            class="btn btn-primary w-full shadow-md shadow-pink-500/20 bg-gradient-to-r from-rose-600 to-pink-600 border-0 text-xs py-2.5 font-bold cursor-pointer"
                         >
-                            {{ locale === 'en' ? 'Start 6 Months with bKash / Nagad' : 'বিকাশ / নগদ দিয়ে ৬ মাস শুরু করুন' }}
+                            {{ locale === 'en' ? `Start ${plan.duration_months || 1} Months with bKash / Nagad` : `বিকাশ / নগদ দিয়ে ${plan.duration_months || 1} মাস শুরু করুন` }}
                         </button>
                         <button
                             v-if="student"
-                            @click="subscribeSpecial({ title: locale === 'en' ? 'Admission Success Pass (6 Months)' : 'অ্যাডমিশন সাকসেস পাস (৬ মাস)', price: 850, months: 6, minutes: 1200, images: 350, books: 15, reuploads: 15, quizzes: 150 }, 'wallet')"
-                            class="btn btn-outline w-full text-xs py-2 font-bold"
+                            @click="subscribePlan(plan, 'wallet')"
+                            class="btn btn-outline w-full text-xs py-2 font-bold cursor-pointer"
                         >
-                            {{ locale === 'en' ? 'Pay with Wallet (৳850)' : 'ওয়ালেট দিয়ে পরিশোধ (৳৮৫০)' }}
+                            {{ locale === 'en' ? `Pay with Wallet (৳${Math.round(plan.price_total || plan.price_monthly)})` : `ওয়ালেট দিয়ে পরিশোধ (৳${Math.round(plan.price_total || plan.price_monthly)})` }}
                         </button>
                     </div>
                 </div>
+            </div>
+            <div v-else class="text-center py-12 text-[var(--text-muted)] text-sm">
+                শীঘ্রই ভর্তি প্রস্তুতি বান্ডেলসমূহ উন্মুক্ত করা হচ্ছে।
             </div>
         </div>
 
@@ -541,105 +517,64 @@ function subscribeSpecial(pack, method) {
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-                <!-- 3 Months Job Crash Pack -->
-                <div class="card p-6 rounded-3xl border border-blue-500/40 bg-[var(--surface)] shadow-md relative flex flex-col justify-between">
-                    <div>
-                        <span class="badge bg-blue-600 text-white text-xs font-bold px-3 py-0.5 rounded-full inline-block mb-3">
-                            {{ locale === 'en' ? '3 Months Job Crash Pack' : '৩ মাস জব ক্র্যাশ প্যাক' }}
-                        </span>
-                        <h3 class="font-heading text-xl font-bold text-[var(--text)]">
-                            {{ locale === 'en' ? 'Govt Job Crash Pack (3 Months)' : 'সরকারি চাকরি ক্র্যাশ প্যাক (৩ মাস)' }}
-                        </h3>
-                        <p class="text-xs text-[var(--text-muted)] mt-1">
-                            {{ locale === 'en' ? 'Fast-track revision package for BCS and Bank preliminary examinations.' : 'বিসিএস ও ব্যাংক প্রিলির দ্রুততম রিভিশন প্যাকেজ।' }}
-                        </p>
-
-                        <div class="my-4 flex items-baseline gap-2">
-                            <span class="font-heading text-3xl font-extrabold text-[var(--text)]">৳৫০০</span>
-                            <span class="text-sm text-[var(--text-muted)] line-through">৳৫৬০</span>
-                            <span class="text-xs font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">
-                                {{ locale === 'en' ? '10% OFF' : '১০% ছাড়' }}
-                            </span>
-                        </div>
-
-                        <ul class="space-y-2 text-xs text-[var(--text)] border-t border-[var(--border)] pt-3 mb-6">
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? '500 mins AI chat & general knowledge assistant' : '৫০০ মিনিট এআই চ্যাট ও সাধারণ জ্ঞান সহকারী' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? '100 Math & analytical solvers' : '১০০টি গণিত ও এনালিটিক্যাল সমাধান' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? 'Past 20 years BCS & PSC question banks' : 'বিগত ২০ বছরের বিসিএস ও পিএসসি প্রশ্নব্যাংক' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? 'Recent current affairs & general knowledge quizzes' : 'সাম্প্রতিক কারেন্ট অ্যাফেয়ার্স ও সাধারণ জ্ঞান কুইজ' }}</li>
-                        </ul>
-                    </div>
-
-                    <div class="space-y-2">
-                        <button
-                            @click="subscribeSpecial({ title: locale === 'en' ? 'Govt Job Crash Pack (3 Months)' : 'জব ক্র্যাশ প্যাক (৩ মাস)', price: 500, months: 3, minutes: 500, images: 100, books: 5, reuploads: 5, quizzes: 80 }, 'mhpay')"
-                            class="btn btn-primary w-full shadow-md shadow-pink-500/20 bg-gradient-to-r from-rose-600 to-pink-600 border-0 text-xs py-2.5 font-bold"
-                        >
-                            {{ locale === 'en' ? 'Start 3 Months with bKash / Nagad' : 'বিকাশ / নগদ দিয়ে ৩ মাস শুরু করুন' }}
-                        </button>
-                        <button
-                            v-if="student"
-                            @click="subscribeSpecial({ title: locale === 'en' ? 'Govt Job Crash Pack (3 Months)' : 'জব ক্র্যাশ প্যাক (৩ মাস)', price: 500, months: 3, minutes: 500, images: 100, books: 5, reuploads: 5, quizzes: 80 }, 'wallet')"
-                            class="btn btn-outline w-full text-xs py-2 font-bold"
-                        >
-                            {{ locale === 'en' ? 'Pay with Wallet (৳500)' : 'ওয়ালেট দিয়ে পরিশোধ (৳৫০০)' }}
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 6 Months Complete BCS & Bank Pass -->
-                <div class="card p-6 rounded-3xl border-2 border-emerald-500 bg-[var(--surface)] shadow-lg relative flex flex-col justify-between">
+            <!-- Dynamic Job Bundles Grid -->
+            <div v-if="jobPlans.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+                <div
+                    v-for="plan in jobPlans"
+                    :key="plan.id"
+                    class="card p-6 rounded-3xl border border-blue-500/40 bg-[var(--surface)] shadow-md relative flex flex-col justify-between"
+                >
                     <div>
                         <div class="flex items-center justify-between mb-3">
-                            <span class="badge bg-emerald-600 text-white text-xs font-bold px-3 py-0.5 rounded-full inline-block">
-                                {{ locale === 'en' ? '6 Months Complete BCS & Bank Pass' : '৬ মাস কমপ্লিট বিসিএস ও ব্যাংক পাস' }}
+                            <span v-if="plan.badge_text" class="badge bg-blue-600 text-white text-xs font-bold px-3 py-0.5 rounded-full inline-block">
+                                {{ plan.badge_text }}
                             </span>
-                            <span class="text-xs font-bold text-rose-500 bg-rose-500/10 px-2.5 py-0.5 rounded-full">
-                                {{ locale === 'en' ? '20% Mega Savings' : '২০% মেগা সাশ্রয়' }}
+                            <span v-else class="badge bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-0.5 rounded-full inline-block">
+                                {{ (plan.duration_months || 1) > 1 ? plan.duration_months + ' মাস মেয়াদ' : '১ মাস' }}
                             </span>
                         </div>
 
                         <h3 class="font-heading text-xl font-bold text-[var(--text)]">
-                            {{ locale === 'en' ? 'BCS & Bank Complete Pass (6 Months)' : 'বিসিএস ও ব্যাংক কমপ্লিট পাস (৬ মাস)' }}
+                            {{ plan.name }}
                         </h3>
-                        <p class="text-xs text-[var(--text-muted)] mt-1">
-                            {{ locale === 'en' ? 'Comprehensive preparation from preliminary to written essays, translations, and AI grading.' : 'প্রিলিমিনারি থেকে লিখিত পরীক্ষার রচনা ও ইংরেজি অনুবাদ মূল্যায়নসহ সম্পূর্ণ প্যাকেজ।' }}
+                        <p v-if="plan.description" class="text-xs text-[var(--text-muted)] mt-1">
+                            {{ plan.description }}
                         </p>
 
                         <div class="my-4 flex items-baseline gap-2">
-                            <span class="font-heading text-3xl font-extrabold text-[var(--text)]">৳৯৫০</span>
-                            <span class="text-sm text-[var(--text-muted)] line-through">৳১,২০০</span>
-                            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                                {{ locale === 'en' ? 'Save ৳250' : 'সাশ্রয় ৳২৫০' }}
+                            <span class="font-heading text-3xl font-extrabold text-[var(--text)]">৳{{ Math.round(plan.price_total || plan.price_monthly) }}</span>
+                            <span v-if="(plan.duration_months || 1) > 1" class="text-xs font-bold text-[var(--text-muted)]">
+                                ({{ plan.duration_months }} মাসের মোট ফি)
                             </span>
                         </div>
 
                         <ul class="space-y-2 text-xs text-[var(--text)] border-t border-[var(--border)] pt-3 mb-6">
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? '1,500 mins high-reasoning AI chat' : '১,৫০০ মিনিট হাই-রিজনিং AI চ্যাট' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? '450 Math & bank analytical solutions' : '৪৫০টি গণিত ও ব্যাংক এনালিটিক্যাল সমাধান' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? 'AI evaluation & feedback for written test scripts' : 'লিখিত পরীক্ষার সৃজনশীল খাতার AI মূল্যায়ন ও ফিডব্যাক' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? 'Unlimited topic-wise BCS mock tests' : 'আনলিমিটেড বিষয়ভিত্তিক বিসিএস মক টেস্ট' }}</li>
-                            <li class="flex items-center gap-2"><CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" /> {{ locale === 'en' ? '20 Job preparation guides & book upload slots' : '২০টি চাকরি সহায়ক গাইড ও বই আপলোড স্লট' }}</li>
+                            <li v-for="feat in plan.features" :key="feat" class="flex items-center gap-2">
+                                <CheckIcon class="w-4 h-4 text-emerald-500 shrink-0" />
+                                <span>{{ feat }}</span>
+                            </li>
                         </ul>
                     </div>
 
                     <div class="space-y-2">
                         <button
-                            @click="subscribeSpecial({ title: locale === 'en' ? 'BCS & Bank Complete Pass (6 Months)' : 'বিসিএস ও ব্যাংক কমপ্লিট পাস (৬ মাস)', price: 950, months: 6, minutes: 1500, images: 450, books: 20, reuploads: 20, quizzes: 200 }, 'mhpay')"
-                            class="btn btn-primary w-full shadow-md shadow-pink-500/20 bg-gradient-to-r from-rose-600 to-pink-600 border-0 text-xs py-2.5 font-bold"
+                            @click="subscribePlan(plan, 'mhpay')"
+                            class="btn btn-primary w-full shadow-md shadow-pink-500/20 bg-gradient-to-r from-rose-600 to-pink-600 border-0 text-xs py-2.5 font-bold cursor-pointer"
                         >
-                            {{ locale === 'en' ? 'Start 6 Months with bKash / Nagad' : 'বিকাশ / নগদ দিয়ে ৬ মাস শুরু করুন' }}
+                            {{ locale === 'en' ? `Start ${plan.duration_months || 1} Months with bKash / Nagad` : `বিকাশ / নগদ দিয়ে ${plan.duration_months || 1} মাস শুরু করুন` }}
                         </button>
                         <button
                             v-if="student"
-                            @click="subscribeSpecial({ title: locale === 'en' ? 'BCS & Bank Complete Pass (6 Months)' : 'বিসিএস ও ব্যাংক কমপ্লিট পাস (৬ মাস)', price: 950, months: 6, minutes: 1500, images: 450, books: 20, reuploads: 20, quizzes: 200 }, 'wallet')"
-                            class="btn btn-outline w-full text-xs py-2 font-bold"
+                            @click="subscribePlan(plan, 'wallet')"
+                            class="btn btn-outline w-full text-xs py-2 font-bold cursor-pointer"
                         >
-                            {{ locale === 'en' ? 'Pay with Wallet (৳950)' : 'ওয়ালেট দিয়ে পরিশোধ (৳৯৫০)' }}
+                            {{ locale === 'en' ? `Pay with Wallet (৳${Math.round(plan.price_total || plan.price_monthly)})` : `ওয়ালেট দিয়ে পরিশোধ (৳${Math.round(plan.price_total || plan.price_monthly)})` }}
                         </button>
                     </div>
                 </div>
+            </div>
+            <div v-else class="text-center py-12 text-[var(--text-muted)] text-sm">
+                শীঘ্রই চাকরি প্রস্তুতি বান্ডেলসমূহ উন্মুক্ত করা হচ্ছে।
             </div>
         </div>
 

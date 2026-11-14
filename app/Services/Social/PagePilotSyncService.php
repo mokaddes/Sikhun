@@ -86,8 +86,13 @@ class PagePilotSyncService
                 default => 'সকল সেগমেন্ট',
             };
 
+            $durationText = ($plan->duration_months ?? 1) > 1 ? " ({$plan->duration_months} মাস)" : " (১ মাস)";
+            $effectivePrice = (float) ($plan->price_total ?: $plan->price_monthly);
+
             $featuresList = ! empty($plan->features) ? "• " . implode("\n• ", $plan->features) : '';
             $desc = "টার্গেট সেগমেন্ট: {$segmentLabel}\n"
+                . "মেয়াদ: " . ($plan->duration_months ?? 1) . " মাস\n"
+                . "মোট মূল্য: ৳" . number_format($effectivePrice) . "\n"
                 . "মাসিক ফি: ৳" . number_format($plan->price_monthly) . "\n"
                 . "এআই এক্সপ্লেনেশন লিমিট: {$plan->ai_explanation_count} টি\n"
                 . "এআই মক টেস্ট: {$plan->ai_exam_count} টি\n"
@@ -95,9 +100,9 @@ class PagePilotSyncService
 
             $productsPayload[] = [
                 'sku' => "sikhun_plan_{$plan->id}_{$plan->slug}",
-                'name' => "{$plan->name} ({$segmentLabel})",
+                'name' => "{$plan->name}{$durationText} ({$segmentLabel})",
                 'description' => $desc,
-                'price' => (float) $plan->price_monthly,
+                'price' => $effectivePrice,
                 'search_keywords' => "plan, subscription, {$plan->target_segment}, প্যাকেজ, প্ল্যান, সাবস্ক্রিপশন, ভর্তি, চাকরি, {$plan->name}, {$segmentLabel}",
                 'product_link' => url('/pricing'),
                 'order_url' => url('/pricing?plan=' . $plan->slug),

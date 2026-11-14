@@ -18,7 +18,18 @@ class SubscriptionController extends Controller
         $student = auth('web')->user();
 
         return Inertia::render('Student/Subscription/Plans', [
-            'plans' => Plan::where('is_active', true)->orderBy('price_monthly')->get(),
+            'plans' => Plan::where('is_active', true)->orderBy('duration_months')->orderBy('price_monthly')->get(),
+            'customPlanConfig' => [
+                'enabled' => filter_var(app(\App\Services\SiteSettingService::class)->get('custom_plan_enabled', true), FILTER_VALIDATE_BOOLEAN),
+                'base_fee' => (float) app(\App\Services\SiteSettingService::class)->get('custom_plan_base_fee', 35.0),
+                'min_monthly' => (float) app(\App\Services\SiteSettingService::class)->get('custom_plan_min_monthly', 149.0),
+                'rate_minute' => (float) app(\App\Services\SiteSettingService::class)->get('custom_plan_rate_minute', 0.22),
+                'rate_image' => (float) app(\App\Services\SiteSettingService::class)->get('custom_plan_rate_image', 1.10),
+                'rate_book' => (float) app(\App\Services\SiteSettingService::class)->get('custom_plan_rate_book', 14.00),
+                'rate_reupload' => (float) app(\App\Services\SiteSettingService::class)->get('custom_plan_rate_reupload', 5.00),
+                'rate_quiz' => (float) app(\App\Services\SiteSettingService::class)->get('custom_plan_rate_quiz', 2.50),
+                'rate_explanation' => (float) app(\App\Services\SiteSettingService::class)->get('custom_plan_rate_explanation', 1.00),
+            ],
             'activeSubscription' => $student ? $student->activeSubscription()->with('plan')->first() : null,
         ]);
     }

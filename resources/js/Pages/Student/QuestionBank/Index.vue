@@ -33,6 +33,8 @@ const props = defineProps({
     filters: Object,
     isPaid: Boolean,
     studentType: String,
+    lockedToGoal: Boolean,
+    studentGoal: String,
     activeSector: { type: String, default: 'admission' },
     sectorCounts: { type: Object, default: () => ({ admission: 0, job: 0, hsc: 0, ssc: 0 }) },
 });
@@ -147,6 +149,7 @@ const testError = ref('');
 
 // Switch sector
 function setSector(secKey) {
+    if (props.lockedToGoal) return;
     if (currentSector.value === secKey) return;
     currentSector.value = secKey;
     selectedSubjectId.value = '';
@@ -248,8 +251,26 @@ async function handleGenerateTest() {
 <template>
     <Head title="প্রশ্নব্যাংক ও অনুশীলন | Sikhun.com" />
     <StudentLayout>
-        <!-- Sector Selector Navigation Pills -->
-        <nav class="mb-4 flex flex-wrap items-center gap-2" aria-label="Question Bank Sectors">
+        <!-- Locked Student Goal Indicator (When student is logged in) -->
+        <div v-if="props.lockedToGoal" class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 shadow-xs">
+            <div class="flex items-center gap-2.5">
+                <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
+                    :class="currentSector === 'job' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20' : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20'">
+                    <component :is="activeSectorData.icon" class="h-3.5 w-3.5 shrink-0" />
+                    <span>আপনার লক্ষ্য: {{ activeSectorData.shortTitle }}</span>
+                </span>
+                <span class="text-xs text-[var(--text-muted)] hidden sm:inline">
+                    আপনার শিক্ষা লক্ষ্য অনুসারে প্রশ্নব্যাংকটি প্রদর্শিত হচ্ছে।
+                </span>
+            </div>
+            <Link href="/profile/settings" class="inline-flex items-center gap-1 text-xs font-semibold text-[var(--primary)] hover:underline">
+                <span>শিক্ষা লক্ষ্য পরিবর্তন করুন</span>
+                <ArrowRightIcon class="h-3.5 w-3.5" />
+            </Link>
+        </div>
+
+        <!-- Sector Selector Navigation Pills (Guest Browsing Only) -->
+        <nav v-else class="mb-4 flex flex-wrap items-center gap-2" aria-label="Question Bank Sectors">
             <button
                 v-for="sec in sectors"
                 :key="sec.key"
@@ -278,6 +299,18 @@ async function handleGenerateTest() {
                 </span>
             </button>
         </nav>
+
+        <!-- Zero question warning for upcoming sectors (e.g. HSC/SSC) -->
+        <div v-if="props.sectorCounts?.[currentSector] === 0" class="mb-6 rounded-2xl border border-dashed border-amber-500/30 bg-amber-500/5 p-8 text-center">
+            <BookOpenIcon class="mx-auto h-12 w-12 text-amber-500/60" />
+            <h3 class="mt-3 font-heading text-lg font-bold text-[var(--text)]">{{ activeSectorData.shortTitle }} প্রশ্নব্যাংক শীঘ্রই যুক্ত করা হচ্ছে</h3>
+            <p class="mt-1 text-sm text-[var(--text-muted)] max-w-md mx-auto">
+                বর্তমানে বিশ্ববিদ্যালয় ভর্তি ও বিসিএস/চাকরি প্রস্তুতি প্রশ্নব্যাংক চালু রয়েছে। আপনি চাইলে প্রোফাইল সেটিংস থেকে স্টাডি লক্ষ্য পরিবর্তন করে অনুশীলন করতে পারেন।
+            </p>
+            <Link href="/profile/settings" class="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[var(--primary)] px-4 py-2 text-xs font-bold text-white shadow-md">
+                স্টাডি লক্ষ্য পরিবর্তন করুন
+            </Link>
+        </div>
 
         <!-- Top Hero Banner with Sector Badge & Title -->
         <header
@@ -825,7 +858,14 @@ async function handleGenerateTest() {
                         </div>
 
                         <!-- Sector selection -->
-                        <div>
+                        <div v-if="props.lockedToGoal" class="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface2)]">
+                            <span class="block text-[10px] font-bold uppercase text-[var(--text-muted)] mb-1">আপনার স্টাডি লক্ষ্য</span>
+                            <div class="font-bold text-sm text-[var(--text)]">{{ activeSectorData.shortTitle }}</div>
+                            <Link href="/profile/settings" class="mt-2 text-xs font-semibold text-[var(--primary)] hover:underline inline-flex items-center gap-1">
+                                লক্ষ্য পরিবর্তন করুন →
+                            </Link>
+                        </div>
+                        <div v-else>
                             <label class="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase">সেক্টর নির্বাচন</label>
                             <div class="grid grid-cols-2 gap-2">
                                 <button

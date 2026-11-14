@@ -118,14 +118,20 @@ class PurchaseService
 
     public function purchaseSubscription(Student $student, Plan $plan, int $months, string $method, ?PaymentGatewayContract $gateway = null): array
     {
-        $baseAmount = (float) $plan->price_monthly * $months;
-        $discountFactor = match ($months) {
-            3 => 0.90,
-            6 => 0.80,
-            12 => 0.70,
-            default => 1.0,
-        };
-        $amount = round($baseAmount * $discountFactor, 2);
+        if ($plan->price_total > 0 && ($months === (int) $plan->duration_months || $months <= 1)) {
+            $amount = (float) $plan->price_total;
+            $baseAmount = $amount;
+            $months = (int) ($plan->duration_months ?: 1);
+        } else {
+            $baseAmount = (float) $plan->price_monthly * $months;
+            $discountFactor = match ($months) {
+                3 => 0.90,
+                6 => 0.80,
+                12 => 0.70,
+                default => 1.0,
+            };
+            $amount = round($baseAmount * $discountFactor, 2);
+        }
 
         // Instant fulfillment for Free Plan (0 Tk)
         if ($amount <= 0 || $plan->is_free || $method === 'free') {

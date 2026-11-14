@@ -15,7 +15,10 @@ const isEdit = !!props.plan;
 const form = useForm({
     name: props.plan?.name ?? '',
     slug: props.plan?.slug ?? '',
+    badge_text: props.plan?.badge_text ?? '',
     target_segment: props.plan?.target_segment ?? 'all',
+    duration_months: props.plan?.duration_months ?? 1,
+    price_total: props.plan?.price_total ?? (props.plan?.price_monthly ? Number(props.plan.price_monthly) : null),
     description: props.plan?.description ?? '',
     price_monthly: props.plan?.price_monthly ?? 0,
     ai_chat_minutes: props.plan?.ai_chat_minutes ?? 60,
@@ -37,6 +40,13 @@ watch(() => form.name, (val) => {
     if (!slugTouched) form.slug = val.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 });
 
+// Auto-sync monthly and total price when duration changes
+watch([() => form.price_total, () => form.duration_months], ([total, months]) => {
+    if (total && months > 0 && (!form.price_monthly || form.price_monthly == Math.round((total / months) * 100) / 100)) {
+        form.price_monthly = Math.round((total / months) * 100) / 100;
+    }
+});
+
 function submit() {
     isEdit ? form.put(`/admin/plans/${props.plan.id}`) : form.post('/admin/plans');
 }
@@ -47,9 +57,15 @@ function submit() {
     <AdminLayout>
         <h1 class="font-heading text-2xl font-extrabold mb-6">{{ isEdit ? t('common.edit') : t('admin.plans.new') }}</h1>
         <form @submit.prevent="submit" class="max-w-xl space-y-5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-            <div>
-                <label class="block text-sm font-medium mb-1.5">{{ t('common.name') }}</label>
-                <input v-model="form.name" type="text" required class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">{{ t('common.name') }}</label>
+                    <input v-model="form.name" type="text" required class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Badge Text (যেমন: 3 Months Crash, 20% Mega Savings)</label>
+                    <input v-model="form.badge_text" type="text" placeholder="e.g. 3 Months Crash Course" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+                </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -59,13 +75,25 @@ function submit() {
                 <div>
                     <label class="block text-sm font-medium mb-1.5">Target Segment (টার্গেট সেগমেন্ট)</label>
                     <select v-model="form.target_segment" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)] font-semibold text-sm">
-                        <option value="all">🌐 All Students (সকল শিক্ষার্থী)</option>
+                        <option value="all">🌐 All Students / General (সকল শিক্ষার্থী)</option>
                         <option value="admission">🎓 University Admission (বিশ্ববিদ্যালয় ভর্তি)</option>
                         <option value="job">💼 BCS & Govt Jobs (বিসিএস ও চাকরি)</option>
                         <option value="hsc">📘 HSC (উচ্চ মাধ্যমিক)</option>
                         <option value="ssc">📗 SSC (মাধ্যমিক)</option>
                         <option value="custom">⚡ Custom / Special Plan (কাস্টম প্যাকেজ)</option>
                     </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Duration in Months (মেয়াদ - মাস)</label>
+                    <input v-model.number="form.duration_months" type="number" min="1" max="60" required class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)] font-bold" />
+                    <span class="text-[11px] text-[var(--text-muted)]">১ মাস, ২ মাস, ৩ মাস বা ৬ মাস ইত্যাদি</span>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Total Package Price (প্যাকেজের মোট মূল্য ৳)</label>
+                    <input v-model.number="form.price_total" type="number" step="0.01" min="0" placeholder="e.g. 450" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)] font-bold text-emerald-600 dark:text-emerald-400" />
+                    <span class="text-[11px] text-[var(--text-muted)]">৩ মাস বা ৬ মাসের বান্ডেল মোট মূল্য (যেমনঃ ৳৪৫০ বা ৳৮৫০)</span>
                 </div>
             </div>
             <div>
@@ -76,8 +104,9 @@ function submit() {
             <!-- Limits & Pricing Grid -->
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium mb-1.5">{{ t('admin.plans.price_monthly') }} (৳)</label>
+                    <label class="block text-sm font-medium mb-1.5">{{ t('admin.plans.price_monthly') }} (মাসিক সমতুল্য ৳)</label>
                     <input v-model="form.price_monthly" type="number" step="0.01" min="0" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+                    <span class="text-[11px] text-[var(--text-muted)]">মাসিক সমতুল্য রেট (মোট মূল্য / মেয়াদ)</span>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1.5">{{ t('admin.plans.trial_minutes') }}</label>

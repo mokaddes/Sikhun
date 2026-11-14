@@ -99,6 +99,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('courses/video/merge', [CourseVideoUploadController::class, 'mergeChunks'])->name('courses.video.merge');
 
         Route::post('plans/sync-pagepilot', [PlanController::class, 'syncToPagePilot'])->name('plans.sync-pagepilot');
+        Route::post('plans/custom-config', [PlanController::class, 'updateCustomConfig'])->name('plans.custom-config');
         Route::resource('plans', PlanController::class)->except(['show']);
 
         Route::resource('coupons', CouponController::class)->except(['show']);

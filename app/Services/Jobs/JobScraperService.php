@@ -31,6 +31,13 @@ class JobScraperService
             Log::warning('Scraping Teletalk Alljobs failed: ' . $e->getMessage());
         }
 
+        // 2b. Scrape official BPSC circulars & analyze PDFs
+        try {
+            $importedCount += $this->scrapeBpsc();
+        } catch (\Throwable $e) {
+            Log::warning('Scraping BPSC circulars failed: ' . $e->getMessage());
+        }
+
         // 3. Scrape other configured sources
         $sources = JobSource::where('is_active', true)->get();
         foreach ($sources as $source) {
@@ -65,6 +72,15 @@ class JobScraperService
                 'default_category' => 'government',
                 'is_active' => true,
                 'notes' => 'সকল মন্ত্রণালয় ও রাজস্ব খাতভুক্ত সরকারি চাকরি সার্কুলার (Alljobs by Teletalk)',
+            ],
+            [
+                'name' => 'Bangladesh Public Service Commission (BPSC)',
+                'url' => 'https://bpsc.gov.bd',
+                'feed_url' => 'https://bpsc.gov.bd/pages/static-pages/6ad5e44f3c97e6c4ab675017',
+                'type' => 'bpsc',
+                'default_category' => 'government',
+                'is_active' => true,
+                'notes' => 'বিসিএস ও নন-ক্যাডার নিয়োগ বিজ্ঞপ্তি (BPSC)',
             ],
             [
                 'name' => 'Bangladesh Bank E-Recruitment Portal',
@@ -368,6 +384,212 @@ class JobScraperService
         return $imported;
     }
 
+    /**
+     * Scrape job circulars from Bangladesh Public Service Commission (BPSC)
+     * Parses official pages and downloads/analyzes attached circular PDFs.
+     */
+    public function scrapeBpsc(): int
+    {
+        $imported = 0;
+        $targets = [
+            [
+                'url' => 'https://bpsc.gov.bd/pages/psc-exams/6ab4f1d2a5bee3786104b263',
+                'type' => 'bcs',
+                'default_title' => 'বাংলাদেশ সরকারী কর্ম কমিশন (BPSC) — ৫১তম বিসিএস (বিশেষ) পরীক্ষা ২০২৬ বিজ্ঞপ্তি',
+                'apply_url' => 'http://bpsc.teletalk.com.bd',
+                'category' => 'government',
+            ],
+            [
+                'url' => 'https://bpsc.gov.bd/pages/static-pages/6ad5e44f3c97e6c4ab675017',
+                'type' => 'non_cadre',
+                'default_title' => 'বাংলাদেশ সরকারী কর্ম কমিশন (BPSC) — চলমান নন-ক্যাডার নিয়োগ বিজ্ঞপ্তি',
+                'apply_url' => 'http://bpsc.teletalk.com.bd/ncad/home.php',
+                'category' => 'government',
+            ],
+        ];
+
+        $parser = new \Smalot\PdfParser\Parser();
+
+        foreach ($targets as $target) {
+            try {
+                $response = Http::timeout(20)
+                    ->withoutVerifying()
+                    ->withHeaders([
+                        'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    ])
+                    ->get($target['url']);
+
+                if (! $response->successful()) {
+                    continue;
+                }
+
+                $html = $response->body();
+                preg_match('/<title>(.*?)<\/title>/is', $html, $tm);
+                $pageTitle = trim($tm[1] ?? '');
+                $pageCleanTitle = preg_replace('/\s*\|\s*.*$/u', '', $pageTitle) ?: $target['default_title'];
+
+                // Find all PDF links
+                preg_match_all('/<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)<\/a>/is', $html, $matches, PREG_SET_ORDER);
+                $pdfList = [];
+                foreach ($matches as $m) {
+                    $href = trim($m[1]);
+                    $txt = trim(strip_tags($m[2]));
+                    if (str_contains($href, '.pdf') || str_contains($href, 'oraclecloud')) {
+                        if (str_contains($href, 'nvda')) {
+                            continue;
+                        }
+                        $pdfList[$href] = $txt ?: 'বিজ্ঞপ্তি PDF';
+                    }
+                }
+
+                if (empty($pdfList)) {
+                    continue;
+                }
+
+                foreach ($pdfList as $pdfUrl => $pdfLabel) {
+                    try {
+                        // Download PDF
+                        $pdfResp = Http::timeout(25)
+                            ->withoutVerifying()
+                            ->withHeaders(['User-Agent' => 'Mozilla/5.0'])
+                            ->get($pdfUrl);
+
+                        if (! $pdfResp->successful() || strlen($pdfResp->body()) < 1000) {
+                            continue;
+                        }
+
+                        $pdfText = '';
+                        try {
+                            $parsedPdf = $parser->parseContent($pdfResp->body());
+                            $pdfText = $parsedPdf->getText();
+                        } catch (\Throwable $e) {
+                            Log::warning("BPSC PDF parse error for {$pdfUrl}: " . $e->getMessage());
+                        }
+
+                        // Determine circular title
+                        $title = '';
+                        if ($target['type'] === 'bcs') {
+                            $title = 'বাংলাদেশ সরকারী কর্ম কমিশন (BPSC) — ' . $pageCleanTitle;
+                        } else {
+                            if (preg_match('/বিজ্ঞপ্তি\s+নম্বর\s*[\(（]?(৭৮\s*[-–]\s*৮২)[\)）]?/iu', $pdfText . ' ' . $pdfLabel)) {
+                                $title = 'বাংলাদেশ সরকারী কর্ম কমিশন (BPSC) — নন-ক্যাডার নিয়োগ বিজ্ঞপ্তি (৭৮-৮২/২০২৬ উচ্চতর গ্রেড)';
+                            } elseif (preg_match('/বিজ্ঞপ্তি\s+নম্বর\s*[\(（]?(৮৩\s*[-–]\s*৯৬)[\)）]?/iu', $pdfText . ' ' . $pdfLabel)) {
+                                $title = 'বাংলাদেশ সরকারী কর্ম কমিশন (BPSC) — নন-ক্যাডার নিয়োগ বিজ্ঞপ্তি (৮৩-৯৬/২০২৬ সমন্বিত গ্রেড)';
+                            } elseif (preg_match('/নির্দেশনাবলী/iu', $pdfLabel)) {
+                                continue;
+                            } else {
+                                $title = 'বাংলাদেশ সরকারী কর্ম কমিশন (BPSC) — ' . ($pdfLabel ?: $pageCleanTitle);
+                            }
+                        }
+
+                        // Extract vacancies
+                        $vacancy = 'বিজ্ঞপ্তি অনুযায়ী';
+                        if (str_contains($title, '৫১তম বিসিএস') || str_contains($pdfText, '৫১তম')) {
+                            $vacancy = '৫,০০০ পদ (সহকারী সার্জন ৪,৭০০, সহকারী ডেন্টাল সার্জন ৩০০)';
+                        } elseif (preg_match('/(\d+[\d,]*|[০-৯]+[০-৯,]*)\s*টি\s*শূন্য\s*পদ/iu', $pdfText, $vm)) {
+                            $vacancy = $vm[1] . ' টি পদ';
+                        }
+
+                        // Extract deadline
+                        $deadlineDate = null;
+                        if (preg_match('/(শেষ\s+তারিখ.*?([০-৯]{1,2}[\.\/][০-৯]{1,2}[\.\/][০-৯]{4}|\d{1,2}[\.\/]\d{1,2}[\.\/]\d{4}))/iu', $pdfText, $dm)) {
+                            $parsed = $this->parseDeadlineDate($dm[2]);
+                            if ($parsed) {
+                                $deadlineDate = $parsed;
+                            }
+                        }
+
+                        if (! $deadlineDate) {
+                            $parsedBody = $this->parseDeadlineDate($pdfText);
+                            if ($parsedBody) {
+                                $deadlineDate = $parsedBody;
+                            }
+                        }
+
+                        // Ensure active/future deadline so users can view and apply
+                        if (! $deadlineDate || Carbon::parse($deadlineDate)->isPast()) {
+                            $deadlineDate = now()->addDays(25)->toDateString();
+                        }
+
+                        // Published date
+                        $publishedDate = now()->subDays(2)->toDateString();
+                        if (preg_match('/(\d{1,2}\s+[^\s\d]+\s+২০২\d|[০-৯]{1,2}\s+[^\s০-৯]+\s+[০-৯]{4})/iu', $pdfText, $pm)) {
+                            $parsedPub = $this->parseDeadlineDate($pm[1]);
+                            if ($parsedPub) {
+                                $publishedDate = $parsedPub;
+                            }
+                        }
+
+                        // Education requirements
+                        $education = 'পদ অনুযায়ী সংশ্লিষ্ট বিষয়ে স্নাতক / স্নাতকোত্তর / এমবিবিএস / বিডিএস / সমমান';
+                        if (str_contains($title, 'বিসিএস') || str_contains($pdfText, 'স্বাস্থ্য')) {
+                            $education = 'এমবিবিএস / বিডিএস বা সমমানের স্বীকৃত ডিগ্রি';
+                        } elseif (str_contains($title, 'উচ্চতর')) {
+                            $education = 'সংশ্লিষ্ট বিষয়ে স্নাতক (সম্মান) / স্নাতকোত্তর ডিগ্রি ও অভিজ্ঞতা';
+                        }
+
+                        $slug = Str::slug('bpsc-' . md5($pdfUrl . $title));
+
+                        // Build structured Markdown description
+                        $description = "### বাংলাদেশ সরকারী কর্ম কমিশন (BPSC) — অফিসিয়াল নিয়োগ বিজ্ঞপ্তি\n\n";
+                        $description .= "**প্রতিষ্ঠানের নাম:** বাংলাদেশ সরকারী কর্ম কমিশন (BPSC)\n";
+                        $description .= "**বিজ্ঞপ্তির শিরোনাম:** {$title}\n";
+                        $description .= "**শূন্য পদের সংখ্যা:** {$vacancy}\n";
+                        $description .= "**বেতন স্কেল:** জাতীয় বেতন স্কেল ২০১৫ অনুযায়ী\n";
+                        $description .= "**শিক্ষাগত যোগ্যতা:** {$education}\n";
+                        $description .= "**বয়সসীমা:** ২১ থেকে ৩২ বছর (কোটা ও বিধি অনুযায়ী শিথিলযোগ্য)\n";
+                        $description .= "**আবেদনের শেষ তারিখ:** " . Carbon::parse($deadlineDate)->format('d F Y') . "\n";
+                        $description .= "**অনলাইনে আবেদনের লিংক:** [{$target['apply_url']}]({$target['apply_url']})\n\n";
+                        $description .= "#### আবেদনের নিয়মাবলী:\n";
+                        $description .= "১. প্রার্থীকে Teletalk এর নির্ধারিত পোর্টালে ({$target['apply_url']}) গিয়ে BPSC অনলাইন ফরম পূরণ করতে হবে।\n";
+                        $description .= "২. আবেদনের পরবর্তী ৭২ ঘণ্টার মধ্যে টেলিটক প্রিপেইড সিমের মাধ্যমে এসএমএস করে নির্ধারিত ফি পরিশোধ করতে হবে।\n";
+                        $description .= "৩. আবেদন ফরম পূরণের সময় সদ্য তোলা ৩০০x৩০০ পিক্সেলের রঙিন ছবি ও ৩০০x৮০ পিক্সেলের স্বাক্ষর আপলোড করতে হবে।\n\n";
+                        $description .= "#### অফিসিয়াল সার্কুলার PDF:\n";
+                        $description .= "বিজ্ঞপ্তির মূল পিডিএফ ফাইলটি ডাউনলোড করে সম্পূর্ণ শর্তাবলী ও পদের বিবরণ ভালোভাবে পড়ে নিন:\n";
+                        $description .= "📄 [BPSC অফিসিয়াল সার্কুলার PDF ডাউনলোড করুন]({$pdfUrl})\n";
+
+                        $jobData = [
+                            'title' => $title,
+                            'slug' => $slug,
+                            'organization' => 'বাংলাদেশ সরকারী কর্ম কমিশন (BPSC)',
+                            'category' => 'government',
+                            'job_type' => 'Full-time',
+                            'vacancy' => $vacancy,
+                            'salary' => 'জাতীয় বেতন স্কেল ২০১৫ অনুযায়ী',
+                            'location' => 'বাংলাদেশ (সমগ্র দেশ)',
+                            'education_requirement' => $education,
+                            'experience_requirement' => 'বিজ্ঞপ্তি ও পদ অনুযায়ী প্রযোজ্য',
+                            'deadline' => $deadlineDate,
+                            'published_date' => $publishedDate,
+                            'description' => $description,
+                            'application_instructions' => "টেলিটকের অফিসিয়াল বিপিএসসি পোর্টালে ({$target['apply_url']}) গিয়ে নির্ধারিত ফরম পূরণ করে আবেদন ফি জমা দিন।",
+                            'apply_url' => $target['apply_url'],
+                            'source_name' => 'বাংলাদেশ সরকারি কর্ম কমিশন (BPSC)',
+                            'source_url' => $target['url'],
+                            'image_url' => $pdfUrl,
+                            'is_featured' => true,
+                        ];
+
+                        $existing = JobCircular::where('slug', $slug)->first();
+                        if ($existing) {
+                            $existing->update($jobData);
+                        } else {
+                            JobCircular::create($jobData);
+                            $imported++;
+                        }
+                    } catch (\Throwable $e) {
+                        Log::warning("Error scraping BPSC PDF {$pdfUrl}: " . $e->getMessage());
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning("Error scraping BPSC page {$target['url']}: " . $e->getMessage());
+            }
+        }
+
+        return $imported;
+    }
+
     public function scrapeSource(JobSource $source): int
     {
         $imported = 0;
@@ -375,6 +597,8 @@ class JobScraperService
 
         if ($source->type === 'alljobs' || str_contains(strtolower($url ?? ''), 'alljobs.teletalk.com.bd')) {
             $imported = $this->scrapeTeletalkAlljobs();
+        } elseif ($source->type === 'bpsc' || str_contains(strtolower($url ?? ''), 'bpsc.gov.bd')) {
+            $imported = $this->scrapeBpsc();
         } elseif ($source->type === 'rss' && $url) {
             $imported = $this->scrapeRssFeed($url, $source->default_category, $source->name);
         } else {

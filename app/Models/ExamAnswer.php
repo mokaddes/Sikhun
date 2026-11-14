@@ -23,6 +23,8 @@ class ExamAnswer extends Model
         'correct_answer',
         'student_answer',
         'is_correct',
+        'resolved',
+        'resolved_at',
         'explanation',
         'subject_id',
         'subject_name',
@@ -42,6 +44,8 @@ class ExamAnswer extends Model
             'subject_id' => 'integer',
             'options' => 'array',
             'is_correct' => 'boolean',
+            'resolved' => 'boolean',
+            'resolved_at' => 'datetime',
             'year' => 'integer',
         ];
     }

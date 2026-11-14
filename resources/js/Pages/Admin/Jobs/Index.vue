@@ -244,10 +244,13 @@ function isExpired(date) {
                         <button
                             type="button"
                             @click="shareFacebook(job)"
-                            class="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20"
-                            title="ফেসবুকে পোস্ট করুন"
+                            class="p-1.5 rounded-lg border border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 relative"
+                            :title="job.fb_shared_count > 0 ? `পুনরায় ফেসবুকে শেয়ার করুন (পূর্বে ${job.fb_shared_count} বার শেয়ার করা হয়েছে)` : 'ফেসবুকে পোস্ট করুন'"
                         >
                             <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                            <span v-if="job.fb_shared_count > 0" class="absolute -top-1 -right-1 px-1 rounded-full text-[8px] font-bold bg-blue-600 text-white leading-tight">
+                                {{ job.fb_shared_count }}
+                            </span>
                         </button>
                         <a
                             :href="`/jobs/${job.slug}`"
@@ -290,6 +293,7 @@ function isExpired(date) {
                             <th class="py-3.5 px-3 whitespace-nowrap">ক্যাটাগরি</th>
                             <th class="py-3.5 px-3 whitespace-nowrap">পদ ও বেতন</th>
                             <th class="py-3.5 px-3 whitespace-nowrap">শেষ তারিখ</th>
+                            <th class="py-3.5 px-3 text-center whitespace-nowrap">ফেসবুক শেয়ার</th>
                             <th class="py-3.5 px-3 text-center whitespace-nowrap">ফিচার্ড</th>
                             <th class="py-3.5 px-3 text-center whitespace-nowrap">ভিউ</th>
                             <th class="py-3.5 px-4 text-right whitespace-nowrap">অ্যাকশন</th>
@@ -338,6 +342,16 @@ function isExpired(date) {
                             </td>
 
                             <td class="py-3.5 px-3 text-center whitespace-nowrap">
+                                <div v-if="job.fb_shared_count > 0" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20" :title="'সর্বশেষ শেয়ার: ' + (job.fb_last_shared_at ? new Date(job.fb_last_shared_at).toLocaleDateString() : 'পূর্বে')">
+                                    <svg class="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                    <span>শেয়ার্ড ({{ job.fb_shared_count }} বার)</span>
+                                </div>
+                                <div v-else class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-[var(--text-muted)] bg-[var(--surface2)] border border-[var(--border)]">
+                                    <span>শেয়ার হয়নি</span>
+                                </div>
+                            </td>
+
+                            <td class="py-3.5 px-3 text-center whitespace-nowrap">
                                 <button
                                     type="button"
                                     @click="toggleFeatured(job)"
@@ -358,10 +372,13 @@ function isExpired(date) {
                                     <button
                                         type="button"
                                         @click="shareFacebook(job)"
-                                        class="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition"
-                                        title="ফেসবুক পেজে পোস্ট করুন (PagePilotBD)"
+                                        class="p-1.5 rounded-lg border border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 relative transition"
+                                        :title="job.fb_shared_count > 0 ? `পুনরায় ফেসবুকে শেয়ার করুন (পূর্বে ${job.fb_shared_count} বার শেয়ার করা হয়েছে)` : 'ফেসবুক পেজে পোস্ট করুন (PagePilotBD)'"
                                     >
                                         <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                        <span v-if="job.fb_shared_count > 0" class="absolute -top-1 -right-1 px-1 rounded-full text-[8px] font-bold bg-blue-600 text-white leading-tight">
+                                            {{ job.fb_shared_count }}
+                                        </span>
                                     </button>
 
                                     <Link

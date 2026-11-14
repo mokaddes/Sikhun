@@ -169,7 +169,13 @@ class AdmissionNoticeController extends Controller
         $result = $social->publishAdmissionNotice($admission);
 
         if ($result['success'] ?? false) {
-            return back()->with('success', 'ফেসবুক পেজে সফলভাবে পোস্ট এবং প্রথম কমেন্ট প্রকাশিত হয়েছে!');
+            $admission->increment('fb_shared_count');
+            $admission->update([
+                'fb_last_shared_at' => now(),
+                'fb_post_id' => $result['post_id'] ?? $result['id'] ?? $admission->fb_post_id,
+            ]);
+
+            return back()->with('success', 'ফেসবুক পেজে সফলভাবে পোস্ট এবং প্রথম কমেন্ট প্রকাশিত হয়েছে! (মোট শেয়ার: ' . $admission->fb_shared_count . ' বার)');
         }
 
         return back()->with('error', 'ফেসবুক পোস্টে ব্যর্থ হয়েছে: ' . ($result['message'] ?? 'অজানা ত্রুটি'));

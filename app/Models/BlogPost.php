@@ -33,6 +33,9 @@ class BlogPost extends Model
         'original_language',
         'ai_meta',
         'view_count',
+        'fb_shared_count',
+        'fb_last_shared_at',
+        'fb_post_id',
         'admin_id',
     ];
 
@@ -44,6 +47,8 @@ class BlogPost extends Model
             'published_at' => 'datetime',
             'ai_meta' => 'array',
             'view_count' => 'integer',
+            'fb_shared_count' => 'integer',
+            'fb_last_shared_at' => 'datetime',
         ];
     }
 

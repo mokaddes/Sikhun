@@ -121,11 +121,11 @@ function formatDateBn(val) {
             <!-- Header -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                    <h1 class="text-2xl font-bold tracking-tight text-[var(--text)] flex items-center gap-2">
                         <AcademicCapIcon class="w-7 h-7 text-orange-500" />
                         <span>বিশ্ববিদ্যালয় ভর্তি বিজ্ঞপ্তি ব্যবস্থাপনা</span>
                     </h1>
-                    <p class="text-sm text-gray-400 mt-1">
+                    <p class="text-sm text-[var(--text-muted)] mt-1">
                         পাবলিক, গুচ্ছ ও বেসরকারি বিশ্ববিদ্যালয়ের অফিসিয়াল সার্কুলার সংগ্রহ, ড্রাফট রিভিউ ও প্রকাশ।
                     </p>
                 </div>
@@ -148,34 +148,34 @@ function formatDateBn(val) {
             <!-- Stats Bar -->
             <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
                 <div class="card p-3 sm:p-4">
-                    <div class="text-xs text-gray-400">মোট সার্কুলার</div>
-                    <div class="text-xl font-bold text-white mt-1">{{ counts.total }}</div>
+                    <div class="text-xs text-[var(--text-muted)]">মোট সার্কুলার</div>
+                    <div class="text-xl font-bold text-[var(--text)] mt-1">{{ toBengaliNumber(counts.total) }}</div>
                 </div>
                 <div class="card p-3 sm:p-4 border-amber-500/30 bg-amber-500/5">
-                    <div class="text-xs text-amber-400 flex items-center gap-1">
+                    <div class="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 font-semibold">
                         <ClockIcon class="w-3.5 h-3.5" />
                         <span>অপেক্ষমাণ ড্রাফট</span>
                     </div>
-                    <div class="text-xl font-bold text-amber-400 mt-1">{{ counts.draft }}</div>
+                    <div class="text-xl font-bold text-amber-600 dark:text-amber-400 mt-1">{{ toBengaliNumber(counts.draft) }}</div>
                 </div>
                 <div class="card p-3 sm:p-4 border-emerald-500/30 bg-emerald-500/5">
-                    <div class="text-xs text-emerald-400 flex items-center gap-1">
+                    <div class="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold">
                         <CheckCircleIcon class="w-3.5 h-3.5" />
                         <span>প্রকাশিত</span>
                     </div>
-                    <div class="text-xl font-bold text-emerald-400 mt-1">{{ counts.published }}</div>
+                    <div class="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{{ toBengaliNumber(counts.published) }}</div>
                 </div>
                 <div class="card p-3 sm:p-4">
-                    <div class="text-xs text-blue-400">পাবলিক</div>
-                    <div class="text-xl font-bold text-blue-400 mt-1">{{ counts.public }}</div>
+                    <div class="text-xs text-blue-600 dark:text-blue-400 font-semibold">পাবলিক</div>
+                    <div class="text-xl font-bold text-blue-600 dark:text-blue-400 mt-1">{{ toBengaliNumber(counts.public) }}</div>
                 </div>
                 <div class="card p-3 sm:p-4">
-                    <div class="text-xs text-purple-400">গুচ্ছ</div>
-                    <div class="text-xl font-bold text-purple-400 mt-1">{{ counts.guccho }}</div>
+                    <div class="text-xs text-purple-600 dark:text-purple-400 font-semibold">গুচ্ছ</div>
+                    <div class="text-xl font-bold text-purple-600 dark:text-purple-400 mt-1">{{ toBengaliNumber(counts.guccho) }}</div>
                 </div>
                 <div class="card p-3 sm:p-4">
-                    <div class="text-xs text-gray-400">বেসরকারি</div>
-                    <div class="text-xl font-bold text-gray-300 mt-1">{{ counts.private }}</div>
+                    <div class="text-xs text-[var(--text-muted)]">বেসরকারি</div>
+                    <div class="text-xl font-bold text-[var(--text)] mt-1">{{ toBengaliNumber(counts.private) }}</div>
                 </div>
             </div>
 
@@ -214,73 +214,84 @@ function formatDateBn(val) {
                 <div
                     v-for="item in notices.data"
                     :key="item.id"
-                    class="card p-4 space-y-3 border border-white/10 bg-[var(--surface)] hover:border-orange-500/30 transition rounded-2xl"
+                    class="card p-4 space-y-3 border border-[var(--border)] bg-[var(--surface)] hover:border-orange-500/30 transition rounded-2xl"
                 >
                     <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0 flex-1">
-                            <span class="text-xs font-bold text-orange-400 block truncate">{{ item.institution_name }}</span>
-                            <h3 class="font-bold text-white text-sm line-clamp-2 mt-0.5">{{ item.title }}</h3>
-                            <span class="text-[10px] text-gray-400 mt-0.5 block">সেশন: {{ item.academic_year }}</span>
+                            <span class="text-xs font-bold text-orange-600 dark:text-orange-400 block truncate">{{ item.institution_name }}</span>
+                            <h3 class="font-bold text-[var(--text)] text-sm line-clamp-2 mt-0.5">{{ item.title }}</h3>
+                            <span class="text-[10px] text-[var(--text-muted)] mt-0.5 block">সেশন: {{ item.academic_year }}</span>
                         </div>
                         <span
                             :class="[
                                 'px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0',
-                                item.university_type === 'public' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                item.university_type === 'guccho' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                                'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                item.university_type === 'public' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' :
+                                item.university_type === 'guccho' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' :
+                                'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                             ]"
                         >
                             {{ formatType(item.university_type) }}
                         </span>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-[11px]">
+                    <div class="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-[var(--surface2)] border border-[var(--border)] text-[11px]">
                         <div>
-                            <span class="text-gray-400 block text-[10px]">শেষ তারিখ:</span>
-                            <span class="text-white font-medium">{{ formatDateBn(item.application_deadline_text || item.application_deadline) }}</span>
+                            <span class="text-[var(--text-muted)] block text-[10px]">শেষ তারিখ:</span>
+                            <span class="text-[var(--text)] font-medium">{{ formatDateBn(item.application_deadline_text || item.application_deadline) }}</span>
                         </div>
                         <div>
-                            <span class="text-gray-400 block text-[10px]">আবেদন ফি:</span>
-                            <span class="text-emerald-400 font-semibold">{{ item.application_fee || '-' }}</span>
+                            <span class="text-[var(--text-muted)] block text-[10px]">আবেদন ফি:</span>
+                            <span class="text-emerald-600 dark:text-emerald-400 font-semibold">{{ item.application_fee || '-' }}</span>
                         </div>
                         <div class="col-span-2" v-if="item.total_gpa_required">
-                            <span class="text-gray-400 block text-[10px]">ন্যূনতম জিপিএ:</span>
-                            <span class="text-gray-300 line-clamp-2">{{ item.total_gpa_required }}</span>
+                            <span class="text-[var(--text-muted)] block text-[10px]">ন্যূনতম জিপিএ:</span>
+                            <span class="text-[var(--text)] line-clamp-2">{{ item.total_gpa_required }}</span>
+                        </div>
+                        <div class="col-span-2 flex items-center justify-between pt-1 border-t border-[var(--border)]">
+                            <span class="text-[var(--text-muted)] text-[10px]">ফেসবুক শেয়ার:</span>
+                            <span v-if="item.fb_shared_count > 0" class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                                <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                <span>{{ toBengaliNumber(item.fb_shared_count) }} বার শেয়ার্ড</span>
+                            </span>
+                            <span v-else class="text-[10px] text-[var(--text-muted)]">শেয়ার হয়নি</span>
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-between gap-2 pt-2 border-t border-white/5">
+                    <div class="flex items-center justify-between gap-2 pt-2 border-t border-[var(--border)]">
                         <button
                             @click="togglePublish(item)"
                             :class="[
                                 'px-2.5 py-1 rounded-full text-[10px] font-bold transition flex items-center gap-1',
                                 item.status === 'published'
-                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                             ]"
                         >
-                            <span class="w-1.5 h-1.5 rounded-full" :class="item.status === 'published' ? 'bg-emerald-400' : 'bg-amber-400'"></span>
+                            <span class="w-1.5 h-1.5 rounded-full" :class="item.status === 'published' ? 'bg-emerald-500' : 'bg-amber-500'"></span>
                             <span>{{ item.status === 'published' ? 'Published' : 'Draft' }}</span>
                         </button>
 
                         <div class="flex items-center gap-1">
                             <button
                                 @click="shareFacebook(item)"
-                                class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
-                                title="ফেসবুকে পোস্ট করুন"
+                                class="p-1.5 rounded-lg border border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 relative"
+                                :title="item.fb_shared_count > 0 ? `পুনরায় শেয়ার করুন (পূর্বে ${toBengaliNumber(item.fb_shared_count)} বার শেয়ার করা হয়েছে)` : 'ফেসবুকে পোস্ট করুন'"
                             >
                                 <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                <span v-if="item.fb_shared_count > 0" class="absolute -top-1 -right-1 px-1 rounded-full text-[8px] font-bold bg-blue-600 text-white leading-tight">
+                                    {{ item.fb_shared_count }}
+                                </span>
                             </button>
                             <button
                                 @click="previewNotice = item"
-                                class="p-1.5 rounded-lg bg-white/5 text-gray-300 hover:text-white hover:bg-white/10"
+                                class="p-1.5 rounded-lg bg-[var(--surface2)] text-[var(--text-muted)] hover:text-[var(--text)] border border-[var(--border)]"
                                 title="প্রিভিউ"
                             >
                                 <EyeIcon class="w-4 h-4" />
                             </button>
                             <Link
                                 :href="`/admin/admissions/${item.id}/edit`"
-                                class="p-1.5 rounded-lg bg-white/5 text-gray-300 hover:text-white hover:bg-white/10"
+                                class="p-1.5 rounded-lg bg-[var(--surface2)] text-[var(--text-muted)] hover:text-[var(--text)] border border-[var(--border)]"
                                 title="সম্পাদনা"
                             >
                                 <PencilSquareIcon class="w-4 h-4" />
@@ -288,7 +299,7 @@ function formatDateBn(val) {
                             <ConfirmButton
                                 @confirm="deleteNotice(item)"
                                 confirm-message="আপনি কি এই ভর্তি বিজ্ঞপ্তিটি মুছে ফেলতে চান?"
-                                class="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
+                                class="p-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 border border-rose-500/20"
                                 title="মুছুন"
                             >
                                 <TrashIcon class="w-4 h-4" />
@@ -302,41 +313,51 @@ function formatDateBn(val) {
             <div class="card overflow-hidden hidden md:block">
                 <div class="overflow-x-auto">
                     <table class="table w-full text-left text-xs">
-                        <thead class="border-b border-white/5 bg-white/[0.02] text-gray-400 uppercase">
+                        <thead class="border-b border-[var(--border)] bg-[var(--surface2)] text-[var(--text-muted)] uppercase">
                             <tr>
                                 <th class="p-3">প্রতিষ্ঠান ও শিরোনাম</th>
                                 <th class="p-3 whitespace-nowrap">ক্যাটাগরি</th>
                                 <th class="p-3 whitespace-nowrap">শেষ তারিখ</th>
                                 <th class="p-3">জিপিএ / ফি</th>
+                                <th class="p-3 whitespace-nowrap text-center">ফেসবুক শেয়ার</th>
                                 <th class="p-3 whitespace-nowrap text-center">স্ট্যাটাস</th>
                                 <th class="p-3 whitespace-nowrap text-right">অ্যাকশন</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-white/5">
-                            <tr v-for="item in notices.data" :key="item.id" class="hover:bg-white/[0.02]">
+                        <tbody class="divide-y divide-[var(--border)]">
+                            <tr v-for="item in notices.data" :key="item.id" class="hover:bg-[var(--surface2)]/50 transition">
                                 <td class="p-3 max-w-[220px] lg:max-w-xs">
-                                    <div class="font-bold text-orange-400 text-[11px] mb-0.5 truncate" :title="item.institution_name">{{ item.institution_name }}</div>
-                                    <div class="font-medium text-white line-clamp-2" :title="item.title">{{ item.title }}</div>
-                                    <div class="text-[10px] text-gray-400 mt-0.5">সেশন: {{ item.academic_year }}</div>
+                                    <div class="font-bold text-orange-600 dark:text-orange-400 text-[11px] mb-0.5 truncate" :title="item.institution_name">{{ item.institution_name }}</div>
+                                    <div class="font-semibold text-[var(--text)] line-clamp-2" :title="item.title">{{ item.title }}</div>
+                                    <div class="text-[10px] text-[var(--text-muted)] mt-0.5">সেশন: {{ item.academic_year }}</div>
                                 </td>
                                 <td class="p-3 whitespace-nowrap">
                                     <span
                                         :class="[
                                             'px-2 py-0.5 rounded-full text-[10px] font-bold border',
-                                            item.university_type === 'public' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                            item.university_type === 'guccho' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                                            'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                            item.university_type === 'public' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' :
+                                            item.university_type === 'guccho' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' :
+                                            'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                                         ]"
                                     >
                                         {{ formatType(item.university_type) }}
                                     </span>
                                 </td>
                                 <td class="p-3 whitespace-nowrap">
-                                    <div class="text-white font-medium">{{ formatDateBn(item.application_deadline_text || item.application_deadline) }}</div>
+                                    <div class="text-[var(--text)] font-semibold">{{ formatDateBn(item.application_deadline_text || item.application_deadline) }}</div>
                                 </td>
                                 <td class="p-3 max-w-[170px]">
-                                    <div class="text-gray-300 truncate text-[11px]" :title="item.total_gpa_required">{{ item.total_gpa_required || 'সার্কুলার দেখুন' }}</div>
-                                    <div class="text-emerald-400 text-[10px] font-semibold truncate" :title="item.application_fee">{{ item.application_fee || '-' }}</div>
+                                    <div class="text-[var(--text)] truncate text-[11px]" :title="item.total_gpa_required">{{ item.total_gpa_required || 'সার্কুলার দেখুন' }}</div>
+                                    <div class="text-emerald-600 dark:text-emerald-400 text-[10px] font-bold truncate" :title="item.application_fee">{{ item.application_fee || '-' }}</div>
+                                </td>
+                                <td class="p-3 whitespace-nowrap text-center">
+                                    <div v-if="item.fb_shared_count > 0" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20" :title="'সর্বশেষ শেয়ার: ' + (item.fb_last_shared_at ? formatDateBn(item.fb_last_shared_at) : 'পূর্বে')">
+                                        <svg class="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                        <span>শেয়ার্ড ({{ toBengaliNumber(item.fb_shared_count) }} বার)</span>
+                                    </div>
+                                    <div v-else class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-[var(--text-muted)] bg-[var(--surface2)] border border-[var(--border)]">
+                                        <span>শেয়ার হয়নি</span>
+                                    </div>
                                 </td>
                                 <td class="p-3 whitespace-nowrap text-center">
                                     <button
@@ -344,12 +365,12 @@ function formatDateBn(val) {
                                         :class="[
                                             'px-2.5 py-1 rounded-full text-[10px] font-bold transition inline-flex items-center gap-1',
                                             item.status === 'published'
-                                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20'
-                                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20'
+                                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20'
+                                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20'
                                         ]"
                                         :title="item.status === 'published' ? 'ড্রাফট করতে ক্লিক করুন' : 'পাবলিশ করতে ক্লিক করুন'"
                                     >
-                                        <span class="w-1.5 h-1.5 rounded-full" :class="item.status === 'published' ? 'bg-emerald-400' : 'bg-amber-400'"></span>
+                                        <span class="w-1.5 h-1.5 rounded-full" :class="item.status === 'published' ? 'bg-emerald-500' : 'bg-amber-500'"></span>
                                         <span>{{ item.status === 'published' ? 'Published' : 'Draft' }}</span>
                                     </button>
                                 </td>
@@ -358,22 +379,25 @@ function formatDateBn(val) {
                                         <!-- Share to Facebook via PagePilotBD -->
                                         <button
                                             @click="shareFacebook(item)"
-                                            class="p-1.5 rounded hover:bg-blue-500/20 text-blue-400 transition"
-                                            title="ফেসবুক পেজে পোস্ট করুন (PagePilotBD)"
+                                            class="p-1.5 rounded-lg border border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 relative transition"
+                                            :title="item.fb_shared_count > 0 ? `পুনরায় ফেসবুকে শেয়ার করুন (পূর্বে ${toBengaliNumber(item.fb_shared_count)} বার শেয়ার করা হয়েছে)` : 'ফেসবুকে পোস্ট করুন (PagePilotBD)'"
                                         >
                                             <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                            <span v-if="item.fb_shared_count > 0" class="absolute -top-1 -right-1 px-1 rounded-full text-[8px] font-bold bg-blue-600 text-white leading-tight">
+                                                {{ item.fb_shared_count }}
+                                            </span>
                                         </button>
                                         <!-- Pre-publish Preview Modal trigger -->
                                         <button
                                             @click="previewNotice = item"
-                                            class="p-1.5 rounded hover:bg-white/10 text-gray-300 hover:text-white transition"
+                                            class="p-1.5 rounded-lg bg-[var(--surface2)] text-[var(--text-muted)] hover:text-[var(--text)] border border-[var(--border)] transition"
                                             title="প্রিভিউ দেখুন"
                                         >
                                             <EyeIcon class="w-4 h-4" />
                                         </button>
                                         <Link
                                             :href="`/admin/admissions/${item.id}/edit`"
-                                            class="p-1.5 rounded hover:bg-white/10 text-gray-300 hover:text-white transition"
+                                            class="p-1.5 rounded-lg bg-[var(--surface2)] text-[var(--text-muted)] hover:text-[var(--text)] border border-[var(--border)] transition"
                                             title="এডিট করুন"
                                         >
                                             <PencilSquareIcon class="w-4 h-4" />
@@ -381,7 +405,7 @@ function formatDateBn(val) {
                                         <ConfirmButton
                                             @confirm="deleteNotice(item)"
                                             confirm-message="আপনি কি এই ভর্তি বিজ্ঞপ্তিটি মুছে ফেলতে চান?"
-                                            class="p-1.5 rounded hover:bg-rose-500/20 text-rose-400 transition"
+                                            class="p-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 border border-rose-500/20 transition"
                                             title="মুছে ফেলুন"
                                         >
                                             <TrashIcon class="w-4 h-4" />
@@ -393,11 +417,11 @@ function formatDateBn(val) {
                     </table>
                 </div>
 
-                <div v-if="!notices.data?.length" class="p-8 text-center text-gray-400 text-xs">
+                <div v-if="!notices.data?.length" class="p-8 text-center text-[var(--text-muted)] text-xs">
                     কোনো ভর্তি বিজ্ঞপ্তি পাওয়া যায়নি।
                 </div>
 
-                <div v-if="notices.links?.length > 3" class="p-4 border-t border-white/5">
+                <div v-if="notices.links?.length > 3" class="p-4 border-t border-[var(--border)]">
                     <Pagination :links="notices.links" />
                 </div>
             </div>

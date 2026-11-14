@@ -28,8 +28,9 @@ const siteName = computed(() => site?.name || 'Sikhun.com');
         <meta property="og:title" :content="seo.title" />
         <meta property="og:description" :content="seo.description" />
         <meta v-if="ogImage" property="og:image" :content="ogImage" />
+        <meta v-if="ogImage" property="og:image:alt" :content="seo.title" />
         <meta property="og:url" :content="seo.canonical" />
-        <meta property="og:type" content="website" />
+        <meta property="og:type" :content="seo.og_type || 'website'" />
         <meta property="og:site_name" :content="siteName" />
         <meta property="og:locale" :content="locale === 'bn' ? 'bn_BD' : 'en_US'" />
 

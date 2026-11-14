@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
+import ShareActions from '@/Components/ShareActions.vue';
 import { useI18n } from '@/i18n';
 
 const props = defineProps({
@@ -15,14 +16,6 @@ const props = defineProps({
 
 const { t, locale } = useI18n();
 const en = computed(() => locale.value === 'en');
-const copied = ref(false);
-
-function copyShareLink() {
-    if (typeof window === 'undefined') return;
-    navigator.clipboard?.writeText(window.location.href);
-    copied.value = true;
-    setTimeout(() => { copied.value = false; }, 2000);
-}
 </script>
 
 <template>
@@ -101,13 +94,7 @@ function copyShareLink() {
                 <Link href="/blog" class="text-sm font-semibold text-[var(--primary)] hover:underline">
                     ← {{ t('blog_page.all_posts') }}
                 </Link>
-                <button
-                    type="button"
-                    @click="copyShareLink"
-                    class="px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface2)] text-xs font-semibold hover:border-[var(--primary)]"
-                >
-                    {{ copied ? t('referral_page.copied') : t('blog_page.share_link') }}
-                </button>
+                <ShareActions :title="post.title" :description="post.excerpt || ''" :en="en" />
             </div>
 
             <!-- Conversion CTA: Books & Courses -->

@@ -102,7 +102,7 @@ const statusBadge = (s) => ({
             <div class="hero-glow pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full"></div>
             <div class="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div class="min-w-0">
-                    <span class="eyebrow">{{ locale === 'en' ? 'Executive Dashboard' : 'অ্যাডমিন ড্যাশবোর্ড' }}</span>
+                    <span class="eyebrow" :class="{ '!tracking-normal !normal-case': locale === 'bn' }">{{ locale === 'en' ? 'Executive Dashboard' : 'অ্যাডমিন ড্যাশবোর্ড' }}</span>
                     <h1 class="mt-2 font-heading text-2xl font-extrabold leading-tight sm:text-3xl text-[var(--text)]">
                         {{ locale === 'en' ? 'Welcome back' : 'স্বাগতম' }}, {{ admin?.name?.split(' ')[0] }} <span class="inline-block">👋</span>
                     </h1>

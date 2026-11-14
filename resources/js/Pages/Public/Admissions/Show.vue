@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
+import ShareActions from '@/Components/ShareActions.vue';
 import { useI18n } from '@/i18n';
 
 const props = defineProps({
@@ -332,6 +333,7 @@ const typeLabel = computed(() => {
                                 <h1 class="text-2xl md:text-4xl font-extrabold font-heading text-gray-900 dark:text-white leading-tight">
                                     {{ notice.title }}
                                 </h1>
+                                <div class="mt-4"><ShareActions :title="notice.title" :description="notice.institution_name || ''" :en="en" /></div>
                             </div>
 
                             <!-- Real-Time Countdown Hero Banner (Matching official portal admission.eis.du.ac.bd) -->

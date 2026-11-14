@@ -27,6 +27,9 @@ class JobCircular extends Model
         'image_url',
         'is_featured',
         'views_count',
+        'fb_shared_count',
+        'fb_last_shared_at',
+        'fb_post_id',
     ];
 
     protected function casts(): array
@@ -36,6 +39,8 @@ class JobCircular extends Model
             'published_date' => 'date',
             'is_featured' => 'boolean',
             'views_count' => 'integer',
+            'fb_shared_count' => 'integer',
+            'fb_last_shared_at' => 'datetime',
         ];
     }
 

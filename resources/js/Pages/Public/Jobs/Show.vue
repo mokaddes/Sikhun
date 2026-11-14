@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
+import ShareActions from '@/Components/ShareActions.vue';
 import { useI18n } from '@/i18n';
 import {
     BriefcaseIcon,
@@ -14,7 +15,6 @@ import {
     AcademicCapIcon,
     CalculatorIcon,
     ArrowTopRightOnSquareIcon,
-    ShareIcon,
     CheckCircleIcon,
     ClockIcon,
     ArrowLeftIcon,
@@ -28,22 +28,6 @@ const props = defineProps({
 
 const { locale } = useI18n();
 const en = computed(() => locale.value === 'en');
-const copied = ref(false);
-
-function copyLink() {
-    navigator.clipboard.writeText(window.location.href);
-    copied.value = true;
-    setTimeout(() => { copied.value = false; }, 2000);
-}
-
-function shareFacebook() {
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank');
-}
-
-function shareWhatsApp() {
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(props.job.title + ' ' + window.location.href)}`, '_blank');
-}
-
 function formatDate(d) {
     if (!d) return en.value ? 'Soon' : 'শীঘ্রই';
     return new Date(d).toLocaleDateString(en.value ? 'en-US' : 'bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -137,33 +121,7 @@ const ogImage = computed(() => {
                             </a>
 
                             <!-- Share Buttons -->
-                            <div class="flex items-center gap-2">
-                                <button
-                                    @click="shareFacebook"
-                                    type="button"
-                                    class="p-3 rounded-xl bg-gray-100 dark:bg-[#202738] hover:bg-blue-600 hover:text-white text-gray-700 dark:text-white transition text-xs"
-                                    :title="en ? 'Share on Facebook' : 'ফেসবুকে শেয়ার করুন'"
-                                >
-                                    <span class="font-bold">f</span>
-                                </button>
-                                <button
-                                    @click="shareWhatsApp"
-                                    type="button"
-                                    class="p-3 rounded-xl bg-gray-100 dark:bg-[#202738] hover:bg-emerald-600 hover:text-white text-gray-700 dark:text-white transition text-xs"
-                                    :title="en ? 'Share on WhatsApp' : 'হোয়াটসঅ্যাপে শেয়ার করুন'"
-                                >
-                                    <span>WA</span>
-                                </button>
-                                <button
-                                    @click="copyLink"
-                                    type="button"
-                                    class="px-3 py-3 rounded-xl bg-gray-100 dark:bg-[#202738] hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-white transition text-xs flex items-center gap-1"
-                                    :title="en ? 'Copy Link' : 'লিংক কপি করুন'"
-                                >
-                                    <ShareIcon class="w-4 h-4" />
-                                    <span>{{ copied ? (en ? 'Copied!' : 'কপি হয়েছে!') : (en ? 'Copy' : 'কপি') }}</span>
-                                </button>
-                            </div>
+                            <ShareActions :title="job.title" :description="job.summary || ''" :en="en" />
                         </div>
                     </div>
 

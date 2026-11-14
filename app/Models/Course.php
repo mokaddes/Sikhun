@@ -11,6 +11,7 @@ class Course extends Model
         'title', 'slug', 'description', 'cover_image', 'mentor_id',
         'category_id', 'level', 'price', 'is_active',
         'delivery_type', 'external_link', 'link_note',
+        'fb_shared_count', 'fb_last_shared_at', 'fb_post_id',
     ];
 
     protected $appends = ['cover_image_url'];
@@ -24,7 +25,12 @@ class Course extends Model
 
     protected function casts(): array
     {
-        return ['price' => 'decimal:2', 'is_active' => 'boolean'];
+        return [
+            'price' => 'decimal:2',
+            'is_active' => 'boolean',
+            'fb_shared_count' => 'integer',
+            'fb_last_shared_at' => 'datetime',
+        ];
     }
 
     public function getCoverImageUrlAttribute(): ?string

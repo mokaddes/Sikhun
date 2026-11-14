@@ -161,7 +161,13 @@ class BlogPostController extends Controller
         $result = $social->publishBlogPost($blog);
 
         if ($result['success'] ?? false) {
-            return back()->with('success', 'ফেসবুক পেজে সফলভাবে ব্লগ পোস্ট ও প্রথম কমেন্ট প্রকাশিত হয়েছে!');
+            $blog->increment('fb_shared_count');
+            $blog->update([
+                'fb_last_shared_at' => now(),
+                'fb_post_id' => $result['post_id'] ?? $result['id'] ?? $blog->fb_post_id,
+            ]);
+
+            return back()->with('success', 'ফেসবুক পেজে সফলভাবে ব্লগ পোস্ট ও প্রথম কমেন্ট প্রকাশিত হয়েছে! (মোট শেয়ার: ' . $blog->fb_shared_count . ' বার)');
         }
 
         return back()->with('error', 'ফেসবুক পোস্টে ব্যর্থ হয়েছে: ' . ($result['message'] ?? 'অজানা ত্রুটি'));

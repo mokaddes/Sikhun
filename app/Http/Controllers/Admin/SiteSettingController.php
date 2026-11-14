@@ -14,7 +14,10 @@ use Inertia\Response;
 
 class SiteSettingController extends Controller
 {
-    private const IMAGE_KEYS = ['site_logo', 'site_favicon', 'seo_image'];
+    private const IMAGE_KEYS = [
+        'site_logo', 'site_favicon', 'seo_image',
+        'seo_admission_image', 'seo_job_image', 'seo_blog_image',
+    ];
 
     private const REQUIRED_FIELDS = [
         'site_name',
@@ -56,9 +59,15 @@ class SiteSettingController extends Controller
             'site_logo' => $request->hasFile('site_logo') ? ['nullable', 'mimes:png,jpg,jpeg,webp,svg', 'max:5120'] : ['nullable'],
             'site_favicon' => $request->hasFile('site_favicon') ? ['nullable', 'mimes:png,jpg,jpeg,webp,svg,ico', 'max:5120'] : ['nullable'],
             'seo_image' => $request->hasFile('seo_image') ? ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:5120'] : ['nullable'],
+            'seo_admission_image' => $request->hasFile('seo_admission_image') ? ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:5120'] : ['nullable'],
+            'seo_job_image' => $request->hasFile('seo_job_image') ? ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:5120'] : ['nullable'],
+            'seo_blog_image' => $request->hasFile('seo_blog_image') ? ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:5120'] : ['nullable'],
             'remove_site_logo' => ['nullable', 'boolean'],
             'remove_site_favicon' => ['nullable', 'boolean'],
             'remove_seo_image' => ['nullable', 'boolean'],
+            'remove_seo_admission_image' => ['nullable', 'boolean'],
+            'remove_seo_job_image' => ['nullable', 'boolean'],
+            'remove_seo_blog_image' => ['nullable', 'boolean'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
             'referrer_reward_amount' => ['required', 'numeric', 'min:0'],

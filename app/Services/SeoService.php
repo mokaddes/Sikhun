@@ -40,6 +40,21 @@ class SeoService
         return $seoImage ? asset('storage/'.$seoImage) : asset($fallback);
     }
 
+    private function sectionSocialImage(string $key): string
+    {
+        $image = $this->settings->get($key);
+
+        return $image ? asset('storage/'.$image) : $this->socialImage();
+    }
+
+    private function absoluteImage(?string $image, string $fallback): string
+    {
+        if (! $image) return $fallback;
+        if (Str::startsWith($image, ['https://', 'http://'])) return $image;
+        if (Str::startsWith($image, '/')) return url($image);
+        return asset('storage/'.ltrim($image, '/'));
+    }
+
     /**
      * Resolves the official site logo URL.
      */
@@ -123,7 +138,7 @@ class SeoService
         return [
             'title' => $title,
             'description' => $description,
-            'og_image' => $this->socialImage(),
+            'og_image' => $this->sectionSocialImage('seo_admission_image'),
             'canonical' => $canonical,
             'keywords' => 'বিশ্ববিদ্যালয় ভর্তি বিজ্ঞপ্তি, ভর্তি সার্কুলার ২০২৬, ঢাবি ভর্তি, রাবি ভর্তি, গুচ্ছ ভর্তি, BUET admission circular, sikhun admission',
             'json_ld' => [
@@ -152,7 +167,8 @@ class SeoService
         $descText = strip_tags($notice->description ?? '');
         $metaDescription = Str::limit($descText ?: "{$notice->institution_name} ২০২৬-২০২৭ শিক্ষাবর্ষে স্নাতক প্রথম বর্ষে ভর্তির অফিসিয়াল বিজ্ঞপ্তি, যোগ্যতা, ইউনিট ও আবেদনের নিয়মাবলী।", 155);
         $canonical = $this->siteUrl.'/admission-notice/'.$notice->slug;
-        $image = $notice->notice_image_url ?: $this->socialImage();
+        $fallbackImage = $this->sectionSocialImage('seo_admission_image');
+        $image = $this->absoluteImage($notice->featured_image_url ?: $notice->notice_image_url, $fallbackImage);
 
         $schema = [
             '@context' => 'https://schema.org',
@@ -182,6 +198,7 @@ class SeoService
             'title' => $metaTitle,
             'description' => $metaDescription,
             'og_image' => $image,
+            'og_type' => 'article',
             'canonical' => $canonical,
             'keywords' => implode(', ', array_filter([
                 $notice->institution_name,
@@ -346,7 +363,7 @@ class SeoService
         return [
             'title' => $title,
             'description' => 'বিজ্ঞান, প্রযুক্তি, কৃত্রিম বুদ্ধিমত্তা (AI) এবং একাডেমিক প্রস্তুতি নিয়ে বাংলা শিক্ষামূলক ব্লগ ও আর্টিকেল।',
-            'og_image' => $this->socialImage(),
+            'og_image' => $this->sectionSocialImage('seo_blog_image'),
             'canonical' => $canonical,
             'keywords' => 'বাংলা ব্লগ, প্রযুক্তি ব্লগ, AI ব্লগ, বিজ্ঞান আর্টিকেল, শিক্ষা ব্লগ, Sikhun blog',
             'json_ld' => [
@@ -369,7 +386,7 @@ class SeoService
         $metaTitle = $post->meta_title ?: "{$post->title} | {$this->siteName}";
         $metaDescription = $post->meta_description ?: Str::limit(strip_tags($post->excerpt ?: $post->content), 155);
         $canonical = "{$this->siteUrl}/blog/{$post->slug}";
-        $image = $post->featured_image_url ?? $this->socialImage();
+        $image = $this->absoluteImage($post->featured_image_url, $this->sectionSocialImage('seo_blog_image'));
 
         $crumbs = [
             ['name' => 'Home', 'url' => $this->siteUrl],
@@ -387,6 +404,7 @@ class SeoService
             'title' => $metaTitle,
             'description' => $metaDescription,
             'og_image' => $image,
+            'og_type' => 'article',
             'canonical' => $canonical,
             'keywords' => implode(', ', array_filter([$post->title, $post->category?->name_bn, 'ব্লগ', 'Sikhun'])),
             'json_ld' => array_filter([
@@ -416,7 +434,7 @@ class SeoService
         return [
             'title' => "চাকরির খবর ও নিয়োগ বিজ্ঞপ্তি ২০২৬ | {$this->siteName}",
             'description' => 'সরকারি, ব্যাংক ও বেসরকারি চাকরির সর্বশেষ নিয়োগ বিজ্ঞপ্তি, আবেদন প্রক্রিয়া, পরীক্ষার রুটিন ও প্রস্তুতি সহায়িকা।',
-            'og_image' => $this->socialImage(),
+            'og_image' => $this->sectionSocialImage('seo_job_image'),
             'canonical' => $canonical,
             'keywords' => 'চাকরির খবর, নিয়োগ বিজ্ঞপ্তি ২০২৬, সরকারি চাকরি, ব্যাংক জব, job circular bangladesh, sikhun jobs',
             'json_ld' => [
@@ -445,7 +463,8 @@ class SeoService
         return [
             'title' => "{$job->title} | {$this->siteName}",
             'description' => $metaDescription,
-            'og_image' => $job->image_url ?: $this->socialImage(),
+            'og_image' => $this->absoluteImage($job->image_url, $this->sectionSocialImage('seo_job_image')),
+            'og_type' => 'article',
             'canonical' => $canonical,
             'keywords' => implode(', ', array_filter([$job->title, $job->organization, 'চাকরির খবর', 'Sikhun'])),
             'json_ld' => [
@@ -592,6 +611,7 @@ class SeoService
                 'robots' => $seoProps['robots'] ?? 'index, follow',
                 'site_name' => $this->siteName,
                 'og_image' => $seoProps['og_image'] ?? $this->socialImage(),
+                'og_type' => $seoProps['og_type'] ?? 'website',
                 'keywords' => $seoProps['keywords'] ?? null,
                 'json_ld' => $seoProps['json_ld'] ?? null,
                 'breadcrumb' => $seoProps['breadcrumb'] ?? null,

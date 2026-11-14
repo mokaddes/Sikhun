@@ -36,6 +36,9 @@ class AdmissionNotice extends Model
         'eligibility_criteria',
         'marks_distribution',
         'status',
+        'fb_shared_count',
+        'fb_last_shared_at',
+        'fb_post_id',
         'is_featured',
         'views_count',
         'source_name',
@@ -62,6 +65,8 @@ class AdmissionNotice extends Model
             'published_at' => 'datetime',
             'is_featured' => 'boolean',
             'views_count' => 'integer',
+            'fb_shared_count' => 'integer',
+            'fb_last_shared_at' => 'datetime',
         ];
     }
 

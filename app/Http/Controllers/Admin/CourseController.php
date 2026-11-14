@@ -112,7 +112,13 @@ class CourseController extends Controller
         $result = $social->publishCourse($course);
 
         if ($result['success'] ?? false) {
-            return back()->with('success', 'ফেসবুক পেজে সফলভাবে কোর্স পোস্ট এবং প্রথম কমেন্ট প্রকাশিত হয়েছে!');
+            $course->increment('fb_shared_count');
+            $course->update([
+                'fb_last_shared_at' => now(),
+                'fb_post_id' => $result['post_id'] ?? $result['id'] ?? $course->fb_post_id,
+            ]);
+
+            return back()->with('success', 'ফেসবুক পেজে সফলভাবে কোর্স পোস্ট এবং প্রথম কমেন্ট প্রকাশিত হয়েছে! (মোট শেয়ার: ' . $course->fb_shared_count . ' বার)');
         }
 
         return back()->with('error', 'ফেসবুক পোস্টে ব্যর্থ হয়েছে: ' . ($result['message'] ?? 'অজানা ত্রুটি'));

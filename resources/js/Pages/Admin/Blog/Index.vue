@@ -82,7 +82,7 @@ function getPostActions(post) {
             icon: CheckCircleIcon,
         },
         {
-            label: 'Share to Facebook (PagePilotBD)',
+            label: post.fb_shared_count > 0 ? `Share to Facebook (${post.fb_shared_count}x shared)` : 'Share to Facebook (PagePilotBD)',
             onClick: () => {
                 if (confirm(`"${post.title}" পোস্টটি কি ফেসবুক পেজে শেয়ার করতে চান? এতে ফটো কার্ড সহ পোস্ট হবে।`)) {
                     router.post(`/admin/blog/${post.id}/share-facebook`);
@@ -196,6 +196,7 @@ function getPostActions(post) {
                         <th class="px-4 py-3 font-medium">{{ t('admin.books.category') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('common.type') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('common.status') }}</th>
+                        <th class="px-4 py-3 font-medium text-center">FB Share</th>
                         <th class="px-4 py-3 font-medium text-right">{{ t('common.actions') }}</th>
                     </tr>
                 </thead>
@@ -225,6 +226,13 @@ function getPostActions(post) {
                                 :class="post.status === 'published' ? 'bg-emerald-500/15 text-emerald-500' : 'bg-amber-500/15 text-amber-500'">
                                 {{ post.status === 'published' ? t('common.published') : t('admin.blog.draft') }}
                             </span>
+                        </td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            <span v-if="post.fb_shared_count > 0" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20" :title="'Last shared: ' + (post.fb_last_shared_at || 'earlier')">
+                                <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                <span>{{ post.fb_shared_count }}x</span>
+                            </span>
+                            <span v-else class="text-[11px] text-[var(--text-muted)]">—</span>
                         </td>
                         <td class="px-4 py-3 text-right">
                             <div class="flex items-center justify-end gap-2">

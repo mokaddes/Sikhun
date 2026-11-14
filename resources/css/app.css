@@ -7,9 +7,9 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    --font-sans: 'Plus Jakarta Sans', 'Hind Siliguri', 'Noto Sans Bengali', 'Kalpurush', system-ui, -apple-system, sans-serif;
-    --font-heading: 'Plus Jakarta Sans', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif;
-    --font-serif: 'Playfair Display', 'Noto Serif Bengali', Georgia, serif;
+    --font-sans: 'Hind Siliguri', 'Noto Sans Bengali', 'Plus Jakarta Sans', 'Kalpurush', system-ui, -apple-system, sans-serif;
+    --font-heading: 'Hind Siliguri', 'Noto Sans Bengali', 'Plus Jakarta Sans', sans-serif;
+    --font-serif: 'Noto Serif Bengali', 'Playfair Display', Georgia, serif;
     --font-bangla: 'Hind Siliguri', 'Noto Sans Bengali', 'Kalpurush', sans-serif;
     --font-bangla-classic: 'Noto Serif Bengali', 'Hind Siliguri', serif;
     --font-mono: 'JetBrains Mono', 'Hind Siliguri', monospace;
@@ -139,45 +139,9 @@ html[lang="bn"] .dashboard-page h3,
 .dashboard-page [class*="bg-gradient-to-br"] {
     background-image: linear-gradient(120deg, color-mix(in srgb, var(--primary) 7%, var(--surface)), var(--surface)) !important;
 }
-.public-shell main [class*="text-orange-"],
-.public-shell main [class*="text-cyan-"],
-.public-shell main [class*="text-blue-"],
-.public-shell main [class*="text-indigo-"],
-.public-shell main [class*="text-purple-"],
-.dashboard-page [class*="text-orange-"],
-.dashboard-page [class*="text-cyan-"],
-.dashboard-page [class*="text-blue-"],
-.dashboard-page [class*="text-indigo-"],
-.dashboard-page [class*="text-purple-"] {
-    color: var(--primary) !important;
-}
-.public-shell main [class*="bg-orange-"],
-.public-shell main [class*="bg-cyan-"],
-.public-shell main [class*="bg-blue-"],
-.public-shell main [class*="bg-indigo-"],
-.public-shell main [class*="bg-purple-"],
-.dashboard-page [class*="bg-orange-"],
-.dashboard-page [class*="bg-cyan-"],
-.dashboard-page [class*="bg-blue-"],
-.dashboard-page [class*="bg-indigo-"],
-.dashboard-page [class*="bg-purple-"] {
-    background-color: color-mix(in srgb, var(--primary) 9%, var(--surface)) !important;
-}
-.public-shell main [class*="border-orange-"],
-.public-shell main [class*="border-cyan-"],
-.public-shell main [class*="border-blue-"],
-.public-shell main [class*="border-indigo-"],
-.public-shell main [class*="border-purple-"],
-.dashboard-page [class*="border-orange-"],
-.dashboard-page [class*="border-cyan-"],
-.dashboard-page [class*="border-blue-"],
-.dashboard-page [class*="border-indigo-"],
-.dashboard-page [class*="border-purple-"] {
-    border-color: color-mix(in srgb, var(--primary) 22%, var(--border)) !important;
-}
-.dashboard-page [class*="text-gray-400"],
-.public-shell main [class*="text-gray-400"] {
-    color: var(--text-muted) !important;
+.public-shell main [class*="text-gray-400"],
+.dashboard-page [class*="text-gray-400"] {
+    color: var(--text-muted);
 }
 
 /* Shared scroll reveal for page sections and repeated content cards. */
@@ -210,13 +174,15 @@ html[lang="bn"] .dashboard-page h3,
 
 body,
 .font-sans {
-    font-family: 'Plus Jakarta Sans', var(--font-bn-stack);
+    font-family: var(--font-bn-stack);
     background-color: var(--bg);
     color: var(--text);
     transition: background-color 0.2s ease, color 0.2s ease;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'clig' 1, 'calt' 1;
+    -webkit-font-feature-settings: 'kern' 1, 'liga' 1, 'clig' 1, 'calt' 1;
 }
 
 /* When the document or subtree is in Bengali */
@@ -230,7 +196,9 @@ html[lang="bn"] .font-sans,
 
 /* Headings */
 h1, h2, h3, h4, h5, h6, .font-heading {
-    font-family: 'Plus Jakarta Sans', var(--font-bn-stack);
+    font-family: var(--font-bn-stack);
+    font-feature-settings: 'kern' 1, 'liga' 1, 'clig' 1, 'calt' 1;
+    -webkit-font-feature-settings: 'kern' 1, 'liga' 1, 'clig' 1, 'calt' 1;
 }
 
 html[lang="bn"] h1,
@@ -425,12 +393,19 @@ html[lang="bn"] [class*="eyebrow"],
     .card-hover:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
 
     .eyebrow {
-        font-family: 'JetBrains Mono', 'Hind Siliguri', monospace;
+        font-family: var(--font-bn-stack);
         font-size: 0.6875rem;
         font-weight: 600;
-        letter-spacing: 0.16em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--secondary);
+    }
+
+    html[lang="bn"] .eyebrow,
+    [lang="bn"] .eyebrow,
+    .eyebrow:lang(bn) {
+        letter-spacing: normal !important;
+        text-transform: none !important;
     }
 
     .label {

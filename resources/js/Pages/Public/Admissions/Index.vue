@@ -4,6 +4,14 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
 import { useI18n } from '@/i18n';
+import {
+    AcademicCapIcon,
+    MagnifyingGlassIcon,
+    ArrowRightIcon,
+    CheckBadgeIcon,
+    BookOpenIcon,
+    SparklesIcon,
+} from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     notices: Object,
@@ -90,7 +98,7 @@ function getTypeBadge(type) {
                 <div class="max-w-7xl mx-auto px-4 md:px-6">
                     <div class="max-w-3xl">
                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-400 text-xs font-bold uppercase tracking-wider mb-4">
-                            <span class="material-symbols-outlined !text-sm">school</span>
+                            <AcademicCapIcon class="w-4 h-4" />
                             {{ en ? 'Higher Education Portal' : 'উচ্চশিক্ষা ও ভর্তি নির্দেশিকা' }}
                         </span>
                         <h1 class="text-3xl md:text-5xl font-black font-heading tracking-tight text-gray-900 dark:text-white leading-tight">
@@ -104,7 +112,7 @@ function getTypeBadge(type) {
                     <!-- Search Bar -->
                     <div class="mt-8 max-w-2xl flex flex-col sm:flex-row gap-3">
                         <div class="relative flex-1">
-                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                            <MagnifyingGlassIcon class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input
                                 v-model="search"
                                 type="text"
@@ -115,10 +123,10 @@ function getTypeBadge(type) {
                         </div>
                         <button
                             @click="handleSearch"
-                            class="h-12 px-6 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-500/20 transition flex items-center justify-center gap-2"
+                            class="h-12 px-6 rounded-xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2 shrink-0"
                         >
                             <span>{{ en ? 'Search' : 'খুঁজুন' }}</span>
-                            <span class="material-symbols-outlined !text-sm">arrow_forward</span>
+                            <ArrowRightIcon class="w-4 h-4" />
                         </button>
                     </div>
 
@@ -132,7 +140,7 @@ function getTypeBadge(type) {
                                 'px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition flex items-center gap-2',
                                 activeType === tab.id
                                     ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
-                                    : 'bg-white dark:bg-[#171c28] border border-gray-200 dark:border-white/5 text-gray-600 dark:text-gray-300 hover:border-orange-500/40'
+                                    : 'bg-white dark:bg-[#171c28] border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:border-orange-500/40'
                             ]"
                         >
                             <span>{{ tab.label }}</span>
@@ -157,8 +165,8 @@ function getTypeBadge(type) {
 
                     <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                         <div class="space-y-2 max-w-2xl">
-                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-400 text-xs font-bold uppercase tracking-wider">
-                                <span class="material-symbols-outlined !text-sm">verified</span>
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-600 dark:text-orange-400 text-xs font-bold uppercase tracking-wider">
+                                <CheckBadgeIcon class="w-4 h-4" />
                                 <span>{{ en ? 'SOLVED QUESTION ARCHIVE' : 'বিগত বছরের প্রশ্নব্যাংক ও প্রস্তুতি' }}</span>
                             </div>
                             <h2 class="text-xl sm:text-2xl font-black font-heading text-slate-900 dark:text-white">
@@ -213,19 +221,20 @@ function getTypeBadge(type) {
                         <div class="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
                             <Link
                                 href="/question-bank?segment=admission"
-                                class="px-5 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-orange-500/30 transition flex items-center justify-center gap-2 hover:-translate-y-0.5 text-center"
+                                class="px-5 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 hover:-translate-y-0.5 text-center"
                             >
-                                <span class="material-symbols-outlined !text-base">menu_book</span>
+                                <BookOpenIcon class="w-4 h-4" />
                                 <span>{{ en ? 'Explore Question Bank' : 'ভর্তি প্রশ্নব্যাংক খুলুন' }}</span>
                                 <span>→</span>
                             </Link>
 
                             <Link
                                 href="/question-bank?segment=admission"
-                                class="px-5 py-3 rounded-xl bg-blue-600/90 hover:bg-blue-600 text-white font-bold text-xs sm:text-sm border border-blue-400/30 shadow-lg shadow-blue-500/20 transition flex items-center justify-center gap-2 hover:-translate-y-0.5 text-center"
+                                class="px-5 py-3 rounded-xl bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 hover:-translate-y-0.5 text-center"
                             >
-                                <span class="material-symbols-outlined !text-base">quiz</span>
+                                <SparklesIcon class="w-4 h-4" />
                                 <span>{{ en ? 'Take Free Model Test' : 'ফ্রি মডেল টেস্ট দিন' }}</span>
+                                <span>→</span>
                             </Link>
                         </div>
                     </div>

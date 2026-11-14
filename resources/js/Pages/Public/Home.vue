@@ -26,6 +26,26 @@ const paths = computed(() => en.value ? [
     { number: '০৩', title: 'পরামর্শ নিয়ে শিখুন', detail: 'অভিজ্ঞ মেন্টরের সাজানো পাঠ।', href: '/courses', action: 'কোর্স দেখুন' },
 ]);
 
+const studySteps = computed(() => en.value ? [
+    { title: 'Learn the idea', detail: 'Read a chapter or ask the AI study companion to explain a difficult part.', href: '/library', action: 'Choose a book' },
+    { title: 'Try it yourself', detail: 'Practice admission and university questions, then review each explanation.', href: '/question-bank', action: 'Practice questions' },
+    { title: 'See what improved', detail: 'Keep your sessions, exams and goals together so the next step feels clear.', href: '/register', action: 'Build your study desk' },
+] : [
+    { title: 'বিষয়টি বুঝে নিন', detail: 'অধ্যায় পড়ুন, কঠিন অংশে AI সহায়কের কাছে ব্যাখ্যা চান।', href: '/library', action: 'বই বেছে নিন' },
+    { title: 'নিজে অনুশীলন করুন', detail: 'ভর্তি ও বিশ্ববিদ্যালয়ের প্রশ্ন সমাধান করে ব্যাখ্যাগুলো দেখুন।', href: '/question-bank', action: 'প্রশ্ন অনুশীলন' },
+    { title: 'উন্নতি দেখে এগোন', detail: 'পড়ার সেশন, পরীক্ষা ও লক্ষ্য একসাথে রাখুন—পরের ধাপ হবে স্পষ্ট।', href: '/register', action: 'নিজের স্টাডি ডেস্ক খুলুন' },
+]);
+
+const platformStats = computed(() => [
+    { value: props.stats?.books ?? 0, label: en.value ? 'books to explore' : 'টি বইয়ের সংগ্রহ' },
+    { value: props.stats?.courses ?? 0, label: en.value ? 'mentor-led courses' : 'টি মেন্টর পরিচালিত কোর্স' },
+    { value: props.stats?.students ?? 0, label: en.value ? 'active learners' : 'জন সক্রিয় শিক্ষার্থী' },
+]);
+
+function formatCount(value) {
+    return Number(value || 0).toLocaleString(en.value ? 'en-US' : 'bn-BD');
+}
+
 onMounted(() => {
     const nodes = document.querySelectorAll('.home-reveal');
     if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -85,6 +105,31 @@ onUnmounted(() => revealObserver?.disconnect());
                 </div>
             </section>
 
+            <section class="home-shelf mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+                <div class="home-reveal">
+                    <p class="home-kicker">{{ en ? 'A study rhythm that makes sense' : 'পড়াশোনার কাজে লাগা ছন্দ' }}</p>
+                    <h2 class="home-heading mt-2">{{ en ? 'Understand. Practice. Improve.' : 'বুঝুন। অনুশীলন করুন। এগিয়ে যান।' }}</h2>
+                    <p class="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--text-muted)] sm:text-base">{{ en ? 'Good preparation is more than collecting materials. Sikhun brings reading, deliberate practice and progress into one simple routine.' : 'ভালো প্রস্তুতি মানে শুধু উপকরণ জড়ো করা নয়। শিখুনে পড়া, মনোযোগী অনুশীলন ও অগ্রগতি—সবকিছু সাজানো থাকে একটি সহজ রুটিনে।' }}</p>
+                </div>
+                <div class="mt-6 grid gap-3 md:grid-cols-3">
+                    <article v-for="(step, index) in studySteps" :key="step.title" class="home-step home-reveal">
+                        <span class="home-path-number">{{ en ? `STEP 0${index + 1}` : `ধাপ ০${formatCount(index + 1)}` }}</span>
+                        <h3>{{ step.title }}</h3>
+                        <p>{{ step.detail }}</p>
+                        <Link :href="step.href" class="home-path-action">{{ step.action }} →</Link>
+                    </article>
+                </div>
+            </section>
+
+            <section v-if="stats" class="home-stats mx-auto max-w-7xl px-5 py-9 sm:px-8 sm:py-12">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div v-for="stat in platformStats" :key="stat.label" class="home-stat home-reveal">
+                        <strong>{{ formatCount(stat.value) }}</strong>
+                        <span>{{ stat.label }}</span>
+                    </div>
+                </div>
+            </section>
+
             <section v-if="topCourses?.length" class="home-shelf mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
                 <div class="flex flex-wrap items-end justify-between gap-3 home-reveal">
                     <div><p class="home-kicker">{{ en ? 'Learn with a mentor' : 'মেন্টরের সঙ্গে শিখুন' }}</p><h2 class="home-heading mt-2">{{ en ? 'A good place to continue.' : 'এগিয়ে যাওয়ার ভালো সঙ্গী।' }}</h2></div>
@@ -109,6 +154,40 @@ onUnmounted(() => revealObserver?.disconnect());
                         <img v-if="book.cover_image_url" :src="book.cover_image_url" :alt="book.title" loading="lazy" />
                         <span v-else class="home-book-placeholder">{{ en ? 'READ' : 'পড়ুন' }}</span>
                         <span class="home-book-title">{{ book.title }}</span>
+                    </Link>
+                </div>
+            </section>
+
+            <section v-if="featuredAdmissions?.length || featuredJobs?.length" class="home-shelf mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+                <div class="flex flex-wrap items-end justify-between gap-3 home-reveal">
+                    <div><p class="home-kicker">{{ en ? 'Keep your next step in view' : 'পরের সুযোগটির খোঁজ রাখুন' }}</p><h2 class="home-heading mt-2">{{ en ? 'Notices worth a look.' : 'দরকারি বিজ্ঞপ্তিগুলো এক নজরে।' }}</h2></div>
+                    <div class="flex gap-4"><Link href="/admission-notice" class="home-text-link">{{ en ? 'Admissions' : 'ভর্তি বিজ্ঞপ্তি' }} →</Link><Link href="/job-news" class="home-text-link">{{ en ? 'Jobs' : 'চাকরির খবর' }} →</Link></div>
+                </div>
+                <div class="mt-5 grid gap-4 md:grid-cols-2">
+                    <div class="home-notice home-reveal">
+                        <p class="home-course-meta">{{ en ? 'ADMISSIONS' : 'ভর্তি' }}</p>
+                        <Link v-for="notice in featuredAdmissions.slice(0, 2)" :key="notice.id" :href="`/admission-notice/${notice.slug}`" class="home-notice-row"><span>{{ notice.institution_name || notice.title }}</span><span aria-hidden="true">→</span></Link>
+                        <Link v-if="!featuredAdmissions.length" href="/admission-notice" class="home-notice-row">{{ en ? 'See current admission notices' : 'সাম্প্রতিক ভর্তি বিজ্ঞপ্তি দেখুন' }} →</Link>
+                    </div>
+                    <div class="home-notice home-reveal">
+                        <p class="home-course-meta">{{ en ? 'CAREER' : 'ক্যারিয়ার' }}</p>
+                        <Link v-for="job in featuredJobs.slice(0, 2)" :key="job.id" :href="`/job-news/${job.slug}`" class="home-notice-row"><span>{{ job.title }}</span><span aria-hidden="true">→</span></Link>
+                        <Link v-if="!featuredJobs.length" href="/job-news" class="home-notice-row">{{ en ? 'Explore recent job circulars' : 'সাম্প্রতিক চাকরির সার্কুলার দেখুন' }} →</Link>
+                    </div>
+                </div>
+            </section>
+
+            <section v-if="latestBlogs?.length" class="home-shelf mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+                <div class="flex flex-wrap items-end justify-between gap-3 home-reveal">
+                    <div><p class="home-kicker">{{ en ? 'Ideas for curious minds' : 'জানার আগ্রহে আরও কিছু' }}</p><h2 class="home-heading mt-2">{{ en ? 'Read beyond the syllabus.' : 'পাঠ্যবইয়ের বাইরেও জানুন।' }}</h2></div>
+                    <Link href="/blog" class="home-text-link">{{ en ? 'All articles' : 'সব লেখা' }} →</Link>
+                </div>
+                <div class="mt-5 grid gap-3 md:grid-cols-3">
+                    <Link v-for="post in latestBlogs.slice(0, 3)" :key="post.id" :href="`/blog/${post.slug}`" class="home-reading home-reveal">
+                        <p class="home-course-meta">{{ post.category?.name_en || post.category?.name_bn || (en ? 'Sikhun journal' : 'শিখুন জার্নাল') }}</p>
+                        <h3>{{ post.title }}</h3>
+                        <p class="home-reading-excerpt">{{ post.excerpt }}</p>
+                        <span class="home-path-action">{{ en ? 'Read article' : 'লেখাটি পড়ুন' }} →</span>
                     </Link>
                 </div>
             </section>
@@ -154,6 +233,22 @@ onUnmounted(() => revealObserver?.disconnect());
 .home-path h3 { margin-top: 1.5rem; font-family: 'Playfair Display', 'Noto Serif Bengali', Georgia, serif; font-size: 1.25rem; font-weight: 600; }
 .home-path p { margin-top: .35rem; color: var(--text-muted); font-size: .9rem; }
 .home-path-action { margin-top: auto; padding-top: 1.1rem; color: var(--text); font-size: .8rem; font-weight: 650; }
+.home-step, .home-reading, .home-notice { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); padding: 1.15rem; }
+.home-step { min-height: 205px; }
+.home-step h3, .home-reading h3 { margin-top: 1rem; color: var(--text); font-family: 'Playfair Display', 'Noto Serif Bengali', Georgia, serif; font-size: 1.1rem; font-weight: 600; line-height: 1.4; }
+.home-step > p, .home-reading-excerpt { margin-top: .45rem; color: var(--text-muted); font-size: .86rem; line-height: 1.65; }
+.home-step .home-path-action { margin-top: auto; }
+.home-stats { border-block: 1px solid var(--border); }
+.home-stat { display: flex; align-items: baseline; justify-content: center; gap: .5rem; text-align: center; }
+.home-stat strong { color: var(--home-accent); font-family: 'Playfair Display', 'Noto Serif Bengali', Georgia, serif; font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 600; }
+.home-stat span { color: var(--text-muted); font-size: .82rem; }
+.home-notice { gap: .45rem; }
+.home-notice-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--border); padding-top: .7rem; color: var(--text); font-size: .88rem; font-weight: 550; }
+.home-notice-row:hover { color: var(--home-accent); }
+.home-reading { min-height: 205px; transition: border-color .2s ease, transform .2s ease; }
+.home-reading:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--home-accent) 38%, var(--border)); }
+.home-reading-excerpt { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.home-reading .home-path-action { margin-top: auto; }
 .home-text-link { color: var(--home-accent); font-size: .9rem; font-weight: 650; }
 .home-shelf, .home-closing { border-top: 1px solid var(--border); }
 .home-course { overflow: hidden; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); transition: transform .2s ease, box-shadow .2s ease; }

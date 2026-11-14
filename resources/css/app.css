@@ -180,6 +180,25 @@ html[lang="bn"] .dashboard-page h3,
     color: var(--text-muted) !important;
 }
 
+/* Shared scroll reveal for page sections and repeated content cards. */
+.scroll-reveal {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    transition: opacity .58s ease, transform .58s cubic-bezier(.2, .75, .25, 1);
+}
+.scroll-reveal.scroll-reveal-visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+}
+@media (prefers-reduced-motion: reduce) {
+    .scroll-reveal,
+    .scroll-reveal.scroll-reveal-visible {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
 /* ==========================================================================
    Bengali Typography & OpenType Shaping Engine
    Ensures crystal-clear, smooth, connected conjuncts across all platforms.

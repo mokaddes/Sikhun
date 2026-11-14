@@ -10,6 +10,47 @@ import { useNotificationStore } from './Stores/notifications';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Sikhun.com';
 
+function installScrollReveal() {
+    const appRoot = document.getElementById('app');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!appRoot || reducedMotion || !('IntersectionObserver' in window)) return;
+
+    const selector = '.public-shell main section, .public-shell main article, .public-shell main .card, .public-shell main [data-scroll-reveal]';
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('scroll-reveal-visible');
+            observer.unobserve(entry.target);
+        });
+    }, { threshold: 0.08, rootMargin: '0px 0px -24px 0px' });
+
+    const observeContent = (node) => {
+        if (!(node instanceof Element)) return;
+        if (node.matches(selector) && !node.classList.contains('scroll-reveal')) {
+            node.classList.add('scroll-reveal');
+            observer.observe(node);
+        }
+        node.querySelectorAll(selector).forEach((element) => {
+            if (element.classList.contains('scroll-reveal')) return;
+            element.classList.add('scroll-reveal');
+            observer.observe(element);
+        });
+    };
+
+    observeContent(appRoot);
+    const mutationObserver = new MutationObserver((records) => {
+        records.forEach((record) => {
+            record.addedNodes.forEach(observeContent);
+            record.removedNodes.forEach((node) => {
+                if (!(node instanceof Element)) return;
+                if (node.matches('.scroll-reveal')) observer.unobserve(node);
+                node.querySelectorAll('.scroll-reveal').forEach((element) => observer.unobserve(element));
+            });
+        });
+    });
+    mutationObserver.observe(appRoot, { childList: true, subtree: true });
+}
+
 // SPA page-view tracking — Inertia navigations don't reload the page, so
 // report each visit to Google Analytics manually and keep document lang synchronized.
 router.on('navigate', (event) => {
@@ -36,6 +77,8 @@ createInertiaApp({
             .use(pinia);
 
         app.mount(el);
+
+        installScrollReveal();
 
         // Sync document language attribute on mount
         const currentLocale = props.initialPage?.props?.locale || 'bn';

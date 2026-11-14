@@ -94,13 +94,15 @@ class BookChunkRetrievalService
      *
      * @return array<int, array{chunk_id: int, chapter_id: ?int, chapter: ?string, page: ?int, content: string}>
      */
-    public function coverageChunks(Book $book, ?Student $student = null, array $selectedChapterIds = [], int $limit = 48): array
+    public function coverageChunks(Book $book, ?Student $student = null, array $selectedChapterIds = [], int $limit = 48, ?bool $randomize = null): array
     {
         $accessibleChapterIds = $this->access->accessibleChapterIds($student, $book);
 
         if ($accessibleChapterIds === null || $limit < 1) {
             return [];
         }
+
+        $shouldRandomize = $randomize ?? (! app()->environment('testing'));
 
         $selectedChapterIds = array_values(array_unique(array_map('intval', $selectedChapterIds)));
         $hasSelection = $selectedChapterIds !== [];
@@ -131,25 +133,52 @@ class BookChunkRetrievalService
             $chapterIds = $accessibleChapterIds;
         }
 
-        // Older processed books may have valid chunks but no chapter_id. A
-        // full-book owner can safely use those legacy chunks even when the UI
-        // selected a chapter, because the purchase grants access to the whole
-        // book. Partial chapter owners must never receive unscoped legacy
-        // content because its chapter cannot be proven.
-        $includeLegacyChunks = $chapterIds && $this->access->hasAccess($student, $book);
-        $query = $book->chunks()->where(function ($q) use ($chapterIds, $includeLegacyChunks) {
-            if ($chapterIds) {
-                $q->whereIn('chapter_id', $chapterIds);
-                if ($includeLegacyChunks) {
-                    $q->orWhereNull('chapter_id');
-                }
+        if ($hasSelection) {
+            // Strict chapter isolation: when chapters are selected, NEVER query unassigned or other chapters.
+            $query = $book->chunks()->whereIn('chapter_id', $chapterIds);
+        } else {
+            // Whole-book mode:
+            // Prefer chapter-assigned chunks if any exist. Unassigned chunks usually contain
+            // prefaces, publisher notices, and table of contents that are not academic material.
+            $hasChapterChunks = $book->chunks()->whereNotNull('chapter_id')->whereIn('chapter_id', $chapterIds)->exists();
+            if ($hasChapterChunks) {
+                $query = $book->chunks()->whereIn('chapter_id', $chapterIds);
             } else {
-                $q->whereNull('chapter_id');
+                $query = $book->chunks()->whereNull('chapter_id');
             }
+        }
+
+        // Exclude non-academic front-matter/preamble chunks (e.g. textbook board, publishing/copyright metadata)
+        $frontMatterKeywords = [
+            'জাতীয় শিক্ষাক্রম ও পাঠ্যপুস্তক বোর্ড',
+            'জাতীয় শিক্ষাক্রম ও পাঠ্যপুস্তক বোর্ড',
+            'সর্বস্বত্ব সংরক্ষিত',
+            'মুদ্রণে :',
+            'প্রকাশনায় :',
+            'প্রকাশনায় :',
+            'পাঠ্যপুস্তক প্রণয়ন কমিটি',
+            'পাঠ্যপুস্তক প্রণয়ন কমিটি',
+            'পরিমার্জিত সংস্করণ',
+        ];
+
+        $candidates = $query->orderBy('chunk_index')->get(['id', 'chapter_id', 'page_number', 'chunk_index', 'content']);
+
+        $filtered = $candidates->filter(function (BookChunk $chunk) use ($frontMatterKeywords) {
+            if ($chunk->page_number !== null && $chunk->page_number <= 4) {
+                foreach ($frontMatterKeywords as $kw) {
+                    if (str_contains($chunk->content, $kw)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
         });
 
-        $groups = $query->orderBy('chunk_index')->get(['id', 'chapter_id', 'page_number', 'chunk_index'])
-            ->groupBy(fn (BookChunk $chunk) => $chunk->chapter_id ?? 0)
+        if ($filtered->isEmpty() && $candidates->isNotEmpty()) {
+            $filtered = $candidates;
+        }
+
+        $groups = $filtered->groupBy(fn (BookChunk $chunk) => $chunk->chapter_id ?? 0)
             ->map(fn ($chunks) => $chunks->pluck('id')->all())
             ->all();
 
@@ -178,20 +207,10 @@ class BookChunkRetrievalService
 
         $sampledIds = [];
         foreach ($groups as $key => $ids) {
-            $sampledIds = array_merge($sampledIds, $this->spreadSample($ids, $quotas[$key]));
+            $sampledIds = array_merge($sampledIds, $this->spreadSample($ids, $quotas[$key], $shouldRandomize));
         }
 
         $chunks = $book->chunks()->whereIn('id', $sampledIds)
-            ->where(function ($q) use ($chapterIds, $includeLegacyChunks) {
-                if ($chapterIds) {
-                    $q->whereIn('chapter_id', $chapterIds);
-                    if ($includeLegacyChunks) {
-                        $q->orWhereNull('chapter_id');
-                    }
-                } else {
-                    $q->whereNull('chapter_id');
-                }
-            })
             ->get(['id', 'chapter_id', 'page_number', 'chunk_index', 'content'])
             ->sortBy(fn (BookChunk $chunk) => [$chunk->chunk_index, $chunk->id])
             ->values();
@@ -349,7 +368,7 @@ class BookChunkRetrievalService
      * @param  array<int, int>  $orderedIds
      * @return array<int, int>
      */
-    private function spreadSample(array $orderedIds, int $want): array
+    private function spreadSample(array $orderedIds, int $want, bool $randomize = false): array
     {
         $count = count($orderedIds);
 
@@ -363,8 +382,21 @@ class BookChunkRetrievalService
 
         $picked = [];
 
-        for ($i = 0; $i < $want; $i++) {
-            $picked[] = $orderedIds[(int) round($i * ($count - 1) / max($want - 1, 1))];
+        if ($randomize) {
+            $segmentSize = $count / $want;
+            for ($i = 0; $i < $want; $i++) {
+                $start = (int) floor($i * $segmentSize);
+                $end = (int) min(floor(($i + 1) * $segmentSize) - 1, $count - 1);
+                if ($start > $end) {
+                    $start = $end;
+                }
+                $randomIndex = random_int($start, $end);
+                $picked[] = $orderedIds[$randomIndex];
+            }
+        } else {
+            for ($i = 0; $i < $want; $i++) {
+                $picked[] = $orderedIds[(int) round($i * ($count - 1) / max($want - 1, 1))];
+            }
         }
 
         return array_values(array_unique($picked));

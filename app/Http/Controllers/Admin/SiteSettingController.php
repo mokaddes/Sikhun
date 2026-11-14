@@ -48,7 +48,9 @@ class SiteSettingController extends Controller
 
         $validated = $request->validate([
             'site_name' => ['required', 'string', 'max:255'],
+            'site_name_bn' => ['nullable', 'string', 'max:255'],
             'site_tagline' => ['nullable', 'string', 'max:255'],
+            'site_tagline_bn' => ['nullable', 'string', 'max:255'],
             'site_email' => ['required', 'email'],
             'site_phone' => ['nullable', 'string', 'max:50'],
             'site_logo' => $request->hasFile('site_logo') ? ['nullable', 'mimes:png,jpg,jpeg,webp,svg', 'max:5120'] : ['nullable'],

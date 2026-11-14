@@ -69,7 +69,11 @@ class HandleInertiaRequests extends Middleware
 
         return [
             'name' => $all['site_name'] ?? 'Sikhun.com',
+            'name_en' => $all['site_name'] ?? 'Sikhun.com',
+            'name_bn' => $all['site_name_bn'] ?? 'শিখুন',
             'tagline' => $all['site_tagline'] ?? null,
+            'tagline_en' => $all['site_tagline'] ?? 'YOUR AI STUDY DESK',
+            'tagline_bn' => $all['site_tagline_bn'] ?? 'আপনার এআই পড়ার টেবিল',
             'logo_url' => $this->publicAsset($all['site_logo'] ?? null),
             'favicon_url' => $this->publicAsset($all['site_favicon'] ?? null),
             'seo_image_url' => $this->publicAsset($all['seo_image'] ?? null),

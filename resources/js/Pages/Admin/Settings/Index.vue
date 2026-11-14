@@ -20,7 +20,9 @@ function testPagePilot() {
 
 const form = useForm({
     site_name: props.settings.site_name ?? '',
-    site_tagline: props.settings.site_tagline ?? '',
+    site_name_bn: props.settings.site_name_bn ?? 'শিখুন',
+    site_tagline: props.settings.site_tagline ?? 'YOUR AI STUDY DESK',
+    site_tagline_bn: props.settings.site_tagline_bn ?? 'আপনার এআই পড়ার টেবিল',
     site_email: props.settings.site_email ?? '',
     site_phone: props.settings.site_phone ?? '',
     site_logo: null,
@@ -98,12 +100,20 @@ function submit() {
         <h1 class="font-heading text-2xl font-extrabold mb-6">{{ t('admin.settings.title') }}</h1>
         <form @submit.prevent="submit" class="max-w-xl space-y-5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
             <div>
-                <label class="block text-sm font-medium mb-1.5">{{ t('admin.settings.site_name') }}</label>
+                <label class="block text-sm font-medium mb-1.5">{{ locale === 'bn' ? 'ওয়েবসাইটের নাম (English)' : 'Website name (English)' }}</label>
                 <input v-model="form.site_name" type="text" required class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
             </div>
             <div>
-                <label class="block text-sm font-medium mb-1.5">{{ t('admin.settings.site_tagline') }}</label>
+                <label class="block text-sm font-medium mb-1.5">{{ locale === 'bn' ? 'ওয়েবসাইটের নাম (বাংলা)' : 'Website name (Bangla)' }}</label>
+                <input v-model="form.site_name_bn" type="text" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1.5">{{ locale === 'bn' ? 'ট্যাগলাইন (English)' : 'Tagline (English)' }}</label>
                 <input v-model="form.site_tagline" type="text" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1.5">{{ locale === 'bn' ? 'ট্যাগলাইন (বাংলা)' : 'Tagline (Bangla)' }}</label>
+                <input v-model="form.site_tagline_bn" type="text" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -124,11 +134,11 @@ function submit() {
                     <div class="grid gap-3 sm:grid-cols-2">
                         <div class="flex min-h-24 items-center gap-3 rounded-xl border border-[var(--border)] bg-[#fffefa] px-4 py-3 text-[#29251f]">
                             <img :src="logoPreview || '/images/sikhun-mark.svg'" :alt="`${form.site_name} logo`" class="h-12 w-12 shrink-0 object-contain" />
-                            <div class="min-w-0"><div class="truncate font-serif-classic text-base font-bold">{{ form.site_name || 'Sikhun.com' }}</div><div class="mt-1 truncate text-[10px] text-[#8a5a32]">{{ form.site_tagline || (locale === 'bn' ? 'আপনার এআই পড়ার টেবিল' : 'YOUR AI STUDY DESK') }}</div></div>
+                            <div class="min-w-0"><div class="truncate font-serif-classic text-base font-bold">{{ form.site_name || 'Sikhun.com' }}</div><div class="mt-1 truncate text-[10px] tracking-[.12em] text-[#4a3fd6]">{{ form.site_tagline || 'YOUR AI STUDY DESK' }}</div></div>
                         </div>
                         <div class="flex min-h-24 items-center gap-3 rounded-xl border border-[#38342c] bg-[#211f1a] px-4 py-3 text-[#eee9df]">
-                            <img :src="logoPreview || '/images/sikhun-mark.svg'" :alt="`${form.site_name} logo`" class="h-12 w-12 shrink-0 object-contain" />
-                            <div class="min-w-0"><div class="truncate font-serif-classic text-base font-bold">{{ form.site_name || 'Sikhun.com' }}</div><div class="mt-1 truncate text-[10px] text-[#d2ad7c]">{{ form.site_tagline || (locale === 'bn' ? 'আপনার এআই পড়ার টেবিল' : 'YOUR AI STUDY DESK') }}</div></div>
+                            <img :src="logoPreview || '/images/sikhun-mark.svg'" :alt="`${form.site_name_bn} logo`" class="h-12 w-12 shrink-0 object-contain" />
+                            <div class="min-w-0"><div class="truncate font-bangla-classic text-base font-bold">{{ form.site_name_bn || 'শিখুন' }}</div><div class="mt-1 truncate text-[10px] text-[#d2ad7c]">{{ form.site_tagline_bn || 'আপনার এআই পড়ার টেবিল' }}</div></div>
                         </div>
                     </div>
                     <p class="mt-3 text-xs leading-relaxed text-[var(--text-muted)]">{{ locale === 'bn' ? 'স্বচ্ছ ব্যাকগ্রাউন্ডসহ বর্গাকার SVG বা PNG লোগো আপলোড করুন। সাইটের নাম ও ট্যাগলাইন লোগোর পাশে দেখানো হবে।' : 'Upload a square SVG or PNG mark with a transparent background. The site name and tagline will appear beside it.' }}

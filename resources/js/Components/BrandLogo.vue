@@ -15,7 +15,12 @@ const { locale } = useI18n();
 const page = usePage();
 const site = computed(() => page.props.site ?? {});
 const isBangla = computed(() => locale.value === 'bn');
-const tagline = computed(() => site.value.tagline || (isBangla.value ? 'আপনার এআই পড়ার টেবিল' : 'YOUR AI STUDY DESK'));
+const brandName = computed(() => isBangla.value
+    ? (site.value.name_bn || 'শিখুন')
+    : (site.value.name_en || site.value.name || 'Sikhun.com'));
+const tagline = computed(() => isBangla.value
+    ? (site.value.tagline_bn || 'আপনার এআই পড়ার টেবিল')
+    : (site.value.tagline_en || site.value.tagline || 'YOUR AI STUDY DESK'));
 const logoUrl = computed(() => site.value.logo_url || '/images/sikhun-mark.svg');
 </script>
 
@@ -32,7 +37,7 @@ const logoUrl = computed(() => site.value.logo_url || '/images/sikhun-mark.svg')
             <div v-if="isBangla" class="flex flex-col">
                 <span class="font-bangla-classic font-bold text-slate-900 dark:text-slate-100 transition-colors"
                       :class="size === 'sm' ? 'text-lg' : (size === 'lg' ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl')">
-                    {{ site.name && site.name.toLowerCase() !== 'sikhun.com' ? site.name : 'শিখুন' }}
+                    {{ brandName }}
                 </span>
                 <span v-if="!compact" class="text-[9px] sm:text-[10px] font-semibold text-orange-600 dark:text-orange-400 mt-1 flex items-center gap-1 font-bangla">
                     <span>— ◆</span>
@@ -44,7 +49,7 @@ const logoUrl = computed(() => site.value.logo_url || '/images/sikhun-mark.svg')
             <div v-else class="flex flex-col">
                 <span class="font-serif-classic font-extrabold tracking-[0.18em] uppercase text-slate-900 dark:text-slate-100 transition-colors"
                       :class="size === 'sm' ? 'text-base' : (size === 'lg' ? 'text-2xl sm:text-3xl' : 'text-lg sm:text-xl')">
-                    {{ (site.name || 'Sikhun.com').replace(/\.com.*$/i, '') }}<em v-if="(site.name || 'Sikhun.com').toLowerCase().includes('.com')" class="not-italic text-[var(--primary)]">.com</em>
+                    {{ brandName.replace(/\.com.*$/i, '') }}<em v-if="brandName.toLowerCase().includes('.com')" class="not-italic text-[var(--primary)]">.com</em>
                 </span>
                 <span v-if="!compact" class="text-[8px] sm:text-[9px] font-bold text-orange-600 dark:text-orange-400 mt-1 tracking-[0.14em] uppercase flex items-center gap-1 font-sans">
                     <span>— ◆</span>

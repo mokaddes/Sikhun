@@ -33,6 +33,12 @@ class SiteSettingService
         return Cache::remember('site_settings:all', 3600, fn () => SiteSetting::pluck('value', 'key')->all());
     }
 
+    public function set(string $key, mixed $value): void
+    {
+        SiteSetting::updateOrCreate(['key' => $key], ['value' => $value]);
+        $this->forget($key);
+    }
+
     public function forget(string $key): void
     {
         Cache::forget("site_setting:{$key}");

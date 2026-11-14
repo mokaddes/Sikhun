@@ -196,7 +196,7 @@ function logout() {
 </script>
 
 <template>
-    <div class="flex min-h-screen bg-[var(--bg)] text-[var(--text)]">
+    <div :lang="locale" class="flex min-h-screen bg-[var(--bg)] text-[var(--text)]">
         <aside
             class="fixed inset-y-0 left-0 z-50 flex -translate-x-full transform bg-[var(--surface)] shadow-[var(--shadow-lg)]
                    transition-transform duration-300 ease-out

@@ -68,11 +68,11 @@ const isBangla = computed(() => locale.value === 'bn');
         <div class="flex flex-col justify-center leading-none">
             <!-- Bangla Brand Wordmark -->
             <div v-if="isBangla" class="flex flex-col">
-                <span class="font-bangla-classic font-bold tracking-tight text-slate-900 dark:text-slate-100 transition-colors"
+                <span class="font-bangla-classic font-bold text-slate-900 dark:text-slate-100 transition-colors"
                       :class="size === 'sm' ? 'text-lg' : (size === 'lg' ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl')">
                     শিখুন
                 </span>
-                <span v-if="!compact" class="text-[9px] sm:text-[10px] font-semibold text-orange-600 dark:text-orange-400 mt-1 tracking-wider flex items-center gap-1 font-sans">
+                <span v-if="!compact" class="text-[9px] sm:text-[10px] font-semibold text-orange-600 dark:text-orange-400 mt-1 flex items-center gap-1 font-bangla">
                     <span>— ◆</span>
                     <span>আপনার এআই পড়ার টেবিল</span>
                 </span>

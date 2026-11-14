@@ -1,10 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Noto+Serif+Bengali:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-sans: 'Plus Jakarta Sans', 'Hind Siliguri', 'Noto Sans Bengali', 'Kalpurush', system-ui, -apple-system, sans-serif;
+    --font-heading: 'Plus Jakarta Sans', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif;
+    --font-serif: 'Playfair Display', 'Noto Serif Bengali', Georgia, serif;
+    --font-bangla: 'Hind Siliguri', 'Noto Sans Bengali', 'Kalpurush', sans-serif;
+    --font-bangla-classic: 'Noto Serif Bengali', 'Hind Siliguri', serif;
+    --font-mono: 'JetBrains Mono', 'Hind Siliguri', monospace;
+}
 
 /*
  * Sikhun Design System — "Uday (উদয়) — the Rising Sun"
@@ -60,7 +69,8 @@
 
 /* Classical Bengali & Serif Typography Utility Classes */
 .font-bangla-classic {
-    font-family: 'Noto Serif Bengali', 'Hind Siliguri', serif;
+    font-family: 'Noto Serif Bengali', 'Hind Siliguri', serif !important;
+    letter-spacing: normal !important;
 }
 
 .font-serif-classic {
@@ -68,9 +78,10 @@
 }
 
 .font-bangla-num {
-    font-family: 'Noto Serif Bengali', 'Hind Siliguri', serif;
+    font-family: 'Hind Siliguri', 'Noto Sans Bengali', sans-serif !important;
     font-variant-numeric: tabular-nums;
     font-feature-settings: 'tnum' 1;
+    letter-spacing: normal !important;
 }
 
 html { background-color: var(--bg); scroll-behavior: smooth; }
@@ -97,6 +108,23 @@ html { font-size: calc(16px * var(--text-scale, 1)); }
 .dashboard-page h3 {
     font-family: 'Playfair Display', 'Noto Serif Bengali', Georgia, serif;
     letter-spacing: -.02em;
+}
+
+/* Ensure Bengali text in headings never suffers from negative letter-spacing */
+html[lang="bn"] .public-shell main h1,
+html[lang="bn"] .public-shell main h2,
+html[lang="bn"] .public-shell main h3,
+html[lang="bn"] .dashboard-page h1,
+html[lang="bn"] .dashboard-page h2,
+html[lang="bn"] .dashboard-page h3,
+[lang="bn"] .public-shell main h1,
+[lang="bn"] .public-shell main h2,
+[lang="bn"] .public-shell main h3,
+[lang="bn"] .dashboard-page h1,
+[lang="bn"] .dashboard-page h2,
+[lang="bn"] .dashboard-page h3 {
+    font-family: 'Noto Serif Bengali', 'Hind Siliguri', serif !important;
+    letter-spacing: normal !important;
 }
 .public-shell main section[class*="py-"] {
     padding-block: clamp(2.25rem, 5vw, 4rem);
@@ -152,16 +180,83 @@ html { font-size: calc(16px * var(--text-scale, 1)); }
     color: var(--text-muted) !important;
 }
 
-body {
-    font-family: 'Plus Jakarta Sans', 'DM Sans', 'Hind Siliguri', sans-serif;
+/* ==========================================================================
+   Bengali Typography & OpenType Shaping Engine
+   Ensures crystal-clear, smooth, connected conjuncts across all platforms.
+   ========================================================================== */
+:root {
+    --font-bn-stack: 'Hind Siliguri', 'Noto Sans Bengali', 'Kalpurush', 'SolaimanLipi', system-ui, -apple-system, sans-serif;
+    --font-bn-serif: 'Noto Serif Bengali', 'Hind Siliguri', serif;
+}
+
+body,
+.font-sans {
+    font-family: 'Plus Jakarta Sans', var(--font-bn-stack);
     background-color: var(--bg);
     color: var(--text);
     transition: background-color 0.2s ease, color 0.2s ease;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
-h1, h2, h3, h4, .font-heading {
-    font-family: 'Plus Jakarta Sans', 'Noto Serif Bengali', sans-serif;
+/* When the document or subtree is in Bengali */
+html[lang="bn"] body,
+html[lang="bn"] .font-sans,
+:lang(bn),
+[lang="bn"],
+.font-bangla {
+    font-family: var(--font-bn-stack) !important;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: 'Plus Jakarta Sans', var(--font-bn-stack);
+}
+
+html[lang="bn"] h1,
+html[lang="bn"] h2,
+html[lang="bn"] h3,
+html[lang="bn"] h4,
+html[lang="bn"] h5,
+html[lang="bn"] h6,
+html[lang="bn"] .font-heading,
+[lang="bn"] h1,
+[lang="bn"] h2,
+[lang="bn"] h3,
+[lang="bn"] h4,
+[lang="bn"] h5,
+[lang="bn"] h6,
+[lang="bn"] .font-heading {
+    font-family: var(--font-bn-stack) !important;
+    letter-spacing: normal !important;
+}
+
+/* Bengali OpenType Ligature & Conjunct Safety:
+   letter-spacing disrupts Indic conjunct rendering in Blink & WebKit.
+   Enforce zero/normal letter-spacing and enable ligatures on Bengali text. */
+html[lang="bn"] *,
+[lang="bn"] *,
+:lang(bn),
+.font-bangla,
+.font-bangla-classic,
+.font-bangla-num {
+    letter-spacing: normal !important;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'clig' 1, 'calt' 1;
+    -webkit-font-feature-settings: 'kern' 1, 'liga' 1, 'clig' 1, 'calt' 1;
+    text-rendering: optimizeLegibility;
+}
+
+/* Eyebrow in Bengali context: disable wide letter-spacing and uppercase */
+html[lang="bn"] .eyebrow,
+[lang="bn"] .eyebrow,
+.eyebrow:lang(bn),
+html[lang="bn"] [class*="eyebrow"],
+[lang="bn"] [class*="eyebrow"] {
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    font-family: var(--font-bn-stack) !important;
+    font-weight: 600;
 }
 
 .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 1.25em; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; direction: ltr; font-feature-settings: 'liga'; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }

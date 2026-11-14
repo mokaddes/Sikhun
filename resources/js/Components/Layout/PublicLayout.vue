@@ -50,7 +50,7 @@ const nav = computed(() => [
 </script>
 
 <template>
-    <div class="public-shell min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-200">
+    <div :lang="locale" class="public-shell min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-200">
         <!-- Classical Nav Header -->
         <header class="public-header sticky top-0 z-40 border-b border-slate-200/80 dark:border-white/5 bg-white/95 dark:bg-[#0b0f19]/95 text-slate-900 dark:text-[#dfe2f1] backdrop-blur-xl shadow-xs transition-colors duration-200">
             <div class="max-w-7xl mx-auto px-4 md:px-6 h-16 xl:h-18 flex items-center justify-between gap-4">

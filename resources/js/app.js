@@ -11,8 +11,10 @@ import { useNotificationStore } from './Stores/notifications';
 const appName = import.meta.env.VITE_APP_NAME || 'Sikhun.com';
 
 // SPA page-view tracking — Inertia navigations don't reload the page, so
-// report each visit to Google Analytics manually.
+// report each visit to Google Analytics manually and keep document lang synchronized.
 router.on('navigate', (event) => {
+    const loc = event.detail.page.props?.locale || 'bn';
+    document.documentElement.lang = loc;
     if (typeof window.gtag === 'function') {
         window.gtag('config', 'G-102CKE347K', {
             page_path: event.detail.page.url,
@@ -34,6 +36,10 @@ createInertiaApp({
             .use(pinia);
 
         app.mount(el);
+
+        // Sync document language attribute on mount
+        const currentLocale = props.initialPage?.props?.locale || 'bn';
+        document.documentElement.lang = currentLocale;
 
         // Apply saved/system theme immediately after mount to avoid flash.
         useThemeStore().init();

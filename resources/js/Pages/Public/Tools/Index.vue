@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
@@ -50,12 +50,18 @@ const en = computed(() => locale.value === 'en');
 
 // Active view: 'catalog' | toolId
 const activeTab = ref('catalog');
-const categoryFilter = ref('all'); // 'all' | 'study' | 'tech' | 'pdf' | 'finance' | 'career'
+const categoryFilter = ref('all'); // all | study | documents | everyday | tech
 const searchQuery = ref('');
 const copied = ref(false);
+const categoryLabels = computed(() => ({
+    study: en.value ? 'Study & exams' : 'পড়াশোনা ও পরীক্ষা',
+    documents: en.value ? 'Documents & images' : 'নথি ও ছবি',
+    everyday: en.value ? 'Everyday calculators' : 'দৈনন্দিন ক্যালকুলেটর',
+    tech: en.value ? 'Coding & notes' : 'কোডিং ও নোট',
+}));
 
 // ==========================================
-// 14 ESSENTIAL STUDENT & TECH TOOLS DIRECTORY
+// Student tools first, then everyday document and technical utilities.
 // ==========================================
 const toolsList = [
     // --- Study & Academic Tools ---
@@ -115,7 +121,7 @@ const toolsList = [
     // --- PDF & Document Tools ---
     {
         id: 'image_to_pdf',
-        category: 'pdf',
+        category: 'documents',
         titleBn: 'ছবি থেকে পিডিএফ কনভার্টার',
         titleEn: 'Image to PDF Converter',
         descBn: 'একাধিক ছবি (JPG, PNG, WebP) যুক্ত করে ব্রাউজারে ১-ক্লিকে চমৎকার A4 PDF তৈরি ও ডাউনলোড করুন।',
@@ -128,7 +134,7 @@ const toolsList = [
     },
     {
         id: 'pdf_to_text',
-        category: 'pdf',
+        category: 'documents',
         titleBn: 'পিডিএফ থেকে টেক্সট এক্সট্রাক্টর',
         titleEn: 'PDF to Text Extractor',
         descBn: 'যেকোনো পিডিএফ ফাইল থেকে সব লেখা আলাদা করুন, ওয়ার্ড কাউন্ট দেখুন বা .TXT ফাইল ডাউনলোড করুন।',
@@ -141,7 +147,7 @@ const toolsList = [
     },
     {
         id: 'resizer',
-        category: 'pdf',
+        category: 'documents',
         titleBn: 'চাকরির ছবি ও স্বাক্ষর রিসাইজার',
         titleEn: 'Job Photo & Signature Resizer',
         descBn: 'টেলিটক ও সরকারি চাকরির আবেদনের জন্য ৩০০x৩০০ ছবি (১০০KB) ও ৩০০x৮০ স্বাক্ষর (৬০KB) রূপান্তর।',
@@ -223,7 +229,7 @@ const toolsList = [
     // --- Currency & Finance / Utilities ---
     {
         id: 'currency',
-        category: 'finance',
+        category: 'everyday',
         titleBn: 'লাইভ কারেন্সি ও মুদ্রা কনভার্টার',
         titleEn: 'Live Currency Converter',
         descBn: 'বাংলাদেশী টাকা (BDT), ইউএস ডলার ($), সৌদি রিয়াল (SAR), দিরহাম, ইউরো, পাউন্ডের লাইভ রেট কনভার্টার।',
@@ -236,7 +242,7 @@ const toolsList = [
     },
     {
         id: 'age',
-        category: 'career',
+        category: 'everyday',
         titleBn: 'সাধারণ ও চাকরির বয়স ক্যালকুলেটর',
         titleEn: 'General & Job Age Calculator',
         descBn: 'বছর, মাস, দিন, মোট সপ্তাহ ও পরবর্তী জন্মদিনের কাউন্টডাউন এবং সরকারি চাকরির বয়স যোগ্যতা।',
@@ -249,7 +255,7 @@ const toolsList = [
     },
     {
         id: 'calculator',
-        category: 'career',
+        category: 'everyday',
         titleBn: 'ইন্টারঅ্যাক্টিভ সাধারণ ক্যালকুলেটর',
         titleEn: 'Standard Calculator',
         descBn: 'ক্যালকুলেটরের বোতাম চেপে বা কিবোর্ড টাইপ করে দ্রুত গাণিতিক হিসাব সম্পন্ন করার টুল।',
@@ -262,6 +268,8 @@ const toolsList = [
     },
 ];
 
+const toolPriority = ['gpa', 'routine', 'pomodoro', 'formulas', 'image_to_pdf', 'resizer', 'pdf_to_text', 'age', 'calculator', 'currency', 'text', 'markdown', 'code_formatter', 'json_viewer', 'regex'];
+
 const filteredTools = computed(() => {
     return toolsList.filter(t => {
         const matchesCategory = categoryFilter.value === 'all' || t.category === categoryFilter.value;
@@ -273,12 +281,13 @@ const filteredTools = computed(() => {
             t.descBn.toLowerCase().includes(q) ||
             t.descEn.toLowerCase().includes(q)
         );
-    });
+    }).sort((a, b) => toolPriority.indexOf(a.id) - toolPriority.indexOf(b.id));
 });
 
-function openTool(toolId) {
+async function openTool(toolId) {
     activeTab.value = toolId;
-    window.scrollTo({ top: 380, behavior: 'smooth' });
+    await nextTick();
+    document.querySelector('#tools-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 onMounted(() => {
@@ -566,89 +575,95 @@ function convertText(mode) {
 
     <PublicLayout>
         <!-- Hero Header -->
-        <header class="bg-gradient-to-b from-gray-50 via-white to-gray-50 dark:from-[#111622] dark:via-[#0d111a] dark:to-[var(--bg)] border-b border-gray-200 dark:border-white/5 py-12 md:py-16">
-            <div class="max-w-6xl mx-auto px-4 md:px-6 text-center">
-                <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[var(--primary)]/15 border border-[var(--primary)]/30 text-[var(--primary)] text-xs font-bold uppercase tracking-wider mb-3">
-                    <SparklesIcon class="w-4 h-4" /> {{ en ? '100% Free Online Student & Tech Utilities (No Login Required)' : '১০০% ফ্রি অনলাইন স্টুডেন্ট ও টেক টুলস (লগইন ছাড়াই)' }}
-                </span>
-                <h1 class="font-heading text-3xl md:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-                    {{ en ? 'Student & Tech' : 'স্টাডি ও টেক অনলাইন' }} <span class="text-gradient">{{ en ? 'Tools Hub' : 'টুলস হাব' }}</span>
+        <header class="tools-hero border-b border-[var(--border)] py-9 sm:py-12">
+            <div class="mx-auto max-w-6xl px-4 text-left md:px-6">
+                <span class="tools-eyebrow">{{ en ? 'A practical desk for students' : 'শিক্ষার্থীদের দরকারি সহায়তা' }}</span>
+                <h1 class="mt-2 font-heading text-3xl font-bold tracking-tight text-[var(--text)] md:text-5xl">
+                    {{ en ? 'Study tools, in the right order.' : 'পড়াশোনার দরকারি টুলস, এক জায়গায়।' }}
                 </h1>
-                <p class="mt-3 max-w-2xl mx-auto text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                    {{ en ? 'Pomodoro timer, study planner, image to PDF, PDF to text, live currency exchange, code formatter, JSON validator, and formulas—all in one place.' : 'পোমোডোরো টাইমার, স্টাডি রুটিন মেকার, ইমেজ টু পিডিএফ, পিডিএফ টু টেক্সট, লাইভ মুদ্রা কনভার্টার, কোড ফরম্যাটার, জেসন ভিউয়ার ও সূত্রাবলি—সকল দরকারি ফ্রি টুলস এক জায়গায়।' }}
+                <p class="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--text-muted)] sm:text-base">
+                    {{ en ? 'Start with grades, a study plan, or a focus session. Find document and everyday utilities below.' : 'GPA হিসাব, পড়ার পরিকল্পনা বা মনোযোগী একটি সেশন দিয়ে শুরু করুন। এরপর নথি ও দৈনন্দিন কাজের টুলস খুঁজে নিন।' }}
                 </p>
 
                 <!-- Search Input Bar -->
-                <div class="mt-6 max-w-xl mx-auto relative">
+                <div class="relative mt-6 max-w-2xl">
                     <MagnifyingGlassIcon class="w-5 h-5 text-gray-400 absolute left-4 top-3" />
                     <input
                         v-model="searchQuery"
                         type="text"
-                        :placeholder="en ? 'Search any tool (e.g. Pomodoro, PDF, Currency, Routine, Code)...' : 'টুল খুঁজুন... (যেমন: পোমোডোরো, পিডিএফ, মুদ্রা, রুটিন, কোড, বয়স)'"
-                        class="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-white dark:bg-[#161a26] border border-gray-300 dark:border-white/10 text-xs sm:text-sm text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                        :placeholder="en ? 'What do you need to do? Search tools…' : 'কোন কাজটি করতে চান? টুল খুঁজুন…'"
+                        aria-label="Search student tools"
+                        class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] py-3 pl-11 pr-4 text-sm text-[var(--text)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                     />
                 </div>
 
                 <!-- Tool Category Switcher Tabs -->
-                <div class="mt-6 flex items-center justify-center gap-2 flex-wrap">
+                <div class="mt-5 flex flex-wrap items-center gap-2">
                     <button
                         type="button"
                         @click="categoryFilter = 'all'; activeTab = 'catalog'"
                         class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border"
-                        :class="categoryFilter === 'all' && activeTab === 'catalog' ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-md shadow-[var(--primary)]/20' : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'"
+                        :class="categoryFilter === 'all' && activeTab === 'catalog' ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm' : 'bg-[var(--surface)] text-[var(--text-muted)] border-[var(--border)] hover:bg-[var(--surface2)]'"
                     >
-                        <span>🌟</span> {{ en ? 'All Tools (14)' : 'সবগুলো ক্যাটালগ (১৪)' }}
+                        {{ en ? `All tools (${toolsList.length})` : `সব টুলস (${toolsList.length})` }}
                     </button>
 
                     <button
                         type="button"
                         @click="categoryFilter = 'study'; activeTab = 'catalog'"
                         class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border"
-                        :class="categoryFilter === 'study' && activeTab === 'catalog' ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/20' : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'"
+                        :class="categoryFilter === 'study' && activeTab === 'catalog' ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm' : 'bg-[var(--surface)] text-[var(--text-muted)] border-[var(--border)] hover:bg-[var(--surface2)]'"
                     >
-                        <span>🎓</span> {{ en ? 'Study & Focus' : 'শিক্ষা ও পড়াশোনা' }}
+                        {{ en ? 'Study & exams' : 'পড়াশোনা ও পরীক্ষা' }}
                     </button>
 
                     <button
                         type="button"
-                        @click="categoryFilter = 'pdf'; activeTab = 'catalog'"
+                        @click="categoryFilter = 'documents'; activeTab = 'catalog'"
                         class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border"
-                        :class="categoryFilter === 'pdf' && activeTab === 'catalog' ? 'bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/20' : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'"
+                        :class="categoryFilter === 'documents' && activeTab === 'catalog' ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm' : 'bg-[var(--surface)] text-[var(--text-muted)] border-[var(--border)] hover:bg-[var(--surface2)]'"
                     >
-                        <span>📑</span> {{ en ? 'PDF & Images' : 'পিডিএফ ও ইমেজ' }}
+                        {{ en ? 'Documents & images' : 'নথি ও ছবি' }}
                     </button>
 
                     <button
                         type="button"
                         @click="categoryFilter = 'tech'; activeTab = 'catalog'"
                         class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border"
-                        :class="categoryFilter === 'tech' && activeTab === 'catalog' ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20' : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'"
+                        :class="categoryFilter === 'tech' && activeTab === 'catalog' ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm' : 'bg-[var(--surface)] text-[var(--text-muted)] border-[var(--border)] hover:bg-[var(--surface2)]'"
                     >
-                        <span>💻</span> {{ en ? 'Tech & Coding' : 'টেক ও কোডিং' }}
+                        {{ en ? 'Coding & notes' : 'কোডিং ও নোট' }}
                     </button>
 
                     <button
                         type="button"
-                        @click="categoryFilter = 'finance'; activeTab = 'catalog'"
+                        @click="categoryFilter = 'everyday'; activeTab = 'catalog'"
                         class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border"
-                        :class="categoryFilter === 'finance' && activeTab === 'catalog' ? 'bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-600/20' : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'"
+                        :class="categoryFilter === 'everyday' && activeTab === 'catalog' ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm' : 'bg-[var(--surface)] text-[var(--text-muted)] border-[var(--border)] hover:bg-[var(--surface2)]'"
                     >
-                        <span>💱</span> {{ en ? 'Currency & FX' : 'মুদ্রা ও ফাইন্যান্স' }}
-                    </button>
-
-                    <button
-                        type="button"
-                        @click="categoryFilter = 'career'; activeTab = 'catalog'"
-                        class="px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border"
-                        :class="categoryFilter === 'career' && activeTab === 'catalog' ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20' : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'"
-                    >
-                        <span>💼</span> {{ en ? 'Career & Apply' : 'চাকরি ও আবেদন' }}
+                        {{ en ? 'Everyday calculators' : 'দৈনন্দিন ক্যালকুলেটর' }}
                     </button>
                 </div>
             </div>
         </header>
 
-        <main class="max-w-6xl mx-auto px-4 md:px-6 py-10">
+        <main id="tools-workspace" class="max-w-6xl mx-auto scroll-mt-24 px-4 py-8 md:px-6 md:py-10">
+            <section v-if="activeTab === 'catalog'" class="tools-priority mb-10">
+                <div class="mb-4 flex flex-wrap items-end justify-between gap-2">
+                    <div>
+                        <p class="tools-eyebrow">{{ en ? 'Start here' : 'এখান থেকে শুরু করুন' }}</p>
+                        <h2 class="mt-1 text-xl font-semibold text-[var(--text)] sm:text-2xl">{{ en ? 'Your next useful step' : 'এখন আপনার যে কাজটি দরকার' }}</h2>
+                    </div>
+                    <Link href="/question-bank" class="tools-link">{{ en ? 'Practice questions' : 'প্রশ্ন অনুশীলন' }} →</Link>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Link href="/results" class="tools-shortcut"><span class="tools-shortcut-index">01</span><strong>{{ en ? 'Check exam results' : 'পরীক্ষার ফল দেখুন' }}</strong><span>{{ en ? 'Find a published result' : 'প্রকাশিত ফলাফল খুঁজুন' }} →</span></Link>
+                    <button type="button" class="tools-shortcut text-left" @click="openTool('gpa')"><span class="tools-shortcut-index">02</span><strong>{{ en ? 'Calculate GPA' : 'GPA হিসাব করুন' }}</strong><span>{{ en ? 'SSC, HSC & honours' : 'SSC, HSC ও অনার্স' }} →</span></button>
+                    <button type="button" class="tools-shortcut text-left" @click="openTool('routine')"><span class="tools-shortcut-index">03</span><strong>{{ en ? 'Plan a study routine' : 'পড়ার রুটিন সাজান' }}</strong><span>{{ en ? 'Make a plan for your week' : 'সপ্তাহের পরিকল্পনা করুন' }} →</span></button>
+                    <button type="button" class="tools-shortcut text-left" @click="openTool('pomodoro')"><span class="tools-shortcut-index">04</span><strong>{{ en ? 'Start a focus session' : 'মনোযোগী সেশন শুরু করুন' }}</strong><span>{{ en ? 'Study with a simple timer' : 'সহজ টাইমারে পড়ুন' }} →</span></button>
+                </div>
+            </section>
+
             <!-- Breadcrumb Navigation when a tool is active -->
             <div v-if="activeTab !== 'catalog'" class="mb-6 flex items-center justify-between gap-3">
                 <button
@@ -683,7 +698,7 @@ function convertText(mode) {
                         {{ en ? `Showing ${filteredTools.length} free tools` : `${filteredTools.length}টি ১০০% ফ্রি ইউটিলিটি টুলস` }}
                     </span>
                     <span v-if="categoryFilter !== 'all'" class="font-semibold text-[var(--primary)] uppercase tracking-wider">
-                        {{ categoryFilter }}
+                        {{ categoryLabels[categoryFilter] }}
                     </span>
                 </div>
 
@@ -692,12 +707,16 @@ function convertText(mode) {
                         v-for="tool in filteredTools"
                         :key="tool.id"
                         @click="openTool(tool.id)"
-                        class="card p-6 rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161a26] hover:border-[var(--primary)]/50 transition-all duration-200 shadow-sm hover:shadow-lg hover:-translate-y-0.5 cursor-pointer flex flex-col justify-between group"
+                        class="tool-card card p-5 sm:p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--primary)]/40 transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 cursor-pointer flex flex-col justify-between group text-left"
+                        role="button"
+                        tabindex="0"
+                        @keydown.enter.prevent="openTool(tool.id)"
+                        @keydown.space.prevent="openTool(tool.id)"
                     >
                         <div>
                             <!-- Top Badge Strip -->
                             <div class="flex items-center justify-between mb-4">
-                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border" :class="tool.badgeColor">
+                                <span class="tool-badge px-2.5 py-0.5 rounded-full text-[10px] font-bold border" :class="tool.badgeColor">
                                     {{ en ? tool.badgeEn : tool.badgeBn }}
                                 </span>
                                 <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
@@ -708,14 +727,14 @@ function convertText(mode) {
                             <!-- Icon & Title -->
                             <div class="flex items-start gap-3.5 mb-2">
                                 <div class="p-2.5 rounded-2xl bg-gray-50 dark:bg-[#0e121d] border border-gray-200 dark:border-white/5 shrink-0 group-hover:scale-110 transition">
-                                    <component :is="tool.icon" class="w-6 h-6" :class="tool.color" />
+                                    <component :is="tool.icon" class="tool-icon w-6 h-6" :class="tool.color" />
                                 </div>
                                 <div>
                                     <h3 class="font-heading font-bold text-base text-gray-900 dark:text-white group-hover:text-[var(--primary)] transition">
                                         {{ en ? tool.titleEn : tool.titleBn }}
                                     </h3>
-                                    <span class="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">
-                                        {{ tool.category.toUpperCase() }} UTILITY
+                                    <span class="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-semibold">
+                                        {{ categoryLabels[tool.category] || tool.category }}
                                     </span>
                                 </div>
                             </div>
@@ -1281,3 +1300,18 @@ function convertText(mode) {
         </main>
     </PublicLayout>
 </template>
+
+<style>
+.tools-hero { background: linear-gradient(180deg, var(--surface2), var(--bg)); }
+.tools-eyebrow { color: var(--primary); font-size: .7rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.tools-link { color: var(--primary); font-size: .82rem; font-weight: 650; }
+.tools-shortcut { display: flex; min-height: 142px; flex-direction: column; align-items: flex-start; gap: .45rem; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); padding: 1rem; color: var(--text); transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+.tools-shortcut:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 38%, var(--border)); background: color-mix(in srgb, var(--primary) 5%, var(--surface)); }
+.tools-shortcut:focus-visible, .tool-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.tools-shortcut-index { color: var(--primary); font-size: .7rem; font-weight: 700; letter-spacing: .12em; }
+.tools-shortcut strong { font-size: .95rem; line-height: 1.4; }
+.tools-shortcut > span:last-child { margin-top: auto; color: var(--text-muted); font-size: .76rem; }
+.tool-card .tool-badge { border-color: var(--border) !important; background: var(--surface2) !important; color: var(--text-muted) !important; }
+.tool-card .tool-icon { color: var(--primary) !important; }
+@media (max-width: 640px) { .tools-shortcut { min-height: 122px; } }
+</style>

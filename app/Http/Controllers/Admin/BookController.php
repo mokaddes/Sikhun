@@ -244,19 +244,27 @@ class BookController extends Controller
 
     public function updateChapters(Request $request, Book $book): RedirectResponse
     {
-        $validated = $request->validate([
-            'chapters' => ['required', 'array'],
-            'chapters.*.id' => ['required', 'integer', 'exists:book_chapters,id'],
-            'chapters.*.price' => ['nullable', 'numeric', 'min:0'],
-        ]);
-
-        foreach ($validated['chapters'] as $item) {
-            $book->chapters()->where('id', $item['id'])->update([
-                'price' => isset($item['price']) && $item['price'] !== '' ? $item['price'] : null,
+        if ($request->has('chapter_purchase_enabled')) {
+            $book->update([
+                'chapter_purchase_enabled' => $request->boolean('chapter_purchase_enabled'),
             ]);
         }
 
-        return back()->with('success', 'Chapter prices updated successfully.');
+        if ($request->has('chapters') && is_array($request->input('chapters'))) {
+            $validated = $request->validate([
+                'chapters' => ['required', 'array'],
+                'chapters.*.id' => ['required', 'integer', 'exists:book_chapters,id'],
+                'chapters.*.price' => ['nullable', 'numeric', 'min:0'],
+            ]);
+
+            foreach ($validated['chapters'] as $item) {
+                $book->chapters()->where('id', $item['id'])->update([
+                    'price' => isset($item['price']) && $item['price'] !== '' && $item['price'] !== null ? $item['price'] : null,
+                ]);
+            }
+        }
+
+        return back()->with('success', 'Chapter settings and prices updated successfully.');
     }
 
     private function formOptions(): array

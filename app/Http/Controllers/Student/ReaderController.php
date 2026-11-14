@@ -67,11 +67,28 @@ class ReaderController extends Controller
 
         $accessiblePages = null;
         if ($accessibleChapterIds !== null && ! $access->hasAccess($student, $book)) {
-            $accessiblePages = $book->pages()
+            $pageNumbersFromDb = $book->pages()
                 ->whereIn('chapter_id', $accessibleChapterIds)
-                ->orderBy('page_number')
                 ->pluck('page_number')
                 ->all();
+
+            $chapterRanges = $book->chapters()
+                ->whereIn('id', $accessibleChapterIds)
+                ->get(['start_page', 'end_page']);
+
+            $pagesFromRanges = [];
+            foreach ($chapterRanges as $ch) {
+                if ($ch->start_page) {
+                    $start = (int) $ch->start_page;
+                    $end = (int) ($ch->end_page ?: $start);
+                    for ($p = $start; $p <= $end; $p++) {
+                        $pagesFromRanges[] = $p;
+                    }
+                }
+            }
+
+            $accessiblePages = array_values(array_unique(array_merge($pageNumbersFromDb, $pagesFromRanges)));
+            sort($accessiblePages);
         }
 
         $session = ReadingSession::where('student_id', $student->id)
@@ -90,6 +107,10 @@ class ReaderController extends Controller
         $initialPage = $lastPage
             ? max(1, min((int) $lastPage, (int) ($book->total_pages ?: $lastPage)))
             : 1;
+
+        if ($accessiblePages !== null && ! empty($accessiblePages) && ! in_array($initialPage, $accessiblePages, true)) {
+            $initialPage = $accessiblePages[0];
+        }
 
         if (! $session) {
             $session = ReadingSession::create([

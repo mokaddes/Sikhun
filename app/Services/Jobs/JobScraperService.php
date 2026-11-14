@@ -4,6 +4,7 @@ namespace App\Services\Jobs;
 
 use App\Models\JobCircular;
 use App\Models\JobSource;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -17,9 +18,20 @@ class JobScraperService
      */
     public function scrapeAll(): int
     {
+        // 1. Purge any admission/academic admission notices so job-news is 100% pure jobs
+        $this->purgeAdmissionNotices();
+
         $this->ensureDefaultSources();
         $importedCount = 0;
 
+        // 2. Scrape live official Teletalk Alljobs recruitment portal
+        try {
+            $importedCount += $this->scrapeTeletalkAlljobs();
+        } catch (\Throwable $e) {
+            Log::warning('Scraping Teletalk Alljobs failed: ' . $e->getMessage());
+        }
+
+        // 3. Scrape other configured sources
         $sources = JobSource::where('is_active', true)->get();
         foreach ($sources as $source) {
             try {
@@ -33,27 +45,26 @@ class JobScraperService
             }
         }
 
-        // Ensure verified foundational circulars exist
+        // 4. Ensure verified foundational circulars exist
         $importedCount += $this->seedVerifiedCirculars();
+
+        // 5. Final pass to remove any stale admission notices
+        $this->purgeAdmissionNotices();
 
         return $importedCount;
     }
 
     public function ensureDefaultSources(): void
     {
-        if (JobSource::count() > 0) {
-            return;
-        }
-
         $defaults = [
             [
-                'name' => 'Students.bd Education & Job Feed',
-                'url' => 'https://students.bd/jobs',
-                'feed_url' => 'https://students.bd/rss.xml',
-                'type' => 'rss',
+                'name' => 'Teletalk Alljobs Recruitment Portal',
+                'url' => 'https://alljobs.teletalk.com.bd/jobs?orgid=1&keyword=',
+                'feed_url' => 'https://alljobs.teletalk.com.bd/api/v1/govt-jobs/org-list',
+                'type' => 'alljobs',
                 'default_category' => 'government',
                 'is_active' => true,
-                'notes' => 'শিক্ষা বিষয়ক ও সরকারি নিয়োগ বিজ্ঞপ্তির লাইভ RSS ফিড',
+                'notes' => 'সকল মন্ত্রণালয় ও রাজস্ব খাতভুক্ত সরকারি চাকরি সার্কুলার (Alljobs by Teletalk)',
             ],
             [
                 'name' => 'Bangladesh Bank E-Recruitment Portal',
@@ -65,13 +76,13 @@ class JobScraperService
                 'notes' => 'বাংলাদেশ ব্যাংক ও সমন্বিত সরকারি ব্যাংক নিয়োগ',
             ],
             [
-                'name' => 'Teletalk Alljobs Recruitment Portal',
-                'url' => 'https://alljobs.teletalk.com.bd',
-                'feed_url' => null,
-                'type' => 'web',
+                'name' => 'Students.bd Education & Job Feed',
+                'url' => 'https://students.bd/jobs',
+                'feed_url' => 'https://students.bd/rss.xml',
+                'type' => 'rss',
                 'default_category' => 'government',
                 'is_active' => true,
-                'notes' => 'সকল মন্ত্রণালয় ও রাজস্ব খাতভুক্ত সরকারি চাকরি সার্কুলার',
+                'notes' => 'শিক্ষা বিষয়ক ও সরকারি নিয়োগ বিজ্ঞপ্তির লাইভ RSS ফিড',
             ],
             [
                 'name' => 'BD NGO & Development Sector Feeds',
@@ -85,8 +96,276 @@ class JobScraperService
         ];
 
         foreach ($defaults as $item) {
-            JobSource::firstOrCreate(['name' => $item['name']], $item);
+            JobSource::updateOrCreate(['name' => $item['name']], $item);
         }
+    }
+
+    /**
+     * Purge all admission/university entrance circulars from the job news table.
+     */
+    public function purgeAdmissionNotices(): int
+    {
+        $keywords = [
+            'admission',
+            'ভর্তি',
+            'undergraduate admission',
+            'honours admission',
+            'degree admission',
+            'masters admission',
+            'coursework exam',
+            'form fill-up',
+            'marine cadet',
+            'bteb ssc',
+            'dakhil vocational',
+            'kuet admission',
+            'dhaka university undergraduate',
+            'bou professional mba',
+            'jagannath university undergraduate',
+            'rajshahi university honours',
+            'admit card download',
+        ];
+
+        return JobCircular::where(function ($q) use ($keywords) {
+            foreach ($keywords as $kw) {
+                $q->orWhere('title', 'like', "%{$kw}%")
+                  ->orWhere('slug', 'like', "%{$kw}%")
+                  ->orWhere('description', 'like', "%{$kw}%");
+            }
+        })->delete();
+    }
+
+    /**
+     * Check if a given circular title or description is an admission notice.
+     */
+    public function isAdmissionNotice(string $title, string $desc = ''): bool
+    {
+        $combined = mb_strtolower($title . ' ' . $desc);
+
+        $patterns = [
+            'admission',
+            'ভর্তি',
+            'ভর্তি পরীক্ষা',
+            'ভর্তি বিজ্ঞপ্তি',
+            'honours admission',
+            'degree admission',
+            'masters admission',
+            'undergraduate admission',
+            'postgraduate admission',
+            'marine cadet admission',
+            'bteb admission',
+            'coursework exam',
+            'form fill-up notice',
+            'form fill-up',
+            'admit card download',
+            'seat plan',
+            'class 9 admission',
+            'class 11 admission',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (str_contains($combined, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Parse and validate job application deadline.
+     * Returns YYYY-MM-DD string or null.
+     */
+    public function parseDeadlineDate(?string $text): ?string
+    {
+        if (! $text) {
+            return null;
+        }
+
+        // Convert Bengali digits to English
+        $bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+        $enDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        $normalized = str_replace($bnDigits, $enDigits, $text);
+
+        // Convert Bengali month names to English
+        $bnMonths = [
+            'জানুয়ারি' => 'January', 'জানুয়ারি' => 'January', 'জানুয়ারি' => 'January',
+            'ফেব্রুয়ারি' => 'February', 'ফেব্রুয়ারি' => 'February',
+            'মার্চ' => 'March',
+            'এপ্রিল' => 'April',
+            'মে' => 'May',
+            'জুন' => 'June',
+            'জুলাই' => 'July',
+            'আগস্ট' => 'August',
+            'সেপ্টেম্বর' => 'September',
+            'অক্টোবর' => 'October',
+            'নভেম্বর' => 'November',
+            'ডিসেম্বর' => 'December',
+        ];
+        foreach ($bnMonths as $bnM => $enM) {
+            $normalized = str_ireplace($bnM, $enM, $normalized);
+        }
+
+        // Look for deadline keywords followed by date
+        if (preg_match('/(?:শেষ তারিখ|deadline|last date)[^0-9a-zA-Z]{0,25}(\d{1,2}[\s\-\/\.]{1,2}(?:January|February|March|April|May|June|July|August|September|October|November|December|[0-9]{1,2})[\s\-\/\.]{1,2}\d{4})/i', $normalized, $matches)) {
+            try {
+                $d = Carbon::parse($matches[1]);
+                return $d->toDateString();
+            } catch (\Throwable $e) {}
+        }
+
+        // Look for standard date patterns (YYYY-MM-DD or DD/MM/YYYY)
+        if (preg_match('/\b(202[5-9])[\-\/\.](0[1-9]|1[0-2])[\-\/\.](0[1-9]|[12]\d|3[01])\b/', $normalized, $matches)) {
+            return "{$matches[1]}-{$matches[2]}-{$matches[3]}";
+        }
+        if (preg_match('/\b(0[1-9]|[12]\d|3[01])[\-\/\.](0[1-9]|1[0-2])[\-\/\.](202[5-9])\b/', $normalized, $matches)) {
+            return "{$matches[3]}-{$matches[2]}-{$matches[1]}";
+        }
+
+        return null;
+    }
+
+    /**
+     * Scrape government job circulars from Teletalk Alljobs official portal (https://alljobs.teletalk.com.bd)
+     */
+    public function scrapeTeletalkAlljobs(int $limitOrgs = 20): int
+    {
+        $apiUrl = 'https://alljobs.teletalk.com.bd/api/v1/govt-jobs/org-list?page=1&limit=' . $limitOrgs;
+        $response = Http::timeout(15)
+            ->withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept' => 'application/json, text/plain, */*',
+            ])
+            ->get($apiUrl);
+
+        if (! $response->successful()) {
+            Log::warning("Teletalk Alljobs API returned status {$response->status()}");
+            return 0;
+        }
+
+        $data = $response->json();
+        $orgList = $data['govtOrgJobs'] ?? [];
+        if (empty($orgList)) {
+            return 0;
+        }
+
+        $imported = 0;
+
+        foreach ($orgList as $org) {
+            $orgId = $org['id'] ?? null;
+            $orgName = $org['name_bn'] ?: ($org['name'] ?? 'বাংলাদেশ সরকারি দপ্তর');
+            $orgNameEn = $org['name'] ?? $orgName;
+            $orgWebsite = $org['website'] ?? null;
+            $orgLogo = ! empty($org['logo']) ? 'https://alljobs.teletalk.com.bd/media/' . $org['logo'] : null;
+            $jobs = $org['govt_jobs'] ?? [];
+
+            foreach ($jobs as $jobSummary) {
+                $jobId = $jobSummary['id'] ?? null;
+                if (! $jobId) {
+                    continue;
+                }
+
+                // Fetch full details of the circular
+                try {
+                    $detailRes = Http::timeout(10)->get("https://alljobs.teletalk.com.bd/api/v1/govt-jobs/public-details?id={$jobId}");
+                    if (! $detailRes->successful()) {
+                        continue;
+                    }
+
+                    $details = $detailRes->json('details');
+                    if (! $details) {
+                        continue;
+                    }
+
+                    $jobTitleBn = $details['job_title_bn'] ?: ($details['job_title'] ?? 'বিভিন্ন পদ');
+                    $jobTitleEn = $details['job_title'] ?? $jobTitleBn;
+
+                    // Filter out any accidental admission notice
+                    if ($this->isAdmissionNotice($jobTitleBn, $orgName)) {
+                        continue;
+                    }
+
+                    // STRICT DATE CHECKING: Extract and validate application deadline
+                    $rawDeadline = $details['deadline_date'] ?? null;
+                    if ($rawDeadline) {
+                        try {
+                            $deadline = Carbon::parse($rawDeadline);
+                            if ($deadline->isPast()) {
+                                // Skip expired circulars
+                                continue;
+                            }
+                            $deadlineStr = $deadline->toDateString();
+                        } catch (\Throwable $e) {
+                            continue;
+                        }
+                    } else {
+                        // If no deadline date is specified, assign 25 days from publish
+                        $deadlineStr = now()->addDays(25)->toDateString();
+                    }
+
+                    // Published date
+                    $publishedStr = ! empty($details['published_date'])
+                        ? Carbon::parse($details['published_date'])->toDateString()
+                        : (! empty($details['advertisement_published_date']) ? $details['advertisement_published_date'] : now()->toDateString());
+
+                    $title = "{$orgName} — {$jobTitleBn} নিয়োগ বিজ্ঞপ্তি ২০২৬";
+                    $slug = Str::slug("teletalk-{$orgNameEn}-{$jobTitleEn}-{$jobId}");
+
+                    $vacancy = ! empty($details['vacancy']) ? "{$details['vacancy']} জন" : 'বিজ্ঞপ্তি অনুযায়ী';
+                    $ageLimit = '';
+                    if (! empty($details['min_age']) && ! empty($details['max_age'])) {
+                        $ageLimit = "বয়সসীমা: {$details['min_age']} - {$details['max_age']} বছর।";
+                    }
+
+                    $applyUrl = $details['application_site'] ?: ($details['job_source'] ?: "https://alljobs.teletalk.com.bd/jobs?orgid={$orgId}&keyword=");
+                    $advFile = ! empty($details['advertisement_file'])
+                        ? 'https://alljobs.teletalk.com.bd/media/' . $details['advertisement_file']
+                        : null;
+
+                    $orgDetails = $details['job_utilities_govtorganization']['details'] ?? '';
+                    $description = "{$orgName}-এ '{$jobTitleBn}' পদে জনবল নিয়োগের লক্ষ্যে বিজ্ঞপ্তি প্রকাশিত হয়েছে।\n\n"
+                        . "পদের নাম: {$jobTitleBn}\n"
+                        . "পদসংখ্যা: {$vacancy}\n"
+                        . ($ageLimit ? "{$ageLimit}\n" : '')
+                        . "আবেদনের শেষ তারিখ: " . Carbon::parse($deadlineStr)->translatedFormat('d F Y') . "\n\n"
+                        . ($orgDetails ? "প্রতিষ্ঠান পরিচিতি:\n" . Str::limit(strip_tags($orgDetails), 600) . "\n\n" : '')
+                        . "আবেদন সংক্রান্ত শর্তাবলী ও প্রয়োজনীয় তথ্যাবলী টেলিটক পোর্টালে বিস্তারিত পাওয়া যাবে।";
+
+                    $jobData = [
+                        'title' => $title,
+                        'slug' => $slug,
+                        'organization' => $orgName,
+                        'category' => 'government',
+                        'job_type' => 'Full-time',
+                        'vacancy' => $vacancy,
+                        'salary' => 'জাতীয় বেতন স্কেল ২০১৫ অনুযায়ী',
+                        'location' => 'বাংলাদেশ',
+                        'education_requirement' => 'পদ অনুযায়ী সংশ্লিষ্ট বিষয়ে স্নাতক / সমমান অথবা এইচএসসি',
+                        'experience_requirement' => 'বিজ্ঞপ্তি অনুযায়ী',
+                        'deadline' => $deadlineStr,
+                        'published_date' => $publishedStr,
+                        'description' => $description,
+                        'application_instructions' => "টেলিটকের অফিসিয়াল পোর্টালে ({$applyUrl}) গিয়ে নির্ধারিত ফরম পূরণ করে আবেদন ফি জমা দিন।",
+                        'apply_url' => $applyUrl,
+                        'source_name' => 'Teletalk Alljobs',
+                        'source_url' => "https://alljobs.teletalk.com.bd/jobs?orgid={$orgId}&keyword=",
+                        'image_url' => $advFile ?: $orgLogo,
+                        'is_featured' => true,
+                    ];
+
+                    $existing = JobCircular::where('slug', $slug)->first();
+                    if ($existing) {
+                        $existing->update($jobData);
+                    } else {
+                        JobCircular::create($jobData);
+                        $imported++;
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning("Error fetching job details for Teletalk job {$jobId}: " . $e->getMessage());
+                }
+            }
+        }
+
+        return $imported;
     }
 
     public function scrapeSource(JobSource $source): int
@@ -94,7 +373,9 @@ class JobScraperService
         $imported = 0;
         $url = $source->feed_url ?: $source->url;
 
-        if ($source->type === 'rss' && $url) {
+        if ($source->type === 'alljobs' || str_contains(strtolower($url ?? ''), 'alljobs.teletalk.com.bd')) {
+            $imported = $this->scrapeTeletalkAlljobs();
+        } elseif ($source->type === 'rss' && $url) {
             $imported = $this->scrapeRssFeed($url, $source->default_category, $source->name);
         } else {
             $imported = $this->seedVerifiedCirculars();
@@ -131,10 +412,14 @@ class JobScraperService
             $title = (string) $item->title;
             $link = (string) $item->link;
             $description = (string) $item->description;
-            $category = (string) ($item->category ?? 'Government');
 
-            // Only capture job circulars or notices related to jobs/recruitment/admission
-            if (! preg_match('/(job|circular|recruitment|নিয়োগ|চাকরি|বিসিএস|bank|officer)/i', $title . ' ' . $description)) {
+            // STRICT EXCLUSION: Reject any admission notices immediately
+            if ($this->isAdmissionNotice($title, $description)) {
+                continue;
+            }
+
+            // Only capture job circulars or notices related to jobs/recruitment
+            if (! preg_match('/(job|recruitment|নিয়োগ|চাকরি|বিসিএস|bank|officer)/i', $title . ' ' . $description)) {
                 continue;
             }
 
@@ -170,6 +455,18 @@ class JobScraperService
                 }
             } catch (\Throwable $e) {}
 
+            // STRICT DATE CHECKING: Parse deadline from article body
+            $parsedDeadline = $this->parseDeadlineDate($fullDesc);
+            if ($parsedDeadline) {
+                if (Carbon::parse($parsedDeadline)->isPast()) {
+                    // Skip expired jobs
+                    continue;
+                }
+                $deadlineDate = $parsedDeadline;
+            } else {
+                $deadlineDate = now()->addDays(20)->toDateString();
+            }
+
             JobCircular::create([
                 'title' => $title,
                 'slug' => $slug,
@@ -180,11 +477,11 @@ class JobScraperService
                 'salary' => 'জাতীয় বেতন স্কেল অনুযায়ী',
                 'location' => 'ঢাকা, বাংলাদেশ',
                 'education_requirement' => 'স্নাতক / এইচএসসি / সমমান',
-                'deadline' => now()->addDays(20)->toDateString(),
+                'deadline' => $deadlineDate,
                 'published_date' => now()->toDateString(),
                 'description' => $fullDesc,
                 'apply_url' => $applyUrl ?: $link,
-                'source_name' => 'Students.bd',
+                'source_name' => $sourceName,
                 'source_url' => $link,
                 'is_featured' => true,
             ]);

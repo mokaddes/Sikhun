@@ -19,6 +19,14 @@ class JobController extends Controller
     {
         $query = JobCircular::query();
 
+        // Exclude admission/academic entrance circulars from the job feed
+        $query->where(function ($q) {
+            $q->where('title', 'not like', '%admission%')
+              ->where('title', 'not like', '%ভর্তি%')
+              ->where('slug', 'not like', '%admission%')
+              ->where('slug', 'not like', '%coursework%');
+        });
+
         if ($cat = $request->input('category')) {
             if ($cat !== 'all') {
                 $query->where('category', $cat);
@@ -35,16 +43,17 @@ class JobController extends Controller
         }
 
         $jobs = $query->orderByDesc('is_featured')
+            ->orderByRaw('CASE WHEN deadline >= CURRENT_DATE THEN 0 ELSE 1 END ASC')
             ->orderBy('deadline')
             ->paginate(12)
             ->withQueryString();
 
         $stats = [
-            'total' => JobCircular::count(),
-            'govt' => JobCircular::where('category', 'government')->count(),
-            'bank' => JobCircular::where('category', 'bank')->count(),
-            'ngo' => JobCircular::where('category', 'ngo')->count(),
-            'private' => JobCircular::whereIn('category', ['private', 'it_tech'])->count(),
+            'total' => JobCircular::where('title', 'not like', '%admission%')->where('title', 'not like', '%ভর্তি%')->count(),
+            'govt' => JobCircular::where('category', 'government')->where('title', 'not like', '%admission%')->where('title', 'not like', '%ভর্তি%')->count(),
+            'bank' => JobCircular::where('category', 'bank')->where('title', 'not like', '%admission%')->where('title', 'not like', '%ভর্তি%')->count(),
+            'ngo' => JobCircular::where('category', 'ngo')->where('title', 'not like', '%admission%')->where('title', 'not like', '%ভর্তি%')->count(),
+            'private' => JobCircular::whereIn('category', ['private', 'it_tech'])->where('title', 'not like', '%admission%')->where('title', 'not like', '%ভর্তি%')->count(),
         ];
 
         return Inertia::render('Public/Jobs/Index', [
@@ -64,6 +73,8 @@ class JobController extends Controller
         $job->increment('views_count');
 
         $relatedJobs = JobCircular::where('id', '!=', $job->id)
+            ->where('title', 'not like', '%admission%')
+            ->where('title', 'not like', '%ভর্তি%')
             ->where(function ($q) use ($job) {
                 $q->where('category', $job->category)
                     ->orWhere('organization', $job->organization);

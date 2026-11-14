@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
@@ -69,6 +69,61 @@ function handlePurchaseChapter(chapter, method) {
     requireAuthOrRun(() => {
         router.post(`/library/${props.book.id}/chapters/${chapter.id}/purchase`, { payment_method: method }, {
             preserveScroll: true,
+        });
+    });
+}
+
+const selectedChapterIds = ref([]);
+const purchasingMulti = ref(false);
+
+const purchasableChapters = computed(() => {
+    return (props.chapters || []).filter((c) => !c.owned && c.purchasable && Number(c.price) > 0);
+});
+
+const isAllSelected = computed(() => {
+    if (!purchasableChapters.value.length) return false;
+    return purchasableChapters.value.every((c) => selectedChapterIds.value.includes(c.id));
+});
+
+function toggleSelectAllChapters() {
+    if (isAllSelected.value) {
+        selectedChapterIds.value = [];
+    } else {
+        selectedChapterIds.value = purchasableChapters.value.map((c) => c.id);
+    }
+}
+
+function toggleChapterSelection(chapterId) {
+    const idx = selectedChapterIds.value.indexOf(chapterId);
+    if (idx > -1) {
+        selectedChapterIds.value.splice(idx, 1);
+    } else {
+        selectedChapterIds.value.push(chapterId);
+    }
+}
+
+const selectedChaptersTotal = computed(() => {
+    return selectedChapterIds.value.reduce((sum, id) => {
+        const ch = (props.chapters || []).find((c) => c.id === id);
+        return sum + (ch ? Number(ch.price || 0) : 0);
+    }, 0);
+});
+
+function handlePurchaseSelectedChapters(method) {
+    if (!selectedChapterIds.value.length) return;
+    requireAuthOrRun(() => {
+        purchasingMulti.value = true;
+        router.post(`/library/${props.book.id}/chapters/purchase`, {
+            chapter_ids: selectedChapterIds.value,
+            payment_method: method,
+        }, {
+            preserveScroll: true,
+            onFinish: () => {
+                purchasingMulti.value = false;
+            },
+            onSuccess: () => {
+                selectedChapterIds.value = [];
+            },
         });
     });
 }
@@ -446,29 +501,66 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
 
                     <!-- Chapter-wise Purchase / Table of Contents -->
                     <div v-if="showChapters" class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm sm:p-8">
-                        <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+                        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <h2 class="font-heading text-xl font-bold">{{ t('book_show.buy_chapters') }}</h2>
                                 <p class="text-xs text-[var(--text-muted)]">
                                     {{ locale === 'en'
-                                        ? 'You can unlock individual chapters or buy the full book.'
-                                        : 'আপনি চাইলে পুরো বই না কিনেও শুধু প্রয়োজনীয় অধ্যায় কিনে পড়তে পারেন।' }}
+                                        ? 'You can buy single chapters, select multiple chapters together, or purchase the complete book.'
+                                        : 'আপনি চাইলে পুরো বই না কিনেও এক বা একাধিক প্রয়োজনীয় অধ্যায় সিলেক্ট করে একসাথে কিনতে পারেন।' }}
                                 </p>
                             </div>
-                            <span class="rounded-full bg-[var(--surface2)] px-3 py-1 text-xs font-semibold">
-                                {{ chapterTree.length }} {{ locale === 'en' ? 'Chapters' : 'টি অধ্যায়' }}
-                            </span>
+                            <div class="flex items-center gap-2">
+                                <button
+                                    v-if="purchasableChapters.length > 1"
+                                    type="button"
+                                    @click="toggleSelectAllChapters"
+                                    class="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface2)] hover:border-orange-500 text-xs font-semibold text-[var(--text)] transition cursor-pointer"
+                                >
+                                    {{ isAllSelected
+                                        ? (locale === 'bn' ? 'সব অনির্বাচন করুন' : 'Deselect All')
+                                        : (locale === 'bn' ? 'সব বাকি অধ্যায় নির্বাচন করুন' : 'Select All Chapters') }}
+                                </button>
+                                <span class="rounded-full bg-[var(--surface2)] px-3 py-1 text-xs font-semibold">
+                                    {{ chapterTree.length }} {{ locale === 'en' ? 'Chapters' : 'টি অধ্যায়' }}
+                                </span>
+                            </div>
                         </div>
 
                         <ul class="divide-y divide-[var(--border)] overflow-hidden rounded-xl border border-[var(--border)]">
-                            <li v-for="chapter in chapterTree" :key="chapter.id" class="p-4 transition hover:bg-[var(--surface2)]/40">
+                            <li
+                                v-for="chapter in chapterTree"
+                                :key="chapter.id"
+                                class="p-4 transition"
+                                :class="[
+                                    selectedChapterIds.includes(chapter.id)
+                                        ? 'bg-orange-500/10 border-l-4 border-l-orange-500'
+                                        : 'hover:bg-[var(--surface2)]/40'
+                                ]"
+                            >
                                 <div class="flex flex-wrap items-center justify-between gap-3">
-                                    <div>
-                                        <div class="font-medium text-[var(--text)]">
-                                            {{ formatChapterTitle(chapter) }}
+                                    <div class="flex items-center gap-3">
+                                        <!-- Checkbox for unowned purchasable chapter -->
+                                        <div v-if="!chapter.owned && chapter.purchasable" class="pt-0.5">
+                                            <input
+                                                type="checkbox"
+                                                :id="`chapter-chk-${chapter.id}`"
+                                                :checked="selectedChapterIds.includes(chapter.id)"
+                                                @change="toggleChapterSelection(chapter.id)"
+                                                class="h-4 w-4 rounded border-[var(--border)] text-orange-500 focus:ring-orange-500 cursor-pointer"
+                                            />
                                         </div>
-                                        <div class="mt-0.5 text-xs text-[var(--text-muted)]">
-                                            {{ t('book_show.pages') }} {{ chapter.start_page ?? '?' }}–{{ chapter.end_page ?? '?' }}
+                                        <div>
+                                            <label
+                                                :for="`chapter-chk-${chapter.id}`"
+                                                class="font-medium text-[var(--text)]"
+                                                :class="{ 'cursor-pointer': !chapter.owned && chapter.purchasable }"
+                                            >
+                                                {{ formatChapterTitle(chapter) }}
+                                            </label>
+                                            <div class="mt-0.5 text-xs text-[var(--text-muted)]">
+                                                {{ t('book_show.pages') }} {{ chapter.start_page ?? '?' }}–{{ chapter.end_page ?? '?' }}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -489,7 +581,7 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
                                         <button
                                             type="button"
                                             @click="handlePurchaseChapter(chapter, 'wallet')"
-                                            class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--primary)] px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--primary-hover)]"
+                                            class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--primary)] px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--primary-hover)] cursor-pointer"
                                         >
                                             <LockClosedIcon v-if="!isLoggedIn" class="h-3.5 w-3.5" />
                                             <span>{{ t('book_show.buy_chapter') }}</span>
@@ -498,7 +590,7 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
                                             v-if="isLoggedIn"
                                             type="button"
                                             @click="handlePurchaseChapter(chapter, 'zinipay')"
-                                            class="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold hover:border-[var(--primary)]"
+                                            class="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold hover:border-[var(--primary)] cursor-pointer"
                                         >
                                             {{ locale === 'en' ? 'Pay Online' : 'অনলাইন পে' }}
                                         </button>
@@ -513,6 +605,61 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
                                 </ul>
                             </li>
                         </ul>
+
+                        <!-- Multi-chapter Sticky Checkout Bar -->
+                        <div
+                            v-if="selectedChapterIds.length > 0"
+                            class="sticky bottom-4 z-40 mt-6 p-4 rounded-2xl border border-orange-500/50 bg-[var(--surface)]/95 backdrop-blur-md shadow-2xl flex flex-wrap items-center justify-between gap-4"
+                        >
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold text-base">
+                                    {{ locale === 'bn' ? toBengaliDigits(selectedChapterIds.length) : selectedChapterIds.length }}
+                                </div>
+                                <div>
+                                    <div class="font-bold text-sm text-[var(--text)]">
+                                        {{ locale === 'bn'
+                                            ? `${toBengaliDigits(selectedChapterIds.length)}টি অধ্যায় নির্বাচিত`
+                                            : `${selectedChapterIds.length} chapter${selectedChapterIds.length > 1 ? 's' : ''} selected` }}
+                                    </div>
+                                    <div class="text-xs text-[var(--text-muted)] flex items-center gap-2">
+                                        <span>{{ locale === 'bn' ? 'মোট মূল্য:' : 'Total:' }}</span>
+                                        <span class="font-extrabold text-base text-orange-500">
+                                            ৳{{ locale === 'bn' ? toBengaliDigits(selectedChaptersTotal) : selectedChaptersTotal }}
+                                        </span>
+                                        <span v-if="props.book.price && selectedChaptersTotal >= Number(props.book.price)" class="text-[11px] text-emerald-500 font-medium">
+                                            ({{ locale === 'bn' ? 'পুরো বইয়ের দাম ৳' + toBengaliDigits(props.book.price) : 'Full book price ৳' + props.book.price }})
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <button
+                                    type="button"
+                                    @click="selectedChapterIds = []"
+                                    class="px-3 py-2 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text)] transition cursor-pointer"
+                                >
+                                    {{ locale === 'bn' ? 'বাতিল' : 'Clear' }}
+                                </button>
+                                <button
+                                    v-if="isLoggedIn && walletBalance >= selectedChaptersTotal"
+                                    type="button"
+                                    @click="handlePurchaseSelectedChapters('wallet')"
+                                    :disabled="purchasingMulti"
+                                    class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50"
+                                >
+                                    {{ locale === 'bn' ? 'ওয়ালেট দিয়ে কিনুন' : 'Pay via Wallet' }}
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="handlePurchaseSelectedChapters('zinipay')"
+                                    :disabled="purchasingMulti"
+                                    class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold transition shadow-md shadow-orange-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                                >
+                                    <ShoppingBagIcon class="w-4 h-4" />
+                                    <span>{{ locale === 'bn' ? 'একসাথে কিনুন (বিকাশ/নগদ/কার্ড)' : 'Buy Selected Chapters (bKash/Nagad)' }}</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

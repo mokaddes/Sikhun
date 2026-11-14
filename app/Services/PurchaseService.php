@@ -60,6 +60,45 @@ class PurchaseService
         return ['redirect_url' => $redirectUrl, 'order' => $order];
     }
 
+    /**
+     * Purchase multiple chapters of a book in a single transaction.
+     */
+    public function purchaseChapters(Student $student, Book $book, array $chapters, string $method, ?PaymentGatewayContract $gateway = null): array
+    {
+        $ownedChapterIds = $student->ownedChapters()->where('book_id', $book->id)->pluck('chapter_id')->all();
+        $unowned = array_filter($chapters, fn ($c) => ! in_array($c->id, $ownedChapterIds, true));
+
+        if (empty($unowned)) {
+            throw new \RuntimeException('You already own all selected chapters.');
+        }
+
+        $totalPrice = 0.0;
+        $chapterIds = [];
+        foreach ($unowned as $ch) {
+            $totalPrice += (float) ($ch->price ?? 0);
+            $chapterIds[] = $ch->id;
+        }
+
+        $count = count($chapterIds);
+        $order = $this->createOrder($student, 'book_chapters', $book->id, $totalPrice, $method, [
+            'book_id' => $book->id,
+            'chapter_ids' => $chapterIds,
+            'count' => $count,
+        ]);
+
+        if ($method === 'wallet') {
+            $this->wallet->debit($student, $totalPrice, 'chapter_purchase', $order->order_number, "Purchased {$count} chapters of {$book->title}");
+            $order->update(['status' => 'completed']);
+            $this->fulfill($order);
+
+            return ['redirect_url' => null, 'order' => $order];
+        }
+
+        $redirectUrl = $gateway->initiate($order);
+
+        return ['redirect_url' => $redirectUrl, 'order' => $order];
+    }
+
     public function purchaseCourse(Student $student, Course $course, string $method, ?PaymentGatewayContract $gateway = null, array $meta = []): array
     {
         $order = $this->createOrder($student, 'course', $course->id, $course->price, $method, $meta);
@@ -184,6 +223,17 @@ class PurchaseService
                 ['book_id' => $order->meta['book_id'], 'chapter_id' => $order->orderable_id],
                 ['source' => 'purchased', 'price' => $order->amount, 'purchased_at' => now()]
             ),
+            'book_chapters' => (function () use ($order) {
+                $chapterIds = $order->meta['chapter_ids'] ?? [];
+                $bookId = $order->meta['book_id'] ?? $order->orderable_id;
+                foreach ($chapterIds as $cId) {
+                    $ch = \App\Models\BookChapter::find($cId);
+                    $order->student->ownedChapters()->firstOrCreate(
+                        ['book_id' => $bookId, 'chapter_id' => $cId],
+                        ['source' => 'purchased', 'price' => $ch ? (float) $ch->price : 0, 'purchased_at' => now()]
+                    );
+                }
+            })(),
             'course' => $order->student->courseEnrollments()->firstOrCreate(
                 ['course_id' => $order->orderable_id],
                 ['progress_percentage' => 0]

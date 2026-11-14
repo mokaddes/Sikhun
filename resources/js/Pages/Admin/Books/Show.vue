@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import { useI18n } from '@/i18n';
@@ -15,6 +15,7 @@ import {
     ArrowPathIcon,
     ExclamationTriangleIcon,
     ChevronRightIcon,
+    BanknotesIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({ book: Object, chapters: Array, stats: Object });
@@ -24,16 +25,50 @@ const retryForm = useForm({});
 const retrying = retryForm.processing;
 
 const editingPrices = ref(false);
+const bulkChapterPrice = ref('');
 const chapterPriceForm = useForm({
+    chapter_purchase_enabled: !!props.book.chapter_purchase_enabled,
     chapters: (props.chapters || []).map((c) => ({ id: c.id, price: c.price ?? '' })),
 });
 
+watch(() => props.chapters, (newCh) => {
+    chapterPriceForm.chapters = (newCh || []).map((c) => ({ id: c.id, price: c.price ?? '' }));
+}, { deep: true });
+
+watch(() => props.book.chapter_purchase_enabled, (val) => {
+    chapterPriceForm.chapter_purchase_enabled = !!val;
+});
+
+function getChapterPriceItem(id) {
+    let item = chapterPriceForm.chapters.find((x) => x.id === id);
+    if (!item) {
+        item = { id, price: '' };
+        chapterPriceForm.chapters.push(item);
+    }
+    return item;
+}
+
+function applyBulkPrice() {
+    if (bulkChapterPrice.value === '') return;
+    const val = Number(bulkChapterPrice.value);
+    chapterPriceForm.chapters.forEach((ch) => {
+        ch.price = val;
+    });
+}
+
 function savePrices() {
-    chapterPriceForm.put(`/admin/books/${props.book.id}/chapters`, {
+    chapterPriceForm.put(`/admin/books/${props.book.id}/chapters/prices`, {
         preserveScroll: true,
         onSuccess: () => {
             editingPrices.value = false;
         },
+    });
+}
+
+function toggleChapterPurchase() {
+    chapterPriceForm.chapter_purchase_enabled = !chapterPriceForm.chapter_purchase_enabled;
+    chapterPriceForm.put(`/admin/books/${props.book.id}/chapters/prices`, {
+        preserveScroll: true,
     });
 }
 
@@ -391,6 +426,87 @@ function applyQuickSplit() {
                 </div>
             </div>
 
+            <!-- Chapter-wise Purchase Settings Card -->
+            <div class="mb-5 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface2)]/30 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="chapterPriceForm.chapter_purchase_enabled ? 'bg-emerald-500/15 text-emerald-500' : 'bg-slate-500/15 text-slate-400'">
+                        <BanknotesIcon class="w-5 h-5" />
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-bold text-[var(--text)]">Chapter-wise Purchase</span>
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold" :class="chapterPriceForm.chapter_purchase_enabled ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-[var(--surface2)] text-[var(--text-muted)]'">
+                                {{ chapterPriceForm.chapter_purchase_enabled ? 'Enabled' : 'Disabled' }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-[var(--text-muted)] mt-0.5">
+                            Allow students to purchase and read individual chapters or select multiple chapters as a custom bundle.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <button
+                        type="button"
+                        @click="toggleChapterPurchase"
+                        :disabled="chapterPriceForm.processing"
+                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                        :class="chapterPriceForm.chapter_purchase_enabled ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20' : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)]'"
+                    >
+                        <span class="w-2 h-2 rounded-full" :class="chapterPriceForm.chapter_purchase_enabled ? 'bg-emerald-500' : 'bg-slate-400'"></span>
+                        {{ chapterPriceForm.chapter_purchase_enabled ? 'Disable Chapter Purchase' : 'Enable Chapter Purchase' }}
+                    </button>
+                    <button
+                        v-if="!editingPrices && sortedChapters.length"
+                        type="button"
+                        @click="editingPrices = true"
+                        class="px-3.5 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--primary)] text-xs font-bold text-[var(--text)] transition cursor-pointer"
+                    >
+                        Edit Chapter Prices
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bulk Price Quick-Setter Bar (Active when editingPrices is true) -->
+            <div v-if="editingPrices" class="mb-5 p-3.5 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/5 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xs font-bold text-[var(--text)]">Quick Set All Prices:</span>
+                    <div class="relative w-28">
+                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--text-muted)]">৳</span>
+                        <input
+                            type="number"
+                            v-model="bulkChapterPrice"
+                            placeholder="e.g. 15"
+                            min="0"
+                            class="w-full pl-6 pr-2 py-1 text-xs rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] focus:ring-1 focus:ring-[var(--primary)]"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        @click="applyBulkPrice"
+                        class="px-3 py-1 rounded-lg bg-[var(--primary)] text-white text-xs font-bold transition cursor-pointer hover:opacity-90"
+                    >
+                        Apply to All Chapters
+                    </button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        @click="editingPrices = false"
+                        class="px-3 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text)]"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        @click="savePrices"
+                        :disabled="chapterPriceForm.processing"
+                        class="px-4 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer disabled:opacity-50 shadow-sm"
+                    >
+                        Save All Prices
+                    </button>
+                </div>
+            </div>
+
             <!-- Visual Page Coverage Bar -->
             <div class="mb-6 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface2)]/40">
                 <div class="flex items-center justify-between text-xs font-bold mb-2">
@@ -494,10 +610,24 @@ function applyQuickSplit() {
                                 </span>
                             </td>
                             <td class="py-3 px-4 font-medium">
-                                <span v-if="c.price !== null" class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
-                                    ৳{{ c.price }}
-                                </span>
-                                <span v-else class="text-[var(--text-muted)]">—</span>
+                                <template v-if="editingPrices">
+                                    <div class="relative w-24">
+                                        <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--text-muted)]">৳</span>
+                                        <input
+                                            type="number"
+                                            v-model.number="getChapterPriceItem(c.id).price"
+                                            placeholder="0"
+                                            min="0"
+                                            class="w-full pl-5 pr-2 py-1 text-xs rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] focus:ring-1 focus:ring-[var(--primary)]"
+                                        />
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    <span v-if="c.price !== null && c.price !== ''" class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
+                                        ৳{{ c.price }}
+                                    </span>
+                                    <span v-else class="text-[var(--text-muted)]">—</span>
+                                </template>
                             </td>
                             <td class="py-3 px-4 text-right space-x-2">
                                 <button

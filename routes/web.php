@@ -152,6 +152,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
 
     // Library actions (read, purchase, chapter purchase, add to shelf MUST require auth)
     Route::post('/library/{book}/purchase', [LibraryController::class, 'purchase'])->name('library.purchase');
+    Route::post('/library/{book}/chapters/purchase', [LibraryController::class, 'purchaseChapters'])->name('library.chapters.purchase-multiple');
     Route::post('/library/{book}/chapters/{chapter}/purchase', [LibraryController::class, 'purchaseChapter'])->name('library.chapters.purchase');
     Route::post('/library/{book}/shelf', [LibraryController::class, 'addToShelf'])->name('library.shelf-add');
 

@@ -80,7 +80,7 @@ class LibraryController extends Controller
                         'end_page' => $chapter->end_page,
                         'price' => $chapter->price,
                         'owned' => $hasFullAccess || in_array($chapter->id, $ownedChapterIds),
-                        'purchasable' => $chapter->level === 1 && $chapter->price !== null,
+                        'purchasable' => ($chapter->level <= 1 || $chapter->parent_id === null) && $chapter->price !== null && (float) $chapter->price > 0,
                     ];
                 });
         }
@@ -149,6 +149,41 @@ class LibraryController extends Controller
         }
 
         return back()->with('success', 'Chapter purchased!');
+    }
+
+    public function purchaseChapters(Request $request, Book $book, PurchaseService $purchases, PaymentGatewayResolver $resolver): \Symfony\Component\HttpFoundation\Response
+    {
+        $validated = $request->validate([
+            'chapter_ids' => ['required', 'array', 'min:1'],
+            'chapter_ids.*' => ['integer', 'exists:book_chapters,id'],
+            'payment_method' => ['required', 'in:wallet,zinipay,mhpay'],
+        ]);
+
+        $chapters = $book->chapters()->whereIn('id', $validated['chapter_ids'])->get()->all();
+        if (empty($chapters)) {
+            return back()->with('error', 'No valid chapters selected.');
+        }
+
+        $student = auth('web')->user();
+
+        try {
+            $gateway = $resolver->resolve($validated['payment_method']);
+            $result = $purchases->purchaseChapters(
+                $student,
+                $book,
+                $chapters,
+                $validated['payment_method'],
+                $gateway
+            );
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        if ($result['redirect_url']) {
+            return Inertia::location($result['redirect_url']);
+        }
+
+        return back()->with('success', count($chapters) . ' chapters purchased successfully!');
     }
 
     public function purchase(PurchaseRequest $request, Book $book, PurchaseService $purchases, PaymentGatewayResolver $resolver): \Symfony\Component\HttpFoundation\Response

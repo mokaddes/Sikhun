@@ -49,6 +49,18 @@ class AiProviderController extends Controller
             'models' => ['DeepSeek', 'OpenAI — GPT-4o-mini'],
             'reason' => 'Cost-effective with strong Bengali writing.',
         ],
+        'question_analysis' => [
+            'models' => ['DeepSeek — V3 / Flash', 'OpenAI — GPT-4o-mini', 'Google — Gemini 2.0 Flash'],
+            'reason' => 'Detailed conceptual explanations with LaTeX formulas in Bengali.',
+        ],
+        'question_structure' => [
+            'models' => ['OpenAI — GPT-4o-mini', 'DeepSeek — V3', 'Google — Gemini Flash'],
+            'reason' => 'High precision OCR & raw question text parsing.',
+        ],
+        'question_gen' => [
+            'models' => ['OpenAI — GPT-4o-mini', 'DeepSeek — V3'],
+            'reason' => 'Authentic exam-standard MCQ batch generation with distractors.',
+        ],
     ];
 
     public const PROVIDER_TYPES = [

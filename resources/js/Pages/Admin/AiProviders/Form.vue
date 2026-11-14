@@ -69,6 +69,9 @@ const providerTypeOptions = [
 const useCaseOptions = [
     { value: 'book_chat', label: 'AI Chat with Books' },
     { value: 'exam_gen', label: 'Exam Generation' },
+    { value: 'question_analysis', label: 'Question Analysis & Explanation' },
+    { value: 'question_structure', label: 'Question PDF/Text Structuring' },
+    { value: 'question_gen', label: 'Question Bank Batch Generation' },
     { value: 'flashcard_gen', label: 'Flashcard Generation' },
     { value: 'essay_grade', label: 'Essay Grading' },
     { value: 'schedule_gen', label: 'Study Schedule Generation' },
@@ -100,9 +103,16 @@ const form = useForm({
     is_active: props.provider?.is_active ?? true,
     max_tokens: props.provider?.max_tokens ?? 2000,
     temperature: props.provider?.temperature ?? 0.7,
+    cost_per_1m_input: props.provider?.cost_per_1m_input ?? 0.15,
+    cost_per_1m_output: props.provider?.cost_per_1m_output ?? 0.30,
     use_cases: props.provider?.use_case_list ?? [],
     default_use_cases: props.provider?.default_use_case_list ?? [],
 });
+
+function applyCostPreset(inCost, outCost) {
+    form.cost_per_1m_input = inCost;
+    form.cost_per_1m_output = outCost;
+}
 
 const currentTypeConfig = computed(() => {
     return providerTypeOptions.find(o => o.key === form.type) || providerTypeOptions[0];
@@ -358,6 +368,99 @@ function submit() {
                             max="2"
                             class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2 text-sm text-[var(--text)] focus:border-[var(--primary)] focus:outline-hidden"
                         />
+                    </div>
+                </div>
+
+                <!-- Token Pricing / Cost per 1 Million Tokens (USD) -->
+                <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text)]">Cost per 1M Tokens (USD)</label>
+                            <p class="text-[11px] text-[var(--text-muted)]">Used to calculate exact money spent in AI Logs.</p>
+                        </div>
+                        <span class="rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-bold">
+                            Live Cost Tracking
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-[var(--text)] mb-1">Input Cost ($ / 1M tokens)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2 text-xs font-mono text-[var(--text-muted)]">$</span>
+                                <input
+                                    v-model="form.cost_per_1m_input"
+                                    type="number"
+                                    step="0.0001"
+                                    min="0"
+                                    placeholder="0.1500"
+                                    class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] pl-7 pr-4 py-2 text-sm font-mono text-[var(--text)] focus:border-[var(--primary)] focus:outline-hidden"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-[var(--text)] mb-1">Output Cost ($ / 1M tokens)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2 text-xs font-mono text-[var(--text-muted)]">$</span>
+                                <input
+                                    v-model="form.cost_per_1m_output"
+                                    type="number"
+                                    step="0.0001"
+                                    min="0"
+                                    placeholder="0.3000"
+                                    class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] pl-7 pr-4 py-2 text-sm font-mono text-[var(--text)] focus:border-[var(--primary)] focus:outline-hidden"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Preset Pills -->
+                    <div class="pt-1">
+                        <span class="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider block mb-1.5">Quick Pricing Presets:</span>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button
+                                type="button"
+                                @click="applyCostPreset(0.15, 0.30)"
+                                class="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-[11px] font-medium text-[var(--text)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors"
+                            >
+                                DeepSeek V3 / Flash ($0.15 / $0.30)
+                            </button>
+                            <button
+                                type="button"
+                                @click="applyCostPreset(0.15, 0.60)"
+                                class="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-[11px] font-medium text-[var(--text)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors"
+                            >
+                                GPT-4o mini ($0.15 / $0.60)
+                            </button>
+                            <button
+                                type="button"
+                                @click="applyCostPreset(0.08, 0.30)"
+                                class="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-[11px] font-medium text-[var(--text)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors"
+                            >
+                                Gemini 2.0 Flash ($0.08 / $0.30)
+                            </button>
+                            <button
+                                type="button"
+                                @click="applyCostPreset(0.59, 0.79)"
+                                class="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-[11px] font-medium text-[var(--text)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors"
+                            >
+                                Groq Llama 3.3 70B ($0.59 / $0.79)
+                            </button>
+                            <button
+                                type="button"
+                                @click="applyCostPreset(3.00, 15.00)"
+                                class="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-[11px] font-medium text-[var(--text)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors"
+                            >
+                                Claude 3.5 Sonnet ($3.00 / $15.00)
+                            </button>
+                            <button
+                                type="button"
+                                @click="applyCostPreset(0.00, 0.00)"
+                                class="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-[11px] font-medium text-[var(--text)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors"
+                            >
+                                Free / Ollama ($0.00 / $0.00)
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

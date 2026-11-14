@@ -184,6 +184,9 @@ function getProviderActions(p) {
                                 <span class="font-mono text-[var(--text)] font-medium">Model: {{ p.model_name }}</span>
                                 <span v-if="p.max_tokens">Max: {{ p.max_tokens }} tokens</span>
                                 <span v-if="p.temperature !== null && p.temperature !== undefined">Temp: {{ p.temperature }}</span>
+                                <span class="font-mono text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                                    Cost/1M: ${{ Number(p.cost_per_1m_input || 0).toFixed(2) }} in / ${{ Number(p.cost_per_1m_output || 0).toFixed(2) }} out
+                                </span>
                             </div>
                         </div>
 

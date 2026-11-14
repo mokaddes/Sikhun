@@ -97,10 +97,12 @@ class QuestionBankPracticeController extends Controller
                 $q->where('segment', $activeSector)
                   ->orWhere('segment', 'both');
             })
+            ->whereHas('questions', function ($q) use ($activeSector) {
+                $q->published()->where('segment', $activeSector);
+            })
             ->withCount(['questions' => function ($q) use ($activeSector) {
                 $q->published()->where('segment', $activeSector);
             }])
-            ->having('questions_count', '>', 0)
             ->orderByDesc('questions_count')
             ->get(['id', 'name_bn', 'name_en', 'slug', 'segment', 'icon', 'order']);
 

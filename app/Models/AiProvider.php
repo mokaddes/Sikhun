@@ -9,6 +9,7 @@ class AiProvider extends Model
     protected $fillable = [
         'name', 'type', 'api_key', 'model_name', 'api_endpoint',
         'custom_headers', 'is_active', 'max_tokens', 'temperature',
+        'cost_per_1m_input', 'cost_per_1m_output',
     ];
 
     protected $hidden = ['api_key'];
@@ -22,6 +23,8 @@ class AiProvider extends Model
             'custom_headers' => 'array',
             'is_active' => 'boolean',
             'temperature' => 'decimal:2',
+            'cost_per_1m_input' => 'decimal:4',
+            'cost_per_1m_output' => 'decimal:4',
         ];
     }
 

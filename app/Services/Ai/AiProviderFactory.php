@@ -51,7 +51,7 @@ class AiProviderFactory
 
         // 2. Plan-wise AI Provider & Model Resolution:
         // If this is a student-facing feature and the student has an active subscription with an assigned plan-level AI provider:
-        $studentFacingUseCases = ['book_chat', 'exam_gen', 'flashcard_gen', 'essay_grade', 'schedule_gen'];
+        $studentFacingUseCases = ['book_chat', 'exam_gen', 'flashcard_gen', 'essay_grade', 'schedule_gen', 'question_analysis'];
         if ($student instanceof Student && in_array($useCase, $studentFacingUseCases, true)) {
             $plan = $student->activeSubscription?->plan;
             if ($plan && $plan->ai_provider_id) {
@@ -77,37 +77,31 @@ class AiProviderFactory
             }
         }
 
-        // 3. System Default Provider for this specific use case
-        $mapping = \App\Models\AiProviderUseCase::where('use_case', $useCase)
-            ->where('is_default', true)
-            ->whereHas('provider', fn ($q) => $q->where('is_active', true))
-            ->with('provider')
-            ->first();
+        // 3. System Default Provider for this specific use case (with intelligent fallback chain)
+        $candidates = match ($useCase) {
+            'question_analysis' => ['question_analysis', 'exam_gen', 'book_chat'],
+            'question_structure' => ['question_structure', 'exam_gen', 'book_ocr', 'book_chat'],
+            'question_gen' => ['question_gen', 'exam_gen', 'book_chat'],
+            'support_bot' => ['support_bot', 'book_chat'],
+            'blog_translate', 'blog_rewrite' => [$useCase, 'book_chat'],
+            default => [$useCase, 'book_chat', 'exam_gen', 'book_ocr'],
+        };
 
-        if ($mapping && $mapping->provider) {
-            return new LoggingAiProviderDecorator(
-                self::instantiate($mapping->provider),
-                $mapping->provider,
-                $useCase,
-                $context
-            );
-        }
+        foreach ($candidates as $candidate) {
+            $mapping = \App\Models\AiProviderUseCase::where('use_case', $candidate)
+                ->where('is_default', true)
+                ->whereHas('provider', fn ($q) => $q->where('is_active', true))
+                ->with('provider')
+                ->first();
 
-        // Fallback to book_chat or any active provider so unmapped secondary use-cases
-        // (like book_structure) don't crash background jobs.
-        $fallbackMapping = \App\Models\AiProviderUseCase::whereIn('use_case', ['book_chat', 'book_ocr'])
-            ->where('is_default', true)
-            ->whereHas('provider', fn ($q) => $q->where('is_active', true))
-            ->with('provider')
-            ->first();
-
-        if ($fallbackMapping && $fallbackMapping->provider) {
-            return new LoggingAiProviderDecorator(
-                self::instantiate($fallbackMapping->provider),
-                $fallbackMapping->provider,
-                $useCase,
-                $context
-            );
+            if ($mapping && $mapping->provider) {
+                return new LoggingAiProviderDecorator(
+                    self::instantiate($mapping->provider),
+                    $mapping->provider,
+                    $useCase,
+                    $context
+                );
+            }
         }
 
         $activeProvider = AiProvider::where('is_active', true)->orderBy('id')->first();

@@ -66,18 +66,25 @@ class AiLogController extends Controller
         $logs = $query->latest('id')->paginate(20)->withQueryString();
 
         // Calculate overview stats for admin dashboard
+        $totalCost = (float) AiLog::sum('cost');
         $stats = [
             'total_calls' => AiLog::count(),
             'successful_calls' => AiLog::where('status', 'success')->count(),
             'failed_calls' => AiLog::where('status', 'failed')->count(),
             'total_tokens' => (int) AiLog::sum('total_tokens'),
             'avg_latency_ms' => (int) round((float) AiLog::where('status', 'success')->avg('latency_ms')),
+            'total_cost' => round($totalCost, 4),
+            'total_cost_formatted' => '$' . number_format($totalCost, 4),
+            'total_cost_bdt' => round($totalCost * 122, 2),
         ];
 
         // Available use cases for dropdown filter
         $availableUseCases = [
             'book_chat' => 'AI Chat with Books',
             'exam_gen' => 'Exam Generation',
+            'question_analysis' => 'Question Analysis & Explanation',
+            'question_structure' => 'Question PDF/Text Structuring',
+            'question_gen' => 'Question Bank Batch Generation',
             'flashcard_gen' => 'Flashcard Generation',
             'essay_grade' => 'Essay Grading',
             'schedule_gen' => 'Study Schedule Generation',

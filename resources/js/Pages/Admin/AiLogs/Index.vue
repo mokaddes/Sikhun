@@ -26,6 +26,7 @@ import {
     SparklesIcon,
     CalendarIcon,
     ExclamationTriangleIcon,
+    BanknotesIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -130,6 +131,13 @@ function formatTokens(num) {
     return num.toLocaleString();
 }
 
+function formatCost(cost) {
+    if (!cost || Number(cost) <= 0) return '$0.0000';
+    const num = Number(cost);
+    if (num < 0.0001) return '<$0.0001';
+    return '$' + num.toFixed(4);
+}
+
 function formatDate(isoStr) {
     if (!isoStr) return '-';
     try {
@@ -150,9 +158,12 @@ function formatDate(isoStr) {
 const useCaseBadges = {
     book_chat: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
     exam_gen: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-    flashcard_gen: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    question_analysis: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    question_structure: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
+    question_gen: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
+    flashcard_gen: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
     essay_grade: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-    schedule_gen: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
+    schedule_gen: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
     notification_gen: 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20',
     support_bot: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
     book_ocr: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
@@ -298,7 +309,7 @@ function submitClearLogs() {
         </div>
 
         <!-- Metric Summary Cards -->
-        <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+        <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 sm:gap-4">
             <!-- Total Requests -->
             <div class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-2xs">
                 <div class="flex items-center justify-between text-xs font-medium text-[var(--text-muted)]">
@@ -338,6 +349,20 @@ function submitClearLogs() {
                 </div>
                 <div class="mt-1 text-[11px] text-[var(--text-muted)]">
                     Prompt + completion
+                </div>
+            </div>
+
+            <!-- Total Money Spend -->
+            <div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 p-4 shadow-2xs">
+                <div class="flex items-center justify-between text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                    <span>{{ locale === 'bn' ? 'মোট খরচ (Spend)' : 'Total Spend' }}</span>
+                    <BanknotesIcon class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div class="mt-2 font-heading text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                    {{ stats.total_cost_formatted || '$0.0000' }}
+                </div>
+                <div class="mt-1 text-[11px] text-emerald-700/80 dark:text-emerald-400/80 font-medium">
+                    ~৳{{ Number(stats.total_cost_bdt || 0).toLocaleString() }} BDT
                 </div>
             </div>
 
@@ -465,6 +490,7 @@ function submitClearLogs() {
                             <th class="px-4 py-3.5">{{ t('admin.ai_logs.use_type') }}</th>
                             <th class="px-4 py-3.5">{{ t('admin.ai_logs.provider') }}</th>
                             <th class="px-4 py-3.5">{{ t('admin.ai_logs.latency') }} & {{ t('admin.ai_logs.tokens') }}</th>
+                            <th class="px-4 py-3.5">{{ locale === 'bn' ? 'খরচ (Spend)' : 'Cost / Spend' }}</th>
                             <th class="px-4 py-3.5">{{ t('common.status') }}</th>
                             <th class="px-4 py-3.5">{{ t('common.date') }}</th>
                             <th class="px-4 py-3.5 text-right">{{ t('common.actions') }}</th>
@@ -535,6 +561,18 @@ function submitClearLogs() {
                                 </div>
                             </td>
 
+                            <!-- Cost / Spend Column -->
+                            <td class="px-4 py-3">
+                                <div class="flex flex-col gap-0.5 font-mono">
+                                    <div class="font-bold text-[var(--text)]">
+                                        {{ formatCost(log.cost) }}
+                                    </div>
+                                    <div class="text-[10px] text-[var(--text-muted)]">
+                                        ~৳{{ (Number(log.cost || 0) * 122).toFixed(2) }}
+                                    </div>
+                                </div>
+                            </td>
+
                             <!-- Status Column -->
                             <td class="px-4 py-3">
                                 <span
@@ -573,7 +611,7 @@ function submitClearLogs() {
                         </tr>
 
                         <tr v-if="!logs.data?.length">
-                            <td colspan="7" class="p-12 text-center text-[var(--text-muted)]">
+                            <td colspan="8" class="p-12 text-center text-[var(--text-muted)]">
                                 <CommandLineIcon class="mx-auto h-10 w-10 text-[var(--text-muted)] opacity-40 mb-2" />
                                 <div class="font-heading font-bold text-sm text-[var(--text)]">{{ t('admin.ai_logs.no_logs') }}</div>
                                 <div class="text-xs text-[var(--text-muted)] mt-1">
@@ -645,7 +683,7 @@ function submitClearLogs() {
                 <!-- Modal Content Body -->
                 <div class="flex-1 overflow-y-auto p-6 space-y-5">
                     <!-- Key Meta Grid -->
-                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 rounded-xl border border-[var(--border)] bg-[var(--surface2)]/30 p-3.5 text-xs">
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-5 rounded-xl border border-[var(--border)] bg-[var(--surface2)]/30 p-3.5 text-xs">
                         <div>
                             <span class="text-[var(--text-muted)] block text-[11px]">User</span>
                             <span class="font-bold text-[var(--text)]">{{ selectedLog.user_name || 'Anonymous' }}</span>
@@ -663,6 +701,15 @@ function submitClearLogs() {
                             </span>
                             <span class="block text-[11px] text-[var(--text-muted)]">
                                 In: {{ selectedLog.input_tokens || 0 }} | Out: {{ selectedLog.output_tokens || 0 }} (Total: {{ selectedLog.total_tokens || 0 }})
+                            </span>
+                        </div>
+                        <div>
+                            <span class="text-[var(--text-muted)] block text-[11px]">Money Spent</span>
+                            <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono text-sm block">
+                                {{ formatCost(selectedLog.cost) }}
+                            </span>
+                            <span class="block text-[11px] text-[var(--text-muted)] font-mono">
+                                ~৳{{ (Number(selectedLog.cost || 0) * 122).toFixed(2) }} BDT
                             </span>
                         </div>
                         <div>

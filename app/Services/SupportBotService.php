@@ -90,6 +90,9 @@ class SupportBotService
             $provider = AiProviderFactory::default('support_bot');
 
             $history = $conversation->messages()->orderBy('id')->get()
+                ->filter(fn ($m) => ! empty(trim((string) $m->message)) &&
+                    ! str_contains((string) $m->message, 'could not prepare a reply') &&
+                    ! str_contains((string) $m->message, 'এই মুহূর্তে উত্তর তৈরি করা যাচ্ছে না'))
                 ->map(fn ($m) => [
                     'role' => $m->sender_type === 'student' ? 'user' : 'assistant',
                     'content' => $m->message,
@@ -99,7 +102,11 @@ class SupportBotService
                 [['role' => 'system', 'content' => $this->systemPrompt($activeLocale)]],
                 $history->all(),
             );
-            $reply = $provider->chat($messages, ['max_tokens' => 400]);
+            $reply = trim((string) $provider->chat($messages, ['max_tokens' => 600]));
+
+            if ($reply === '') {
+                throw new \RuntimeException('Support bot returned an empty response.');
+            }
 
             $conversation->messages()->create(['sender_type' => 'bot', 'message' => $reply]);
 

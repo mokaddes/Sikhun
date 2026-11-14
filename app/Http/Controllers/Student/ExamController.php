@@ -333,7 +333,7 @@ class ExamController extends Controller
 
             $explanation = '';
             try {
-                $provider = AiProviderFactory::default('exam_gen', [
+                $provider = AiProviderFactory::default('question_analysis', [
                     'student' => $student,
                     'student_id' => $student->id,
                 ]);

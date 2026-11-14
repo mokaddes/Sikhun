@@ -65,7 +65,7 @@ Return ONLY a valid JSON object without markdown fences, in this exact format:
 PROMPT;
 
         try {
-            $provider = AiProviderFactory::default('exam_gen', []);
+            $provider = AiProviderFactory::default('question_gen', []);
             $response = $provider->chat([
                 ['role' => 'system', 'content' => $systemPrompt],
                 ['role' => 'user', 'content' => "Generate {$count} questions for {$studentType} on {$subjectName} ({$topicName})."],
@@ -101,7 +101,7 @@ PROMPT;
         }
 
         try {
-            $provider = AiProviderFactory::default('exam_gen', []);
+            $provider = AiProviderFactory::default('question_structure', []);
             $subjectsList = QuestionSubject::active()->pluck('slug', 'name_bn')->toArray();
             $subjectsJson = json_encode($subjectsList, JSON_UNESCAPED_UNICODE);
 
@@ -176,7 +176,7 @@ PROMPT;
     public function generateAiExplanation(string $questionText, array $options, string $correctOption, ?string $subjectName = null): string
     {
         try {
-            $provider = AiProviderFactory::default('exam_gen', []);
+            $provider = AiProviderFactory::default('question_analysis', []);
 
             $optionsStr = collect($options)->map(function ($opt) {
                 $key = $opt['key'] ?? '';

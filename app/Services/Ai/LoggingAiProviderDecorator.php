@@ -61,6 +61,33 @@ class LoggingAiProviderDecorator implements AiProviderContract
                 $mergedOptions
             );
 
+            // Resilient automatic fallback to another active provider
+            if (empty($options['_is_fallback'])) {
+                $alternate = AiProvider::where('is_active', true)
+                    ->where('id', '!=', $this->provider->id)
+                    ->whereNotNull('api_key')
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                if ($alternate) {
+                    try {
+                        $fallback = new self(
+                            AiProviderFactory::instantiate($alternate),
+                            $alternate,
+                            $useCase,
+                            $this->context
+                        );
+
+                        return $fallback->chat(
+                            $messages,
+                            array_merge($options, ['_is_fallback' => true])
+                        );
+                    } catch (Throwable) {
+                        // ignore and throw original exception below
+                    }
+                }
+            }
+
             throw $e;
         }
     }

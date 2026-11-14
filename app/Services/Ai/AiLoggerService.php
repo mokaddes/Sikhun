@@ -79,6 +79,27 @@ class AiLoggerService
             $outputTokens = $options['output_tokens'] ?? self::estimateTokens((string) $response);
             $totalTokens = $inputTokens + $outputTokens;
 
+            // Calculate cost in USD based on provider 1M token rates
+            $inputRate = (float) ($provider->cost_per_1m_input ?? 0);
+            $outputRate = (float) ($provider->cost_per_1m_output ?? 0);
+            if ($inputRate <= 0 && $outputRate <= 0) {
+                $modelCheck = strtolower($provider->name . ' ' . $provider->model_name);
+                if (str_contains($modelCheck, 'claude')) {
+                    $inputRate = 3.00;
+                    $outputRate = 15.00;
+                } elseif (str_contains($modelCheck, 'gemini')) {
+                    $inputRate = 0.08;
+                    $outputRate = 0.30;
+                } elseif (str_contains($modelCheck, 'deepseek')) {
+                    $inputRate = 0.15;
+                    $outputRate = 0.30;
+                } else {
+                    $inputRate = 0.15;
+                    $outputRate = 0.60;
+                }
+            }
+            $cost = round((($inputTokens / 1000000) * $inputRate) + (($outputTokens / 1000000) * $outputRate), 6);
+
             // Safe truncate prompt and response to prevent exceeding mediumText/longText
             $safePrompt = mb_substr(json_encode($messages, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), 0, 65000);
             $safeResponse = $response !== null ? mb_substr($response, 0, 65000) : null;
@@ -102,6 +123,7 @@ class AiLoggerService
                 'input_tokens' => $inputTokens,
                 'output_tokens' => $outputTokens,
                 'total_tokens' => $totalTokens,
+                'cost' => $cost,
                 'latency_ms' => $latencyMs,
                 'ip_address' => request()?->ip(),
             ]);

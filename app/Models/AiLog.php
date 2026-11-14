@@ -25,6 +25,7 @@ class AiLog extends Model
         'input_tokens',
         'output_tokens',
         'total_tokens',
+        'cost',
         'latency_ms',
         'ip_address',
     ];
@@ -35,6 +36,7 @@ class AiLog extends Model
             'input_tokens' => 'integer',
             'output_tokens' => 'integer',
             'total_tokens' => 'integer',
+            'cost' => 'decimal:6',
             'latency_ms' => 'integer',
         ];
     }

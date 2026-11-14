@@ -22,10 +22,12 @@ class AiProviderRequest extends FormRequest
             'is_active' => ['boolean'],
             'max_tokens' => ['required', 'integer', 'min:1'],
             'temperature' => ['required', 'numeric', 'min:0', 'max:2'],
+            'cost_per_1m_input' => ['nullable', 'numeric', 'min:0'],
+            'cost_per_1m_output' => ['nullable', 'numeric', 'min:0'],
             'use_cases' => ['required', 'array', 'min:1'],
-            'use_cases.*' => ['in:book_chat,exam_gen,flashcard_gen,essay_grade,schedule_gen,notification_gen,support_bot,book_ocr,book_retrieval,book_structure,blog_translate,blog_rewrite'],
+            'use_cases.*' => ['in:book_chat,exam_gen,flashcard_gen,essay_grade,schedule_gen,notification_gen,support_bot,book_ocr,book_retrieval,book_structure,blog_translate,blog_rewrite,question_analysis,question_structure,question_gen'],
             'default_use_cases' => ['nullable', 'array'],
-            'default_use_cases.*' => ['in:book_chat,exam_gen,flashcard_gen,essay_grade,schedule_gen,notification_gen,support_bot,book_ocr,book_retrieval,book_structure,blog_translate,blog_rewrite'],
+            'default_use_cases.*' => ['in:book_chat,exam_gen,flashcard_gen,essay_grade,schedule_gen,notification_gen,support_bot,book_ocr,book_retrieval,book_structure,blog_translate,blog_rewrite,question_analysis,question_structure,question_gen'],
         ];
     }
 }

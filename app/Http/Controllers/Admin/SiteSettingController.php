@@ -102,14 +102,15 @@ class SiteSettingController extends Controller
         ]);
 
         foreach ($validated as $key => $value) {
-            if ($key === 'referral_reward_tiers') {
-                $value = $value ? json_decode($value, true) : null;
+            // File uploads and their remove flags are persisted separately
+            // below; never send UploadedFile objects through the text setting
+            // model's generic value column.
+            if (in_array($key, self::IMAGE_KEYS, true) || str_starts_with($key, 'remove_')) {
+                continue;
             }
 
-            // An untouched image field arrives as an empty string or null;
-            // never let that clobber an already-stored image path.
-            if (in_array($key, self::IMAGE_KEYS) && in_array($value, ['', null], true)) {
-                continue;
+            if ($key === 'referral_reward_tiers') {
+                $value = $value ? json_decode($value, true) : null;
             }
 
             SiteSetting::updateOrCreate(['key' => $key], ['value' => $value]);

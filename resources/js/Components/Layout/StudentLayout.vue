@@ -9,6 +9,7 @@ import NotificationBell from '@/Components/UI/NotificationBell.vue';
 import FlashBanner from '@/Components/UI/FlashBanner.vue';
 import SupportWidget from '@/Components/Support/SupportWidget.vue';
 import StudentAvatar from '@/Components/UI/StudentAvatar.vue';
+import BrandLogo from '@/Components/BrandLogo.vue';
 import PushNotificationPrompt from '@/Components/UI/PushNotificationPrompt.vue';
 import {
     HomeIcon,
@@ -38,8 +39,6 @@ const theme = useThemeStore();
 const { t, locale } = useI18n();
 const page = usePage();
 const student = page.props.auth?.student;
-const site = page.props.site;
-const brandName = computed(() => (site?.name || 'Sikhun.com').replace(/\.com.*$/i, '').toUpperCase());
 
 const sidebarOpen = ref(false);   // mobile off-canvas drawer
 const panelOpen = ref(false);     // second-level panel expanded?
@@ -248,10 +247,7 @@ function logout() {
             >
                 <div class="flex h-full w-64 flex-col">
                     <header class="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-4">
-                        <div class="flex min-w-0 items-center gap-2">
-                            <img src="/images/sikhun-mark.svg" alt="" class="h-9 w-9 shrink-0 object-contain" />
-                            <span class="truncate font-heading text-lg font-extrabold tracking-tight">{{ brandName }}</span>
-                        </div>
+                        <BrandLogo href="/" compact size="sm" />
                         <button
                             type="button"
                             class="icon-btn h-8 w-8 shrink-0"

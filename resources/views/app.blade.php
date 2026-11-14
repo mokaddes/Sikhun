@@ -56,6 +56,7 @@
     @php
         $seoService = app(\App\Services\SeoService::class);
         $seoData = $seoService->resolveForRequest(request(), $page['props']['seo'] ?? null);
+        $siteFavicon = $page['props']['site']['favicon_url'] ?? asset('favicon.svg');
     @endphp
 
     <title inertia>{{ $seoData['title'] }}</title>
@@ -66,9 +67,9 @@
     <link rel="canonical" href="{{ $seoData['canonical'] }}">
     <meta name="robots" content="{{ $seoData['robots'] ?? 'index, follow' }}">
 
-    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
-    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
-    <link rel="apple-touch-icon" href="{{ asset('favicon.svg') }}">
+    <link rel="icon" href="{{ $siteFavicon }}">
+    <link rel="shortcut icon" href="{{ $siteFavicon }}">
+    <link rel="apple-touch-icon" href="{{ $siteFavicon }}">
 
     <!-- OpenGraph & Twitter for Crawlers, AI Search Bots & Social Debuggers -->
     <meta property="og:site_name" content="{{ $seoData['site_name'] }}">

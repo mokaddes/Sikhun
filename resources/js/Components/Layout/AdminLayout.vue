@@ -5,6 +5,7 @@ import { useI18n } from '@/i18n';
 import LanguageSwitcher from '@/Components/UI/LanguageSwitcher.vue';
 import ThemeToggle from '@/Components/UI/ThemeToggle.vue';
 import FlashBanner from '@/Components/UI/FlashBanner.vue';
+import BrandLogo from '@/Components/BrandLogo.vue';
 import {
     Squares2X2Icon,
     BookOpenIcon,
@@ -40,8 +41,6 @@ import {
 const { t, locale } = useI18n();
 const page = usePage();
 const admin = page.props.auth?.admin;
-const site = page.props.site;
-const brandName = computed(() => (site?.name || 'Sikhun.com').replace(/\.com.*$/i, '').toUpperCase());
 
 const sidebarOpen = ref(false);   // mobile off-canvas drawer
 const panelOpen = ref(false);     // second-level panel expanded?
@@ -294,9 +293,8 @@ function logout() {
                 <div class="flex h-full w-64 flex-col">
                     <header class="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-4">
                         <div class="flex min-w-0 items-center gap-2">
-                            <img src="/images/sikhun-mark.svg" alt="" class="h-9 w-9 shrink-0 object-contain" />
+                            <BrandLogo href="/" compact size="sm" />
                             <div class="min-w-0 leading-tight">
-                                <div class="truncate font-heading text-base font-extrabold tracking-tight">{{ brandName }}</div>
                                 <div class="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">Admin</div>
                             </div>
                         </div>

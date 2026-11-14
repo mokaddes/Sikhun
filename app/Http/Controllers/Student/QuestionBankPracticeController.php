@@ -24,17 +24,35 @@ class QuestionBankPracticeController extends Controller
         $student = auth('web')->user();
         $studentType = $student->type ?? 'admission';
 
+        // Available sector counts in QuestionBank
+        $sectorCounts = [
+            'admission' => QuestionBank::published()->where('segment', 'admission')->count(),
+            'job' => QuestionBank::published()->where('segment', 'job')->count(),
+            'hsc' => QuestionBank::published()->where('segment', 'hsc')->count(),
+            'ssc' => QuestionBank::published()->where('segment', 'ssc')->count(),
+        ];
+
+        // Determine active sector
+        $requestedSector = $request->input('sector');
+        if ($requestedSector && in_array($requestedSector, ['admission', 'job', 'hsc', 'ssc'])) {
+            $activeSector = $requestedSector;
+        } else {
+            if ($studentType === 'job') {
+                $activeSector = 'job';
+            } elseif ($studentType === 'admission') {
+                $activeSector = 'admission';
+            } elseif (in_array($studentType, ['hsc', 'ssc']) && ($sectorCounts[$studentType] ?? 0) > 0) {
+                $activeSector = $studentType;
+            } else {
+                // If student is hsc/ssc or unknown, default to admission (active question bank)
+                $activeSector = 'admission';
+            }
+        }
+
         $query = QuestionBank::query()
             ->with(['subject', 'topic'])
-            ->published();
-
-        // Scoped by student's type (segment = $studentType or where allowed_student_types contains $studentType or 'all')
-        $query->where(function ($q) use ($studentType) {
-            $q->where('segment', $studentType)
-              ->orWhereNull('allowed_student_types')
-              ->orWhereJsonContains('allowed_student_types', 'all')
-              ->orWhereJsonContains('allowed_student_types', $studentType);
-        });
+            ->published()
+            ->where('segment', $activeSector); // Strictly isolated by sector
 
         $mode = $request->input('mode');
 
@@ -73,31 +91,28 @@ class QuestionBankPracticeController extends Controller
 
         $questions = $query->latest('id')->paginate(20)->withQueryString();
 
-        // Available subjects for student's segment or 'both' with question counts
+        // Available subjects for the active sector
         $subjects = QuestionSubject::active()
-            ->forSegment($studentType)
-            ->withCount(['questions' => function ($q) use ($studentType) {
-                $q->published()->where(function ($sq) use ($studentType) {
-                    $sq->where('segment', $studentType)
-                      ->orWhereNull('allowed_student_types')
-                      ->orWhereJsonContains('allowed_student_types', 'all')
-                      ->orWhereJsonContains('allowed_student_types', $studentType);
-                });
+            ->where(function ($q) use ($activeSector) {
+                $q->where('segment', $activeSector)
+                  ->orWhere('segment', 'both');
+            })
+            ->withCount(['questions' => function ($q) use ($activeSector) {
+                $q->published()->where('segment', $activeSector);
             }])
+            ->having('questions_count', '>', 0)
+            ->orderByDesc('questions_count')
             ->get(['id', 'name_bn', 'name_en', 'slug', 'segment', 'icon', 'order']);
 
-        // Available exams distinct by origin_tag, exam_name, institution, year with counts
+        // Available exams for the active sector distinct by origin_tag, exam_name, institution, year with counts
         $exams = QuestionBank::published()
-            ->where(function ($q) use ($studentType) {
-                $q->where('segment', $studentType)
-                  ->orWhereNull('allowed_student_types')
-                  ->orWhereJsonContains('allowed_student_types', 'all')
-                  ->orWhereJsonContains('allowed_student_types', $studentType);
-            })
+            ->where('segment', $activeSector)
             ->whereNotNull('origin_tag')
-            ->selectRaw('origin_tag, exam_name, institution, year, count(*) as questions_count')
+            ->selectRaw('origin_tag, exam_name, institution, year, count(*) as count')
             ->groupBy('origin_tag', 'exam_name', 'institution', 'year')
+            ->having('count', '>', 0)
             ->orderByDesc('year')
+            ->orderByDesc('count')
             ->get();
 
         // Check if student is a paid subscriber
@@ -107,9 +122,13 @@ class QuestionBankPracticeController extends Controller
             'questions' => $questions,
             'subjects' => $subjects,
             'exams' => $exams,
-            'filters' => $request->only(['mode', 'subject_id', 'origin_tag', 'search']),
+            'filters' => array_merge($request->only(['mode', 'subject_id', 'origin_tag', 'search']), [
+                'sector' => $activeSector,
+            ]),
             'isPaid' => $isPaid,
             'studentType' => $studentType,
+            'activeSector' => $activeSector,
+            'sectorCounts' => $sectorCounts,
         ]);
     }
 

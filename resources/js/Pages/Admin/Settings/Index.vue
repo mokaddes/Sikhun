@@ -1,11 +1,11 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onUnmounted } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import { useI18n } from '@/i18n';
 
 const props = defineProps({ settings: Object });
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const testingSocial = ref(false);
 
@@ -44,13 +44,18 @@ const form = useForm({
     pagepilot_auto_publish: props.settings.pagepilot_auto_publish === undefined ? true : Boolean(Number(props.settings.pagepilot_auto_publish) || props.settings.pagepilot_auto_publish === 'true' || props.settings.pagepilot_auto_publish === true),
 });
 
-const logoPreview = ref(props.settings.site_logo ?? null);
-const faviconPreview = ref(props.settings.site_favicon ?? null);
-const seoPreview = ref(props.settings.seo_image ?? null);
+const logoPreview = ref(props.settings.site_logo_url ?? null);
+const faviconPreview = ref(props.settings.site_favicon_url ?? null);
+const seoPreview = ref(props.settings.seo_image_url ?? null);
+
+function releasePreview(preview) {
+    if (preview.value?.startsWith('blob:')) URL.revokeObjectURL(preview.value);
+}
 
 function onFile(field, preview, event) {
     const file = event.target.files[0];
     if (file) {
+        releasePreview(preview);
         form[field] = file;
         form['remove_' + field] = false;
         preview.value = URL.createObjectURL(file);
@@ -62,10 +67,12 @@ function removeImage(field) {
   form['remove_' + field] = true;
 
   // Reset the correct ref dynamically
-  if (field === 'site_logo') logoPreview.value = null;
-  if (field === 'site_favicon') faviconPreview.value = null;
-  if (field === 'seo_image') seoPreview.value = null;
+  const preview = field === 'site_logo' ? logoPreview : field === 'site_favicon' ? faviconPreview : seoPreview;
+  releasePreview(preview);
+  preview.value = null;
 }
+
+onUnmounted(() => [logoPreview, faviconPreview, seoPreview].forEach(releasePreview));
 
 function submit() {
   form.transform((data) => {
@@ -112,11 +119,28 @@ function submit() {
             <div class="border-t border-[var(--border)] pt-5">
                 <div class="text-sm font-semibold mb-4">{{ t('admin.settings.branding_section') }}</div>
 
+                <div class="mb-5 rounded-xl border border-[var(--border)] bg-[var(--surface2)] p-4">
+                    <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">{{ locale === 'bn' ? 'সাইটে লোগোটি এমন দেখাবে' : 'Brand preview' }}</div>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div class="flex min-h-24 items-center gap-3 rounded-xl border border-[var(--border)] bg-[#fffefa] px-4 py-3 text-[#29251f]">
+                            <img :src="logoPreview || '/images/sikhun-mark.svg'" :alt="`${form.site_name} logo`" class="h-12 w-12 shrink-0 object-contain" />
+                            <div class="min-w-0"><div class="truncate font-serif-classic text-base font-bold">{{ form.site_name || 'Sikhun.com' }}</div><div class="mt-1 truncate text-[10px] text-[#8a5a32]">{{ form.site_tagline || (locale === 'bn' ? 'আপনার এআই পড়ার টেবিল' : 'YOUR AI STUDY DESK') }}</div></div>
+                        </div>
+                        <div class="flex min-h-24 items-center gap-3 rounded-xl border border-[#38342c] bg-[#211f1a] px-4 py-3 text-[#eee9df]">
+                            <img :src="logoPreview || '/images/sikhun-mark.svg'" :alt="`${form.site_name} logo`" class="h-12 w-12 shrink-0 object-contain" />
+                            <div class="min-w-0"><div class="truncate font-serif-classic text-base font-bold">{{ form.site_name || 'Sikhun.com' }}</div><div class="mt-1 truncate text-[10px] text-[#d2ad7c]">{{ form.site_tagline || (locale === 'bn' ? 'আপনার এআই পড়ার টেবিল' : 'YOUR AI STUDY DESK') }}</div></div>
+                        </div>
+                    </div>
+                    <p class="mt-3 text-xs leading-relaxed text-[var(--text-muted)]">{{ locale === 'bn' ? 'স্বচ্ছ ব্যাকগ্রাউন্ডসহ বর্গাকার SVG বা PNG লোগো আপলোড করুন। সাইটের নাম ও ট্যাগলাইন লোগোর পাশে দেখানো হবে।' : 'Upload a square SVG or PNG mark with a transparent background. The site name and tagline will appear beside it.' }}
+                        <a href="/images/sikhun-mark.svg" download="sikhun-mark.svg" class="ml-1 font-semibold text-[var(--primary)] underline underline-offset-2">{{ locale === 'bn' ? 'শিখুন লোগো ডাউনলোড' : 'Download the Sikhun mark' }}</a>
+                    </p>
+                </div>
+
                 <div class="space-y-5">
                     <div>
                         <label class="block text-sm font-medium mb-1.5">{{ t('admin.settings.site_logo') }}</label>
                         <div class="flex items-center gap-4">
-                            <img v-if="logoPreview" :src="logoPreview" :alt="t('admin.settings.site_logo')" class="h-12 w-auto object-contain rounded-lg bg-[var(--surface2)] p-1" />
+                            <img v-if="logoPreview" :src="logoPreview" :alt="t('admin.settings.site_logo')" @error="logoPreview = null" class="h-12 w-12 object-contain rounded-lg bg-[var(--surface2)] p-1" />
                             <div v-else class="h-12 w-24 rounded-lg bg-[var(--surface2)] border border-dashed border-[var(--border)] flex items-center justify-center text-xs text-[var(--text-muted)]">{{ t('admin.settings.no_image') }}</div>
                             <div class="flex-1 space-y-2">
                                 <input type="file" accept=".png,.jpg,.jpeg,.webp,.svg" @change="onFile('site_logo', logoPreview, $event)" class="block w-full text-sm text-[var(--text-muted)] file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-[var(--surface2)] file:text-sm file:font-medium" />
@@ -128,7 +152,7 @@ function submit() {
                     <div>
                         <label class="block text-sm font-medium mb-1.5">{{ t('admin.settings.site_favicon') }}</label>
                         <div class="flex items-center gap-4">
-                            <img v-if="faviconPreview" :src="faviconPreview" :alt="t('admin.settings.site_favicon')" class="h-10 w-10 object-contain rounded-lg bg-[var(--surface2)] p-1" />
+                            <img v-if="faviconPreview" :src="faviconPreview" :alt="t('admin.settings.site_favicon')" @error="faviconPreview = null" class="h-10 w-10 object-contain rounded-lg bg-[var(--surface2)] p-1" />
                             <div v-else class="h-10 w-24 rounded-lg bg-[var(--surface2)] border border-dashed border-[var(--border)] flex items-center justify-center text-xs text-[var(--text-muted)]">{{ t('admin.settings.no_image') }}</div>
                             <div class="flex-1 space-y-2">
                                 <input type="file" accept=".png,.jpg,.jpeg,.webp,.svg,.ico" @change="onFile('site_favicon', faviconPreview, $event)" class="block w-full text-sm text-[var(--text-muted)] file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-[var(--surface2)] file:text-sm file:font-medium" />
@@ -140,7 +164,7 @@ function submit() {
                     <div>
                         <label class="block text-sm font-medium mb-1.5">{{ t('admin.settings.seo_image') }}</label>
                         <div class="flex items-center gap-4">
-                            <img v-if="seoPreview" :src="seoPreview" :alt="t('admin.settings.seo_image')" class="h-14 w-24 object-cover rounded-lg bg-[var(--surface2)] p-1" />
+                            <img v-if="seoPreview" :src="seoPreview" :alt="t('admin.settings.seo_image')" @error="seoPreview = null" class="h-14 w-24 object-cover rounded-lg bg-[var(--surface2)] p-1" />
                             <div v-else class="h-14 w-24 rounded-lg bg-[var(--surface2)] border border-dashed border-[var(--border)] flex items-center justify-center text-xs text-[var(--text-muted)]">{{ t('admin.settings.no_image') }}</div>
                             <div class="flex-1 space-y-2">
                                 <input type="file" accept=".png,.jpg,.jpeg,.webp" @change="onFile('seo_image', seoPreview, $event)" class="block w-full text-sm text-[var(--text-muted)] file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-[var(--surface2)] file:text-sm file:font-medium" />

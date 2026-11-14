@@ -12,4 +12,20 @@ class SiteSetting extends Model
     {
         return ['value' => 'array'];
     }
+
+    /**
+     * Get a setting by key from cache/database.
+     */
+    public static function get(string $key, mixed $default = null): mixed
+    {
+        return app(\App\Services\SiteSettingService::class)->get($key, $default);
+    }
+
+    /**
+     * Alias for get().
+     */
+    public static function getValue(string $key, mixed $default = null): mixed
+    {
+        return static::get($key, $default);
+    }
 }

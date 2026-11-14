@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Jobs\DispatchPagePilotSocialPost;
 use App\Models\BlogCategory;
 use App\Models\BlogPost;
-use App\Models\SiteSetting;
 use App\Services\Blog\AiBlogStudioService;
 use App\Services\Blog\BlogDeduplicator;
 use Illuminate\Http\JsonResponse;
@@ -113,7 +112,7 @@ class AiBlogStudioController extends Controller
 
         $post = BlogPost::create($validated);
 
-        if ($post->status === 'published' && SiteSetting::get('pagepilot_auto_publish', true)) {
+        if ($post->status === 'published') {
             DispatchPagePilotSocialPost::dispatch('blog', $post->id);
         }
 

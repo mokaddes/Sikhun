@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\DispatchPagePilotSocialPost;
 use App\Models\BlogCategory;
 use App\Models\BlogPost;
+use App\Models\SiteSetting;
 use App\Services\Blog\AiBlogStudioService;
 use App\Services\Blog\BlogDeduplicator;
 use Illuminate\Http\JsonResponse;
@@ -109,7 +111,11 @@ class AiBlogStudioController extends Controller
             $validated['blog_category_id'] = BlogCategory::first()?->id;
         }
 
-        BlogPost::create($validated);
+        $post = BlogPost::create($validated);
+
+        if ($post->status === 'published' && SiteSetting::get('pagepilot_auto_publish', true)) {
+            DispatchPagePilotSocialPost::dispatch('blog', $post->id);
+        }
 
         return redirect()->route('admin.blog.index')->with('success', 'এআই ব্লগ সফলভাবে তৈরি ও সংরক্ষিত হয়েছে।');
     }

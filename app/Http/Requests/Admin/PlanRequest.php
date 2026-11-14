@@ -16,6 +16,7 @@ class PlanRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', Rule::unique('plans', 'slug')->ignore($planId)],
+            'target_segment' => ['required', 'string', 'in:all,admission,job,hsc,ssc,custom'],
             'description' => ['nullable', 'string', 'max:1000'],
             'price_monthly' => ['required', 'numeric', 'min:0'],
             'ai_chat_minutes' => ['required', 'integer', 'min:0'],
@@ -23,6 +24,7 @@ class PlanRequest extends FormRequest
             'upload_book_limit' => ['required', 'integer', 'min:0'],
             'monthly_reupload_limit' => ['required', 'integer', 'min:0'],
             'ai_exam_count' => ['required', 'integer', 'min:0'],
+            'ai_explanation_count' => ['required', 'integer', 'min:0'],
             'trial_ai_minutes' => ['required', 'integer', 'min:0'],
             'features' => ['nullable', 'string'], // newline-separated in the form
             'ai_provider_id' => ['nullable', 'integer', 'exists:ai_providers,id'],

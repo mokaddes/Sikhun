@@ -154,7 +154,7 @@ class FlashcardBookCoverageTest extends TestCase
         $props = (new \ReflectionProperty($response, 'props'))->getValue($response);
 
         $this->assertSame(
-            ['book_chat', 'exam_gen', 'flashcard_gen', 'essay_grade', 'schedule_gen', 'support_bot', 'book_ocr', 'blog_rewrite'],
+            ['book_chat', 'exam_gen', 'flashcard_gen', 'essay_grade', 'schedule_gen', 'support_bot', 'book_ocr', 'blog_rewrite', 'question_analysis', 'question_structure', 'question_gen'],
             array_keys($props['recommendations']),
         );
         $this->assertContains('Google — Gemini Flash', $props['recommendations']['flashcard_gen']['models']);

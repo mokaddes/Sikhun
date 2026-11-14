@@ -76,4 +76,32 @@ class MistakeReviewController extends Controller
 
         return redirect()->to($redirectUrl);
     }
+
+    /**
+     * Reset student's mistake questions (delete or resolve mistake entries).
+     */
+    public function reset(Request $request): RedirectResponse|JsonResponse
+    {
+        $student = auth('web')->user();
+        $query = \App\Models\ExamAnswer::where('student_id', $student->id)->where('is_correct', false);
+
+        if ($request->filled('subject_id')) {
+            $query->where('subject_id', (int) $request->input('subject_id'));
+        }
+
+        if ($request->filled('institution')) {
+            $query->where('institution', $request->input('institution'));
+        }
+
+        $count = $query->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "ভুল প্রশ্নের তালিকা থেকে {$count}টি প্রশ্ন সফলভাবে রিসেট করা হয়েছে।",
+            ]);
+        }
+
+        return back()->with('success', "ভুল প্রশ্নের তালিকা থেকে {$count}টি প্রশ্ন সফলভাবে রিসেট করা হয়েছে।");
+    }
 }

@@ -79,9 +79,7 @@ const nav = computed(() => [
                 </nav>
 
                 <div class="flex items-center gap-2">
-                    <div class="hidden sm:flex items-center gap-1 rounded-full bg-slate-100 dark:bg-[#171b26] border border-slate-200/80 dark:border-white/5 p-1">
-                        <LanguageSwitcher />
-                    </div>
+                    <LanguageSwitcher class="hidden sm:flex" />
                     <ThemeToggle />
                     <template v-if="student">
                         <Link href="/dashboard" class="btn btn-primary hidden sm:inline-flex h-9 px-4 text-xs font-bold rounded-xl">

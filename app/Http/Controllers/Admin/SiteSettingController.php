@@ -191,4 +191,15 @@ class SiteSettingController extends Controller
 
         return back()->with('error', 'PagePilotBD সংযোগে ব্যর্থ হয়েছে: ' . ($result['message'] ?? 'অজানা ত্রুটি'));
     }
+
+    public function syncPagePilotKnowledge(\App\Services\Social\PagePilotSyncService $sync): RedirectResponse
+    {
+        $result = $sync->syncKnowledgeToPagePilot();
+
+        if ($result['success'] ?? false) {
+            return back()->with('success', $result['message']);
+        }
+
+        return back()->with('error', $result['message']);
+    }
 }

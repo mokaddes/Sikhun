@@ -44,7 +44,19 @@ class SeoService
     {
         $image = $this->settings->get($key);
 
-        return $image ? asset('storage/'.$image) : $this->socialImage();
+        if ($image) {
+            return asset('storage/'.$image);
+        }
+
+        $fallbackMap = [
+            'seo_admission_image' => 'images/og-admission.png',
+            'seo_job_image' => 'images/og-job.png',
+            'seo_blog_image' => 'images/og-blog.png',
+        ];
+
+        $fallback = $fallbackMap[$key] ?? 'images/og-default.png';
+
+        return file_exists(public_path($fallback)) ? asset($fallback) : $this->socialImage();
     }
 
     private function absoluteImage(?string $image, string $fallback): string

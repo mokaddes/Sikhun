@@ -238,6 +238,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     // Mistake Review & Revision Book ("আমার ভুলসমূহ")
     Route::get('/mistakes', [\App\Http\Controllers\Student\MistakeReviewController::class, 'index'])->name('student.mistakes.index');
     Route::post('/mistakes/practice', [\App\Http\Controllers\Student\MistakeReviewController::class, 'practice'])->name('student.mistakes.practice');
+    Route::post('/mistakes/reset', [\App\Http\Controllers\Student\MistakeReviewController::class, 'reset'])->name('student.mistakes.reset');
 
     // AI Flashcard Generator
     Route::get('/flashcards', [FlashcardController::class, 'index'])->name('flashcards.index');

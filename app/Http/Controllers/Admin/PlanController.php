@@ -58,6 +58,17 @@ class PlanController extends Controller
         return back()->with('success', 'Plan deleted.');
     }
 
+    public function syncToPagePilot(\App\Services\Social\PagePilotSyncService $sync): RedirectResponse
+    {
+        $result = $sync->syncPlansToPagePilot();
+
+        if ($result['success'] ?? false) {
+            return back()->with('success', $result['message']);
+        }
+
+        return back()->with('error', $result['message']);
+    }
+
     private function prepared(PlanRequest $request): array
     {
         $data = $request->validated();
@@ -67,6 +78,7 @@ class PlanController extends Controller
             ? array_values(array_filter(array_map('trim', explode("\n", $data['features']))))
             : [];
         $data['ai_vision_limit'] = (int) ($data['ai_vision_limit'] ?? 0);
+        $data['ai_explanation_count'] = (int) ($data['ai_explanation_count'] ?? 50);
         $data['upload_book_limit'] = (int) ($data['upload_book_limit'] ?? 1);
         $data['monthly_reupload_limit'] = (int) ($data['monthly_reupload_limit'] ?? 2);
 

@@ -98,6 +98,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('courses/video/chunk', [CourseVideoUploadController::class, 'uploadChunk'])->name('courses.video.chunk');
         Route::post('courses/video/merge', [CourseVideoUploadController::class, 'mergeChunks'])->name('courses.video.merge');
 
+        Route::post('plans/sync-pagepilot', [PlanController::class, 'syncToPagePilot'])->name('plans.sync-pagepilot');
         Route::resource('plans', PlanController::class)->except(['show']);
 
         Route::resource('coupons', CouponController::class)->except(['show']);
@@ -132,6 +133,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('settings', [SiteSettingController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [SiteSettingController::class, 'update'])->name('settings.update');
         Route::post('settings/test-pagepilot', [SiteSettingController::class, 'testPagePilot'])->name('settings.test-pagepilot');
+        Route::post('settings/sync-pagepilot-knowledge', [SiteSettingController::class, 'syncPagePilotKnowledge'])->name('settings.sync-pagepilot-knowledge');
 
         // Admin account: profile information + password
         Route::get('profile', [ProfileController::class, 'settings'])->name('profile.settings');

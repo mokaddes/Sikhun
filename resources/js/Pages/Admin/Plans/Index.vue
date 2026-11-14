@@ -1,5 +1,6 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import TableDropdown from '@/Components/UI/TableDropdown.vue';
 import { useI18n } from '@/i18n';
@@ -11,10 +12,49 @@ import {
     TrashIcon,
     UsersIcon,
     SparklesIcon,
+    ArrowPathIcon,
+    TagIcon,
 } from '@heroicons/vue/24/outline';
 
 defineProps({ plans: Array });
 const { t, locale } = useI18n();
+
+const syncing = ref(false);
+
+function syncPagePilot() {
+    if (syncing.value) return;
+    syncing.value = true;
+    router.post('/admin/plans/sync-pagepilot', {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            syncing.value = false;
+        },
+    });
+}
+
+function getSegmentLabel(seg) {
+    const map = {
+        all: 'সকল শিক্ষার্থী (All)',
+        admission: 'বিশ্ববিদ্যালয় ভর্তি (Admission)',
+        job: 'বিসিএস ও চাকরি (Job)',
+        hsc: 'উচ্চ মাধ্যমিক (HSC)',
+        ssc: 'মাধ্যমিক (SSC)',
+        custom: 'কাস্টম প্যাকেজ (Custom)',
+    };
+    return map[seg] || seg || 'সকল শিক্ষার্থী';
+}
+
+function getSegmentColor(seg) {
+    const map = {
+        all: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20',
+        admission: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20',
+        job: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+        hsc: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+        ssc: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
+        custom: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+    };
+    return map[seg] || 'bg-slate-500/10 text-slate-700 border-slate-500/20';
+}
 
 function getPlanActions(plan) {
     return [
@@ -38,13 +78,25 @@ function getPlanActions(plan) {
                     </span>
                 </div>
                 <p class="mt-1 text-sm text-[var(--text-muted)]">
-                    {{ locale === 'en' ? 'Create and configure subscription pricing tiers and benefits.' : 'সাবস্ক্রিপশন প্ল্যানের মূল্য ও সুবিধাসমূহ পরিচালনা করুন।' }}
+                    {{ locale === 'en' ? 'Create, configure and manage Admission, Job & Custom subscription tiers.' : 'ভর্তি, চাকরি, এইচএসসি ও কাস্টম সাবস্ক্রিপশন প্ল্যানসমূহ পরিচালনা করুন।' }}
                 </p>
             </div>
-            <Link href="/admin/plans/create" class="btn btn-primary self-start sm:self-auto gap-2">
-                <PlusIcon class="h-4 w-4" />
-                {{ t('admin.plans.new') }}
-            </Link>
+            <div class="flex items-center gap-2.5 self-start sm:self-auto">
+                <button
+                    type="button"
+                    @click="syncPagePilot"
+                    :disabled="syncing"
+                    class="btn btn-secondary inline-flex items-center gap-1.5 text-xs font-bold"
+                    title="PagePilotBD ক্যাটালগে সকল প্ল্যান ও প্রোডাক্ট সিঙ্ক করুন"
+                >
+                    <ArrowPathIcon class="h-4 w-4" :class="{ 'animate-spin': syncing }" />
+                    <span>{{ syncing ? 'সিঙ্ক হচ্ছে...' : 'পেজপাইলটে প্ল্যান সিঙ্ক' }}</span>
+                </button>
+                <Link href="/admin/plans/create" class="btn btn-primary gap-2 text-xs font-bold">
+                    <PlusIcon class="h-4 w-4" />
+                    {{ t('admin.plans.new') }}
+                </Link>
+            </div>
         </div>
 
         <!-- Plans Grid -->
@@ -58,6 +110,10 @@ function getPlanActions(plan) {
                     <!-- Top header -->
                     <div class="flex items-start justify-between gap-3">
                         <div>
+                            <div class="mb-1.5 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold" :class="getSegmentColor(plan.target_segment)">
+                                <TagIcon class="h-3 w-3" />
+                                <span>{{ getSegmentLabel(plan.target_segment) }}</span>
+                            </div>
                             <h3 class="font-heading text-lg font-bold text-[var(--text)]">{{ plan.name }}</h3>
                             <div class="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
                                 <UsersIcon class="h-3.5 w-3.5 text-[var(--secondary)]" />
@@ -93,12 +149,16 @@ function getPlanActions(plan) {
                             {{ plan.ai_vision_limit || 0 }} {{ locale === 'en' ? 'images' : 'টি ছবি' }}
                         </div>
                         <div class="rounded-lg bg-[var(--surface2)] px-2.5 py-1.5 font-medium text-[var(--text-muted)]">
-                            <span class="block text-[10px] uppercase font-bold text-[var(--text)]">📚 Upload Slots</span>
-                            {{ plan.upload_book_limit || 1 }} {{ locale === 'en' ? 'books' : 'টি বই' }} ({{ plan.monthly_reupload_limit || 2 }}/mo)
-                        </div>
-                        <div class="rounded-lg bg-[var(--surface2)] px-2.5 py-1.5 font-medium text-[var(--text-muted)]">
                             <span class="block text-[10px] uppercase font-bold text-[var(--text)]">✍️ AI Exams</span>
                             {{ plan.ai_exam_count }} {{ locale === 'en' ? 'exams' : 'টি পরীক্ষা' }}
+                        </div>
+                        <div class="rounded-lg bg-[var(--surface2)] px-2.5 py-1.5 font-medium text-[var(--text-muted)]">
+                            <span class="block text-[10px] uppercase font-bold text-[var(--text)]">💡 AI Explanations</span>
+                            {{ plan.ai_explanation_count || 50 }} {{ locale === 'en' ? 'questions' : 'টি ব্যাখ্যা' }}
+                        </div>
+                        <div class="col-span-2 rounded-lg bg-[var(--surface2)] px-2.5 py-1.5 font-medium text-[var(--text-muted)]">
+                            <span class="block text-[10px] uppercase font-bold text-[var(--text)]">📚 Upload Slots</span>
+                            {{ plan.upload_book_limit || 1 }} {{ locale === 'en' ? 'books' : 'টি বই' }} ({{ plan.monthly_reupload_limit || 2 }}/mo)
                         </div>
                     </div>
 

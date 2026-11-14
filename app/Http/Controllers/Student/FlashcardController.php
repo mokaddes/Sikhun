@@ -27,9 +27,11 @@ class FlashcardController extends Controller
         ]);
     }
 
-    public function createForm(BookAccessService $access): Response
+    public function createForm(Request $request, BookAccessService $access): Response
     {
         $student = auth('web')->user();
+        $studentSector = $student->type === 'job' ? 'job' : 'admission';
+
         $books = Book::query()
             ->where(function ($query) use ($student) {
                 $query->where('is_free', true)
@@ -46,25 +48,73 @@ class FlashcardController extends Controller
                 return $book;
             });
 
-        return Inertia::render('Student/Flashcards/Create', ['books' => $books]);
+        $subjects = \App\Models\QuestionSubject::active()
+            ->where(function ($q) use ($studentSector) {
+                $q->where('segment', $studentSector)->orWhere('segment', 'both');
+            })
+            ->orderBy('name_bn')
+            ->get(['id', 'name_bn', 'name_en', 'segment']);
+
+        $exams = \App\Models\QuestionBank::published()
+            ->where('segment', $studentSector)
+            ->whereNotNull('origin_tag')
+            ->selectRaw('origin_tag, exam_name, count(*) as count')
+            ->groupBy('origin_tag', 'exam_name')
+            ->having('count', '>', 0)
+            ->orderByDesc('count')
+            ->limit(30)
+            ->get();
+
+        return Inertia::render('Student/Flashcards/Create', [
+            'books' => $books,
+            'subjects' => $subjects,
+            'exams' => $exams,
+            'prefill' => [
+                'source_type' => $request->query('source_type', 'topic'),
+                'subject_id' => $request->query('subject_id') ? (int) $request->query('subject_id') : null,
+                'origin_tag' => $request->query('origin_tag'),
+                'sector' => $request->query('sector', $studentSector),
+                'title' => $request->query('title', ''),
+            ],
+        ]);
     }
 
     public function create(GenerateFlashcardsRequest $request, FlashcardSourceService $sources): RedirectResponse
     {
         $student = auth('web')->user();
-        $sourceText = (string) $request->source_text;
+        $sourceType = $request->input('source_type', 'topic');
+        $sourceText = '';
         $sourceLabel = null;
         $sourceReferences = [];
 
-        if ($request->source_book_id) {
+        if ($sourceType === 'book' || $request->source_book_id) {
+            $book = Book::findOrFail($request->source_book_id);
             $source = $sources->fromBook(
-                Book::findOrFail($request->source_book_id),
+                $book,
                 $student,
                 $request->input('chapter_ids', []),
             );
             $sourceText = $source['content'];
             $sourceLabel = $source['source_label'];
             $sourceReferences = $source['references'];
+        } elseif ($sourceType === 'question_bank') {
+            $source = $sources->fromQuestionBank(
+                (int) $request->subject_id,
+                $request->origin_tag,
+                $request->sector
+            );
+            $sourceText = $source['content'];
+            $sourceLabel = $source['source_label'];
+        } elseif ($sourceType === 'paragraph') {
+            $source = $sources->fromParagraph((string) $request->source_text);
+            $sourceText = $source['content'];
+            $sourceLabel = $source['source_label'];
+        } else {
+            // Default topic source
+            $topic = $request->source_topic ?: $request->title;
+            $source = $sources->fromTopic((string) $topic);
+            $sourceText = $source['content'];
+            $sourceLabel = $source['source_label'];
         }
 
         $set = $student->flashcardSets()->create([
@@ -72,10 +122,10 @@ class FlashcardController extends Controller
             'source_label' => $sourceLabel,
             'generation_status' => 'generating',
             'generation_data' => [
-                'source_type' => $request->source_book_id ? 'book' : 'text',
+                'source_type' => $sourceType,
                 'source_book_id' => $request->source_book_id,
                 'chapter_ids' => $request->input('chapter_ids', []),
-                'source_text' => $request->source_book_id ? null : $sourceText,
+                'source_text' => $sourceType === 'paragraph' ? $sourceText : null,
                 'count' => (int) $request->count,
             ],
         ]);

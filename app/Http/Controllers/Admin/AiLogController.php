@@ -114,17 +114,19 @@ class AiLogController extends Controller
 
     public function clear(Request $request): RedirectResponse
     {
-        $days = (int) $request->input('days', 30);
-        if ($days > 0) {
-            AiLog::where('created_at', '<', now()->subDays($days))->delete();
-            return back()->with('success', "Cleared AI logs older than {$days} days.");
-        }
-
-        if ($request->boolean('all')) {
+        if ($request->boolean('all') || $request->input('days') === 'all') {
             AiLog::truncate();
-            return back()->with('success', 'All AI logs have been cleared.');
+            return back()->with('success', 'সকল এআই লগ সফলভাবে মুছে ফেলা হয়েছে।');
         }
 
-        return back()->with('error', 'Invalid clear options specified.');
+        if ($request->filled('days')) {
+            $days = (int) $request->input('days');
+            if ($days > 0) {
+                $deleted = AiLog::where('created_at', '<', now()->subDays($days))->delete();
+                return back()->with('success', "বিগত {$days} দিনের পূর্বের {$deleted}টি এআই লগ মুছে ফেলা হয়েছে।");
+            }
+        }
+
+        return back()->with('error', 'সঠিক ক্লিয়ার অপশন নির্বাচন করুন।');
     }
 }

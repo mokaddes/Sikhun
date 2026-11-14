@@ -19,12 +19,24 @@ const props = defineProps({ settings: Object });
 const { t, locale } = useI18n();
 
 const testingSocial = ref(false);
+const syncingKnowledge = ref(false);
 
 function testPagePilot() {
     testingSocial.value = true;
     router.post('/admin/settings/test-pagepilot', {}, {
         onFinish: () => {
             testingSocial.value = false;
+        }
+    });
+}
+
+function syncKnowledge() {
+    if (syncingKnowledge.value) return;
+    syncingKnowledge.value = true;
+    router.post('/admin/settings/sync-pagepilot-knowledge', {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            syncingKnowledge.value = false;
         }
     });
 }
@@ -498,16 +510,28 @@ function submit() {
                             </div>
                         </div>
 
-                        <!-- Test Button -->
-                        <button
-                            type="button"
-                            @click="testPagePilot"
-                            :disabled="testingSocial"
-                            class="btn btn-outline text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5"
-                        >
-                            <ArrowPathIcon v-if="testingSocial" class="h-3.5 w-3.5 animate-spin" />
-                            <span>{{ testingSocial ? (locale === 'bn' ? 'টেস্ট চলছে...' : 'Testing...') : (locale === 'bn' ? 'টেস্ট পোস্ট পাঠান' : 'Test Webhook') }}</span>
-                        </button>
+                        <!-- Action Buttons -->
+                        <div class="flex items-center gap-2">
+                            <button
+                                type="button"
+                                @click="syncKnowledge"
+                                :disabled="syncingKnowledge"
+                                class="btn btn-secondary text-xs px-3.5 py-1.5 font-bold inline-flex items-center gap-1.5"
+                                title="ভর্তি, চাকরি ও ব্লগ পোস্টসমূহ পেজপাইলট নলেজ বেসে সিঙ্ক করুন"
+                            >
+                                <ArrowPathIcon class="h-3.5 w-3.5" :class="{ 'animate-spin': syncingKnowledge }" />
+                                <span>{{ syncingKnowledge ? 'নলেজ সিঙ্ক হচ্ছে...' : 'নলেজ বেস সিঙ্ক' }}</span>
+                            </button>
+                            <button
+                                type="button"
+                                @click="testPagePilot"
+                                :disabled="testingSocial"
+                                class="btn btn-outline text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5"
+                            >
+                                <ArrowPathIcon v-if="testingSocial" class="h-3.5 w-3.5 animate-spin" />
+                                <span>{{ testingSocial ? (locale === 'bn' ? 'টেস্ট চলছে...' : 'Testing...') : (locale === 'bn' ? 'টেস্ট পোস্ট পাঠান' : 'Test Webhook') }}</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="mt-6 space-y-6">

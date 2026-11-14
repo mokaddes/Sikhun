@@ -21,6 +21,7 @@ import {
     LightBulbIcon,
     ArrowRightIcon,
     BuildingLibraryIcon,
+    TrashIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -42,6 +43,24 @@ const practicing = ref(false);
 const practiceError = ref('');
 const practiceCount = ref(20);
 const showPracticeModal = ref(false);
+
+const showResetModal = ref(false);
+const resetting = ref(false);
+
+function resetMistakes() {
+    if (resetting.value) return;
+    resetting.value = true;
+    router.post('/mistakes/reset', {
+        subject_id: selectedSubjectId.value || undefined,
+        institution: selectedInstitution.value || undefined,
+    }, {
+        preserveScroll: true,
+        onFinish: () => {
+            resetting.value = false;
+            showResetModal.value = false;
+        },
+    });
+}
 
 const openExplanations = ref({});
 const loadingExplanation = ref({});
@@ -220,6 +239,16 @@ function isCorrectAnswer(mistake, opt, index) {
                             <AcademicCapIcon class="h-4 w-4" />
                             <span>{{ locale === 'en' ? 'Question Bank' : 'প্রশ্নব্যাংক' }}</span>
                         </Link>
+
+                        <button
+                            v-if="(stats?.total_mistakes || 0) > 0"
+                            type="button"
+                            @click="showResetModal = true"
+                            class="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"
+                        >
+                            <TrashIcon class="h-4 w-4" />
+                            <span>{{ locale === 'en' ? 'Reset Mistakes' : 'ভুল খাতা রিসেট' }}</span>
+                        </button>
                     </div>
                 </div>
 
@@ -605,6 +634,53 @@ function isCorrectAnswer(mistake, opt, index) {
                             <ArrowPathIcon v-if="practicing" class="h-4 w-4 animate-spin" />
                             <span>{{ practicing ? (locale === 'en' ? 'Preparing test...' : 'টেস্ট তৈরি হচ্ছে...') : (locale === 'en' ? 'Start Practice Now' : 'টেস্ট শুরু করুন') }}</span>
                             <ArrowRightIcon v-if="!practicing" class="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reset Confirmation Modal -->
+            <div
+                v-if="showResetModal"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                @click.self="showResetModal = false"
+            >
+                <div class="relative w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
+                            <TrashIcon class="h-6 w-6" />
+                        </div>
+                        <div>
+                            <h3 class="font-heading font-bold text-base text-[var(--text)]">
+                                {{ locale === 'en' ? 'Reset Mistake Questions?' : 'ভুল প্রশ্নের তালিকা রিসেট করবেন?' }}
+                            </h3>
+                            <p class="text-xs text-[var(--text-muted)] mt-0.5">
+                                {{ locale === 'en' ? 'This will clear all unresolved mistakes from your revision notebook.' : 'এটি আপনার ভুল খাতার সকল প্রশ্ন সমাধানকৃত হিসেবে চিহ্নিত করে নতুন করে শুরু করবে।' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-400">
+                        ⚠️ {{ locale === 'en' ? 'This action cannot be undone. Are you sure you want to proceed?' : 'এই কাজটি অপরিবর্তনীয়। আপনি কি নিশ্চিত যে তালিকা রিসেট করতে চান?' }}
+                    </div>
+
+                    <div class="pt-2 flex items-center justify-end gap-2">
+                        <button
+                            type="button"
+                            @click="showResetModal = false"
+                            class="btn btn-secondary text-xs px-4 py-2"
+                        >
+                            {{ locale === 'en' ? 'Cancel' : 'বাতিল' }}
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="resetMistakes"
+                            :disabled="resetting"
+                            class="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-5 py-2 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50 transition"
+                        >
+                            <ArrowPathIcon v-if="resetting" class="h-3.5 w-3.5 animate-spin" />
+                            <span>{{ resetting ? (locale === 'en' ? 'Resetting...' : 'রিসেট হচ্ছে...') : (locale === 'en' ? 'Confirm Reset' : 'হ্যাঁ, রিসেট করুন') }}</span>
                         </button>
                     </div>
                 </div>

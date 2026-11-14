@@ -23,6 +23,7 @@ import {
     BriefcaseIcon,
     XMarkIcon,
     ArrowRightIcon,
+    RectangleStackIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -300,8 +301,15 @@ async function handleGenerateTest() {
                     </p>
                 </div>
 
-                <!-- Action Buttons: Generate Mock Test, Mistakes, Circulars -->
+                <!-- Action Buttons: Generate Mock Test, Flashcards, Mistakes, Circulars -->
                 <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <Link
+                        :href="'/flashcards/create?source_type=question_bank&sector=' + currentSector + (selectedSubjectId ? '&subject_id=' + selectedSubjectId : '') + (selectedOriginTag ? '&origin_tag=' + encodeURIComponent(selectedOriginTag) : '')"
+                        class="flex items-center gap-1.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2.5 font-heading text-xs font-bold text-white transition-all shadow-sm"
+                    >
+                        <RectangleStackIcon class="h-4 w-4 text-emerald-300" />
+                        <span>ফ্ল্যাশকার্ড তৈরি করুন</span>
+                    </Link>
                     <Link
                         href="/mistakes"
                         class="flex items-center gap-1.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2.5 font-heading text-xs font-bold text-white transition-all shadow-sm"
@@ -589,10 +597,18 @@ async function handleGenerateTest() {
                     </span>
                     <button
                         @click="resetFilters"
-                        class="text-[var(--text-muted)] hover:text-rose-500 transition text-[11px] font-bold cursor-pointer underline"
+                        class="text-[var(--text-muted)] hover:text-rose-500 transition text-[11px] font-bold cursor-pointer underline mr-auto"
                     >
                         সব মুছুন
                     </button>
+                    <Link
+                        v-if="selectedSubjectId || selectedOriginTag"
+                        :href="'/flashcards/create?source_type=question_bank&sector=' + currentSector + (selectedSubjectId ? '&subject_id=' + selectedSubjectId : '') + (selectedOriginTag ? '&origin_tag=' + encodeURIComponent(selectedOriginTag) : '')"
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-bold hover:bg-emerald-500/20 transition"
+                    >
+                        <RectangleStackIcon class="w-3.5 h-3.5" />
+                        <span>এই ফিল্টারে ফ্ল্যাশকার্ড বানান</span>
+                    </Link>
                 </div>
 
                 <!-- Empty State for HSC / SSC (Coming Soon notification) -->

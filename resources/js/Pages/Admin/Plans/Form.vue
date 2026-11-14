@@ -15,6 +15,7 @@ const isEdit = !!props.plan;
 const form = useForm({
     name: props.plan?.name ?? '',
     slug: props.plan?.slug ?? '',
+    target_segment: props.plan?.target_segment ?? 'all',
     description: props.plan?.description ?? '',
     price_monthly: props.plan?.price_monthly ?? 0,
     ai_chat_minutes: props.plan?.ai_chat_minutes ?? 60,
@@ -22,6 +23,7 @@ const form = useForm({
     upload_book_limit: props.plan?.upload_book_limit ?? 3,
     monthly_reupload_limit: props.plan?.monthly_reupload_limit ?? 5,
     ai_exam_count: props.plan?.ai_exam_count ?? 20,
+    ai_explanation_count: props.plan?.ai_explanation_count ?? 50,
     trial_ai_minutes: props.plan?.trial_ai_minutes ?? 10,
     features: props.plan?.features ?? '',
     ai_provider_id: props.plan?.ai_provider_id ?? null,
@@ -49,9 +51,22 @@ function submit() {
                 <label class="block text-sm font-medium mb-1.5">{{ t('common.name') }}</label>
                 <input v-model="form.name" type="text" required class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
             </div>
-            <div>
-                <label class="block text-sm font-medium mb-1.5">Slug</label>
-                <input v-model="form.slug" @input="slugTouched = true" type="text" required class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Slug</label>
+                    <input v-model="form.slug" @input="slugTouched = true" type="text" required class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Target Segment (টার্গেট সেগমেন্ট)</label>
+                    <select v-model="form.target_segment" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)] font-semibold text-sm">
+                        <option value="all">🌐 All Students (সকল শিক্ষার্থী)</option>
+                        <option value="admission">🎓 University Admission (বিশ্ববিদ্যালয় ভর্তি)</option>
+                        <option value="job">💼 BCS & Govt Jobs (বিসিএস ও চাকরি)</option>
+                        <option value="hsc">📘 HSC (উচ্চ মাধ্যমিক)</option>
+                        <option value="ssc">📗 SSC (মাধ্যমিক)</option>
+                        <option value="custom">⚡ Custom / Special Plan (কাস্টম প্যাকেজ)</option>
+                    </select>
+                </div>
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1.5">Description</label>
@@ -87,9 +102,15 @@ function submit() {
                     <input v-model="form.monthly_reupload_limit" type="number" min="1" placeholder="e.g. 10" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
                     <span class="text-[11px] text-[var(--text-muted)]">Max uploads / re-uploads per month</span>
                 </div>
-                <div class="col-span-2">
+                <div>
                     <label class="block text-sm font-medium mb-1.5">{{ t('admin.plans.ai_exam_count') }}</label>
                     <input v-model="form.ai_exam_count" type="number" min="0" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+                    <span class="text-[11px] text-[var(--text-muted)]">Monthly AI exam sessions</span>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">AI Explanation Limit (এআই ব্যাখ্যা লিমিট)</label>
+                    <input v-model="form.ai_explanation_count" type="number" min="0" class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+                    <span class="text-[11px] text-[var(--text-muted)]">Monthly question explanations allowed</span>
                 </div>
             </div>
 

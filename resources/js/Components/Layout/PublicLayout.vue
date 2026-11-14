@@ -143,13 +143,16 @@ const nav = computed(() => [
             <div class="max-w-7xl mx-auto px-5 md:px-6 py-10 md:py-12">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 xl:gap-12 pb-8">
                     <div class="sm:col-span-2 flex flex-col gap-4">
-                        <BrandLogo href="/" compact size="normal" />
+                        <BrandLogo href="/" size="normal" />
                         <p class="text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-400 max-w-sm">
                             {{ locale === 'bn' ? 'বই, মেন্টর পরিচালিত কোর্স এবং AI-সহায়ক স্টাডি টুল—আপনার পড়াশোনার প্রতিটি ধাপকে আরও কার্যকর ও সহজ করতে এক জায়গায়।' : 'Books, mentor-led courses, and AI study tools—together in one focused space to make every step of learning clearer.' }}
                         </p>
-                        <div class="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
-                            <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span>{{ locale === 'bn' ? 'আপনার সফলতার প্রস্তুতি এখান থেকেই শুরু' : 'YOUR AI STUDY DESK' }}</span>
+                        <div class="inline-flex items-center gap-2.5 rounded-full border border-orange-500/20 bg-orange-500/10 dark:bg-orange-500/15 px-3.5 py-1.5 text-xs font-semibold text-orange-700 dark:text-orange-300 w-fit shadow-xs">
+                            <span class="flex h-2 w-2 relative">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            <span>{{ t('footer.badge') }}</span>
                         </div>
                     </div>
                     <div>

@@ -25,9 +25,9 @@ const logoUrl = computed(() => site.value.logo_url || '/images/sikhun-mark.svg')
 </script>
 
 <template>
-    <Link :href="href" class="inline-flex items-center gap-2.5 sm:gap-3 group select-none transition-transform duration-200 hover:scale-[1.015]">
+    <Link :href="href" class="inline-flex items-center gap-3 sm:gap-3.5 group select-none transition-transform duration-200 hover:scale-[1.015]">
         <div class="relative flex shrink-0 items-center justify-center transition-transform duration-300 group-hover:scale-105"
-             :class="size === 'sm' ? 'h-8 w-8' : (size === 'lg' ? 'h-12 w-12' : 'h-9 w-9 sm:h-10 sm:w-10')">
+             :class="size === 'sm' ? 'h-9 w-9 sm:h-10 sm:w-10' : (size === 'lg' ? 'h-14 w-14 sm:h-16 sm:w-16' : 'h-11 w-11 sm:h-12 sm:w-12')">
             <img :src="logoUrl" :alt="isBangla ? 'শিখুন লোগো' : 'Sikhun logo'" class="h-full w-full object-contain" />
         </div>
 
@@ -36,10 +36,10 @@ const logoUrl = computed(() => site.value.logo_url || '/images/sikhun-mark.svg')
             <!-- Bangla Brand Wordmark -->
             <div v-if="isBangla" class="flex flex-col">
                 <span class="font-bangla-classic font-bold text-slate-900 dark:text-slate-100 transition-colors"
-                      :class="size === 'sm' ? 'text-lg' : (size === 'lg' ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl')">
+                      :class="size === 'sm' ? 'text-lg sm:text-xl' : (size === 'lg' ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl')">
                     {{ brandName }}
                 </span>
-                <span v-if="!compact" class="text-[9px] sm:text-[10px] font-semibold text-orange-600 dark:text-orange-400 mt-1 flex items-center gap-1 font-bangla">
+                <span v-if="!compact" class="text-[9.5px] sm:text-[10.5px] font-semibold text-orange-600 dark:text-orange-400 mt-1 flex items-center gap-1 font-bangla">
                     <span>— ◆</span>
                     <span>{{ tagline }}</span>
                 </span>
@@ -48,10 +48,10 @@ const logoUrl = computed(() => site.value.logo_url || '/images/sikhun-mark.svg')
             <!-- English Brand Wordmark -->
             <div v-else class="flex flex-col">
                 <span class="font-serif-classic font-extrabold tracking-[0.18em] uppercase text-slate-900 dark:text-slate-100 transition-colors"
-                      :class="size === 'sm' ? 'text-base' : (size === 'lg' ? 'text-2xl sm:text-3xl' : 'text-lg sm:text-xl')">
+                      :class="size === 'sm' ? 'text-base sm:text-lg' : (size === 'lg' ? 'text-2xl sm:text-3xl' : 'text-lg sm:text-xl')">
                     {{ brandName.replace(/\.com.*$/i, '') }}<em v-if="brandName.toLowerCase().includes('.com')" class="not-italic text-[var(--primary)]">.com</em>
                 </span>
-                <span v-if="!compact" class="text-[8px] sm:text-[9px] font-bold text-orange-600 dark:text-orange-400 mt-1 tracking-[0.14em] uppercase flex items-center gap-1 font-sans">
+                <span v-if="!compact" class="text-[8.5px] sm:text-[9.5px] font-bold text-orange-600 dark:text-orange-400 mt-1 tracking-[0.14em] uppercase flex items-center gap-1 font-sans">
                     <span>— ◆</span>
                     <span>{{ tagline }}</span>
                 </span>

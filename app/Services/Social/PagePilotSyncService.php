@@ -19,8 +19,19 @@ class PagePilotSyncService
      */
     public function isConfigured(): bool
     {
-        return ! empty($this->settings->get('pagepilot_webhook_url'))
-            && ! empty($this->settings->get('pagepilot_webhook_key'));
+        return ! empty($this->getWebhookUrl()) && ! empty($this->getApiKey());
+    }
+
+    protected function getWebhookUrl(): string
+    {
+        return \App\Models\SiteSetting::where('key', 'pagepilot_webhook_url')->value('value')
+            ?: config('services.pagepilot.webhook_url', 'https://pagepilotbd.com/api/v1/pages/1299709296552706/trigger');
+    }
+
+    protected function getApiKey(): string
+    {
+        return \App\Models\SiteSetting::where('key', 'pagepilot_api_key')->value('value')
+            ?: config('services.pagepilot.api_key', 'pp_sec_44350dm0rtZ3kshrDTYM9CcmXS1VaPH2y2sh');
     }
 
     /**
@@ -28,7 +39,7 @@ class PagePilotSyncService
      */
     protected function getPageEndpoint(string $endpoint): ?string
     {
-        $triggerUrl = trim((string) $this->settings->get('pagepilot_webhook_url'));
+        $triggerUrl = trim($this->getWebhookUrl());
         if (empty($triggerUrl)) {
             return null;
         }
@@ -54,7 +65,7 @@ class PagePilotSyncService
         }
 
         $url = $this->getPageEndpoint('sync-products');
-        $apiKey = trim((string) $this->settings->get('pagepilot_webhook_key'));
+        $apiKey = trim($this->getApiKey());
 
         $plans = Plan::where('is_active', true)->get();
         if ($plans->isEmpty()) {
@@ -146,7 +157,7 @@ class PagePilotSyncService
         }
 
         $url = $this->getPageEndpoint('sync-knowledge');
-        $apiKey = trim((string) $this->settings->get('pagepilot_webhook_key'));
+        $apiKey = trim($this->getApiKey());
 
         $items = [];
 

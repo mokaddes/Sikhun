@@ -34,13 +34,14 @@ class BookStructureDetectionService
                     }
 
                     $prompt = "You are an expert textbook and document structure analyzer. "
-                        ."Identify ONLY genuine chapter, section, and subsection starting points in these extracted PDF pages.\n\n"
+                        ."Identify ONLY genuine major CHAPTER (অধ্যায় / Chapter) starting points in these extracted PDF pages.\n\n"
                         ."CRITICAL RULES:\n"
-                        ."1. DO NOT extract repeating running headers/footers (e.g. 'অধ্যায় ১৭ : পরিসংখ্যান ৩৩২' appearing at the top of every page). Textbooks repeat the chapter title on almost every page — you must ONLY identify the single page where a chapter actually BEGINS!\n"
-                        ."2. Never output the same chapter or section multiple times.\n"
-                        ."3. Strip printed page numbers from titles (e.g. if text says 'পরিসংখ্যান ৩৩২' or 'পরিমিতি ৩২৪', the title is 'পরিসংখ্যান' or 'পরিমিতি', do NOT include the page numbers '৩৩২' or '৩২৪' in the title).\n"
-                        ."4. Strip leading punctuation or noise (e.g. '. পরিসংখ্যান' -> 'পরিসংখ্যান').\n"
-                        ."5. Return valid JSON only: {\"headings\":[{\"title\":string,\"chapter_number\":string|null,\"level\":1|2|3,\"page\":integer}]}. Page values must exactly match a supplied PAGE label.\n\n"
+                        ."1. ONLY identify main top-level chapters (e.g. 'প্রথম অধ্যায়', 'দ্বিতীয় অধ্যায়' or 'অধ্যায় ১', 'অধ্যায় ২' or 'Chapter 1', 'Chapter 2').\n"
+                        ."2. NEVER extract sections, sub-sections, topics, or অনুচ্ছেদ (e.g. '১.১', '১.২', '২.১.১', 'পাঠ', 'পরিচ্ছেদ', 'অনুচ্ছেদ')! Only main chapters.\n"
+                        ."3. DO NOT extract repeating running headers/footers (textbooks repeat the chapter title on almost every page — you must ONLY identify the single page where a chapter actually BEGINS!).\n"
+                        ."4. Strip printed page numbers from titles (e.g. if text says 'পরিসংখ্যান ৩৩২' or 'পরিমিতি ৩২৪', the title is 'পরিসংখ্যান' or 'পরিমিতি', do NOT include the page numbers in the title).\n"
+                        ."5. Strip leading punctuation or noise (e.g. '. পরিসংখ্যান' -> 'পরিসংখ্যান').\n"
+                        ."6. Return valid JSON only: {\"headings\":[{\"title\":string,\"chapter_number\":string|null,\"level\":1,\"page\":integer}]}. Every item MUST have level: 1.\n\n"
                         .implode("\n\n", $lines);
 
                     $raw = $provider->chat([['role' => 'user', 'content' => $prompt]], ['temperature' => 0]);
@@ -50,15 +51,19 @@ class BookStructureDetectionService
                         if (! in_array((int) ($heading['page'] ?? 0), $pageNumbers, true)) {
                             continue;
                         }
-                        $level = (int) ($heading['level'] ?? 0);
+                        $level = (int) ($heading['level'] ?? 1);
                         $title = trim((string) ($heading['title'] ?? ''));
-                        if ($level < 1 || $level > 3 || $title === '') {
+                        if ($level !== 1 || $title === '') {
+                            continue;
+                        }
+                        // Skip sub-section numbers like 1.1, ১.১, or words like অনুচ্ছেদ, পাঠ, পরিচ্ছেদ
+                        if (preg_match('/[০-৯0-9]+\.[০-৯0-9]+/u', $title) || preg_match('/(?:অনুচ্ছেদ|পাঠ|পরিচ্ছেদ|টপিক|section|topic|lesson|উপঅধ্যায়|উপ-অধ্যায়)/iu', $title)) {
                             continue;
                         }
                         $detected[] = [
                             'title' => mb_substr($title, 0, 255),
                             'chapter_number' => isset($heading['chapter_number']) ? (string) $heading['chapter_number'] : null,
-                            'level' => $level,
+                            'level' => 1,
                             'start_page' => (int) $heading['page'],
                         ];
                     }
@@ -151,10 +156,22 @@ class BookStructureDetectionService
         $seenTitles = [];
 
         foreach ($headings as $h) {
+            $level = (int) ($h['level'] ?? 1);
+            if ($level !== 1) {
+                continue; // Strictly enforce top-level chapters only, no sections/sub-sections
+            }
+
             $rawTitle = trim((string) ($h['title'] ?? ''));
             $num = isset($h['chapter_number']) ? trim((string) $h['chapter_number']) : null;
-            $level = (int) ($h['level'] ?? 1);
             $startPage = (int) ($h['start_page'] ?? 1);
+
+            // Skip sub-section notation (e.g. 1.1, ২.১, 2.1.3, অনুচ্ছেদ, পাঠ, পরিচ্ছেদ)
+            if (preg_match('/[০-৯0-9]+\.[০-৯0-9]+/u', $rawTitle) || preg_match('/[০-৯0-9]+\.[০-৯0-9]+/u', $num ?? '')) {
+                continue;
+            }
+            if (preg_match('/(?:অনুচ্ছেদ|পাঠ|পরিচ্ছেদ|টপিক|section|topic|lesson|উপঅধ্যায়|উপ-অধ্যায়)/iu', $rawTitle)) {
+                continue;
+            }
 
             // Strip trailing printed page numbers and common OCR artifacts (e.g., '৩৩২', '৩৩৪', '332', '©', 'wo')
             $title = preg_replace('/\s+[০-৯0-9©®wo]+(?:\.)?$/u', '', $rawTitle);
@@ -224,9 +241,13 @@ class BookStructureDetectionService
             'প্রথম' => '১', 'দ্বিতীয়' => '২', 'দ্বিতীয়' => '২', 'তৃতীয়' => '৩', 'তৃতীয়' => '৩',
             'চতুর্থ' => '৪', 'পঞ্চম' => '৫', 'ষষ্ঠ' => '৬', 'সপ্তম' => '৭', 'অষ্টম' => '৮',
             'নবম' => '৯', 'দশম' => '১০', 'একাদশ' => '১১', 'দ্বাদশ' => '১২',
+            'ত্রয়োদশ' => '১৩', 'ত্রয়োদশ' => '১৩', 'চতুর্দশ' => '১৪', 'পঞ্চদশ' => '১৫',
+            'ষোড়শ' => '১৬', 'ষোড়শ' => '১৬', 'সপ্তদশ' => '১৭', 'অষ্টাদশ' => '১৮',
+            'ঊনবিংশ' => '১৯', 'বিংশ' => '২০', 'একবিংশ' => '২১', 'দ্বাবিংশ' => '২২',
+            'ত্রয়োবিংশ' => '২৩', 'চতুর্বিংশ' => '২৪', 'পঞ্চবিংশ' => '২৫',
         ];
-        $ordinalRegex = '/^(প্রথম|দ্বিতীয়|দ্বিতীয়|তৃতীয়|তৃতীয়|চতুর্থ|পঞ্চম|ষষ্ঠ|সপ্তম|অষ্টম|নবম|দশম|একাদশ|দ্বাদশ)\s+(অধ্যায়|অধ্যায়|পাঠ|পরিচ্ছেদ)\s*[:\-–—]?\s*(.*)$/u';
-        $prefixRegex = '/^(অধ্যায়|অধ্যায়|পাঠ|পরিচ্ছেদ|ইউনিট|Chapter|Unit|Lesson|Section)\s*[:\-–—]?\s*([০-৯0-9IVXivx]+)\s*[:\-–—]?\s*(.*)$/iu';
+        $ordinalRegex = '/^(প্রথম|দ্বিতীয়|দ্বিতীয়|তৃতীয়|তৃতীয়|চতুর্থ|পঞ্চম|ষষ্ঠ|সপ্তম|অষ্টম|নবম|দশম|একাদশ|দ্বাদশ|ত্রয়োদশ|ত্রয়োদশ|চতুর্দশ|পঞ্চদশ|ষোড়শ|ষোড়শ|সপ্তদশ|অষ্টাদশ|ঊনবিংশ|বিংশ|একবিংশ|দ্বাবিংশ|ত্রয়োবিংশ|চতুর্বিংশ|পঞ্চবিংশ)\s+(অধ্যায়|অধ্যায়|Chapter)\s*[:\-–—]?\s*(.*)$/u';
+        $prefixRegex = '/^(অধ্যায়|অধ্যায়|Chapter)\s*[:\-–—]?\s*([০-৯0-9IVXivx]+)\s*[:\-–—]?\s*(.*)$/iu';
 
         $lastSeenNum = null;
         $lastSeenPage = 0;
@@ -258,6 +279,11 @@ class BookStructureDetectionService
                     continue;
                 }
 
+                // Skip sub-sections (e.g. 1.1, ২.১, অনুচ্ছেদ, পাঠ, পরিচ্ছেদ)
+                if (preg_match('/[০-৯0-9]+\.[০-৯0-9]+/u', $line) || preg_match('/(?:অনুচ্ছেদ|পাঠ|পরিচ্ছেদ|টপিক|section|topic|lesson|উপঅধ্যায়|উপ-অধ্যায়)/iu', $line)) {
+                    continue;
+                }
+
                 if (preg_match($ordinalRegex, $line, $m)) {
                     $ordWord = trim($m[1]);
                     $kind = trim($m[2]);
@@ -273,11 +299,10 @@ class BookStructureDetectionService
                     }
 
                     $title = trim($rest !== '' ? $rest : "{$ordWord} {$kind}");
-                    $level = in_array($kind, ['পাঠ', 'পরিচ্ছেদ'], true) ? 2 : 1;
                     $detected[] = [
                         'title' => mb_substr($title, 0, 255),
                         'chapter_number' => $num,
-                        'level' => $level,
+                        'level' => 1,
                         'start_page' => $pageNum,
                     ];
                     $lastSeenNum = $this->normalizeNumeral($num);
@@ -299,11 +324,10 @@ class BookStructureDetectionService
                     }
 
                     $title = trim($rest !== '' ? $rest : "{$prefix} {$num}");
-                    $level = in_array(mb_strtolower($prefix), ['পাঠ', 'পরিচ্ছেদ', 'lesson', 'section'], true) ? 2 : 1;
                     $detected[] = [
                         'title' => mb_substr($title, 0, 255),
                         'chapter_number' => $num,
-                        'level' => $level,
+                        'level' => 1,
                         'start_page' => $pageNum,
                     ];
                     $lastSeenNum = $this->normalizeNumeral($num);

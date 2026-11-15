@@ -166,6 +166,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('question-import/pdf', [QuestionImportController::class, 'showPdfUpload'])->name('question-import.pdf');
         Route::post('question-import/pdf', [QuestionImportController::class, 'processPdf'])->name('question-import.pdf.process');
+        Route::post('question-import/upload-chunk', [QuestionImportController::class, 'uploadChunk'])->name('question-import.upload-chunk');
+        Route::post('question-import/merge-chunks', [QuestionImportController::class, 'mergeChunks'])->name('question-import.merge-chunks');
+        Route::get('question-import/merge-chunks/status/{uploadId}', [QuestionImportController::class, 'mergeStatus'])->name('question-import.merge-status');
+        Route::post('question-import/reprocess/{batch}', [QuestionImportController::class, 'reprocess'])->name('question-import.reprocess');
+        Route::delete('question-import/batch/{batch}', [QuestionImportController::class, 'destroyBatch'])->name('question-import.destroy-batch');
 
         Route::get('question-import/json', [QuestionJsonImportController::class, 'index'])->name('question-import.json');
         Route::post('question-import/json/upload', [QuestionJsonImportController::class, 'upload'])->name('question-import.json.upload');

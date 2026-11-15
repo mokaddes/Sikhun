@@ -86,7 +86,6 @@ onUnmounted(() => revealObserver?.disconnect());
                 </div>
                 <div class="home-scene home-reveal" aria-label="Animated study scene">
                     <EducativeHeroScene :locale="locale" />
-                    <div class="home-note"><span class="home-note-mark">✳</span>{{ en ? 'A little progress, every day.' : 'প্রতিদিন একটু করে এগিয়ে চলুন।' }}</div>
                 </div>
             </section>
 
@@ -223,7 +222,7 @@ onUnmounted(() => revealObserver?.disconnect());
 .home-secondary:hover { background: var(--surface2); }
 .home-dot { color: var(--home-accent); }
 .home-scene { position: relative; min-width: 0; }
-.home-scene > div:first-child { height: clamp(290px, 39vw, 440px); }
+.home-scene > div:first-child { min-height: 410px; height: auto; }
 .home-note { position: absolute; bottom: 7%; left: 8%; display: flex; align-items: center; gap: .6rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); padding: .65rem .9rem; color: var(--text); font-size: .8rem; box-shadow: var(--shadow); }
 .home-note-mark { color: var(--home-accent); }
 .home-section-head { max-width: 40rem; }

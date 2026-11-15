@@ -354,6 +354,10 @@ const isDragging = ref(false);
 let dragStart = { x: 0, y: 0 };
 let panStart = { x: 0, y: 0 };
 
+const viewModeOverride = ref(
+    typeof window !== 'undefined' ? localStorage.getItem('sikhun_reader_mode') : null
+);
+
 const size = ref(computeSize());
 const loaded = {};
 const pageImageUrls = {};
@@ -412,10 +416,6 @@ const containerStyle = computed(() => {
         cursor: isDragging.value ? 'grabbing' : 'grab',
     };
 });
-
-const viewModeOverride = ref(
-    typeof window !== 'undefined' ? localStorage.getItem('sikhun_reader_mode') : null
-);
 
 function computeSize() {
     const viewportW = rootEl.value?.clientWidth ?? 0;

@@ -29,10 +29,12 @@ class EmailVerificationController extends Controller
     {
         $student = Student::findOrFail($id);
 
-        // The signed URL proves mailbox ownership, but it must only ever
-        // verify the account that is currently signed in — never switch
-        // the session to whoever the link belongs to.
-        abort_unless((int) $request->user('web')->getKey() === (int) $student->getKey(), 403);
+        // The signed URL proves mailbox ownership. If a session is active, ensure
+        // it matches the verified account; if logged out, still verify and send to login.
+        $currentUser = $request->user('web');
+        if ($currentUser) {
+            abort_unless((int) $currentUser->getKey() === (int) $student->getKey(), 403);
+        }
 
         abort_unless(hash_equals($hash, sha1($student->getEmailForVerification())), 403);
 
@@ -41,8 +43,10 @@ class EmailVerificationController extends Controller
             event(new Verified($student));
         }
 
+        $fallbackRoute = $currentUser ? route('dashboard') : route('login');
+
         return redirect()
-            ->intended(route('dashboard'))
+            ->intended($fallbackRoute)
             ->with('success', app()->getLocale() === 'bn'
                 ? 'ইমেইল যাচাই সম্পন্ন হয়েছে। ধন্যবাদ!'
                 : 'Your email has been verified. Thank you!');

@@ -13,6 +13,7 @@ import {
     ChevronRightIcon,
     Bars3BottomLeftIcon,
     BookOpenIcon,
+    DocumentIcon,
     XMarkIcon,
     MagnifyingGlassIcon,
     LockClosedIcon,
@@ -412,15 +413,24 @@ const containerStyle = computed(() => {
     };
 });
 
+const viewModeOverride = ref(
+    typeof window !== 'undefined' ? localStorage.getItem('sikhun_reader_mode') : null
+);
+
 function computeSize() {
     const viewportW = rootEl.value?.clientWidth ?? 0;
     const containerW = Math.max(viewportW > 0 ? viewportW : window.innerWidth - 32, 280);
     const maxH = Math.max(Math.min(window.innerHeight * 0.76, 880), 380);
-    const double = window.innerWidth >= 768;
+    const autoDouble = window.innerWidth >= 768;
+    const double = viewModeOverride.value === 'single'
+        ? false
+        : viewModeOverride.value === 'double'
+            ? true
+            : autoDouble;
 
     let pageW = double
         ? Math.min(Math.floor((containerW - 32) / 2), 520)
-        : Math.min(containerW - 20, 520);
+        : Math.min(containerW - 24, 620);
     let pageH = Math.round(pageW * PAGE_ASPECT);
 
     if (pageH > maxH) {
@@ -429,6 +439,22 @@ function computeSize() {
     }
 
     return { pageW, pageH, double };
+}
+
+function togglePageMode() {
+    const nextMode = size.value.double ? 'single' : 'double';
+    viewModeOverride.value = nextMode;
+    try {
+        localStorage.setItem('sikhun_reader_mode', nextMode);
+    } catch {}
+    size.value = computeSize();
+    if (ready.value) {
+        try {
+            createTurn();
+        } catch (e) {
+            console.error('Turn.js mode toggle failed', e);
+        }
+    }
 }
 
 function pageUrl(realPage) {
@@ -1167,6 +1193,24 @@ onBeforeUnmount(() => {
                 @click.stop="zoomIn"
             >
                 <MagnifyingGlassPlusIcon class="w-4 h-4" />
+            </button>
+
+            <div class="w-px h-4 bg-slate-300 dark:bg-white/20 mx-1"></div>
+
+            <button
+                type="button"
+                class="zoom-btn flex items-center gap-1 !w-auto px-2"
+                :title="isDouble
+                    ? (locale === 'bn' ? 'একক পৃষ্ঠা মোড' : 'Switch to Single Page')
+                    : (locale === 'bn' ? 'দুই পৃষ্ঠা মোড' : 'Switch to Double Page')"
+                :aria-label="isDouble ? 'Single Page Mode' : 'Double Page Mode'"
+                @click.stop="togglePageMode"
+            >
+                <DocumentIcon v-if="isDouble" class="w-4 h-4" />
+                <BookOpenIcon v-else class="w-4 h-4" />
+                <span class="hidden sm:inline text-[11px] font-semibold">
+                    {{ isDouble ? (locale === 'bn' ? '১ পৃষ্ঠা' : '1 Page') : (locale === 'bn' ? '২ পৃষ্ঠা' : '2 Pages') }}
+                </span>
             </button>
 
             <div class="w-px h-4 bg-slate-300 dark:bg-white/20 mx-1"></div>

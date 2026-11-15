@@ -60,8 +60,14 @@ class StudentAuthController extends Controller
 
         try {
             Mail::to($student->email)->send(new WelcomeMail($student));
-        } catch (\Throwable) {
-            // Do not block registration if mail transport is not configured
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Welcome mail failed: ' . $e->getMessage());
+        }
+
+        try {
+            $student->sendEmailVerificationNotification();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Verification mail failed: ' . $e->getMessage());
         }
 
         $planId = $request->input('plan_id');

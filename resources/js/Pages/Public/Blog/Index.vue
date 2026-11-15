@@ -104,84 +104,91 @@ function submitSearch() {
                 </Link>
             </div>
 
-            <!-- Tag filters -->
-            <div v-if="tags?.length" class="mb-8">
-                <p class="mb-2 text-xs font-semibold text-[var(--text-muted)]">{{ t('blog_page.filter_by_tag') }}</p>
-                <div class="flex flex-wrap items-center gap-2">
-                    <Link
-                        :href="filterUrl()"
-                        class="px-3.5 py-2 rounded-full text-xs font-semibold transition border"
-                        :class="!activeTag ? 'bg-[var(--primary)] text-white border-[var(--primary)]' : 'bg-[var(--surface)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text)]'"
-                    >
-                        {{ t('blog_page.all_tags') }}
-                    </Link>
-                    <Link
-                        v-for="tag in tags"
-                        :key="tag.id"
-                        :href="filterUrl(tag)"
-                        class="px-3.5 py-2 rounded-full text-xs font-semibold transition border"
-                        :class="activeTag?.id === tag.id ? 'bg-[var(--primary)] text-white border-[var(--primary)]' : 'bg-[var(--surface)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text)]'"
-                    >
-                        {{ tag.name }} <span class="opacity-70">({{ tag.posts_count }})</span>
-                    </Link>
-                </div>
-            </div>
-
-            <!-- Blog Posts Grid -->
-            <div v-if="posts.data?.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <Link
-                    v-for="(post, idx) in posts.data"
-                    :key="post.id"
-                    :href="`/blog/${post.slug}`"
-                    class="group flex flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[var(--primary)]/40 hover:shadow-xl"
-                >
-                    <div class="relative h-48 overflow-hidden bg-gradient-to-br" :class="cardPalettes[idx % cardPalettes.length]">
-                        <img
-                            v-if="post.featured_image_url"
-                            :src="post.featured_image_url"
-                            :alt="post.title"
-                            loading="lazy"
-                            class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                        />
-                        <div v-else class="absolute inset-0 grid place-items-center text-white/50">
-                            <span class="material-symbols-outlined !text-5xl">article</span>
-                        </div>
-                        <span
-                            v-if="post.category"
-                            class="absolute left-3 top-3 rounded-full bg-[#0a0e18]/85 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-[#4cd7f6] backdrop-blur"
+            <!-- Main Content + Right Tag Sidebar -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <!-- Blog Posts Grid -->
+                <div class="lg:col-span-9">
+                    <div v-if="posts.data?.length" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Link
+                            v-for="(post, idx) in posts.data"
+                            :key="post.id"
+                            :href="`/blog/${post.slug}`"
+                            class="group flex flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[var(--primary)]/40 hover:shadow-xl"
                         >
-                            {{ post.category.name }}
-                        </span>
+                            <div class="relative h-52 overflow-hidden bg-gradient-to-br" :class="cardPalettes[idx % cardPalettes.length]">
+                                <img
+                                    v-if="post.featured_image_url"
+                                    :src="post.featured_image_url"
+                                    :alt="post.title"
+                                    loading="lazy"
+                                    class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                                />
+                                <div v-else class="absolute inset-0 grid place-items-center text-white/50">
+                                    <span class="material-symbols-outlined !text-5xl">article</span>
+                                </div>
+                                <span
+                                    v-if="post.category"
+                                    class="absolute left-3 top-3 rounded-full bg-[#0a0e18]/85 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-[#4cd7f6] backdrop-blur"
+                                >
+                                    {{ post.category.name }}
+                                </span>
+                            </div>
+
+                            <div class="flex flex-1 flex-col justify-between gap-4 p-5">
+                                <div>
+                                    <h2 class="line-clamp-2 font-heading text-lg font-bold leading-snug transition group-hover:text-[var(--primary)]">
+                                        {{ post.title }}
+                                    </h2>
+                                    <p v-if="post.excerpt" class="mt-2.5 line-clamp-3 text-sm leading-relaxed text-[var(--text-muted)]">
+                                        {{ post.excerpt }}
+                                    </p>
+                                </div>
+
+                                <div class="flex items-center justify-between border-t border-[var(--border)] pt-3.5 text-xs text-[var(--text-muted)]">
+                                    <span>
+                                        {{ post.published_at ? new Date(post.published_at).toLocaleDateString(en ? 'en-GB' : 'bn-BD', { day: 'numeric', month: 'short', year: 'numeric' }) : '' }}
+                                    </span>
+                                    <span class="font-semibold text-[var(--primary)]">
+                                        {{ t('blog_page.read_more') }} →
+                                    </span>
+                                </div>
+                            </div>
+                        </Link>
                     </div>
 
-                    <div class="flex flex-1 flex-col justify-between gap-4 p-5">
-                        <div>
-                            <h2 class="line-clamp-2 font-heading text-lg font-bold leading-snug transition group-hover:text-[var(--primary)]">
-                                {{ post.title }}
-                            </h2>
-                            <p v-if="post.excerpt" class="mt-2.5 line-clamp-3 text-sm leading-relaxed text-[var(--text-muted)]">
-                                {{ post.excerpt }}
-                            </p>
-                        </div>
-
-                        <div class="flex items-center justify-between border-t border-[var(--border)] pt-3.5 text-xs text-[var(--text-muted)]">
-                            <span>
-                                {{ post.published_at ? new Date(post.published_at).toLocaleDateString(en ? 'en-GB' : 'bn-BD', { day: 'numeric', month: 'short', year: 'numeric' }) : '' }}
-                            </span>
-                            <span class="font-semibold text-[var(--primary)]">
-                                {{ t('blog_page.read_more') }} →
-                            </span>
-                        </div>
+                    <div v-else class="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] p-14 text-center text-sm text-[var(--text-muted)]">
+                        {{ t('blog_page.no_posts') }}
                     </div>
-                </Link>
-            </div>
 
-            <div v-else class="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] p-14 text-center text-sm text-[var(--text-muted)]">
-                {{ t('blog_page.no_posts') }}
-            </div>
+                    <div class="mt-8">
+                        <Pagination :links="posts.links" />
+                    </div>
+                </div>
 
-            <div class="mt-8">
-                <Pagination :links="posts.links" />
+                <!-- Right Sidebar: Tag Pills -->
+                <aside v-if="tags?.length" class="lg:col-span-3 lg:sticky lg:top-24 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
+                    <p class="mb-3.5 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                        {{ t('blog_page.filter_by_tag') }}
+                    </p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <Link
+                            :href="filterUrl()"
+                            class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition border"
+                            :class="!activeTag ? 'bg-[var(--primary)] text-white border-[var(--primary)]' : 'bg-[var(--bg)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text)]'"
+                        >
+                            {{ t('blog_page.all_tags') }}
+                        </Link>
+                        <Link
+                            v-for="tag in tags"
+                            :key="tag.id"
+                            :href="filterUrl(tag)"
+                            class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition border"
+                            :class="activeTag?.id === tag.id ? 'bg-[var(--primary)] text-white border-[var(--primary)]' : 'bg-[var(--bg)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text)]'"
+                        >
+                            {{ tag.name }} <span class="opacity-70">({{ tag.posts_count }})</span>
+                        </Link>
+                    </div>
+                </aside>
             </div>
         </div>
     </PublicLayout>

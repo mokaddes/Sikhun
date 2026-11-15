@@ -130,10 +130,11 @@ Route::middleware('guest:web')->group(function () {
 | Deliberately outside the student.active group: a deactivated account must
 | still be able to verify, and the signed link may land after a logout.
 */
+Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    ->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+
 Route::middleware('auth:web')->group(function () {
     Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
-    Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
-        ->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
         ->middleware('throttle:6,1')->name('verification.send');
 });

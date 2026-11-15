@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AiChatController;
 use App\Http\Controllers\Api\AccessController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BlogController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\EssayController;
 use App\Http\Controllers\Api\ExamController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Api\LibraryController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\QuestionBankController;
 use App\Http\Controllers\Api\ReaderController;
 use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\Api\ScheduleController;
@@ -56,7 +58,21 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('library/{book}/purchase', [LibraryController::class, 'purchase']);
     Route::get('library/{book}/chapters', [LibraryController::class, 'chapters']);
     Route::get('library/{book}/access', [LibraryController::class, 'access']);
+    Route::post('library/{book}/chapters/purchase', [LibraryController::class, 'purchaseChapters']);
     Route::post('library/{book}/chapters/{chapter}/purchase', [LibraryController::class, 'purchaseChapter']);
+
+    Route::get('bookshelf', [LibraryController::class, 'bookshelf']);
+    Route::post('bookshelf/{book}', [LibraryController::class, 'addToShelf']);
+    Route::delete('bookshelf/{book}', [LibraryController::class, 'removeFromShelf']);
+
+    Route::get('question-bank', [QuestionBankController::class, 'index']);
+    Route::get('question-bank/filters', [QuestionBankController::class, 'filters']);
+    Route::get('question-bank/{question}', [QuestionBankController::class, 'show']);
+
+    Route::get('blogs', [BlogController::class, 'index']);
+    Route::get('blogs/categories', [BlogController::class, 'categories']);
+    Route::get('blogs/tags', [BlogController::class, 'tags']);
+    Route::get('blogs/{post:slug}', [BlogController::class, 'show']);
 
     Route::get('reader/{book}/page/{page}/url', [ReaderController::class, 'pageUrl']);
 

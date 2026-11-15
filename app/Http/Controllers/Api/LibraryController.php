@@ -134,4 +134,82 @@ class LibraryController extends BaseApiController
 
         return $this->success($result, $result['redirect_url'] ? 'Redirect to complete payment' : 'Chapter purchased');
     }
+
+    public function purchaseChapters(Request $request, Book $book, PurchaseService $purchases, PaymentGatewayResolver $resolver): JsonResponse
+    {
+        $validated = $request->validate([
+            'chapter_ids' => ['required', 'array', 'min:1'],
+            'chapter_ids.*' => ['integer', 'exists:book_chapters,id'],
+            'payment_method' => ['required', 'in:wallet,zinipay,mhpay'],
+        ]);
+
+        $chapters = $book->chapters()->whereIn('id', $validated['chapter_ids'])->get()->all();
+        if (empty($chapters)) {
+            return $this->error('No valid chapters selected.', [], 422);
+        }
+
+        $student = auth('sanctum')->user();
+
+        try {
+            $gateway = $resolver->resolve($validated['payment_method']);
+            $result = $purchases->purchaseChapters(
+                $student,
+                $book,
+                $chapters,
+                $validated['payment_method'],
+                $gateway
+            );
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), [], 422);
+        }
+
+        return $this->success($result, $result['redirect_url'] ? 'Redirect to complete payment' : count($chapters) . ' chapters purchased successfully');
+    }
+
+    public function bookshelf(): JsonResponse
+    {
+        $student = auth('sanctum')->user();
+
+        $shelves = $student->bookShelf()
+            ->with('book:id,title,slug,cover_image,level,subject,total_pages,is_free,price')
+            ->latest('added_at')
+            ->get();
+
+        $bookIds = $shelves->pluck('book_id')->all();
+        $lastPages = \App\Models\ReadingSession::where('student_id', $student->id)
+            ->whereIn('book_id', $bookIds)
+            ->whereNotNull('last_page')
+            ->orderBy('id', 'desc')
+            ->get(['book_id', 'last_page'])
+            ->unique('book_id')
+            ->pluck('last_page', 'book_id');
+
+        $shelves->each(function ($shelf) use ($lastPages) {
+            $shelf->last_read_page = $lastPages[$shelf->book_id] ?? 1;
+        });
+
+        return $this->success($shelves);
+    }
+
+    public function addToShelf(Book $book): JsonResponse
+    {
+        abort_unless($book->is_published && ($book->is_free || (float) $book->price <= 0 || app(\App\Services\BookAccessService::class)->hasPricedChapters($book)), 403, 'This book cannot be added directly to your bookshelf.');
+
+        $student = auth('sanctum')->user();
+
+        $shelf = $student->bookShelf()->firstOrCreate(
+            ['book_id' => $book->id],
+            ['source' => 'free', 'added_at' => now()]
+        );
+
+        return $this->success($shelf, 'Book added to your bookshelf');
+    }
+
+    public function removeFromShelf(Book $book): JsonResponse
+    {
+        $student = auth('sanctum')->user();
+        $student->bookShelf()->where('book_id', $book->id)->delete();
+
+        return $this->success(null, 'Book removed from bookshelf');
+    }
 }

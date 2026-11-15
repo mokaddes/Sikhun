@@ -5,7 +5,7 @@ namespace App\Services\Ai;
 use App\Models\AiSession;
 use App\Models\Student;
 use App\Services\AccessGrantService;
-use App\Services\Ai\Contracts\AiProviderFactory;
+use App\Services\Ai\AiProviderFactory;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 

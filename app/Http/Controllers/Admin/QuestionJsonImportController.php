@@ -69,8 +69,13 @@ class QuestionJsonImportController extends Controller
 
         // Recent distinct exams
         $recentExams = QuestionBank::select(['exam_name', 'segment', 'origin_tag', 'year', 'created_at'])
-            ->whereNotNull('exam_name')
-            ->distinct('exam_name')
+            ->whereIn('id', function ($query) {
+                $query->selectRaw('MAX(id)')
+                    ->from('question_banks')
+                    ->whereNotNull('exam_name')
+                    ->where('exam_name', '!=', '')
+                    ->groupBy('exam_name');
+            })
             ->latest('id')
             ->take(10)
             ->get();

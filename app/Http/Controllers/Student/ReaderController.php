@@ -50,9 +50,13 @@ class ReaderController extends Controller
     public function show(Request $request, Book $book, BookAccessService $access, BookReaderService $reader): Response
     {
         $student = auth('web')->user();
-        // Reader shell access: full book access OR ownership of ANY chapter.
+        // Reader shell access: full book access, ownership of ANY chapter, book on shelf, accessible free chapters, or globally free book.
+        $hasAccessibleChapters = $access->accessibleChapterIds($student, $book) !== null;
         $canOpenReader = $access->hasAccess($student, $book)
-            || ($student && $student->ownedChapters()->where('book_id', $book->id)->exists());
+            || ($student && $student->ownedChapters()->where('book_id', $book->id)->exists())
+            || ($student && $student->bookShelf()->where('book_id', $book->id)->exists())
+            || $hasAccessibleChapters
+            || $book->is_free;
         abort_unless($canOpenReader, 403, 'You do not have access to this book.');
 
         if ((int) $book->total_pages <= 0 && $book->pdf_path && \Illuminate\Support\Facades\Storage::disk('private')->exists($book->pdf_path)) {
@@ -63,20 +67,30 @@ class ReaderController extends Controller
         }
 
         // Which pages may this student turn to? (null = no restriction)
+        $hasFullAccess = $access->hasAccess($student, $book);
         $accessibleChapterIds = $access->accessibleChapterIds($student, $book);
 
         $accessiblePages = null;
-        if ($accessibleChapterIds !== null && ! $access->hasAccess($student, $book)) {
+        if (! $hasFullAccess) {
+            $accessibleIds = $accessibleChapterIds ?? [];
             $pageNumbersFromDb = $book->pages()
-                ->whereIn('chapter_id', $accessibleChapterIds)
+                ->whereIn('chapter_id', $accessibleIds)
                 ->pluck('page_number')
                 ->all();
 
             $chapterRanges = $book->chapters()
-                ->whereIn('id', $accessibleChapterIds)
+                ->whereIn('id', $accessibleIds)
                 ->get(['start_page', 'end_page']);
 
             $pagesFromRanges = [];
+            // Include front matter (cover, TOC, preface) before the first chapter start page
+            $firstChapterStart = $book->chapters()->min('start_page');
+            if ($firstChapterStart && (int) $firstChapterStart > 1) {
+                for ($p = 1; $p < (int) $firstChapterStart; $p++) {
+                    $pagesFromRanges[] = $p;
+                }
+            }
+
             foreach ($chapterRanges as $ch) {
                 if ($ch->start_page) {
                     $start = (int) $ch->start_page;
@@ -129,16 +143,38 @@ class ReaderController extends Controller
         // Pre-sign the opening window so the first pages render immediately.
         $pageUrls = $this->preSignedWindow($book, $student, $accessiblePages);
 
+        $chaptersData = $book->chapters()
+            ->orderByRaw('CASE WHEN start_page IS NOT NULL AND start_page > 0 THEN start_page ELSE 999999 END ASC')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get(['id', 'parent_id', 'title', 'chapter_number', 'level', 'start_page', 'end_page', 'price'])
+            ->map(function ($ch) use ($access, $student) {
+                $isPaid = $ch->price !== null && (float) $ch->price > 0;
+                $canAccess = $access->canAccessChapter($student, $ch);
+                return [
+                    'id' => $ch->id,
+                    'parent_id' => $ch->parent_id,
+                    'title' => $ch->title,
+                    'chapter_number' => $ch->chapter_number,
+                    'level' => $ch->level,
+                    'start_page' => $ch->start_page,
+                    'end_page' => $ch->end_page,
+                    'price' => $ch->price ? (float) $ch->price : 0,
+                    'is_free' => ! $isPaid,
+                    'is_locked' => $isPaid && ! $canAccess,
+                    'is_owned' => $canAccess,
+                ];
+            });
+
         return Inertia::render('Student/Library/Reader', [
             'book' => $book->only(['id', 'title', 'slug', 'total_pages']),
             'accessiblePages' => $accessiblePages,
             'pageUrls' => $pageUrls,
             'initialPage' => $initialPage,
-            'chapters' => $book->chapters()
-                ->orderByRaw('CASE WHEN start_page IS NOT NULL AND start_page > 0 THEN start_page ELSE 999999 END ASC')
-                ->orderBy('sort_order')
-                ->orderBy('id')
-                ->get(['id', 'parent_id', 'title', 'chapter_number', 'level', 'start_page', 'end_page']),
+            'chapters' => $chaptersData,
+            'walletBalance' => (float) ($student ? $student->wallet_balance : 0.0),
+            'hasFullAccess' => $hasFullAccess,
+            'hasPricedChapters' => $access->hasPricedChapters($book),
         ]);
     }
 
@@ -300,11 +336,13 @@ class ReaderController extends Controller
      * `signed` + a 5-per-10-seconds throttle). Never linked to directly —
      * only ever reached via a URL minted by pageUrl() above.
      */
-    public function servePage(Request $request, Book $book, int $page, BookReaderService $reader): \Symfony\Component\HttpFoundation\Response
+    public function servePage(Request $request, Book $book, int $page, BookReaderService $reader, BookAccessService $access): \Symfony\Component\HttpFoundation\Response
     {
         abort_unless((int) $request->query('student') === auth('web')->id(), 403);
 
         $student = auth('web')->user();
+        abort_unless($access->canAccessPage($student, $book, $page), 403);
+
         $filePath = $reader->renderPageFile($book, $page, $student);
 
         if ($filePath && file_exists($filePath)) {

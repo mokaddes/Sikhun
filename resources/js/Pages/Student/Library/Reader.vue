@@ -8,7 +8,16 @@ import ReaderChatPanel from '@/Components/Reader/ReaderChatPanel.vue';
 import { BookOpenIcon } from '@heroicons/vue/24/solid';
 import { useI18n } from '@/i18n';
 
-const props = defineProps({ book: Object, accessiblePages: { type: Array, default: null }, chapters: { type: Array, default: () => [] }, pageUrls: { type: Object, default: () => null }, initialPage: { type: Number, default: 1 } });
+const props = defineProps({
+    book: Object,
+    accessiblePages: { type: Array, default: null },
+    chapters: { type: Array, default: () => [] },
+    pageUrls: { type: Object, default: () => null },
+    initialPage: { type: Number, default: 1 },
+    walletBalance: { type: Number, default: 0 },
+    hasFullAccess: { type: Boolean, default: false },
+    hasPricedChapters: { type: Boolean, default: false },
+});
 const { t } = useI18n();
 
 const page = usePage();
@@ -62,6 +71,9 @@ function onPageChange(pageNumber) {
             :page-urls="pageUrls"
             :initial-page="initialPage"
             :chapters="chapters"
+            :wallet-balance="walletBalance"
+            :has-full-access="hasFullAccess"
+            :has-priced-chapters="hasPricedChapters"
             @page-change="onPageChange"
         />
 

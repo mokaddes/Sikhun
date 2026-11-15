@@ -26,8 +26,65 @@ class BookAccessService
 {
     public function __construct(private AccessGrantService $grants) {}
 
+    public function hasPricedChapters(Book $book): bool
+    {
+        if (! $book->chapter_purchase_enabled) {
+            return false;
+        }
+
+        return $book->chapters()
+            ->whereNotNull('price')
+            ->where('price', '>', 0)
+            ->exists();
+    }
+
     public function hasAccess(?Student $student, Book $book): bool
     {
+        if ($this->hasPricedChapters($book)) {
+            // When a book has priced chapters, full access requires:
+            // 1. Active site-wide access grant (campaign/coupon)
+            // 2. Or subscription gift containing this book
+            // 3. Or a completed book purchase with real payment (amount > 0)
+            // 4. Or ownership of ALL priced chapters
+            if (! $student) {
+                return false;
+            }
+
+            if ($this->grants->hasActiveAccess($student)) {
+                return true;
+            }
+
+            $subscription = $student->activeSubscription;
+            if ($subscription && $subscription->expires_at->isFuture()
+                && in_array($book->id, $subscription->plan->gift_book_ids ?? [], true)) {
+                return true;
+            }
+
+            $hasPaidBookOrder = $student->orders()
+                ->where('orderable_type', 'book')
+                ->where('orderable_id', $book->id)
+                ->where('status', 'completed')
+                ->where('amount', '>', 0)
+                ->exists();
+
+            if ($hasPaidBookOrder) {
+                return true;
+            }
+
+            $unownedPricedCount = $book->chapters()
+                ->whereNotNull('price')
+                ->where('price', '>', 0)
+                ->whereNotIn('id', function ($q) use ($student, $book) {
+                    $q->select('chapter_id')
+                        ->from('student_book_chapters')
+                        ->where('student_id', $student->id)
+                        ->where('book_id', $book->id);
+                })
+                ->count();
+
+            return $unownedPricedCount === 0;
+        }
+
         return in_array($this->accessType($student, $book), ['free', 'granted', 'owned', 'subscription_gift'], true);
     }
 
@@ -37,22 +94,38 @@ class BookAccessService
             return 'guest'; // must log in before purchasing, adding to shelf, or reading
         }
 
-        if ($book->is_free) {
-            return 'free';
-        }
-
         if ($this->grants->hasActiveAccess($student)) {
             return 'granted';
-        }
-
-        if ($student->bookShelf()->where('book_id', $book->id)->exists()) {
-            return 'owned';
         }
 
         $subscription = $student->activeSubscription;
         if ($subscription && $subscription->expires_at->isFuture()
             && in_array($book->id, $subscription->plan->gift_book_ids ?? [], true)) {
             return 'subscription_gift';
+        }
+
+        if ($this->hasPricedChapters($book)) {
+            if ($this->hasAccess($student, $book)) {
+                return 'owned';
+            }
+
+            if ($student->bookShelf()->where('book_id', $book->id)->exists()) {
+                return 'freemium_shelf';
+            }
+
+            if ($book->price > 0 && $student->wallet_balance >= $book->price) {
+                return 'purchasable';
+            }
+
+            return 'chapter_gated';
+        }
+
+        if ($book->is_free) {
+            return 'free';
+        }
+
+        if ($student->bookShelf()->where('book_id', $book->id)->exists()) {
+            return 'owned';
         }
 
         if ($student->wallet_balance >= $book->price) {
@@ -74,6 +147,11 @@ class BookAccessService
 
         // Full book access covers every chapter.
         if ($this->hasAccess($student, $book)) {
+            return true;
+        }
+
+        // Chapters with null or 0 price are FREE to read!
+        if ($chapter->price === null || (float) $chapter->price <= 0) {
             return true;
         }
 
@@ -112,22 +190,31 @@ class BookAccessService
             return $book->chapters()->pluck('id')->all();
         }
 
-        if ($student === null) {
-            return null;
-        }
-
-        $owned = $student->ownedChapters()
-            ->where('book_id', $book->id)
-            ->pluck('chapter_id')
+        // Always include all free chapters (price is null or <= 0)
+        $freeChapterIds = $book->chapters()
+            ->where(function ($q) {
+                $q->whereNull('price')->orWhere('price', '<=', 0);
+            })
+            ->pluck('id')
             ->all();
 
-        if (! $owned) {
+        $owned = [];
+        if ($student !== null) {
+            $owned = $student->ownedChapters()
+                ->where('book_id', $book->id)
+                ->pluck('chapter_id')
+                ->all();
+        }
+
+        $accessible = array_values(array_unique(array_merge($freeChapterIds, $owned)));
+
+        if (empty($accessible)) {
             return null;
         }
 
         // Expand downward transitively: owning a chapter unlocks every
         // descendant section, however deep the tree.
-        $ids = $owned;
+        $ids = $accessible;
 
         do {
             $new = $book->chapters()
@@ -152,13 +239,15 @@ class BookAccessService
             return true;
         }
 
-        if ($student === null) {
-            return false;
+        // Front matter (pages before the first indexed chapter starts: cover, TOC, preface) are always accessible
+        $firstChapterStart = $book->chapters()->min('start_page');
+        if ($firstChapterStart && $page < $firstChapterStart) {
+            return true;
         }
 
-        // No chapters (legacy book) → no partial access possible.
+        // No chapters (legacy book) → fallback to bookshelf check
         if (! $book->chapters()->exists()) {
-            return false;
+            return $book->is_free || ($student && $student->bookShelf()->where('book_id', $book->id)->exists());
         }
 
         $chapter = $book->pages()

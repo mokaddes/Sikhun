@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { router } from '@inertiajs/vue3';
 import axios from 'axios';
 import { useI18n } from '@/i18n';
 import {
@@ -14,6 +15,12 @@ import {
     BookOpenIcon,
     XMarkIcon,
     MagnifyingGlassIcon,
+    LockClosedIcon,
+    CheckBadgeIcon,
+    ShoppingBagIcon,
+    CreditCardIcon,
+    WalletIcon,
+    SparklesIcon,
 } from '@heroicons/vue/24/outline';
 import $ from 'jquery';
 
@@ -30,6 +37,9 @@ const props = defineProps({
     initialPage: { type: Number, default: null },
     // Book chapters list for sidebar Table of Contents
     chapters: { type: Array, default: () => [] },
+    walletBalance: { type: Number, default: 0 },
+    hasFullAccess: { type: Boolean, default: false },
+    hasPricedChapters: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['page-change']);
@@ -176,7 +186,136 @@ function isCurrentChapter(chapter) {
     return chapter.id === currentChapterId.value;
 }
 
+const isPageAccessible = (page) => {
+    if (!props.accessiblePages?.length) return true;
+    return props.accessiblePages.includes(Number(page));
+};
+
+const findChapterForPage = (page) => {
+    const p = Number(page);
+    return (props.chapters || []).find((c) => p >= (c.start_page || 1) && p <= (c.end_page || props.totalPages)) || null;
+};
+
+// Chapter Locker Modal State
+const lockerOpen = ref(false);
+const lockerChapter = ref(null);
+const lockerTargetPage = ref(null);
+const lockerPurchasing = ref(false);
+const lockerError = ref('');
+const lockerSuccess = ref('');
+
+// Multi-chapter selection in Locker
+const lockerSelectionMode = ref(false);
+const lockerSelectedChapterIds = ref([]);
+
+const lockedChapters = computed(() => {
+    return (props.chapters || []).filter((c) => c.is_locked);
+});
+
+const multiTotalPrice = computed(() => {
+    return lockedChapters.value
+        .filter((c) => lockerSelectedChapterIds.value.includes(c.id))
+        .reduce((sum, c) => sum + Number(c.price || 0), 0);
+});
+
+function openChapterLocker(chapter, targetPage = null) {
+    lockerChapter.value = chapter;
+    lockerTargetPage.value = targetPage || chapter.start_page;
+    lockerError.value = '';
+    lockerSuccess.value = '';
+    lockerSelectionMode.value = false;
+    lockerSelectedChapterIds.value = [chapter.id];
+    lockerOpen.value = true;
+}
+
+function closeChapterLocker() {
+    lockerOpen.value = false;
+    lockerChapter.value = null;
+    lockerTargetPage.value = null;
+    lockerError.value = '';
+    lockerSuccess.value = '';
+}
+
+async function purchaseLockerChapter(paymentMethod = 'wallet') {
+    if (!lockerChapter.value) return;
+    lockerPurchasing.value = true;
+    lockerError.value = '';
+    lockerSuccess.value = '';
+
+    try {
+        const res = await axios.post(`/library/${props.bookId}/chapters/${lockerChapter.value.id}/purchase`, {
+            payment_method: paymentMethod,
+        });
+
+        if (res.data?.redirect_url) {
+            window.location.href = res.data.redirect_url;
+            return;
+        }
+
+        lockerSuccess.value = locale.value === 'bn' ? 'অধ্যায়টি সফলভাবে আনলক করা হয়েছে!' : 'Chapter unlocked successfully!';
+
+        router.reload({
+            only: ['accessiblePages', 'chapters', 'walletBalance'],
+            onSuccess: () => {
+                setTimeout(() => {
+                    const jumpTo = lockerTargetPage.value || lockerChapter.value?.start_page;
+                    closeChapterLocker();
+                    if (jumpTo) {
+                        goToRealPage(jumpTo);
+                    }
+                }, 600);
+            },
+        });
+    } catch (e) {
+        lockerError.value = e.response?.data?.message || (locale.value === 'bn' ? 'ক্রয় সম্পন্ন করা সম্ভব হয়নি।' : 'Purchase failed.');
+    } finally {
+        lockerPurchasing.value = false;
+    }
+}
+
+async function purchaseMultiChapters(paymentMethod = 'wallet') {
+    if (!lockerSelectedChapterIds.value.length) return;
+    lockerPurchasing.value = true;
+    lockerError.value = '';
+    lockerSuccess.value = '';
+
+    try {
+        const res = await axios.post(`/library/${props.bookId}/chapters/purchase`, {
+            chapter_ids: lockerSelectedChapterIds.value,
+            payment_method: paymentMethod,
+        });
+
+        if (res.data?.redirect_url) {
+            window.location.href = res.data.redirect_url;
+            return;
+        }
+
+        lockerSuccess.value = locale.value === 'bn' ? `${lockerSelectedChapterIds.value.length}টি অধ্যায় সফলভাবে আনলক করা হয়েছে!` : `${lockerSelectedChapterIds.value.length} chapters unlocked!`;
+
+        router.reload({
+            only: ['accessiblePages', 'chapters', 'walletBalance'],
+            onSuccess: () => {
+                setTimeout(() => {
+                    const jumpTo = lockerTargetPage.value || lockerChapter.value?.start_page;
+                    closeChapterLocker();
+                    if (jumpTo) {
+                        goToRealPage(jumpTo);
+                    }
+                }, 700);
+            },
+        });
+    } catch (e) {
+        lockerError.value = e.response?.data?.message || (locale.value === 'bn' ? 'ক্রয় সম্পন্ন করা সম্ভব হয়নি।' : 'Purchase failed.');
+    } finally {
+        lockerPurchasing.value = false;
+    }
+}
+
 function selectChapter(chapter) {
+    if (chapter.is_locked) {
+        openChapterLocker(chapter);
+        return;
+    }
     if (chapter.id) {
         userSelectedChapterId.value = chapter.id;
     }
@@ -640,6 +779,16 @@ function jumpTo() {
     const target = parseInt(jumpTarget.value, 10);
     if (Number.isNaN(target)) return;
     const requested = Math.max(1, Math.min(target, props.totalPages));
+
+    if (!isPageAccessible(requested)) {
+        const lockedChapter = findChapterForPage(requested);
+        if (lockedChapter && lockedChapter.is_locked) {
+            openChapterLocker(lockedChapter, requested);
+            jumpTarget.value = '';
+            return;
+        }
+    }
+
     let pos = realPages.value.indexOf(requested);
     if (pos === -1) {
         let nearest = realPages.value[0];
@@ -945,10 +1094,25 @@ onBeforeUnmount(() => {
                             :class="isCurrentChapter(c) ? 'bg-[var(--primary)] text-white' : 'bg-slate-200/80 dark:bg-neutral-800 text-slate-600 dark:text-slate-400'">
                             {{ formatChapterLabel(c) }}
                         </span>
-                        <span v-if="isCurrentChapter(c)" class="text-[10px] font-semibold text-[var(--primary)] flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-[var(--primary)] animate-pulse"></span>
-                            {{ locale === 'bn' ? 'চলমান' : 'Reading' }}
-                        </span>
+
+                        <div class="flex items-center gap-1.5">
+                            <span v-if="c.is_locked" class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-md">
+                                <LockClosedIcon class="w-3 h-3" />
+                                <span>৳{{ c.price }}</span>
+                            </span>
+                            <span v-else-if="c.is_free" class="inline-flex items-center text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded-md">
+                                {{ locale === 'bn' ? 'ফ্রি' : 'Free' }}
+                            </span>
+                            <span v-else-if="c.is_owned" class="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded-md">
+                                <CheckBadgeIcon class="w-3 h-3" />
+                                {{ locale === 'bn' ? 'সংগৃহীত' : 'Owned' }}
+                            </span>
+
+                            <span v-if="isCurrentChapter(c)" class="text-[10px] font-semibold text-[var(--primary)] flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[var(--primary)] animate-pulse"></span>
+                                {{ locale === 'bn' ? 'চলমান' : 'Reading' }}
+                            </span>
+                        </div>
                     </div>
 
                     <div class="font-medium text-xs leading-snug line-clamp-2">
@@ -1082,6 +1246,198 @@ onBeforeUnmount(() => {
             <ChevronRightIcon class="w-5 h-5" />
         </button>
     </div>
+
+    <!-- Chapter Locker Modal -->
+    <Teleport to="body">
+        <div
+            v-if="lockerOpen"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
+            @click.self="closeChapterLocker"
+        >
+            <div class="relative w-full max-w-lg rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl text-[var(--text)] overflow-hidden">
+                <!-- Close button -->
+                <button
+                    type="button"
+                    @click="closeChapterLocker"
+                    class="absolute top-4 right-4 rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface2)] hover:text-[var(--text)] transition cursor-pointer"
+                >
+                    <XMarkIcon class="w-5 h-5" />
+                </button>
+
+                <!-- Header -->
+                <div class="flex items-center gap-3">
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500">
+                        <LockClosedIcon class="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h3 class="font-heading text-lg font-bold">
+                            {{ locale === 'bn' ? 'প্রিমিয়াম অধ্যায় (লক করা)' : 'Premium Chapter (Locked)' }}
+                        </h3>
+                        <p class="text-xs text-[var(--text-muted)]">
+                            {{ locale === 'bn' ? 'এই অধ্যায়টি পড়তে হলে আনলক করতে হবে' : 'Unlock this chapter to continue reading' }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Target Chapter Box -->
+                <div v-if="lockerChapter" class="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <span class="inline-block rounded-md bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                                {{ formatChapterLabel(lockerChapter) }}
+                            </span>
+                            <h4 class="mt-1 font-heading text-base font-bold text-[var(--text)]">
+                                {{ lockerChapter.title }}
+                            </h4>
+                            <div class="mt-1 text-xs text-[var(--text-muted)]">
+                                {{ t('book_show.pages') }} {{ lockerChapter.start_page }} – {{ lockerChapter.end_page }}
+                                <span v-if="lockerTargetPage" class="ml-1 text-amber-600 dark:text-amber-400 font-medium">
+                                    ({{ locale === 'bn' ? `আপনি পৃষ্ঠা ${lockerTargetPage} পড়তে চেয়েছেন` : `Requested page ${lockerTargetPage}` }})
+                                </span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-[var(--text-muted)]">{{ locale === 'bn' ? 'অধ্যায়ের মূল্য' : 'Price' }}</div>
+                            <div class="text-xl font-extrabold text-amber-500">
+                                ৳{{ lockerChapter.price }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert messages -->
+                <div v-if="lockerError" class="mt-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-600 dark:text-rose-400">
+                    {{ lockerError }}
+                </div>
+                <div v-if="lockerSuccess" class="mt-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-600 dark:text-emerald-400">
+                    {{ lockerSuccess }}
+                </div>
+
+                <!-- Single vs Multi-Selection Mode -->
+                <div v-if="!lockerSelectionMode" class="mt-5 space-y-3">
+                    <div class="flex flex-col gap-2.5">
+                        <!-- Wallet Purchase Button -->
+                        <button
+                            v-if="walletBalance >= (lockerChapter?.price || 0)"
+                            type="button"
+                            :disabled="lockerPurchasing"
+                            @click="purchaseLockerChapter('wallet')"
+                            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-3 px-4 text-sm font-bold text-white shadow-lg shadow-orange-500/20 hover:bg-[var(--primary-hover)] transition disabled:opacity-50 cursor-pointer"
+                        >
+                            <WalletIcon class="w-4 h-4" />
+                            <span>{{ lockerPurchasing ? (locale === 'bn' ? 'আনলক করা হচ্ছে...' : 'Unlocking...') : (locale === 'bn' ? `ওয়ালেট দিয়ে এখনই আনলক করুন (৳${lockerChapter?.price})` : `Unlock with Wallet (৳${lockerChapter?.price})`) }}</span>
+                        </button>
+
+                        <a
+                            v-else
+                            href="/wallet"
+                            class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 py-3 px-4 text-sm font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition cursor-pointer"
+                        >
+                            <WalletIcon class="w-4 h-4" />
+                            <span>{{ locale === 'bn' ? `ওয়ালেট রিচার্জ করে কিনুন (ব্যালেন্স: ৳${walletBalance.toFixed(2)})` : `Recharge Wallet to Buy (Balance: ৳${walletBalance.toFixed(2)})` }}</span>
+                        </a>
+
+                        <!-- Online Payment Button -->
+                        <button
+                            type="button"
+                            :disabled="lockerPurchasing"
+                            @click="purchaseLockerChapter('zinipay')"
+                            class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface2)] py-2.5 px-4 text-xs font-semibold text-[var(--text)] hover:border-[var(--primary)] transition disabled:opacity-50 cursor-pointer"
+                        >
+                            <CreditCardIcon class="w-4 h-4" />
+                            <span>{{ locale === 'bn' ? 'অনলাইন পে (বিকাশ / নগদ / কার্ড)' : 'Pay Online (bKash / Nagad / Card)' }}</span>
+                        </button>
+                    </div>
+
+                    <!-- Multi-chapter toggle -->
+                    <div v-if="lockedChapters.length > 1" class="pt-2 border-t border-[var(--border)]">
+                        <button
+                            type="button"
+                            @click="lockerSelectionMode = true"
+                            class="w-full py-2 text-center text-xs font-semibold text-[var(--primary)] hover:underline flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                            <ShoppingBagIcon class="w-4 h-4" />
+                            <span>{{ locale === 'bn' ? `একাধিক অধ্যায় একসাথে নির্বাচন করে কিনুন (${lockedChapters.length}টি প্রিমিয়াম অধ্যায়) →` : `Select Multiple Chapters to Buy (${lockedChapters.length} available) →` }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Multi-Chapter Selection Mode -->
+                <div v-else class="mt-4 space-y-3">
+                    <div class="flex items-center justify-between text-xs text-[var(--text-muted)] pb-2 border-b border-[var(--border)]">
+                        <span class="font-bold text-[var(--text)]">{{ locale === 'bn' ? 'অধ্যায় নির্বাচন (Chapter Selection)' : 'Select Chapters' }}</span>
+                        <button
+                            type="button"
+                            @click="lockerSelectionMode = false"
+                            class="text-[var(--primary)] hover:underline cursor-pointer"
+                        >
+                            ← {{ locale === 'bn' ? 'একক অধ্যায়ে ফিরুন' : 'Back to Single' }}
+                        </button>
+                    </div>
+
+                    <div class="max-h-52 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
+                        <label
+                            v-for="lc in lockedChapters"
+                            :key="lc.id"
+                            class="flex items-center justify-between gap-2 p-2 rounded-lg border border-[var(--border)] hover:bg-[var(--surface2)] cursor-pointer text-xs transition"
+                            :class="lockerSelectedChapterIds.includes(lc.id) ? 'bg-[var(--primary)]/10 border-[var(--primary)]/40' : ''"
+                        >
+                            <div class="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    :value="lc.id"
+                                    v-model="lockerSelectedChapterIds"
+                                    class="rounded text-orange-500 focus:ring-orange-500 cursor-pointer"
+                                />
+                                <span class="font-medium text-[var(--text)]">{{ lc.chapter_number ? `${lc.chapter_number}. ` : '' }}{{ lc.title }}</span>
+                            </div>
+                            <span class="font-bold text-amber-500 shrink-0">৳{{ lc.price }}</span>
+                        </label>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-[var(--surface2)] flex items-center justify-between text-xs">
+                        <span>{{ locale === 'bn' ? `${lockerSelectedChapterIds.length}টি অধ্যায় নির্বাচিত` : `${lockerSelectedChapterIds.length} chapters selected` }}</span>
+                        <span class="text-sm font-extrabold text-[var(--text)]">
+                            {{ locale === 'bn' ? 'মোট:' : 'Total:' }} ৳{{ multiTotalPrice }}
+                        </span>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <button
+                            v-if="walletBalance >= multiTotalPrice"
+                            type="button"
+                            :disabled="lockerPurchasing || !lockerSelectedChapterIds.length"
+                            @click="purchaseMultiChapters('wallet')"
+                            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-3 px-4 text-sm font-bold text-white shadow-lg shadow-orange-500/20 hover:bg-[var(--primary-hover)] transition disabled:opacity-50 cursor-pointer"
+                        >
+                            <WalletIcon class="w-4 h-4" />
+                            <span>{{ lockerPurchasing ? (locale === 'bn' ? 'কেনা হচ্ছে...' : 'Processing...') : (locale === 'bn' ? `ওয়ালেট দিয়ে একবারে কিনুন (৳${multiTotalPrice})` : `Buy Selected with Wallet (৳${multiTotalPrice})`) }}</span>
+                        </button>
+                        <button
+                            type="button"
+                            :disabled="lockerPurchasing || !lockerSelectedChapterIds.length"
+                            @click="purchaseMultiChapters('zinipay')"
+                            class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface2)] py-2.5 px-4 text-xs font-semibold text-[var(--text)] hover:border-[var(--primary)] transition disabled:opacity-50 cursor-pointer"
+                        >
+                            <CreditCardIcon class="w-4 h-4" />
+                            <span>{{ locale === 'bn' ? `অনলাইনে কিনুন (৳${multiTotalPrice})` : `Pay Online (৳${multiTotalPrice})` }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Footer: Back to free reading -->
+                <div class="mt-4 pt-3 border-t border-[var(--border)] text-center">
+                    <button
+                        type="button"
+                        @click="closeChapterLocker"
+                        class="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text)] transition cursor-pointer"
+                    >
+                        {{ locale === 'bn' ? 'ফ্রি অধ্যায়গুলোতে ফিরে যান' : 'Back to free reading' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </Teleport>
 </template>
 
 <style scoped>

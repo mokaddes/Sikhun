@@ -60,7 +60,7 @@ class LibraryController extends Controller
         // Transitive set (chapter + descendants) — sections of an owned
         // chapter are readable and must not display as locked.
         $hasFullAccess = $access->hasAccess($student, $book);
-        $ownedChapterIds = $hasFullAccess ? null : ($access->accessibleChapterIds($student, $book) ?? []);
+        $hasPricedChapters = $access->hasPricedChapters($book);
 
         $chapters = collect();
         if ($book->chapter_purchase_enabled && $book->chapters()->exists()) {
@@ -69,7 +69,11 @@ class LibraryController extends Controller
                 ->orderBy('sort_order')
                 ->orderBy('id')
                 ->get(['id', 'parent_id', 'chapter_number', 'title', 'level', 'start_page', 'end_page', 'price'])
-                ->map(function ($chapter) use ($ownedChapterIds, $hasFullAccess) {
+                ->map(function ($chapter) use ($access, $student, $hasFullAccess) {
+                    $isPaid = $chapter->price !== null && (float) $chapter->price > 0;
+                    $canAccess = $access->canAccessChapter($student, $chapter);
+                    $isFree = ! $isPaid;
+
                     return [
                         'id' => $chapter->id,
                         'parent_id' => $chapter->parent_id,
@@ -78,9 +82,11 @@ class LibraryController extends Controller
                         'level' => $chapter->level,
                         'start_page' => $chapter->start_page,
                         'end_page' => $chapter->end_page,
-                        'price' => $chapter->price,
-                        'owned' => $hasFullAccess || in_array($chapter->id, $ownedChapterIds),
-                        'purchasable' => ($chapter->level <= 1 || $chapter->parent_id === null) && $chapter->price !== null && (float) $chapter->price > 0,
+                        'price' => $chapter->price ? (float) $chapter->price : null,
+                        'is_free' => $isFree,
+                        'owned' => $canAccess,
+                        'is_locked' => $isPaid && ! $canAccess,
+                        'purchasable' => ($chapter->level <= 1 || $chapter->parent_id === null) && $isPaid && ! $canAccess,
                     ];
                 });
         }
@@ -96,6 +102,8 @@ class LibraryController extends Controller
         return Inertia::render('Student/Library/Show', [
             'book' => $book->load(['author', 'publication', 'category']),
             'accessType' => $access->accessType($student, $book),
+            'hasFullAccess' => $hasFullAccess,
+            'hasPricedChapters' => $hasPricedChapters,
             'onShelf' => $student && $student->bookShelf()->where('book_id', $book->id)->exists(),
             'walletBalance' => $student ? (float) $student->wallet_balance : 0.0,
             'chapters' => $chapters,
@@ -110,7 +118,7 @@ class LibraryController extends Controller
      */
     public function addToShelf(Book $book): \Illuminate\Http\RedirectResponse
     {
-        abort_unless($book->is_published && $book->is_free, 403, 'Only free books can be added directly to your bookshelf.');
+        abort_unless($book->is_published && ($book->is_free || (float) $book->price <= 0 || app(\App\Services\BookAccessService::class)->hasPricedChapters($book)), 403, 'This book cannot be added directly to your bookshelf.');
 
         $student = auth('web')->user();
 

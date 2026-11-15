@@ -63,15 +63,15 @@ class LibraryController extends Controller
         $hasPricedChapters = $access->hasPricedChapters($book);
 
         $chapters = collect();
-        if ($book->chapter_purchase_enabled && $book->chapters()->exists()) {
+        if ($book->chapters()->exists()) {
             $chapters = $book->chapters()
                 ->orderByRaw('CASE WHEN start_page IS NOT NULL AND start_page > 0 THEN start_page ELSE 999999 END ASC')
                 ->orderBy('sort_order')
                 ->orderBy('id')
-                ->get(['id', 'parent_id', 'chapter_number', 'title', 'level', 'start_page', 'end_page', 'price'])
-                ->map(function ($chapter) use ($access, $student, $hasFullAccess) {
-                    $isPaid = $chapter->price !== null && (float) $chapter->price > 0;
-                    $canAccess = $access->canAccessChapter($student, $chapter);
+                ->get(['id', 'book_id', 'parent_id', 'chapter_number', 'title', 'level', 'start_page', 'end_page', 'price'])
+                ->map(function ($chapter) use ($access, $student, $book) {
+                    $isPaid = $book->chapter_purchase_enabled && $chapter->price !== null && (float) $chapter->price > 0;
+                    $canAccess = $access->canAccessChapter($student, $chapter, $book);
                     $isFree = ! $isPaid;
 
                     return [
@@ -82,7 +82,7 @@ class LibraryController extends Controller
                         'level' => $chapter->level,
                         'start_page' => $chapter->start_page,
                         'end_page' => $chapter->end_page,
-                        'price' => $chapter->price ? (float) $chapter->price : null,
+                        'price' => $isPaid ? (float) $chapter->price : null,
                         'is_free' => $isFree,
                         'owned' => $canAccess,
                         'is_locked' => $isPaid && ! $canAccess,

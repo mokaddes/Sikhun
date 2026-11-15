@@ -180,7 +180,7 @@ const chapterTree = computed(() => {
     }));
 });
 
-const showChapters = computed(() => (props.book.chapter_purchase_enabled || props.hasPricedChapters) && chapterTree.value.length > 0);
+const showChapters = computed(() => chapterTree.value.length > 0);
 const hasFullReadAccess = computed(() => {
     if (props.hasPricedChapters) {
         return Boolean(props.hasFullAccess);
@@ -223,8 +223,8 @@ const hasFullReadAccess = computed(() => {
                 <!-- Left Column: Cover & Quick Info -->
                 <div class="lg:col-span-4">
                     <div class="sticky top-24 space-y-5">
-                        <div class="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-lg">
-                            <div class="relative aspect-[3/4] overflow-hidden rounded-xl bg-[var(--surface2)]">
+                        <div class="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-lg">
+                            <div class="relative aspect-[3/4] overflow-hidden bg-[var(--surface2)]">
                                 <img
                                     v-if="book.cover_image_url"
                                     :src="book.cover_image_url"
@@ -247,22 +247,24 @@ const hasFullReadAccess = computed(() => {
                             </div>
 
                             <!-- Metadata Mini Grid -->
-                            <div class="mt-4 grid grid-cols-2 gap-2.5 text-xs">
-                                <div v-if="book.total_pages" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)]/60 p-3">
-                                    <div class="text-[var(--text-muted)]">{{ locale === 'en' ? 'Total Pages' : 'মোট পৃষ্ঠা' }}</div>
-                                    <div class="mt-0.5 font-heading text-sm font-bold">{{ book.total_pages }} {{ t('book_show.pages') }}</div>
-                                </div>
-                                <div v-if="book.level" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)]/60 p-3">
-                                    <div class="text-[var(--text-muted)]">{{ t('common.level') }}</div>
-                                    <div class="mt-0.5 font-heading text-sm font-bold uppercase">{{ book.level }}</div>
-                                </div>
-                                <div v-if="book.subject" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)]/60 p-3">
-                                    <div class="text-[var(--text-muted)]">{{ locale === 'en' ? 'Subject' : 'বিষয়' }}</div>
-                                    <div class="mt-0.5 truncate font-heading text-sm font-bold">{{ book.subject }}</div>
-                                </div>
-                                <div v-if="book.reading_count !== undefined" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)]/60 p-3">
-                                    <div class="text-[var(--text-muted)]">{{ locale === 'en' ? 'Readers' : 'পাঠক সংখ্যা' }}</div>
-                                    <div class="mt-0.5 font-heading text-sm font-bold">{{ book.reading_count }}</div>
+                            <div class="p-4">
+                                <div class="grid grid-cols-2 gap-2.5 text-xs">
+                                    <div v-if="book.total_pages" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)]/60 p-3">
+                                        <div class="text-[var(--text-muted)]">{{ locale === 'en' ? 'Total Pages' : 'মোট পৃষ্ঠা' }}</div>
+                                        <div class="mt-0.5 font-heading text-sm font-bold">{{ book.total_pages }} {{ t('book_show.pages') }}</div>
+                                    </div>
+                                    <div v-if="book.level" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)]/60 p-3">
+                                        <div class="text-[var(--text-muted)]">{{ t('common.level') }}</div>
+                                        <div class="mt-0.5 font-heading text-sm font-bold uppercase">{{ book.level }}</div>
+                                    </div>
+                                    <div v-if="book.subject" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)]/60 p-3">
+                                        <div class="text-[var(--text-muted)]">{{ locale === 'en' ? 'Subject' : 'বিষয়' }}</div>
+                                        <div class="mt-0.5 truncate font-heading text-sm font-bold">{{ book.subject }}</div>
+                                    </div>
+                                    <div v-if="book.reading_count !== undefined" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)]/60 p-3">
+                                        <div class="text-[var(--text-muted)]">{{ locale === 'en' ? 'Readers' : 'পাঠক সংখ্যা' }}</div>
+                                        <div class="mt-0.5 font-heading text-sm font-bold">{{ book.reading_count }}</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -568,11 +570,19 @@ const hasFullReadAccess = computed(() => {
                     <div v-if="showChapters" class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm sm:p-8">
                         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <h2 class="font-heading text-xl font-bold">{{ t('book_show.buy_chapters') }}</h2>
+                                <h2 class="font-heading text-xl font-bold">
+                                    {{ (hasPricedChapters || book.chapter_purchase_enabled)
+                                        ? t('book_show.buy_chapters')
+                                        : (locale === 'en' ? 'Table of Contents & Chapters' : 'সূচিপত্র ও অধ্যায়সমূহ') }}
+                                </h2>
                                 <p class="text-xs text-[var(--text-muted)]">
-                                    {{ locale === 'en'
-                                        ? 'You can buy single chapters, select multiple chapters together, or purchase the complete book.'
-                                        : 'আপনি চাইলে পুরো বই না কিনেও এক বা একাধিক প্রয়োজনীয় অধ্যায় সিলেক্ট করে একসাথে কিনতে পারেন।' }}
+                                    {{ (hasPricedChapters || book.chapter_purchase_enabled)
+                                        ? (locale === 'en'
+                                            ? 'You can buy single chapters, select multiple chapters together, or purchase the complete book.'
+                                            : 'আপনি চাইলে পুরো বই না কিনেও এক বা একাধিক প্রয়োজনীয় অধ্যায় সিলেক্ট করে একসাথে কিনতে পারেন।')
+                                        : (locale === 'en'
+                                            ? 'Browse the chapters in this book and jump directly to start reading.'
+                                            : 'বইটির অধ্যায়সমূহ দেখুন এবং যেকোনো অধ্যায়ে ক্লিক করে সরাসরি পড়া শুরু করুন।') }}
                                 </p>
                             </div>
                             <div class="flex items-center gap-2">

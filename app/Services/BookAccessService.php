@@ -26,9 +26,9 @@ class BookAccessService
 {
     public function __construct(private AccessGrantService $grants) {}
 
-    public function hasPricedChapters(Book $book): bool
+    public function hasPricedChapters(?Book $book): bool
     {
-        if (! $book->chapter_purchase_enabled) {
+        if (! $book || ! $book->chapter_purchase_enabled) {
             return false;
         }
 
@@ -38,8 +38,12 @@ class BookAccessService
             ->exists();
     }
 
-    public function hasAccess(?Student $student, Book $book): bool
+    public function hasAccess(?Student $student, ?Book $book): bool
     {
+        if (! $book) {
+            return false;
+        }
+
         if ($this->hasPricedChapters($book)) {
             // When a book has priced chapters, full access requires:
             // 1. Active site-wide access grant (campaign/coupon)
@@ -88,8 +92,12 @@ class BookAccessService
         return in_array($this->accessType($student, $book), ['free', 'granted', 'owned', 'subscription_gift'], true);
     }
 
-    public function accessType(?Student $student, Book $book): string
+    public function accessType(?Student $student, ?Book $book): string
     {
+        if (! $book) {
+            return 'guest';
+        }
+
         if (! $student) {
             return 'guest'; // must log in before purchasing, adding to shelf, or reading
         }
@@ -141,9 +149,12 @@ class BookAccessService
      * through ownership of the chapter itself OR any of its ancestors
      * (owning "Chapter 2" unlocks "Section 2.1.3").
      */
-    public function canAccessChapter(?Student $student, BookChapter $chapter): bool
+    public function canAccessChapter(?Student $student, BookChapter $chapter, ?Book $book = null): bool
     {
-        $book = $chapter->book;
+        $book = $book ?? $chapter->book ?? Book::find($chapter->book_id);
+        if (! $book) {
+            return false;
+        }
 
         // Full book access covers every chapter.
         if ($this->hasAccess($student, $book)) {

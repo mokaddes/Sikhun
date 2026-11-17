@@ -33,15 +33,17 @@ class QuestionBankPracticeController extends Controller
         ];
 
         // Determine active sector strictly based on student education goal when logged in
+        $isUnavailable = false;
+
         if ($student) {
             if ($studentType === 'job') {
                 $activeSector = 'job';
             } elseif ($studentType === 'admission') {
                 $activeSector = 'admission';
-            } elseif (in_array($studentType, ['hsc', 'ssc'])) {
-                $activeSector = $studentType;
             } else {
-                $activeSector = 'admission';
+                // SSC, HSC, and University students cannot access Question Bank for now
+                $activeSector = in_array($studentType, ['hsc', 'ssc', 'university'], true) ? $studentType : 'ssc';
+                $isUnavailable = true;
             }
 
             // If user requested another sector via query string, strip it to maintain strict goal isolation
@@ -50,9 +52,30 @@ class QuestionBankPracticeController extends Controller
             }
         } else {
             $requestedSector = $request->input('sector');
-            $activeSector = ($requestedSector && in_array($requestedSector, ['admission', 'job', 'hsc', 'ssc']))
+            $activeSector = ($requestedSector && in_array($requestedSector, ['admission', 'job'], true))
                 ? $requestedSector
                 : 'admission';
+        }
+
+        // Check if student is a paid subscriber
+        $isPaid = (bool) ($student?->activeSubscription || ($student && app(AccessGrantService::class)->hasActiveAccess($student)));
+
+        if ($isUnavailable) {
+            return Inertia::render('Student/QuestionBank/Index', [
+                'questions' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20),
+                'subjects' => [],
+                'exams' => [],
+                'filters' => [
+                    'sector' => $activeSector,
+                ],
+                'isPaid' => $isPaid,
+                'studentType' => $studentType,
+                'lockedToGoal' => true,
+                'studentGoal' => $student->type,
+                'activeSector' => $activeSector,
+                'sectorCounts' => $sectorCounts,
+                'isUnavailable' => true,
+            ]);
         }
 
         $query = QuestionBank::query()
@@ -123,9 +146,6 @@ class QuestionBankPracticeController extends Controller
             ->orderByDesc('count')
             ->get();
 
-        // Check if student is a paid subscriber
-        $isPaid = (bool) ($student?->activeSubscription || ($student && app(AccessGrantService::class)->hasActiveAccess($student)));
-
         return Inertia::render('Student/QuestionBank/Index', [
             'questions' => $questions,
             'subjects' => $subjects,
@@ -139,6 +159,7 @@ class QuestionBankPracticeController extends Controller
             'studentGoal' => $student?->type,
             'activeSector' => $activeSector,
             'sectorCounts' => $sectorCounts,
+            'isUnavailable' => false,
         ]);
     }
 
@@ -147,7 +168,17 @@ class QuestionBankPracticeController extends Controller
      */
     public function aiExplain(Request $request, int $id): JsonResponse
     {
+        $student = auth('web')->user();
         $question = QuestionBank::with('subject')->findOrFail($id);
+
+        if ($student) {
+            if (!in_array($student->type, ['admission', 'job'], true) || $question->segment !== $student->type) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'আপনার শিক্ষা লক্ষ্য অনুযায়ী এই প্রশ্নের অ্যাক্সেস নেই।',
+                ], 403);
+            }
+        }
 
         // If question already has an explanation in meta['ai_explanation'] or in explanation field, return it.
         if (!empty($question->meta['ai_explanation'])) {
@@ -192,6 +223,14 @@ class QuestionBankPracticeController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
         }
 
+        $studentType = $student->type ?? '';
+        if (!in_array($studentType, ['admission', 'job'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'SSC, HSC এবং বিশ্ববিদ্যালয় অ্যাকাডেমিক শিক্ষার্থীদের জন্য প্রশ্নব্যাংক এখনো চালু হয়নি।'
+            ], 403);
+        }
+
         // Check paid access
         if (!$student->activeSubscription && !app(AccessGrantService::class)->hasActiveAccess($student)) {
             return response()->json([
@@ -213,19 +252,12 @@ class QuestionBankPracticeController extends Controller
         $count = (int) ($validated['question_count'] ?? 20);
         $durationMinutes = (int) ($validated['duration_minutes'] ?? 20);
         $negativeMarking = $request->has('negative_marking') ? $request->boolean('negative_marking') : true;
-        $studentType = $student->type ?? 'admission';
 
-        // Query random questions matching criteria and student type
+        // Query random questions matching criteria and strictly isolated to student's segment
         $query = QuestionBank::query()
             ->with('subject')
-            ->published();
-
-        $query->where(function ($q) use ($studentType) {
-            $q->where('segment', $studentType)
-              ->orWhereNull('allowed_student_types')
-              ->orWhereJsonContains('allowed_student_types', 'all')
-              ->orWhereJsonContains('allowed_student_types', $studentType);
-        });
+            ->published()
+            ->where('segment', $studentType);
 
         $subjectName = null;
         if (!empty($validated['subject_id'])) {

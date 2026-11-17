@@ -40,6 +40,10 @@ const isAdmission = computed(() => {
     return student?.education_type === 'admission' || student?.type === 'admission';
 });
 
+const canAccessQuestionBank = computed(() => {
+    return !student || ['admission', 'job'].includes(student?.type);
+});
+
 const showVerifyModal = ref(false);
 const verifyForm = useForm({
     transaction_id: props.pendingOrder?.gateway_transaction_id || '',
@@ -262,6 +266,7 @@ const today = computed(() => new Date().toLocaleDateString(locale.value === 'bn'
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                 <!-- Card 1: Question Bank -->
                 <Link
+                    v-if="canAccessQuestionBank"
                     href="/question-bank"
                     class="group flex flex-col justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)]/95 p-4 transition-all hover:-translate-y-1 hover:border-amber-500/40 hover:shadow-lg"
                 >

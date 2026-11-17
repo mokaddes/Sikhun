@@ -37,6 +37,7 @@ const props = defineProps({
     studentGoal: String,
     activeSector: { type: String, default: 'admission' },
     sectorCounts: { type: Object, default: () => ({ admission: 0, job: 0, hsc: 0, ssc: 0 }) },
+    isUnavailable: { type: Boolean, default: false },
 });
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
@@ -83,11 +84,28 @@ const sectors = [
         icon: BookOpenIcon,
         color: 'from-purple-600 to-pink-600',
     },
+    {
+        key: 'university',
+        title: 'বিশ্ববিদ্যালয় অ্যাকাডেমিক প্রশ্নব্যাংক',
+        sub: 'স্নাতক ও সেমিস্টার ভিত্তিক অ্যাকাডেমিক প্রশ্ন ও অনুশীলন',
+        shortTitle: 'বিশ্ববিদ্যালয় অ্যাকাডেমিক',
+        badge: 'University',
+        icon: AcademicCapIcon,
+        color: 'from-violet-600 to-indigo-600',
+    },
 ];
+
+const activeSectors = computed(() => sectors.filter((s) => ['admission', 'job'].includes(s.key)));
 
 const currentSector = ref(props.activeSector || 'admission');
 const activeSectorData = computed(() => {
     return sectors.find((s) => s.key === currentSector.value) || sectors[0];
+});
+
+const isSectorUnavailable = computed(() => {
+    if (props.isUnavailable) return true;
+    if (props.lockedToGoal && !['admission', 'job'].includes(props.studentGoal)) return true;
+    return (props.sectorCounts?.[currentSector.value] ?? 0) === 0;
 });
 
 // State for active practice interaction
@@ -272,7 +290,7 @@ async function handleGenerateTest() {
         <!-- Sector Selector Navigation Pills (Guest Browsing Only) -->
         <nav v-else class="mb-4 flex flex-wrap items-center gap-2" aria-label="Question Bank Sectors">
             <button
-                v-for="sec in sectors"
+                v-for="sec in activeSectors"
                 :key="sec.key"
                 @click="setSector(sec.key)"
                 type="button"
@@ -300,18 +318,24 @@ async function handleGenerateTest() {
             </button>
         </nav>
 
-        <!-- Zero question warning for upcoming sectors (e.g. HSC/SSC) -->
-        <div v-if="props.sectorCounts?.[currentSector] === 0" class="mb-6 rounded-2xl border border-dashed border-amber-500/30 bg-amber-500/5 p-8 text-center">
-            <BookOpenIcon class="mx-auto h-12 w-12 text-amber-500/60" />
-            <h3 class="mt-3 font-heading text-lg font-bold text-[var(--text)]">{{ activeSectorData.shortTitle }} প্রশ্নব্যাংক শীঘ্রই যুক্ত করা হচ্ছে</h3>
-            <p class="mt-1 text-sm text-[var(--text-muted)] max-w-md mx-auto">
-                বর্তমানে বিশ্ববিদ্যালয় ভর্তি ও বিসিএস/চাকরি প্রস্তুতি প্রশ্নব্যাংক চালু রয়েছে। আপনি চাইলে প্রোফাইল সেটিংস থেকে স্টাডি লক্ষ্য পরিবর্তন করে অনুশীলন করতে পারেন।
+        <!-- Unavailable / Coming Soon state for SSC, HSC, and University students -->
+        <div v-if="isSectorUnavailable" class="mb-6 rounded-3xl border border-dashed border-amber-500/30 bg-amber-500/5 p-8 md:p-12 text-center">
+            <LockClosedIcon class="mx-auto h-14 w-14 text-amber-500/70" />
+            <h3 class="mt-4 font-heading text-xl font-bold text-[var(--text)]">{{ activeSectorData.shortTitle }} প্রশ্নব্যাংক এখনো চালু হয়নি</h3>
+            <p class="mt-2 text-sm text-[var(--text-muted)] max-w-lg mx-auto leading-relaxed">
+                বর্তমানে শুধুমাত্র বিশ্ববিদ্যালয় ভর্তি ও বিসিএস/চাকরি প্রস্তুতি প্রশ্নব্যাংক চালু রয়েছে। SSC, HSC এবং বিশ্ববিদ্যালয় অ্যাকাডেমিক শিক্ষার্থীদের জন্য প্রশ্নব্যাংক শীঘ্রই যুক্ত করা হবে।
             </p>
-            <Link href="/profile/settings" class="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[var(--primary)] px-4 py-2 text-xs font-bold text-white shadow-md">
-                স্টাডি লক্ষ্য পরিবর্তন করুন
-            </Link>
+            <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <Link href="/dashboard" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-5 py-2.5 text-xs font-bold text-[var(--text)] hover:border-[var(--primary)]/40 transition">
+                    ড্যাশবোর্ডে ফিরে যান
+                </Link>
+                <Link href="/profile/settings" class="inline-flex items-center gap-1.5 rounded-xl bg-[var(--primary)] px-5 py-2.5 text-xs font-bold text-white shadow-md hover:opacity-95 transition">
+                    স্টাডি লক্ষ্য পরিবর্তন করুন
+                </Link>
+            </div>
         </div>
 
+        <template v-else>
         <!-- Top Hero Banner with Sector Badge & Title -->
         <header
             class="relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-r p-6 text-white shadow-xl md:p-8 transition-colors duration-500"
@@ -1057,5 +1081,6 @@ async function handleGenerateTest() {
                 </div>
             </div>
         </transition>
+        </template>
     </StudentLayout>
 </template>

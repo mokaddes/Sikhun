@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
 import {
@@ -18,16 +18,28 @@ const props = defineProps({
     books: { type: Array, default: () => [] },
     subjects: { type: Array, default: () => [] },
     exams: { type: Array, default: () => [] },
+    canUseQuestionBank: { type: Boolean, default: null },
     prefill: { type: Object, default: () => ({}) },
 });
 
 const { t, locale } = useI18n();
+const page = usePage();
 
-const sourceType = ref(props.prefill?.source_type || 'topic');
+const allowQuestionBank = computed(() => {
+    if (props.canUseQuestionBank !== null) return props.canUseQuestionBank;
+    const student = page.props.auth?.student;
+    return !student || ['admission', 'job'].includes(student.type);
+});
+
+const sourceType = ref(
+    (!allowQuestionBank.value && props.prefill?.source_type === 'question_bank')
+        ? 'topic'
+        : (props.prefill?.source_type || 'topic')
+);
 
 const form = useForm({
     title: props.prefill?.title || '',
-    source_type: props.prefill?.source_type || 'topic',
+    source_type: sourceType.value,
     source_topic: '',
     source_book_id: null,
     chapter_ids: [],
@@ -40,8 +52,13 @@ const form = useForm({
 
 onMounted(() => {
     if (props.prefill?.source_type) {
-        sourceType.value = props.prefill.source_type;
-        form.source_type = props.prefill.source_type;
+        if (!allowQuestionBank.value && props.prefill.source_type === 'question_bank') {
+            sourceType.value = 'topic';
+            form.source_type = 'topic';
+        } else {
+            sourceType.value = props.prefill.source_type;
+            form.source_type = props.prefill.source_type;
+        }
     }
 });
 
@@ -104,8 +121,8 @@ function submit() {
                     </h1>
                     <p class="mt-1 text-sm text-[var(--text-muted)]">
                         {{ locale === 'en'
-                            ? 'Generate front-and-back study flashcards from topics, books, question banks, or notes.'
-                            : 'টপিক, বই, প্রশ্নব্যাংক বা নোট থেকে নিমেষেই ইন্টারেক্টিভ রিভিশন কার্ড তৈরি করুন।' }}
+                            ? (allowQuestionBank ? 'Generate front-and-back study flashcards from topics, books, question banks, or notes.' : 'Generate front-and-back study flashcards from topics, books, or notes.')
+                            : (allowQuestionBank ? 'টপিক, বই, প্রশ্নব্যাংক বা নোট থেকে নিমেষেই ইন্টারেক্টিভ রিভিশন কার্ড তৈরি করুন।' : 'টপিক, বই বা নোট থেকে নিমেষেই ইন্টারেক্টিভ রিভিশন কার্ড তৈরি করুন।') }}
                     </p>
                 </div>
                 <div class="hidden sm:grid h-14 w-14 place-items-center rounded-2xl bg-[var(--surface2)] text-[var(--tertiary)] shrink-0">
@@ -120,7 +137,7 @@ function submit() {
                     <label class="block text-sm font-bold text-[var(--text)] mb-2">
                         {{ locale === 'en' ? 'Choose Material Source' : 'ফ্ল্যাশকার্ড তৈরির উৎস নির্বাচন করুন' }}
                     </label>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div :class="['grid gap-2', allowQuestionBank ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3']">
                         <button
                             type="button"
                             @click="switchSourceType('topic')"
@@ -149,6 +166,7 @@ function submit() {
                             <span>{{ locale === 'en' ? 'Book' : 'বই ও অধ্যায়' }}</span>
                         </button>
                         <button
+                            v-if="allowQuestionBank"
                             type="button"
                             @click="switchSourceType('question_bank')"
                             class="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border text-xs font-bold transition text-center cursor-pointer"

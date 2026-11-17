@@ -30,6 +30,7 @@ class FlashcardController extends Controller
     public function createForm(Request $request, BookAccessService $access): Response
     {
         $student = auth('web')->user();
+        $canUseQuestionBank = in_array($student->type, ['admission', 'job'], true);
         $studentSector = $student->type === 'job' ? 'job' : 'admission';
 
         $books = Book::query()
@@ -48,29 +49,39 @@ class FlashcardController extends Controller
                 return $book;
             });
 
-        $subjects = \App\Models\QuestionSubject::active()
-            ->where(function ($q) use ($studentSector) {
-                $q->where('segment', $studentSector)->orWhere('segment', 'both');
-            })
-            ->orderBy('name_bn')
-            ->get(['id', 'name_bn', 'name_en', 'segment']);
+        $subjects = $canUseQuestionBank
+            ? \App\Models\QuestionSubject::active()
+                ->where(function ($q) use ($studentSector) {
+                    $q->where('segment', $studentSector)->orWhere('segment', 'both');
+                })
+                ->orderBy('name_bn')
+                ->get(['id', 'name_bn', 'name_en', 'segment'])
+            : collect();
 
-        $exams = \App\Models\QuestionBank::published()
-            ->where('segment', $studentSector)
-            ->whereNotNull('origin_tag')
-            ->selectRaw('origin_tag, exam_name, count(*) as count')
-            ->groupBy('origin_tag', 'exam_name')
-            ->having('count', '>', 0)
-            ->orderByDesc('count')
-            ->limit(30)
-            ->get();
+        $exams = $canUseQuestionBank
+            ? \App\Models\QuestionBank::published()
+                ->where('segment', $studentSector)
+                ->whereNotNull('origin_tag')
+                ->selectRaw('origin_tag, exam_name, count(*) as count')
+                ->groupBy('origin_tag', 'exam_name')
+                ->having('count', '>', 0)
+                ->orderByDesc('count')
+                ->limit(30)
+                ->get()
+            : collect();
+
+        $prefillSourceType = $request->query('source_type', 'topic');
+        if (!$canUseQuestionBank && $prefillSourceType === 'question_bank') {
+            $prefillSourceType = 'topic';
+        }
 
         return Inertia::render('Student/Flashcards/Create', [
             'books' => $books,
             'subjects' => $subjects,
             'exams' => $exams,
+            'canUseQuestionBank' => $canUseQuestionBank,
             'prefill' => [
-                'source_type' => $request->query('source_type', 'topic'),
+                'source_type' => $prefillSourceType,
                 'subject_id' => $request->query('subject_id') ? (int) $request->query('subject_id') : null,
                 'origin_tag' => $request->query('origin_tag'),
                 'sector' => $request->query('sector', $studentSector),
@@ -98,10 +109,12 @@ class FlashcardController extends Controller
             $sourceLabel = $source['source_label'];
             $sourceReferences = $source['references'];
         } elseif ($sourceType === 'question_bank') {
+            abort_unless(in_array($student->type, ['admission', 'job'], true), 403, 'Question Bank flashcards are currently available only for Admission and Job students.');
+
             $source = $sources->fromQuestionBank(
                 (int) $request->subject_id,
                 $request->origin_tag,
-                $request->sector
+                $student->type
             );
             $sourceText = $source['content'];
             $sourceLabel = $source['source_label'];

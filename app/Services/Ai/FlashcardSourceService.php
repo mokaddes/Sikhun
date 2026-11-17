@@ -3,6 +3,7 @@
 namespace App\Services\Ai;
 
 use App\Models\Book;
+use App\Models\MyBook;
 use App\Models\QuestionBank;
 use App\Models\QuestionSubject;
 use App\Models\Student;
@@ -83,6 +84,39 @@ class FlashcardSourceService
             'content' => $content,
             'source_label' => $book->title,
             'references' => $references,
+        ];
+    }
+
+    /**
+     * Source flashcard material from a student's own uploaded MyBook.
+     */
+    public function fromMyBook(MyBook $myBook, Student $student): array
+    {
+        abort_unless($myBook->student_id === $student->id, 403);
+
+        if ($myBook->processing_status !== 'completed') {
+            abort(422, 'The selected book is not fully processed yet.');
+        }
+
+        $pages = $myBook->pages()
+            ->whereNotNull('extracted_text')
+            ->where('extracted_text', '!=', '')
+            ->inRandomOrder()
+            ->limit(15)
+            ->get(['page_number', 'extracted_text'])
+            ->sortBy('page_number');
+
+        if ($pages->isEmpty()) {
+            abort(422, 'নির্বাচিত বইটিতে কোনো পাঠ্য কনটেন্ট পাওয়া যায়নি।');
+        }
+
+        $content = $pages->map(fn ($p) => "[Page {$p->page_number}]\n" . mb_substr($p->extracted_text, 0, 1200))
+            ->implode("\n\n");
+
+        return [
+            'content' => mb_substr($content, 0, 8000),
+            'source_label' => $myBook->title,
+            'references' => [],
         ];
     }
 

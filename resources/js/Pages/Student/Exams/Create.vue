@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
@@ -20,6 +20,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    myBooks: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const { t, locale } = useI18n();
@@ -28,6 +32,7 @@ const form = useForm({
     title: '',
     source_type: 'topic',
     source_book_id: props.books.length > 0 ? props.books[0].id : null,
+    source_my_book_id: props.books.length === 0 && props.myBooks.length > 0 ? props.myBooks[0].id : null,
     chapter_ids: [],
     source_text: '',
     type: 'mcq',
@@ -35,6 +40,29 @@ const form = useForm({
     duration: 20,
     mode: 'practice',
 });
+
+const selectedBookKey = ref(
+    props.books.length > 0
+        ? `book:${props.books[0].id}`
+        : (props.myBooks.length > 0 ? `my:${props.myBooks[0].id}` : '')
+);
+
+function onBookSelectChange() {
+    form.chapter_ids = [];
+    if (!selectedBookKey.value) {
+        form.source_book_id = null;
+        form.source_my_book_id = null;
+        return;
+    }
+    const [kind, id] = selectedBookKey.value.split(':');
+    if (kind === 'my') {
+        form.source_my_book_id = Number(id);
+        form.source_book_id = null;
+    } else {
+        form.source_book_id = Number(id);
+        form.source_my_book_id = null;
+    }
+}
 
 const selectedBook = computed(() => props.books.find(book => book.id === form.source_book_id));
 
@@ -147,7 +175,7 @@ function submit() {
                         </button>
                         <button
                             type="button"
-                            :disabled="!books.length"
+                            :disabled="!books.length && !myBooks.length"
                             class="flex flex-col sm:flex-row items-center justify-center gap-1.5 rounded-lg py-2.5 px-3 text-xs font-bold transition-all disabled:opacity-40"
                             :class="form.source_type === 'book'
                                 ? 'bg-[var(--surface)] text-[var(--primary)] shadow-sm'
@@ -164,14 +192,21 @@ function submit() {
                         <!-- Book dropdown -->
                         <div v-if="form.source_type === 'book'">
                             <select
-                                v-model="form.source_book_id"
-                                @change="form.chapter_ids = []"
+                                v-model="selectedBookKey"
+                                @change="onBookSelectChange"
                                 class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-3 text-sm font-medium focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
                             >
-                                <option :value="null" disabled>{{ t('exams.select_book') }}</option>
-                                <option v-for="b in books" :key="b.id" :value="b.id">
-                                    {{ b.title }}
-                                </option>
+                                <option value="" disabled>{{ t('exams.select_book') }}</option>
+                                <optgroup v-if="books.length" :label="locale === 'en' ? 'Bookshelf Books' : 'বুকশেল্ফের বই'">
+                                    <option v-for="b in books" :key="'book-' + b.id" :value="'book:' + b.id">
+                                        {{ b.title }}
+                                    </option>
+                                </optgroup>
+                                <optgroup v-if="myBooks.length" :label="locale === 'en' ? 'My Added Books' : 'আমার যোগ করা বই'">
+                                    <option v-for="mb in myBooks" :key="'my-' + mb.id" :value="'my:' + mb.id">
+                                        {{ mb.title }}
+                                    </option>
+                                </optgroup>
                             </select>
                             <p v-if="form.errors.source_book_id" class="mt-1 text-xs text-rose-500">{{ form.errors.source_book_id }}</p>
                             <div v-if="selectedBook?.chapters?.length" class="mt-3">

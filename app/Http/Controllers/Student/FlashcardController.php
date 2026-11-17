@@ -7,6 +7,7 @@ use App\Http\Requests\Student\GenerateFlashcardsRequest;
 use App\Jobs\GenerateFlashcards;
 use App\Models\Book;
 use App\Models\FlashcardSet;
+use App\Models\MyBook;
 use App\Services\Ai\FlashcardSourceService;
 use App\Services\BookAccessService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -35,8 +36,7 @@ class FlashcardController extends Controller
 
         $books = Book::query()
             ->where(function ($query) use ($student) {
-                $query->where('is_free', true)
-                    ->orWhereIn('id', $student->books()->select('books.id'))
+                $query->whereIn('id', $student->books()->select('books.id'))
                     ->orWhereIn('id', $student->ownedChapters()->select('book_id'));
             })
             ->get(['id', 'title', 'processing_status'])
@@ -48,6 +48,10 @@ class FlashcardController extends Controller
 
                 return $book;
             });
+
+        $myBooks = $student->myBooks()
+            ->where('processing_status', 'completed')
+            ->get(['id', 'title', 'total_pages']);
 
         $subjects = $canUseQuestionBank
             ? \App\Models\QuestionSubject::active()
@@ -77,6 +81,7 @@ class FlashcardController extends Controller
 
         return Inertia::render('Student/Flashcards/Create', [
             'books' => $books,
+            'myBooks' => $myBooks,
             'subjects' => $subjects,
             'exams' => $exams,
             'canUseQuestionBank' => $canUseQuestionBank,
@@ -98,13 +103,18 @@ class FlashcardController extends Controller
         $sourceLabel = null;
         $sourceReferences = [];
 
-        if ($sourceType === 'book' || $request->source_book_id) {
-            $book = Book::findOrFail($request->source_book_id);
-            $source = $sources->fromBook(
-                $book,
-                $student,
-                $request->input('chapter_ids', []),
-            );
+        if ($sourceType === 'book' || $request->source_book_id || $request->source_my_book_id) {
+            if ($request->source_my_book_id) {
+                $myBook = MyBook::findOrFail($request->source_my_book_id);
+                $source = $sources->fromMyBook($myBook, $student);
+            } else {
+                $book = Book::findOrFail($request->source_book_id);
+                $source = $sources->fromBook(
+                    $book,
+                    $student,
+                    $request->input('chapter_ids', []),
+                );
+            }
             $sourceText = $source['content'];
             $sourceLabel = $source['source_label'];
             $sourceReferences = $source['references'];

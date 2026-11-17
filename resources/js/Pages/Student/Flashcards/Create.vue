@@ -16,6 +16,7 @@ import {
 
 const props = defineProps({
     books: { type: Array, default: () => [] },
+    myBooks: { type: Array, default: () => [] },
     subjects: { type: Array, default: () => [] },
     exams: { type: Array, default: () => [] },
     canUseQuestionBank: { type: Boolean, default: null },
@@ -42,6 +43,7 @@ const form = useForm({
     source_type: sourceType.value,
     source_topic: '',
     source_book_id: null,
+    source_my_book_id: null,
     chapter_ids: [],
     subject_id: props.prefill?.subject_id || null,
     origin_tag: props.prefill?.origin_tag || '',
@@ -49,6 +51,24 @@ const form = useForm({
     source_text: '',
     count: 15,
 });
+
+const selectedBookKey = ref('');
+function onBookSelectChange() {
+    form.chapter_ids = [];
+    if (!selectedBookKey.value) {
+        form.source_book_id = null;
+        form.source_my_book_id = null;
+        return;
+    }
+    const [kind, id] = selectedBookKey.value.split(':');
+    if (kind === 'my') {
+        form.source_my_book_id = Number(id);
+        form.source_book_id = null;
+    } else {
+        form.source_book_id = Number(id);
+        form.source_my_book_id = null;
+    }
+}
 
 onMounted(() => {
     if (props.prefill?.source_type) {
@@ -66,12 +86,15 @@ function switchSourceType(type) {
     sourceType.value = type;
     form.source_type = type;
     if (type !== 'book') {
+        selectedBookKey.value = '';
         form.source_book_id = null;
+        form.source_my_book_id = null;
         form.chapter_ids = [];
     }
 }
 
 const selectedBook = computed(() => props.books?.find((b) => b.id === form.source_book_id));
+const selectedMyBook = computed(() => props.myBooks?.find((b) => b.id === form.source_my_book_id));
 
 const countPresets = [5, 10, 15, 20, 25, 30];
 
@@ -80,8 +103,8 @@ function submit() {
     if (!form.title.trim()) {
         if (sourceType.value === 'topic' && form.source_topic.trim()) {
             form.title = form.source_topic.trim() + ' ফ্ল্যাশকার্ড';
-        } else if (sourceType.value === 'book' && selectedBook.value) {
-            form.title = selectedBook.value.title + ' ফ্ল্যাশকার্ড';
+        } else if (sourceType.value === 'book' && (selectedBook.value || selectedMyBook.value)) {
+            form.title = (selectedBook.value || selectedMyBook.value).title + ' ফ্ল্যাশকার্ড';
         } else if (sourceType.value === 'question_bank') {
             const subj = props.subjects?.find((s) => s.id === form.subject_id);
             form.title = (subj ? (subj.name_bn || subj.name_en) : 'প্রশ্নব্যাংক') + ' ফ্ল্যাশকার্ড';
@@ -214,13 +237,21 @@ function submit() {
                         {{ t('exams.source_book') }}
                     </label>
                     <select
-                        v-model="form.source_book_id"
-                        @change="form.chapter_ids = []"
+                        v-model="selectedBookKey"
+                        @change="onBookSelectChange"
                         class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-3 text-sm font-medium focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
                     >
-                        <option :value="null">— {{ locale === 'en' ? 'Select a book from your library' : 'আপনার লাইব্রেরি থেকে একটি বই নির্বাচন করুন' }} —</option>
-                        <option v-for="b in books" :key="b.id" :value="b.id">{{ b.title }}</option>
+                        <option value="">— {{ locale === 'en' ? 'Select from Bookshelf or My Books' : 'বুকশেল্ফ বা নিজের যোগ করা বই নির্বাচন করুন' }} —</option>
+                        <optgroup v-if="books.length" :label="locale === 'en' ? 'Bookshelf Books' : 'বুকশেল্ফের বই'">
+                            <option v-for="b in books" :key="'book-' + b.id" :value="'book:' + b.id">{{ b.title }}</option>
+                        </optgroup>
+                        <optgroup v-if="myBooks.length" :label="locale === 'en' ? 'My Added Books' : 'আমার যোগ করা বই'">
+                            <option v-for="mb in myBooks" :key="'my-' + mb.id" :value="'my:' + mb.id">{{ mb.title }}</option>
+                        </optgroup>
                     </select>
+                    <p v-if="!books.length && !myBooks.length" class="mt-2 text-xs text-amber-500">
+                        {{ locale === 'en' ? 'No books in your Bookshelf or My Books yet. Add a book from Library or upload your own.' : 'আপনার বুকশেল্ফ বা নিজের বইয়ের তালিকায় কোনো বই নেই। লাইব্রেরি থেকে বই যোগ করুন অথবা নিজের বই আপলোড করুন।' }}
+                    </p>
 
                     <div v-if="selectedBook?.chapters?.length" class="mt-3">
                         <label class="mb-1 block text-sm font-bold text-[var(--text)]">

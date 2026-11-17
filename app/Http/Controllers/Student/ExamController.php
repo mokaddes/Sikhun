@@ -80,7 +80,14 @@ class ExamController extends Controller
                 return $book;
             });
 
-        return Inertia::render('Student/Exams/Create', ['books' => $books]);
+        $myBooks = $student->myBooks()
+            ->where('processing_status', 'completed')
+            ->get(['id', 'title', 'total_pages']);
+
+        return Inertia::render('Student/Exams/Create', [
+            'books' => $books,
+            'myBooks' => $myBooks,
+        ]);
     }
 
     public function create(CreateExamRequest $request, BookAccessService $access): RedirectResponse
@@ -89,22 +96,49 @@ class ExamController extends Controller
         abort_unless($student->hasActiveAiExamAccess(), 403, 'Your AI exam quota is exhausted.');
 
         $chapterIds = [];
-        if ($request->source_type === 'book') {
-            $book = \App\Models\Book::findOrFail($request->source_book_id);
-            $accessibleIds = $access->accessibleChapterIds($student, $book);
-            abort_unless($accessibleIds !== null, 403);
+        $sourceType = $request->source_type;
+        $sourceBookId = $request->source_book_id;
+        $sourceText = $request->source_text;
+        $title = $request->title ?: null;
 
-            $chapterIds = array_values(array_unique(array_map('intval', $request->input('chapter_ids', []))));
-            abort_if(array_diff($chapterIds, $accessibleIds), 403);
+        if ($sourceType === 'book') {
+            if ($request->filled('source_my_book_id')) {
+                $myBook = \App\Models\MyBook::findOrFail($request->source_my_book_id);
+                abort_unless($myBook->student_id === $student->id, 403);
+                abort_unless($myBook->processing_status === 'completed', 422, 'The selected book is not fully processed yet.');
+
+                $pages = $myBook->pages()
+                    ->whereNotNull('extracted_text')
+                    ->where('extracted_text', '!=', '')
+                    ->inRandomOrder()
+                    ->limit(15)
+                    ->get(['page_number', 'extracted_text'])
+                    ->sortBy('page_number');
+
+                abort_if($pages->isEmpty(), 422, 'নির্বাচিত বইটিতে কোনো পাঠ্য কনটেন্ট পাওয়া যায়নি।');
+
+                $sourceType = 'paragraph';
+                $sourceBookId = null;
+                $sourceText = mb_substr($pages->map(fn ($p) => "[Page {$p->page_number}]\n" . mb_substr($p->extracted_text, 0, 1200))->implode("\n\n"), 0, 8000);
+                $title = $title ?: $myBook->title;
+            } else {
+                abort_unless($sourceBookId, 422, 'অনুগ্রহ করে একটি বই নির্বাচন করুন।');
+                $book = \App\Models\Book::findOrFail($sourceBookId);
+                $accessibleIds = $access->accessibleChapterIds($student, $book);
+                abort_unless($accessibleIds !== null, 403);
+
+                $chapterIds = array_values(array_unique(array_map('intval', $request->input('chapter_ids', []))));
+                abort_if(array_diff($chapterIds, $accessibleIds), 403);
+            }
         }
 
         $session = $student->examSessions()->create([
-            'title' => $request->title ?: null,
-            'source_type' => $request->source_type,
-            'source_book_id' => $request->source_book_id,
-            'source_text' => $request->source_text,
+            'title' => $title,
+            'source_type' => $sourceType,
+            'source_book_id' => $sourceBookId,
+            'source_text' => $sourceText,
             'config' => [
-                'title' => $request->title ?: null,
+                'title' => $title,
                 'type' => $request->type,
                 'count' => $request->count,
                 'duration' => $request->duration,

@@ -28,8 +28,8 @@ class PublicContentController extends BaseApiController
                 ->latest()
                 ->take(8)
                 ->get(),
-            'featured_courses' => Course::published()
-                ->with(['mentor:id,name,avatar,designation', 'category:id,name'])
+            'featured_courses' => Course::active()
+                ->with(['mentor:id,name', 'category:id,name'])
                 ->latest()
                 ->take(6)
                 ->get(),

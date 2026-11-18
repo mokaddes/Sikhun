@@ -34,8 +34,8 @@ class CourseController extends BaseApiController
     {
         abort_unless($course->is_active, 404);
         $student = auth('sanctum')->user();
-        $enrollment = $student->courseEnrollments()->where('course_id', $course->id)->first();
-        $hasAccess = $grants->hasActiveAccess($student);
+        $enrollment = $student?->courseEnrollments()->where('course_id', $course->id)->first();
+        $hasAccess = $student ? $grants->hasActiveAccess($student) : false;
 
         $course->load(['mentor', 'category', 'sections.lessons'])->decorateLessonsForStudent();
 

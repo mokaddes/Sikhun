@@ -39,7 +39,7 @@ class PublicContentController extends BaseApiController
                 ->with('category:id,name_bn,name_en,slug')
                 ->orderByDesc('published_at')
                 ->take(4)
-                ->get(['id', 'title', 'slug', 'excerpt', 'featured_image', 'blog_category_id', 'published_at', 'reading_time_minutes']),
+                ->get(['id', 'title', 'slug', 'excerpt', 'featured_image', 'blog_category_id', 'published_at', 'view_count']),
             'latest_admissions' => AdmissionNotice::published()
                 ->orderByDesc('is_featured')
                 ->orderBy('application_deadline')
@@ -141,7 +141,7 @@ class PublicContentController extends BaseApiController
             ->when($post->blog_category_id, fn ($q) => $q->where('blog_category_id', $post->blog_category_id))
             ->orderByDesc('published_at')
             ->take(4)
-            ->get(['id', 'title', 'slug', 'excerpt', 'featured_image', 'published_at', 'reading_time_minutes']);
+            ->get(['id', 'title', 'slug', 'excerpt', 'featured_image', 'published_at', 'view_count']);
 
         return $this->success([
             'post' => $post,

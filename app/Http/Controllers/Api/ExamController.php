@@ -5,12 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Requests\Student\CreateExamRequest;
 use App\Http\Requests\Student\SubmitAnswerRequest;
 use App\Jobs\GenerateExamQuestions;
+use App\Models\AiExplanation;
 use App\Models\Book;
 use App\Models\ExamSession;
 use App\Models\LeaderboardEntry;
+use App\Models\MyBook;
 use App\Services\AccessGrantService;
+use App\Services\Ai\AiProviderFactory;
 use App\Services\BookAccessService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response as HttpResponse;
 
 class ExamController extends BaseApiController
 {
@@ -19,26 +24,82 @@ class ExamController extends BaseApiController
         return $this->success(auth('sanctum')->user()->examSessions()->latest()->paginate(15));
     }
 
+    public function createData(BookAccessService $access): JsonResponse
+    {
+        $student = auth('sanctum')->user();
+        $books = Book::query()
+            ->where(function ($query) use ($student) {
+                $query->whereIn('id', $student->books()->select('books.id'))
+                    ->orWhereIn('id', $student->ownedChapters()->select('book_id'));
+            })
+            ->get(['id', 'title'])
+            ->map(function ($book) use ($student, $access) {
+                $accessibleIds = $access->accessibleChapterIds($student, $book) ?? [];
+                $book->setAttribute('chapters', $book->chapters()
+                    ->whereIn('id', $accessibleIds)
+                    ->get(['id', 'title', 'chapter_number']));
+
+                return $book;
+            });
+
+        $myBooks = $student->myBooks()
+            ->where('processing_status', 'completed')
+            ->get(['id', 'title', 'total_pages']);
+
+        return $this->success([
+            'books' => $books,
+            'my_books' => $myBooks,
+        ]);
+    }
+
     public function store(CreateExamRequest $request, BookAccessService $access): JsonResponse
     {
         $student = auth('sanctum')->user();
         abort_unless($student->hasActiveAiExamAccess(), 403, 'AI exam quota exhausted.');
 
         $chapterIds = [];
-        if ($request->source_type === 'book') {
-            $book = Book::findOrFail($request->source_book_id);
-            $accessibleIds = $access->accessibleChapterIds($student, $book);
-            abort_unless($accessibleIds !== null, 403);
+        $sourceType = $request->source_type;
+        $sourceBookId = $request->source_book_id;
+        $sourceText = $request->source_text;
+        $title = $request->title ?: null;
 
-            $chapterIds = array_values(array_unique(array_map('intval', $request->input('chapter_ids', []))));
-            abort_if(array_diff($chapterIds, $accessibleIds), 403);
+        if ($sourceType === 'book') {
+            if ($request->filled('source_my_book_id')) {
+                $myBook = MyBook::findOrFail($request->source_my_book_id);
+                abort_unless($myBook->student_id === $student->id, 403);
+                abort_unless($myBook->processing_status === 'completed', 422, 'The selected book is not fully processed yet.');
+
+                $pages = $myBook->pages()
+                    ->whereNotNull('extracted_text')
+                    ->where('extracted_text', '!=', '')
+                    ->inRandomOrder()
+                    ->limit(15)
+                    ->get(['page_number', 'extracted_text'])
+                    ->sortBy('page_number');
+
+                abort_if($pages->isEmpty(), 422, 'নির্বাচিত বইটিতে কোনো পাঠ্য কনটেন্ট পাওয়া যায়নি।');
+
+                $sourceType = 'paragraph';
+                $sourceBookId = null;
+                $sourceText = mb_substr($pages->map(fn ($p) => "[Page {$p->page_number}]\n".mb_substr($p->extracted_text, 0, 1200))->implode("\n\n"), 0, 8000);
+                $title = $title ?: $myBook->title;
+            } else {
+                abort_unless($sourceBookId, 422, 'Please select a book.');
+                $book = Book::findOrFail($sourceBookId);
+                $accessibleIds = $access->accessibleChapterIds($student, $book);
+                abort_unless($accessibleIds !== null, 403);
+
+                $chapterIds = array_values(array_unique(array_map('intval', $request->input('chapter_ids', []))));
+                abort_if(array_diff($chapterIds, $accessibleIds), 403);
+            }
         }
 
         $session = $student->examSessions()->create([
-            'source_type' => $request->source_type,
-            'source_book_id' => $request->source_book_id,
-            'source_text' => $request->source_text,
-            'config' => ['type' => $request->type, 'count' => $request->count, 'duration' => $request->duration, 'mode' => $request->mode, 'chapter_ids' => $chapterIds],
+            'title' => $title,
+            'source_type' => $sourceType,
+            'source_book_id' => $sourceBookId,
+            'source_text' => $sourceText,
+            'config' => ['title' => $title, 'type' => $request->type, 'count' => $request->count, 'duration' => $request->duration, 'mode' => $request->mode, 'chapter_ids' => $chapterIds],
             'mode' => $request->mode,
             'status' => 'generating',
             'total' => $request->count,
@@ -47,6 +108,69 @@ class ExamController extends BaseApiController
         GenerateExamQuestions::dispatch($session->id);
 
         return $this->success($session, 'Exam generation started', 201);
+    }
+
+    public function status(ExamSession $exam): JsonResponse
+    {
+        $this->authorizeExam($exam);
+
+        return $this->success([
+            'id' => $exam->id,
+            'status' => $exam->status,
+            'total' => $exam->total,
+        ]);
+    }
+
+    public function retry(ExamSession $exam): JsonResponse
+    {
+        $this->authorizeExam($exam);
+        abort_unless($exam->status === 'failed', 409, 'Only failed exam generation can be retried.');
+        abort_unless(auth('sanctum')->user()->hasActiveAiExamAccess(), 403, 'Your AI exam quota is exhausted.');
+
+        $exam->update(['status' => 'generating', 'questions' => null]);
+        GenerateExamQuestions::dispatch($exam->id);
+
+        return $this->success($exam, 'Exam generation retried');
+    }
+
+    public function explanation(ExamSession $exam, int $question): JsonResponse
+    {
+        $this->authorizeExam($exam);
+        $student = auth('sanctum')->user();
+        abort_unless($student->canUseAiExplain(), 403, 'AI explanation limit reached.');
+
+        $q = collect($exam->questions ?? [])->firstWhere('id', $question);
+        abort_unless($q, 404);
+
+        if (! empty($q['explanation'])) {
+            return $this->success(['explanation' => $q['explanation']]);
+        }
+
+        $hash = hash('sha256', ($q['question'] ?? '').'|'.($q['correct_answer'] ?? ''));
+        $cached = AiExplanation::where('question_hash', $hash)->first();
+        if ($cached) {
+            return $this->success(['explanation' => $cached->explanation]);
+        }
+
+        $prompt = "প্রশ্ন: ".($q['question'] ?? '')."\nসঠিক উত্তর: ".($q['correct_answer'] ?? '')."\nসংক্ষেপে বাংলায় ব্যাখ্যা দাও।";
+        $explanation = AiProviderFactory::default('question_analysis')->complete([
+            ['role' => 'user', 'content' => $prompt],
+        ]);
+
+        AiExplanation::updateOrCreate(
+            ['question_hash' => $hash],
+            ['explanation' => $explanation]
+        );
+
+        return $this->success(['explanation' => $explanation]);
+    }
+
+    public function pdf(ExamSession $exam): HttpResponse
+    {
+        $this->authorizeExam($exam);
+        $pdf = Pdf::loadView('pdf.exam', ['exam' => $exam, 'student' => auth('sanctum')->user()]);
+
+        return $pdf->download("exam-{$exam->id}.pdf");
     }
 
     public function show(ExamSession $exam): JsonResponse

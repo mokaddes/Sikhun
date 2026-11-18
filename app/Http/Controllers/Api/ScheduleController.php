@@ -6,8 +6,10 @@ use App\Http\Requests\Student\GenerateScheduleRequest;
 use App\Jobs\GenerateStudySchedule;
 use App\Models\StudySchedule;
 use App\Services\AccessGrantService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 
 class ScheduleController extends BaseApiController
 {
@@ -47,6 +49,32 @@ class ScheduleController extends BaseApiController
         abort_unless($schedule->student_id === auth('sanctum')->id(), 403);
 
         return $this->success($schedule);
+    }
+
+    public function status(StudySchedule $schedule): JsonResponse
+    {
+        abort_unless($schedule->student_id === auth('sanctum')->id(), 403);
+
+        return $this->success(['id' => $schedule->id, 'status' => $schedule->status]);
+    }
+
+    public function retry(StudySchedule $schedule): JsonResponse
+    {
+        abort_unless($schedule->student_id === auth('sanctum')->id(), 403);
+        abort_unless($schedule->status === 'failed', 409, 'Only failed schedules can be retried.');
+
+        $schedule->update(['status' => 'generating']);
+        GenerateStudySchedule::dispatch($schedule->id);
+
+        return $this->success($schedule, 'Schedule generation retried');
+    }
+
+    public function pdf(StudySchedule $schedule): HttpResponse
+    {
+        abort_unless($schedule->student_id === auth('sanctum')->id(), 403);
+        $pdf = Pdf::loadView('pdf.schedule', ['schedule' => $schedule, 'student' => auth('sanctum')->user()]);
+
+        return $pdf->download("study-schedule-{$schedule->id}.pdf");
     }
 
     public function progress(Request $request, StudySchedule $schedule): JsonResponse

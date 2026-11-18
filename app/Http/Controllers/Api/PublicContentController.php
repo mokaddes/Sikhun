@@ -33,8 +33,8 @@ class PublicContentController extends BaseApiController
                 ->latest()
                 ->take(6)
                 ->get(),
-            'plans' => Plan::where('is_active', true)->orderBy('sort_order')->orderBy('price_monthly')->get(),
-            'testimonials' => Testimonial::where('is_active', true)->orderBy('sort_order')->take(6)->get(),
+            'plans' => Plan::where('is_active', true)->orderBy('price_monthly')->get(),
+            'testimonials' => Testimonial::published()->take(6)->get(),
             'latest_blogs' => BlogPost::published()
                 ->with('category:id,name_bn,name_en,slug')
                 ->orderByDesc('published_at')

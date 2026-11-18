@@ -15,7 +15,7 @@ class SubscriptionController extends BaseApiController
     public function plans(): JsonResponse
     {
         return $this->success([
-            'plans' => Plan::where('is_active', true)->orderBy('sort_order')->orderBy('price_monthly')->get(),
+            'plans' => Plan::where('is_active', true)->orderBy('price_monthly')->get(),
             'custom_plan_config' => [
                 'rate_minute' => (float) SiteSetting::get('custom_plan_rate_minute', 0.22),
                 'rate_image' => (float) SiteSetting::get('custom_plan_rate_image', 1.10),

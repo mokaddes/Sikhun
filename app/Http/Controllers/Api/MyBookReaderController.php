@@ -26,7 +26,7 @@ class MyBookReaderController extends BaseApiController
 
     private function signedPageUrl(int $bookId, int $page, int $studentId): string
     {
-        return URL::temporarySignedRoute('api.my-books.reader.page', $this->signingExpiry(), [
+        return URL::temporarySignedRoute('api.my-books.reader.serve-page', $this->signingExpiry(), [
             'myBook' => $bookId,
             'page' => $page,
             'student' => $studentId,

@@ -210,7 +210,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('my-books/{myBook}/reader/progress', [MyBookReaderController::class, 'saveProgress']);
     Route::get('my-books/{myBook}/reader/page/{page}', [MyBookReaderController::class, 'servePage'])
         ->middleware('signed')
-        ->name('api.my-books.reader.page');
+        ->name('api.my-books.reader.serve-page');
     Route::post('my-books/{myBook}/reader/chat', [MyBookReaderController::class, 'chat'])
         ->middleware('throttle:api-ai');
 

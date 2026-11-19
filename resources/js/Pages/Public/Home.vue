@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
-import EducativeHeroScene from '@/Components/Three/EducativeHeroScene.vue';
+import HeroConversationPreview from '@/Components/Home/HeroConversationPreview.vue';
 import { useI18n } from '@/i18n';
 
 const props = defineProps({
@@ -84,9 +84,8 @@ onUnmounted(() => revealObserver?.disconnect());
                         <span>{{ en ? 'AI study tools' : 'AI স্টাডি টুল' }}</span>
                     </div>
                 </div>
-                <div class="home-scene home-reveal" aria-label="Animated study scene">
-                    <EducativeHeroScene :locale="locale" />
-                    <div class="home-note"><span class="home-note-mark">✳</span>{{ en ? 'A little progress, every day.' : 'প্রতিদিন একটু করে এগিয়ে চলুন।' }}</div>
+                <div class="home-scene home-reveal" aria-label="Animated study conversation with 5 books">
+                    <HeroConversationPreview :locale="locale" :books="popularBooks || []" />
                 </div>
             </section>
 
@@ -149,8 +148,8 @@ onUnmounted(() => revealObserver?.disconnect());
                     <div><p class="home-kicker">{{ en ? 'From the library' : 'লাইব্রেরি থেকে' }}</p><h2 class="home-heading mt-2">{{ en ? 'Keep a good book close.' : 'পছন্দের বই পাশে রাখুন।' }}</h2></div>
                     <Link href="/library" class="home-text-link">{{ en ? 'Browse books' : 'বই দেখুন' }} →</Link>
                 </div>
-                <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <Link v-for="book in popularBooks.slice(0, 4)" :key="book.id" :href="`/library/${book.slug}`" class="home-book home-reveal">
+                <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    <Link v-for="book in popularBooks.slice(0, 5)" :key="book.id" :href="`/library/${book.slug}`" class="home-book home-reveal">
                         <img v-if="book.cover_image_url" :src="book.cover_image_url" :alt="book.title" loading="lazy" />
                         <span v-else class="home-book-placeholder">{{ en ? 'READ' : 'পড়ুন' }}</span>
                         <span class="home-book-title">{{ book.title }}</span>
@@ -223,7 +222,6 @@ onUnmounted(() => revealObserver?.disconnect());
 .home-secondary:hover { background: var(--surface2); }
 .home-dot { color: var(--home-accent); }
 .home-scene { position: relative; min-width: 0; }
-.home-scene > div:first-child { height: clamp(290px, 39vw, 440px); }
 .home-note { position: absolute; bottom: 7%; left: 8%; display: flex; align-items: center; gap: .6rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); padding: .65rem .9rem; color: var(--text); font-size: .8rem; box-shadow: var(--shadow); }
 .home-note-mark { color: var(--home-accent); }
 .home-section-head { max-width: 40rem; }

@@ -10,7 +10,7 @@ class Plan extends Model
         'name', 'slug', 'target_segment', 'duration_months', 'badge_text', 'description', 'price_monthly', 'price_total', 'ai_chat_minutes',
         'ai_vision_limit', 'upload_book_limit', 'monthly_reupload_limit',
         'ai_exam_count', 'ai_explanation_count', 'gift_book_ids', 'trial_ai_minutes', 'features',
-        'ai_provider_id', 'ai_model', 'is_active', 'is_free',
+        'ai_provider_id', 'ai_model', 'monthly_ai_cost_limit_usd', 'is_active', 'is_free',
     ];
 
     protected function casts(): array
@@ -23,6 +23,7 @@ class Plan extends Model
             'upload_book_limit' => 'integer',
             'monthly_reupload_limit' => 'integer',
             'ai_explanation_count' => 'integer',
+            'monthly_ai_cost_limit_usd' => 'decimal:4',
             'gift_book_ids' => 'array',
             'features' => 'array',
             'is_active' => 'boolean',

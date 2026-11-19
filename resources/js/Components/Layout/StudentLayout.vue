@@ -86,9 +86,7 @@ const nav = computed(() => [
         label: t('nav.practice'),
         icon: ClipboardDocumentCheckIcon,
         items: [
-            ...(!page.props.auth?.student || ['admission', 'job'].includes(page.props.auth?.student?.type)
-                ? [{ label: t('nav.question_bank'), href: '/question-bank', icon: AcademicCapIcon }]
-                : []),
+            { label: t('nav.question_bank'), href: '/question-bank', icon: AcademicCapIcon },
             { label: locale.value === 'en' ? 'Mistake Review' : 'আমার ভুলসমূহ (Mistakes)', href: '/mistakes', icon: SparklesIcon },
             { label: t('nav.exams'), href: '/exams', icon: ClipboardDocumentCheckIcon },
             { label: t('nav.flashcards'), href: '/flashcards', icon: RectangleStackIcon },

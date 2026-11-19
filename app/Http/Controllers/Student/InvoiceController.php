@@ -51,7 +51,7 @@ class InvoiceController extends Controller
         Request $request,
         Invoice $invoice,
         \App\Services\PurchaseService $purchases,
-        \App\Services\Payment\ZinipayService $zinipay,
+        \App\Services\Payment\PaymentGatewayResolver $resolver,
         \App\Services\WalletService $wallet,
         \App\Services\SubscriptionService $subscriptions
     ): \Symfony\Component\HttpFoundation\Response {
@@ -60,7 +60,7 @@ class InvoiceController extends Controller
         abort_unless(in_array($invoice->status, ['sent', 'overdue', 'draft'], true), 400, 'This invoice is already paid or cannot be paid.');
 
         $validated = $request->validate([
-            'payment_method' => ['required', 'in:wallet,zinipay'],
+            'payment_method' => ['required', 'in:wallet,mhpay,bkash,nagad'],
         ]);
 
         $student = $request->user('web');
@@ -100,18 +100,23 @@ class InvoiceController extends Controller
             return back()->with('success', 'Invoice paid successfully via wallet!');
         }
 
+        $gateway = $resolver->resolve($method);
+        if (! $gateway) {
+            return back()->with('error', 'Selected payment gateway is currently disabled.');
+        }
+
         $order = \App\Models\Order::create([
             'student_id' => $student->id,
             'order_number' => 'SKH-INV-'.now()->format('ymd').'-'.strtoupper(\Illuminate\Support\Str::random(6)),
             'orderable_type' => 'invoice',
             'orderable_id' => $invoice->id,
             'amount' => $invoice->total,
-            'payment_method' => 'zinipay',
+            'payment_method' => $method,
             'status' => 'pending',
             'meta' => ['invoice_id' => $invoice->id, 'invoice_number' => $invoice->invoice_number],
         ]);
 
-        $redirectUrl = $zinipay->initiate($order);
+        $redirectUrl = $gateway->initiate($order);
 
         return \Inertia\Inertia::location($redirectUrl);
     }

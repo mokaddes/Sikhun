@@ -64,7 +64,7 @@ class InvoiceTest extends TestCase
             'orderable_type' => 'book',
             'orderable_id' => $book->id,
             'amount' => $amount,
-            'payment_method' => 'zinipay',
+            'payment_method' => 'mhpay',
             'status' => 'completed',
         ]);
     }
@@ -120,7 +120,7 @@ class InvoiceTest extends TestCase
             'orderable_type' => 'wallet_recharge',
             'orderable_id' => null,
             'amount' => 500,
-            'payment_method' => 'zinipay',
+            'payment_method' => 'mhpay',
             'status' => 'completed',
         ]);
 
@@ -287,18 +287,20 @@ class InvoiceTest extends TestCase
         $this->assertSame('overdue', $invoice->fresh()->status);
     }
 
-    public function test_stale_pending_zinipay_orders_are_failed_after_24_hours_only(): void
+    public function test_stale_pending_gateway_orders_are_failed_after_24_hours_only(): void
     {
         $student = $this->student();
         $oldPending = $this->completedBookOrder($student, $this->book());
         $oldPending->forceFill([
             'status' => 'pending',
+            'payment_method' => 'mhpay',
             'created_at' => now()->subHours(25),
         ])->save();
 
         $recentPending = $this->completedBookOrder($student, $this->book());
         $recentPending->forceFill([
             'status' => 'pending',
+            'payment_method' => 'mhpay',
             'created_at' => now()->subHours(23),
         ])->save();
 
@@ -309,7 +311,7 @@ class InvoiceTest extends TestCase
             'created_at' => now()->subDays(2),
         ])->save();
 
-        $this->artisan('orders:fail-stale-zinipay')->assertExitCode(0);
+        $this->artisan('orders:fail-stale-gateway')->assertExitCode(0);
 
         $this->assertSame('failed', $oldPending->fresh()->status);
         $this->assertSame('pending', $recentPending->fresh()->status);

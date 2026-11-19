@@ -125,4 +125,30 @@ class ProfileController extends Controller
 
         return back()->with('success', 'Notification preferences saved.');
     }
+
+    public function exportData(Request $request, \App\Services\AccountDataService $accountData): \Symfony\Component\HttpFoundation\Response
+    {
+        $student = auth('web')->user();
+        $payload = $accountData->exportForStudent($student);
+
+        return response()->json($payload, 200, [
+            'Content-Disposition' => 'attachment; filename="sikhun-account-data-'.$student->id.'.json"',
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    }
+
+    public function deleteAccount(Request $request, \App\Services\AccountDataService $accountData): RedirectResponse
+    {
+        $request->validate([
+            'confirmation' => ['required', 'in:DELETE'],
+        ]);
+
+        $student = auth('web')->user();
+        auth('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        $accountData->deleteStudentAccount($student);
+
+        return redirect()->route('home')->with('success', 'Your account has been deleted.');
+    }
 }

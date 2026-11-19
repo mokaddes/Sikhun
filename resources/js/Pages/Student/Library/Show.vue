@@ -337,7 +337,7 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
                                         <button
                                             v-if="!book.is_free"
                                             type="button"
-                                            @click="handlePurchase('zinipay')"
+                                            @click="handlePurchase('mhpay')"
                                             class="inline-flex items-center gap-2 rounded-xl border border-[var(--primary)]/40 bg-[var(--primary)]/10 px-6 py-3.5 text-sm font-bold text-[var(--primary)] transition hover:bg-[var(--primary)]/20"
                                         >
                                             <ShoppingBagIcon class="h-5 w-5" />
@@ -424,11 +424,13 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
                                         <span>{{ locale === 'en' ? 'MFS (bKash/Nagad/Rocket)' : 'বিকাশ / নগদ / রকেট' }}</span>
                                     </button>
                                     <button
+                                        v-for="gw in ($page.props.site?.payment_methods || []).filter(m => m.key !== 'mhpay')"
+                                        :key="gw.key"
                                         type="button"
-                                        @click="handlePurchase('zinipay')"
+                                        @click="handlePurchase(gw.key)"
                                         class="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-5 py-3.5 text-xs font-semibold text-[var(--text-muted)] hover:text-white transition"
                                     >
-                                        <span>ZiniPay</span>
+                                        <span>{{ gw.label }}</span>
                                     </button>
                                 </div>
 
@@ -447,11 +449,13 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
                                             <span>{{ locale === 'en' ? 'Pay with MFS (bKash / Nagad / Rocket)' : 'বিকাশ / নগদ / রকেটে কিনুন' }} (৳{{ book.price }})</span>
                                         </button>
                                         <button
+                                            v-for="gw in ($page.props.site?.payment_methods || []).filter(m => m.key !== 'mhpay')"
+                                            :key="gw.key"
                                             type="button"
-                                            @click="handlePurchase('zinipay')"
+                                            @click="handlePurchase(gw.key)"
                                             class="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-medium text-[var(--text-muted)] hover:text-white transition"
                                         >
-                                            <span>ZiniPay (৳{{ book.price }})</span>
+                                            <span>{{ gw.label }} (৳{{ book.price }})</span>
                                         </button>
                                         <Link
                                             href="/wallet"
@@ -589,7 +593,7 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
                                         <button
                                             v-if="isLoggedIn"
                                             type="button"
-                                            @click="handlePurchaseChapter(chapter, 'zinipay')"
+                                            @click="handlePurchaseChapter(chapter, 'mhpay')"
                                             class="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold hover:border-[var(--primary)] cursor-pointer"
                                         >
                                             {{ locale === 'en' ? 'Pay Online' : 'অনলাইন পে' }}
@@ -651,7 +655,7 @@ const hasFullReadAccess = computed(() => ['free', 'granted', 'owned', 'subscript
                                 </button>
                                 <button
                                     type="button"
-                                    @click="handlePurchaseSelectedChapters('zinipay')"
+                                    @click="handlePurchaseSelectedChapters('mhpay')"
                                     :disabled="purchasingMulti"
                                     class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold transition shadow-md shadow-orange-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                                 >

@@ -52,7 +52,7 @@ class SubscriptionController extends BaseApiController
     {
         $validated = $request->validate([
             'months' => ['required', 'integer', 'in:1,2,3,6,12'],
-            'payment_method' => ['required', 'in:wallet,zinipay,mhpay'],
+            'payment_method' => ['required', 'in:wallet,mhpay,bkash,nagad'],
             'custom_config' => ['required', 'array'],
             'custom_config.minutes' => ['required', 'integer', 'min:100', 'max:5000'],
             'custom_config.images' => ['required', 'integer', 'min:10', 'max:1000'],

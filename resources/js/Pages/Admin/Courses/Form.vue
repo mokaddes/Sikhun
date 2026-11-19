@@ -23,6 +23,7 @@ const form = useForm({
     price: props.course?.price ?? 0,
     is_active: props.course?.is_active ?? false,
     cover_image: null,
+    demo_video_url: props.course?.demo_video_url ?? '',
 });
 
 let slugTouched = isEdit;
@@ -293,6 +294,13 @@ function saveLesson(sectionId, lessonId) {
             <div>
                 <label class="block text-sm font-medium mb-1.5">Cover Image</label>
                 <input ref="coverInput" @input="form.cover_image = coverInput.files[0]" type="file" accept="image/*" class="w-full text-sm" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1.5">Demo Video URL (Google Drive)</label>
+                <input v-model="form.demo_video_url" type="url" placeholder="https://drive.google.com/file/d/..."
+                    class="w-full px-4 py-2.5 rounded-lg bg-[var(--surface2)] border border-[var(--border)]" />
+                <p class="text-xs text-[var(--text-muted)] mt-1">Students can preview this video on-site via a secure stream — the Google Drive link is never exposed to users.</p>
+                <p v-if="form.errors.demo_video_url" class="text-xs text-red-500 mt-1">{{ form.errors.demo_video_url }}</p>
             </div>
             <label class="flex items-center gap-2 text-sm"><input v-model="form.is_active" type="checkbox" class="rounded" /> {{ t('common.active') }}</label>
 

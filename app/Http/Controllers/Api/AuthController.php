@@ -4,8 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\Student\LoginRequest;
 use App\Http\Requests\Student\RegisterRequest;
+use App\Models\Plan;
 use App\Models\Student;
+use App\Services\OtpService;
+use App\Services\Payment\PaymentGatewayResolver;
 use App\Services\ReferralService;
+use App\Services\SmsService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -129,5 +134,111 @@ class AuthController extends BaseApiController
         }
 
         return $this->success(null, 'Password reset successfully.');
+    }
+
+    public function config(SmsService $sms, PaymentGatewayResolver $resolver): JsonResponse
+    {
+        return $this->success([
+            'sms_otp_enabled' => $sms->isOtpEnabled(),
+            'payment_methods' => $resolver->enabledMethods(),
+        ]);
+    }
+
+    public function sendOtp(Request $request, OtpService $otp): JsonResponse
+    {
+        $data = $request->validate([
+            'phone' => ['required', 'string', 'max:20'],
+            'purpose' => ['nullable', 'in:login,register,verify'],
+        ]);
+
+        try {
+            $result = $otp->send($data['phone'], $data['purpose'] ?? 'login', $request->ip());
+
+            return $this->success($result, 'OTP sent successfully.');
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), [], 422);
+        }
+    }
+
+    public function otpLogin(Request $request, OtpService $otp): JsonResponse
+    {
+        $data = $request->validate([
+            'phone' => ['required', 'string', 'max:20'],
+            'code' => ['required', 'string', 'size:6'],
+        ]);
+
+        if (! $otp->verify($data['phone'], $data['code'], 'login')) {
+            return $this->error('Invalid or expired OTP code.', [], 422);
+        }
+
+        $normalized = $otp->normalizePhone($data['phone']);
+        $student = Student::where('phone', $normalized)->first();
+
+        if (! $student) {
+            return $this->error('No account found with this phone number.', [], 404);
+        }
+
+        if ($student->status === 'inactive') {
+            return $this->error('Your account has been deactivated.', [], 403);
+        }
+
+        if (! $student->phone_verified_at) {
+            $student->update(['phone_verified_at' => now()]);
+        }
+
+        $token = $student->createToken('sikhun_mobile_app')->plainTextToken;
+
+        return $this->success([
+            'student' => $student,
+            'token' => $token,
+            'phone_verified' => true,
+        ], 'Logged in successfully');
+    }
+
+    public function otpRegister(Request $request, OtpService $otp): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:20'],
+            'code' => ['required', 'string', 'size:6'],
+            'type' => ['required', 'in:ssc,hsc,admission,job,university'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:students,email'],
+        ]);
+
+        if (! $otp->verify($data['phone'], $data['code'], 'register')) {
+            return $this->error('Invalid or expired OTP code.', [], 422);
+        }
+
+        $normalized = $otp->normalizePhone($data['phone']);
+        if (Student::where('phone', $normalized)->exists()) {
+            return $this->error('An account with this phone number already exists.', [], 422);
+        }
+
+        $student = DB::transaction(function () use ($data, $normalized, $request) {
+            $student = Student::create([
+                'name' => $data['name'],
+                'email' => $data['email'] ?? null,
+                'phone' => $normalized,
+                'phone_verified_at' => now(),
+                'password' => Str::random(24),
+                'type' => $data['type'],
+                'referral_code' => 'SIKHU-'.strtoupper(Str::random(5)),
+                'referred_by_student_id' => $request->query('ref')
+                    ? Student::where('referral_code', $request->query('ref'))->value('id')
+                    : null,
+            ]);
+
+            $freePlan = Plan::where('is_free', true)->orWhere('price_monthly', 0)->first();
+            if ($freePlan) {
+                app(SubscriptionService::class)->assign($student, $freePlan, 12);
+            }
+
+            return $student;
+        });
+
+        app(ReferralService::class)->recordRegistration($student, $request);
+        $token = $student->createToken('sikhun_mobile_app')->plainTextToken;
+
+        return $this->success(['student' => $student, 'token' => $token], 'Registered successfully', 201);
     }
 }

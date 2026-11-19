@@ -11,7 +11,7 @@ const { t, locale, money, digits } = useI18n();
 
 const showPayModal = ref(false);
 const payForm = useForm({
-    payment_method: 'zinipay',
+    payment_method: 'mhpay',
 });
 
 function submitPayment() {
@@ -83,12 +83,15 @@ const fmtDate = (value) => (value ? new Date(value).toLocaleDateString(locale.va
                             {{ locale === 'bn' ? 'পেমেন্ট মাধ্যম বেছে নিন' : 'Select Payment Method' }}
                         </label>
                         <div class="space-y-2">
-                            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-[var(--border)] cursor-pointer hover:bg-[var(--surface2)]"
-                                :class="payForm.payment_method === 'zinipay' ? 'ring-2 ring-[var(--primary)] border-[var(--primary)]' : ''">
-                                <input type="radio" value="zinipay" v-model="payForm.payment_method" class="sr-only" />
+                            <label
+                                v-for="gw in ($page.props.site?.payment_methods || [{ key: 'mhpay', label: 'MHPay (bKash / Nagad / Rocket)', description: 'bKash, Nagad, Rocket & Upay via MHPay' }])"
+                                :key="gw.key"
+                                class="flex items-center gap-3 p-3.5 rounded-xl border border-[var(--border)] cursor-pointer hover:bg-[var(--surface2)]"
+                                :class="payForm.payment_method === gw.key ? 'ring-2 ring-[var(--primary)] border-[var(--primary)]' : ''">
+                                <input type="radio" :value="gw.key" v-model="payForm.payment_method" class="sr-only" />
                                 <div class="flex-1">
-                                    <div class="font-semibold text-sm">bKash / Nagad / Rocket / Card</div>
-                                    <div class="text-xs text-[var(--text-muted)]">{{ locale === 'bn' ? 'স্বয়ংক্রিয় ও নিরাপদ পেমেন্ট গেটওয়ে' : 'Instant automated payment via ZiniPay' }}</div>
+                                    <div class="font-semibold text-sm">{{ gw.label }}</div>
+                                    <div class="text-xs text-[var(--text-muted)]">{{ gw.description }}</div>
                                 </div>
                             </label>
 

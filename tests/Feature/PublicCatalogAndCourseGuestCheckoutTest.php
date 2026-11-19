@@ -112,14 +112,14 @@ class PublicCatalogAndCourseGuestCheckoutTest extends TestCase
         auth('web')->logout();
 
         Http::fake([
-            '*/v1/payment/create' => Http::response([
-                'status' => true,
-                'invoice_id' => 'INV-GUEST-101',
-                'payment_url' => 'https://secure.zinipay.com/payment/INV-GUEST-101',
+            '*/api/v1/invoices' => Http::response([
+                'id' => 'INV-GUEST-101',
+                'status' => 'pending',
             ], 200),
-            '*/api/verify-payment' => Http::response([
-                'status' => 'COMPLETED',
-                'transaction_id' => 'TXN-GUEST-101',
+            '*/api/v1/invoices/INV-GUEST-101/status' => Http::response([
+                'id' => 'INV-GUEST-101',
+                'status' => 'paid',
+                'verification' => ['transaction_id' => 'TXN-GUEST-101'],
             ], 200),
         ]);
 
@@ -129,7 +129,7 @@ class PublicCatalogAndCourseGuestCheckoutTest extends TestCase
             'phone' => '01800000000',
         ]);
 
-        // Inertia::location or 302 redirect to ZiniPay payment URL
+        // Inertia::location or 302 redirect to MHPay payment URL
         $this->assertTrue(in_array($paidResp->getStatusCode(), [302, 409], true));
 
         $order = Order::where('orderable_type', 'course')->where('orderable_id', $paidCourse->id)->first();
@@ -137,7 +137,7 @@ class PublicCatalogAndCourseGuestCheckoutTest extends TestCase
         $this->assertEquals('INV-GUEST-101', $order->gateway_invoice_id);
         $this->assertTrue($order->meta['guest_checkout'] ?? false);
 
-        // Simulate ZiniPay callback -> completes order and redirects back to the public course page
+        // Simulate MHPay callback -> completes order and redirects back to the public course page
         $callbackResp = $this->get(route('wallet.gateway.success', ['order_number' => $order->order_number]));
         $callbackResp->assertRedirect(route('courses.show', $paidCourse->slug));
 

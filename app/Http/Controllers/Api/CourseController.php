@@ -12,7 +12,6 @@ use App\Services\AccessGrantService;
 use App\Services\CertificateService;
 use App\Services\CourseDeliveryService;
 use App\Services\Payment\PaymentGatewayResolver;
-use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

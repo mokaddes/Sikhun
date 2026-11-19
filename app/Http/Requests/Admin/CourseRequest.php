@@ -30,6 +30,7 @@ class CourseRequest extends FormRequest
             'price' => ['required', 'numeric', 'min:0'],
             'is_active' => ['boolean'],
             'cover_image' => ['nullable', 'image', 'max:2048'],
+            'demo_video_url' => ['nullable', 'url', 'max:500'],
         ];
     }
 

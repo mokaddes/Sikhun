@@ -48,7 +48,7 @@ class InvoiceController extends BaseApiController
         abort_unless(in_array($invoice->status, ['sent', 'overdue', 'draft'], true), 400, 'This invoice is already paid or cannot be paid.');
 
         $validated = $request->validate([
-            'payment_method' => ['required', 'in:wallet,zinipay,mhpay'],
+            'payment_method' => ['required', 'in:wallet,mhpay,bkash,nagad'],
         ]);
 
         /** @var Student $student */

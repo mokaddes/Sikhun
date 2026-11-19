@@ -65,11 +65,10 @@ class WalletController extends BaseApiController
             $order->update(['gateway_transaction_id' => trim($validated['transaction_id'])]);
         }
 
-        if (in_array($order->payment_method, ['zinipay', 'mhpay'], true)) {
+        if (in_array($order->payment_method, ['mhpay', 'bkash', 'nagad'], true)) {
             $gateway = $resolver->resolve($order->payment_method);
-            $verification = $gateway->verify($order);
-            if ($verification['verified'] ?? false) {
-                $purchases->completeGatewayOrder($order, (string) ($verification['transaction_id'] ?? $order->gateway_transaction_id ?: $order->order_number));
+            if ($gateway && $gateway->verify(['invoice_id' => $order->gateway_invoice_id, 'paymentID' => $order->gateway_invoice_id, 'payment_ref_id' => $order->gateway_invoice_id])) {
+                $purchases->completeGatewayOrder($order, (string) ($order->gateway_transaction_id ?: $order->gateway_invoice_id ?: $order->order_number));
 
                 return $this->success($order->fresh(), 'Payment verified and order completed!');
             }

@@ -36,15 +36,9 @@ class QuestionBankPracticeController extends Controller
         $isUnavailable = false;
 
         if ($student) {
-            if ($studentType === 'job') {
-                $activeSector = 'job';
-            } elseif ($studentType === 'admission') {
-                $activeSector = 'admission';
-            } else {
-                // SSC, HSC, and University students cannot access Question Bank for now
-                $activeSector = in_array($studentType, ['hsc', 'ssc', 'university'], true) ? $studentType : 'ssc';
-                $isUnavailable = true;
-            }
+            $activeSector = in_array($studentType, ['job', 'admission', 'hsc', 'ssc', 'university'], true)
+                ? $studentType
+                : 'admission';
 
             // If user requested another sector via query string, strip it to maintain strict goal isolation
             if ($request->filled('sector') && $request->input('sector') !== $activeSector) {
@@ -52,7 +46,7 @@ class QuestionBankPracticeController extends Controller
             }
         } else {
             $requestedSector = $request->input('sector');
-            $activeSector = ($requestedSector && in_array($requestedSector, ['admission', 'job'], true))
+            $activeSector = ($requestedSector && in_array($requestedSector, ['admission', 'job', 'hsc', 'ssc', 'university'], true))
                 ? $requestedSector
                 : 'admission';
         }

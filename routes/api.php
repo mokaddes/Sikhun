@@ -8,18 +8,24 @@ use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EssayController;
 use App\Http\Controllers\Api\ExamController;
+use App\Http\Controllers\Api\FeedbackController;
 use App\Http\Controllers\Api\FlashcardController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LeaderboardController;
 use App\Http\Controllers\Api\LibraryController;
+use App\Http\Controllers\Api\BkashWebhookController;
 use App\Http\Controllers\Api\MhpayWebhookController;
+use App\Http\Controllers\Api\NagadWebhookController;
 use App\Http\Controllers\Api\MistakeReviewController;
 use App\Http\Controllers\Api\MyBookController;
+use App\Http\Controllers\Api\MyBookReaderController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\OnboardingController;
 use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\PublicContentController;
 use App\Http\Controllers\Api\QuestionBankController;
+use App\Http\Controllers\Api\QuestionBankPracticeController;
 use App\Http\Controllers\Api\ReaderController;
 use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\Api\ScheduleController;
@@ -27,7 +33,6 @@ use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\WalletController;
-use App\Http\Controllers\Api\ZinipayWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -46,6 +51,12 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register'])->middleware('throttle:register');
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:auth');
+    Route::get('config', [AuthController::class, 'config']);
+    Route::post('otp/send', [AuthController::class, 'sendOtp'])->middleware('throttle:auth');
+    Route::post('otp/login', [AuthController::class, 'otpLogin'])->middleware('throttle:auth');
+    Route::post('otp/register', [AuthController::class, 'otpRegister'])->middleware('throttle:register');
+    Route::post('oauth/{provider}/exchange', [\App\Http\Controllers\Student\Auth\SocialAuthController::class, 'apiExchange'])
+        ->middleware('throttle:auth');
     Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:auth');
     Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:auth');
     Route::get('email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
@@ -58,8 +69,9 @@ Route::prefix('auth')->group(function () {
 | Payment Webhooks (Server-to-Server, Unauthenticated)
 |--------------------------------------------------------------------------
 */
-Route::match(['get', 'post'], 'zinipay/webhook', [ZinipayWebhookController::class, 'handle'])->name('zinipay.webhook');
 Route::match(['get', 'post'], 'mhpay/webhook', [MhpayWebhookController::class, 'handle'])->name('mhpay.webhook');
+Route::match(['get', 'post'], 'bkash/webhook', [BkashWebhookController::class, 'handle'])->name('api.webhooks.bkash');
+Route::match(['get', 'post'], 'nagad/webhook', [NagadWebhookController::class, 'handle'])->name('api.webhooks.nagad');
 
 /*
 |--------------------------------------------------------------------------
@@ -184,6 +196,29 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::put('profile/leaderboard-opt-out', [ProfileController::class, 'updateLeaderboardOptOut']);
     Route::put('profile/notifications', [ProfileController::class, 'updateNotifications']);
     Route::post('profile/fcm-token', [ProfileController::class, 'registerFcmToken']);
+    Route::get('profile/export', [ProfileController::class, 'exportData']);
+    Route::delete('profile/account', [ProfileController::class, 'deleteAccount']);
+
+    // Onboarding
+    Route::get('onboarding', [OnboardingController::class, 'show']);
+    Route::post('onboarding/step', [OnboardingController::class, 'saveStep']);
+    Route::post('onboarding/skip', [OnboardingController::class, 'skip']);
+
+    // MyBook Reader
+    Route::get('my-books/{myBook}/reader', [MyBookReaderController::class, 'show']);
+    Route::get('my-books/{myBook}/reader/page-url/{page}', [MyBookReaderController::class, 'pageUrl']);
+    Route::post('my-books/{myBook}/reader/progress', [MyBookReaderController::class, 'saveProgress']);
+    Route::get('my-books/{myBook}/reader/page/{page}', [MyBookReaderController::class, 'servePage'])
+        ->middleware('signed')
+        ->name('api.my-books.reader.page');
+    Route::post('my-books/{myBook}/reader/chat', [MyBookReaderController::class, 'chat'])
+        ->middleware('throttle:api-ai');
+
+    // Question Bank Practice
+    Route::get('question-bank-practice', [QuestionBankPracticeController::class, 'index']);
+    Route::post('question-bank-practice/{question}/ask-ai', [QuestionBankPracticeController::class, 'askAi'])
+        ->middleware('throttle:api-ai');
+    Route::post('question-bank-practice/start-exam', [QuestionBankPracticeController::class, 'startExam']);
 
     // Notifications
     Route::get('notifications', [NotificationController::class, 'index']);
@@ -202,8 +237,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('support/tickets/{ticket}', [TicketController::class, 'show']);
     Route::post('support/tickets/{ticket}/messages', [TicketController::class, 'reply']);
 
-    Route::get('feedback', [TicketController::class, 'feedbackIndex']);
-    Route::post('feedback', [TicketController::class, 'feedbackStore']);
+    Route::get('feedback', [FeedbackController::class, 'index']);
+    Route::post('feedback', [FeedbackController::class, 'store']);
 
     // AI Studio Tools (Chat, Exams, Flashcards, Essays, Schedules)
     Route::middleware('throttle:api-ai')->group(function () {

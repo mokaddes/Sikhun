@@ -42,7 +42,7 @@ class CourseSeeder extends Seeder
                         ['course_section_id' => $section->id, 'title' => "লেসন {$l}"],
                         [
                             'type' => 'video',
-                            'video_url' => 'https://example.com/video-placeholder.mp4',
+                            'video_url' => null,
                             'is_free_preview' => $s === 1 && $l === 1,
                             'sort_order' => $l,
                             'duration_minutes' => rand(10, 25),

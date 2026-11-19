@@ -30,13 +30,15 @@ return Application::configure(basePath: dirname(__DIR__))
         // (e.g. plain `php artisan serve` or a bare VPS with no Nginx in
         // front of PHP-FPM), remove this block; trusting proxies you don't
         // have is a security downgrade, not just a no-op.
-        $middleware->trustProxies(
-            at: '*',
-            headers: Request::HEADER_X_FORWARDED_FOR
-                | Request::HEADER_X_FORWARDED_HOST
-                | Request::HEADER_X_FORWARDED_PORT
-                | Request::HEADER_X_FORWARDED_PROTO,
-        );
+        if ($proxies = env('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(
+                at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)),
+                headers: Request::HEADER_X_FORWARDED_FOR
+                    | Request::HEADER_X_FORWARDED_HOST
+                    | Request::HEADER_X_FORWARDED_PORT
+                    | Request::HEADER_X_FORWARDED_PROTO,
+            );
+        }
 
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,

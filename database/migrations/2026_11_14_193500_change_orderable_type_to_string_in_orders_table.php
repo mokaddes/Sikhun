@@ -10,6 +10,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         DB::statement("ALTER TABLE orders MODIFY orderable_type VARCHAR(60) NOT NULL");
     }
 
@@ -18,6 +22,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         DB::statement("ALTER TABLE orders MODIFY orderable_type ENUM('book','book_chapter','course','subscription','wallet_recharge','custom_subscription','invoice') NOT NULL");
     }
 };

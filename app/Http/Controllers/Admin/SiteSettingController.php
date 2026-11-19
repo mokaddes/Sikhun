@@ -110,6 +110,44 @@ class SiteSettingController extends Controller
             'pagepilot_webhook_url' => ['nullable', 'string', 'max:500'],
             'pagepilot_api_key' => ['nullable', 'string', 'max:255'],
             'pagepilot_auto_publish' => ['nullable', 'boolean'],
+            // SMS OTP
+            'sms_otp_enabled' => ['nullable', 'boolean'],
+            'sms_provider' => ['nullable', 'in:generic_http,sslwireless,bulksmsbd'],
+            'sms_api_url' => ['nullable', 'string', 'max:500'],
+            'sms_api_key' => ['nullable', 'string', 'max:500'],
+            'sms_sender_id' => ['nullable', 'string', 'max:100'],
+            // Payment Gateways (MHPay + direct bKash/Nagad Merchant)
+            'payment_mhpay_enabled' => ['nullable', 'boolean'],
+            'payment_bkash_enabled' => ['nullable', 'boolean'],
+            'payment_bkash_sandbox' => ['nullable', 'boolean'],
+            'payment_bkash_base_url' => ['nullable', 'string', 'max:500'],
+            'payment_bkash_app_key' => ['nullable', 'string', 'max:255'],
+            'payment_bkash_app_secret' => ['nullable', 'string', 'max:255'],
+            'payment_bkash_username' => ['nullable', 'string', 'max:255'],
+            'payment_bkash_password' => ['nullable', 'string', 'max:255'],
+            'payment_nagad_enabled' => ['nullable', 'boolean'],
+            'payment_nagad_sandbox' => ['nullable', 'boolean'],
+            'payment_nagad_base_url' => ['nullable', 'string', 'max:500'],
+            'payment_nagad_merchant_id' => ['nullable', 'string', 'max:255'],
+            'payment_nagad_merchant_number' => ['nullable', 'string', 'max:100'],
+            'payment_nagad_public_key' => ['nullable', 'string', 'max:4000'],
+            'payment_nagad_private_key' => ['nullable', 'string', 'max:4000'],
+            // FCM Push Notifications
+            'fcm_enabled' => ['nullable', 'boolean'],
+            'fcm_project_id' => ['nullable', 'string', 'max:255'],
+            'fcm_server_key' => ['nullable', 'string', 'max:500'],
+            'fcm_service_account_json' => ['nullable', 'string', 'max:10000'],
+            // AI Cost Governance
+            'ai_default_monthly_cost_limit_usd' => ['nullable', 'numeric', 'min:0'],
+            // Social OAuth
+            'oauth_google_enabled' => ['nullable', 'boolean'],
+            'oauth_google_client_id' => ['nullable', 'string', 'max:255'],
+            'oauth_google_client_secret' => ['nullable', 'string', 'max:255'],
+            'oauth_facebook_enabled' => ['nullable', 'boolean'],
+            'oauth_facebook_client_id' => ['nullable', 'string', 'max:255'],
+            'oauth_facebook_client_secret' => ['nullable', 'string', 'max:255'],
+            // Observability
+            'observability_webhook_url' => ['nullable', 'string', 'max:500'],
         ]);
 
         foreach ($validated as $key => $value) {

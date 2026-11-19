@@ -103,4 +103,23 @@ class ProfileController extends BaseApiController
 
         return $this->success(null, 'Device registered for push notifications');
     }
+
+    public function exportData(\App\Services\AccountDataService $accountData): JsonResponse
+    {
+        $student = auth('sanctum')->user();
+
+        return $this->success($accountData->exportForStudent($student), 'Account data exported');
+    }
+
+    public function deleteAccount(Request $request, \App\Services\AccountDataService $accountData): JsonResponse
+    {
+        $request->validate([
+            'confirmation' => ['required', 'in:DELETE'],
+        ]);
+
+        $student = auth('sanctum')->user();
+        $accountData->deleteStudentAccount($student);
+
+        return $this->success(null, 'Account deleted successfully');
+    }
 }

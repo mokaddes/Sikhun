@@ -104,7 +104,6 @@ const activeSectorData = computed(() => {
 
 const isSectorUnavailable = computed(() => {
     if (props.isUnavailable) return true;
-    if (props.lockedToGoal && !['admission', 'job'].includes(props.studentGoal)) return true;
     return (props.sectorCounts?.[currentSector.value] ?? 0) === 0;
 });
 

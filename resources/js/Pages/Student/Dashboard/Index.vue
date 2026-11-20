@@ -41,7 +41,7 @@ const isAdmission = computed(() => {
 });
 
 const canAccessQuestionBank = computed(() => {
-    return !student || ['admission', 'job'].includes(student?.type);
+    return ['admission', 'job'].includes(student?.type);
 });
 
 const showVerifyModal = ref(false);

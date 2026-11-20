@@ -158,7 +158,7 @@ const nav = computed(() => [
                         <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-400">
                             <li><Link href="/courses" class="hover:text-orange-500 transition-colors">{{ t('courses_page.title') }}</Link></li>
                             <li><Link href="/library" class="hover:text-orange-500 transition-colors">{{ t('nav.library') }}</Link></li>
-                            <li><Link href="/question-bank" class="hover:text-orange-500 transition-colors">{{ locale === 'bn' ? 'প্রশ্নব্যাংক' : 'Question Bank' }}</Link></li>
+                            <li v-if="!$page.props.auth?.student || ['admission', 'job'].includes($page.props.auth.student.type)"><Link href="/question-bank" class="hover:text-orange-500 transition-colors">{{ locale === 'bn' ? 'প্রশ্নব্যাংক' : 'Question Bank' }}</Link></li>
                             <li><Link href="/admission-notice" class="hover:text-orange-500 transition-colors">{{ locale === 'bn' ? 'ভর্তি নোটিশ ২০২৬' : 'Admissions 2026' }}</Link></li>
                             <li><Link href="/job-news" class="hover:text-orange-500 transition-colors">{{ locale === 'bn' ? 'চাকরির খবর' : 'Job News' }}</Link></li>
                             <li><Link href="/tools" class="hover:text-orange-500 transition-colors">{{ locale === 'bn' ? 'স্টুডেন্ট টুলস' : 'Student Tools' }}</Link></li>

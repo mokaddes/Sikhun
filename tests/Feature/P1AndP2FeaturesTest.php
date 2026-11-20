@@ -34,12 +34,12 @@ class P1AndP2FeaturesTest extends TestCase
 
     public function test_mobile_api_parity_endpoints_work_for_onboarding_feedback_qb_and_my_book_reader(): void
     {
-        $student = $this->makeStudent(['type' => 'hsc']);
+        $student = $this->makeStudent(['type' => 'admission']);
         Sanctum::actingAs($student);
 
         // Onboarding API
         $this->getJson('/api/onboarding')->assertOk()->assertJsonPath('success', true);
-        $this->postJson('/api/onboarding/step', ['step' => 1, 'goal' => 'hsc'])->assertOk();
+        $this->postJson('/api/onboarding/step', ['step' => 1, 'goal' => 'admission'])->assertOk();
         $this->postJson('/api/onboarding/skip')->assertOk();
 
         // Feedback API
@@ -50,18 +50,18 @@ class P1AndP2FeaturesTest extends TestCase
         ])->assertStatus(201);
         $this->getJson('/api/feedback')->assertOk()->assertJsonPath('success', true);
 
-        // Question Bank Practice API
+        // Question Bank Practice API (Admission student only sees admission segment)
         $subject = QuestionSubject::create([
             'name_bn' => 'পদার্থবিজ্ঞান',
             'name_en' => 'Physics',
             'slug' => 'physics-'.uniqid(),
-            'segment' => 'hsc',
+            'segment' => 'admission',
             'is_active' => true,
         ]);
         QuestionBank::create([
-            'segment' => 'hsc',
+            'segment' => 'admission',
             'subject_id' => $subject->id,
-            'origin_tag' => 'HSC-2025',
+            'origin_tag' => 'DU-2025',
             'question_text' => 'What is F=ma?',
             'question_type' => 'mcq',
             'options' => [['key' => 'A', 'text' => 'Newton 2nd Law']],
@@ -84,36 +84,93 @@ class P1AndP2FeaturesTest extends TestCase
         $this->assertSame(4, $myBook->fresh()->last_page);
     }
 
-    public function test_question_bank_is_unlocked_for_ssc_hsc_and_university_students(): void
+    public function test_question_bank_is_strictly_restricted_to_admission_and_job_segments(): void
     {
-        $hscStudent = $this->makeStudent(['type' => 'hsc']);
         $subject = QuestionSubject::create([
-            'name_bn' => 'রসায়ন',
-            'name_en' => 'Chemistry',
-            'slug' => 'chem-'.uniqid(),
-            'segment' => 'hsc',
+            'name_bn' => 'সাধারণ জ্ঞান',
+            'name_en' => 'General Knowledge',
+            'slug' => 'gk-'.uniqid(),
+            'segment' => 'both',
             'is_active' => true,
         ]);
-        QuestionBank::create([
-            'segment' => 'hsc',
+
+        $admissionQ = QuestionBank::create([
+            'segment' => 'admission',
             'subject_id' => $subject->id,
-            'origin_tag' => 'HSC-2025',
-            'question_text' => 'H2O is?',
+            'origin_tag' => 'DU-A',
+            'question_text' => 'Admission Only Question',
             'question_type' => 'mcq',
-            'options' => [['key' => 'A', 'text' => 'Water']],
+            'options' => [['key' => 'A', 'text' => 'Opt A']],
             'correct_option' => 'A',
             'status' => 'active',
         ]);
 
-        $this->actingAs($hscStudent, 'web')
+        $jobQ = QuestionBank::create([
+            'segment' => 'job',
+            'subject_id' => $subject->id,
+            'origin_tag' => 'BCS-46',
+            'question_text' => 'Job Only Question',
+            'question_type' => 'mcq',
+            'options' => [['key' => 'A', 'text' => 'Opt A']],
+            'correct_option' => 'A',
+            'status' => 'active',
+        ]);
+
+        // 1. SSC / HSC / University students cannot access Question Bank (Web & API)
+        foreach (['ssc', 'hsc', 'university'] as $blockedType) {
+            $blockedStudent = $this->makeStudent(['type' => $blockedType]);
+
+            $this->actingAs($blockedStudent, 'web')
+                ->get(route('student.question-bank.index'))
+                ->assertOk()
+                ->assertInertia(fn ($page) => $page
+                    ->component('Student/QuestionBank/Index')
+                    ->where('isUnavailable', true)
+                    ->has('questions.data', 0)
+                );
+
+            Sanctum::actingAs($blockedStudent);
+            $this->getJson('/api/question-bank-practice')->assertStatus(403);
+            $this->postJson('/api/question-bank-practice/start-exam', ['question_count' => 5])->assertStatus(403);
+        }
+
+        // 2. Admission student ONLY accesses admission questions (never job questions)
+        $admissionStudent = $this->makeStudent(['type' => 'admission']);
+        $this->actingAs($admissionStudent, 'web')
             ->get(route('student.question-bank.index'))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('Student/QuestionBank/Index')
                 ->where('isUnavailable', false)
-                ->where('activeSector', 'hsc')
+                ->where('activeSector', 'admission')
                 ->has('questions.data', 1)
+                ->where('questions.data.0.id', $admissionQ->id)
             );
+
+        Sanctum::actingAs($admissionStudent);
+        $this->getJson('/api/question-bank-practice')
+            ->assertOk()
+            ->assertJsonCount(1, 'data.questions.data')
+            ->assertJsonPath('data.questions.data.0.id', $admissionQ->id);
+        $this->postJson("/api/question-bank-practice/{$jobQ->id}/ask-ai")->assertStatus(403);
+
+        // 3. Job student ONLY accesses job questions (never admission questions)
+        $jobStudent = $this->makeStudent(['type' => 'job']);
+        $this->actingAs($jobStudent, 'web')
+            ->get(route('student.question-bank.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('isUnavailable', false)
+                ->where('activeSector', 'job')
+                ->has('questions.data', 1)
+                ->where('questions.data.0.id', $jobQ->id)
+            );
+
+        Sanctum::actingAs($jobStudent);
+        $this->getJson('/api/question-bank-practice')
+            ->assertOk()
+            ->assertJsonCount(1, 'data.questions.data')
+            ->assertJsonPath('data.questions.data.0.id', $jobQ->id);
+        $this->postJson("/api/question-bank-practice/{$admissionQ->id}/ask-ai")->assertStatus(403);
     }
 
     public function test_social_oauth_respects_admin_toggle_and_issues_sanctum_token(): void

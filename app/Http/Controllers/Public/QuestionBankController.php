@@ -17,11 +17,16 @@ class QuestionBankController extends Controller
     public function index(Request $request): Response
     {
         $student = $request->user('web');
-        $studentType = strtolower($student?->type ?? 'hsc');
+        $studentType = strtolower($student?->type ?? '');
 
-        $segment = $request->input('segment');
-        if (!in_array($segment, ['admission', 'job'], true)) {
-            $segment = ($studentType === 'job') ? 'job' : 'admission';
+        if ($student) {
+            abort_unless(in_array($studentType, ['admission', 'job'], true), 403, 'Question Bank is available only for Admission and Job students.');
+            $segment = $studentType;
+        } else {
+            $segment = $request->input('segment');
+            if (! in_array($segment, ['admission', 'job'], true)) {
+                $segment = 'admission';
+            }
         }
 
         $query = QuestionBank::query()

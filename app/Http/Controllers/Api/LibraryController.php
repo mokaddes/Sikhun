@@ -7,7 +7,6 @@ use App\Models\Book;
 use App\Models\BookChapter;
 use App\Services\BookAccessService;
 use App\Services\Payment\PaymentGatewayResolver;
-use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,11 +32,63 @@ class LibraryController extends BaseApiController
         abort_unless($book->is_published, 404);
 
         $book->load(['author', 'publication', 'category']);
+        $student = auth('sanctum')->user();
         $data = $book->toArray();
-        $data['access_type'] = $access->accessType(auth('sanctum')->user(), $book);
-        $data['has_access'] = $access->hasAccess(auth('sanctum')->user(), $book);
+        $data['access_type'] = $student ? $access->accessType($student, $book) : ($book->is_free ? 'free' : 'none');
+        $data['has_access'] = $student ? $access->hasAccess($student, $book) : (bool) $book->is_free;
 
         return $this->success($data);
+    }
+
+    public function addToShelf(Book $book, BookAccessService $access): JsonResponse
+    {
+        abort_unless($book->is_published, 404);
+        $student = auth('sanctum')->user();
+        abort_unless($access->hasAccess($student, $book), 403, 'You must purchase or unlock this book before adding it to your shelf.');
+
+        $shelf = $student->bookShelf()->firstOrCreate(
+            ['book_id' => $book->id],
+            ['source' => $book->is_free ? 'free' : 'subscription', 'added_at' => now()]
+        );
+
+        return $this->success($shelf, 'Book added to your shelf');
+    }
+
+    public function purchaseChapters(Request $request, Book $book, PurchaseService $purchases, PaymentGatewayResolver $resolver): JsonResponse
+    {
+        abort_unless($book->is_published && $book->chapter_purchase_enabled, 404);
+
+        $validated = $request->validate([
+            'chapter_ids' => ['required', 'array', 'min:1'],
+            'chapter_ids.*' => ['integer', 'distinct'],
+            'payment_method' => ['required', 'in:wallet,mhpay,bkash,nagad'],
+        ]);
+
+        $chapters = $book->chapters()
+            ->whereIn('id', $validated['chapter_ids'])
+            ->where('level', 1)
+            ->whereNotNull('price')
+            ->get()
+            ->all();
+
+        if (empty($chapters)) {
+            return $this->error('No purchasable chapters selected.', [], 422);
+        }
+
+        try {
+            $gateway = $resolver->resolve($validated['payment_method']);
+            $result = $purchases->purchaseChapters(
+                auth('sanctum')->user(),
+                $book,
+                $chapters,
+                $validated['payment_method'],
+                $gateway
+            );
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), [], 422);
+        }
+
+        return $this->success($result, $result['redirect_url'] ? 'Redirect to complete payment' : 'Chapters purchased');
     }
 
     public function purchase(PurchaseRequest $request, Book $book, PurchaseService $purchases, PaymentGatewayResolver $resolver): JsonResponse
@@ -117,7 +168,7 @@ class LibraryController extends BaseApiController
         abort_unless($chapter->book_id === $book->id, 404);
 
         $validated = $request->validate([
-            'payment_method' => ['required', 'in:wallet,zinipay,mhpay'],
+            'payment_method' => ['required', 'in:wallet,mhpay,bkash,nagad'],
         ]);
 
         try {

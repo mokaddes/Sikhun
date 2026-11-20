@@ -41,4 +41,22 @@ class EssayController extends BaseApiController
 
         return $this->success($essay);
     }
+
+    public function status(EssaySubmission $essay): JsonResponse
+    {
+        abort_unless($essay->student_id === auth('sanctum')->id(), 403);
+
+        return $this->success(['id' => $essay->id, 'status' => $essay->status]);
+    }
+
+    public function retry(EssaySubmission $essay): JsonResponse
+    {
+        abort_unless($essay->student_id === auth('sanctum')->id(), 403);
+        abort_unless($essay->status === 'failed', 409, 'Only failed essays can be retried.');
+
+        $essay->update(['status' => 'grading']);
+        GradeEssay::dispatch($essay->id);
+
+        return $this->success($essay, 'Essay grading retried');
+    }
 }

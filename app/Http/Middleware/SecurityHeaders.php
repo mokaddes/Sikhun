@@ -30,6 +30,7 @@ class SecurityHeaders
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
             'Permissions-Policy' => 'camera=(), microphone=(), geolocation=()',
             'Cross-Origin-Opener-Policy' => 'same-origin',
+            'Content-Security-Policy' => "object-src 'none'; base-uri 'self'; frame-ancestors 'self';",
         ];
 
         foreach ($headers as $name => $value) {

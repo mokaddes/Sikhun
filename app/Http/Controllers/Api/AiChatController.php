@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Requests\Student\CreateChatSessionRequest;
 use App\Models\AiSession;
 use App\Models\Book;
+use App\Models\MyBook;
 use App\Services\AccessGrantService;
 use App\Services\Ai\AiProviderFactory;
 use App\Services\Ai\BookChunkRetrievalService;
@@ -17,13 +18,16 @@ class AiChatController extends BaseApiController
 {
     public function index(): JsonResponse
     {
-        return $this->success(auth('sanctum')->user()->aiSessions()->latest()->get(['id', 'title', 'source_type', 'created_at']));
+        return $this->success(auth('sanctum')->user()->aiSessions()->latest()->get(['id', 'title', 'source_type', 'source_book_id', 'source_my_book_id', 'created_at']));
     }
 
     public function store(CreateChatSessionRequest $request, BookAccessService $access): JsonResponse
     {
         $student = auth('sanctum')->user();
         $book = $request->source_book_id ? Book::find($request->source_book_id) : null;
+        $myBook = ($request->my_book_id ?? $request->source_my_book_id)
+            ? MyBook::find($request->my_book_id ?? $request->source_my_book_id)
+            : null;
 
         if ($book) {
             $canAccess = $access->hasAccess($student, $book)
@@ -31,10 +35,15 @@ class AiChatController extends BaseApiController
             abort_unless($canAccess, 403);
         }
 
+        if ($myBook) {
+            abort_unless($myBook->student_id === $student->id, 403);
+        }
+
         $session = $student->aiSessions()->create([
-            'source_type' => $book ? 'book' : 'none',
+            'source_type' => $myBook ? 'upload' : ($book ? 'book' : 'none'),
             'source_book_id' => $book?->id,
-            'title' => $request->title ?: ($book ? "Chat: {$book->title}" : 'New chat'),
+            'source_my_book_id' => $myBook?->id,
+            'title' => $request->title ?: ($myBook ? "Chat: {$myBook->title}" : ($book ? "Chat: {$book->title}" : 'New chat')),
             'messages' => [],
         ]);
 
@@ -46,6 +55,54 @@ class AiChatController extends BaseApiController
         $this->authorizeSession($session);
 
         return $this->success($session);
+    }
+
+    public function rename(Request $request, AiSession $session): JsonResponse
+    {
+        $this->authorizeSession($session);
+        $validated = $request->validate(['title' => ['required', 'string', 'max:255']]);
+        $session->update(['title' => trim($validated['title'])]);
+
+        return $this->success($session, 'Session renamed');
+    }
+
+    public function attachBook(Request $request, AiSession $session, BookAccessService $access): JsonResponse
+    {
+        $this->authorizeSession($session);
+        $student = auth('sanctum')->user();
+
+        $validated = $request->validate([
+            'source_book_id' => ['nullable', 'integer', 'exists:books,id'],
+            'source_my_book_id' => ['nullable', 'integer', 'exists:my_books,id'],
+        ]);
+
+        if (! empty($validated['source_my_book_id'])) {
+            $myBook = MyBook::findOrFail($validated['source_my_book_id']);
+            abort_unless($myBook->student_id === $student->id, 403);
+            $session->update([
+                'source_type' => 'upload',
+                'source_book_id' => null,
+                'source_my_book_id' => $myBook->id,
+            ]);
+        } elseif (! empty($validated['source_book_id'])) {
+            $book = Book::findOrFail($validated['source_book_id']);
+            $canAccess = $access->hasAccess($student, $book)
+                || $student->ownedChapters()->where('book_id', $book->id)->exists();
+            abort_unless($canAccess, 403);
+            $session->update([
+                'source_type' => 'book',
+                'source_book_id' => $book->id,
+                'source_my_book_id' => null,
+            ]);
+        } else {
+            $session->update([
+                'source_type' => 'none',
+                'source_book_id' => null,
+                'source_my_book_id' => null,
+            ]);
+        }
+
+        return $this->success($session->fresh(), 'Book attachment updated');
     }
 
     public function destroy(AiSession $session): JsonResponse

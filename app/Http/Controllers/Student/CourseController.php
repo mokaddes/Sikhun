@@ -10,7 +10,6 @@ use App\Models\Course;
 use App\Services\CertificateService;
 use App\Services\CourseDeliveryService;
 use App\Services\Payment\PaymentGatewayResolver;
-use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -148,7 +147,7 @@ class CourseController extends Controller
             'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
             'type' => ['nullable', 'in:ssc,hsc,university,job'],
-            'payment_method' => ['nullable', 'in:mhpay,zinipay'],
+            'payment_method' => ['nullable', 'in:mhpay,bkash,nagad'],
         ]);
 
         $student = auth('web')->user();
@@ -201,8 +200,11 @@ class CourseController extends Controller
             return redirect()->route('courses.show', $course)->with('success', 'Enrolled successfully!');
         }
 
-        $chosenMethod = $validated['payment_method'] ?? (config('mhpay.api_key') ? 'mhpay' : 'zinipay');
+        $chosenMethod = $validated['payment_method'] ?? 'mhpay';
         $gateway = $resolver->resolve($chosenMethod);
+        if (! $gateway) {
+            return back()->with('error', 'Selected payment gateway is currently unavailable.');
+        }
 
         try {
             $result = $purchases->purchaseCourse(
@@ -291,5 +293,16 @@ class CourseController extends Controller
         }
 
         return back()->with('success', 'Lesson marked complete.');
+    }
+
+    /**
+     * Streams the course demo video on-site via Google Drive proxy so the user
+     * can preview it without ever seeing or accessing the raw Drive URL.
+     */
+    public function streamDemo(Request $request, Course $course, \App\Services\Media\GoogleDriveStreamService $drive): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        abort_unless($course->is_active && filled($course->demo_video_url), 404);
+
+        return $drive->stream($course->demo_video_url, $request);
     }
 }

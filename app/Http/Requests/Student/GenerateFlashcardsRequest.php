@@ -15,6 +15,7 @@ class GenerateFlashcardsRequest extends FormRequest
             'source_type' => ['nullable', 'string', 'in:topic,paragraph,book,question_bank'],
             'source_topic' => ['nullable', 'string', 'max:300'],
             'source_book_id' => ['nullable', 'exists:books,id'],
+            'source_my_book_id' => ['nullable', 'integer', 'exists:my_books,id'],
             'chapter_ids' => ['nullable', 'array'],
             'chapter_ids.*' => ['integer', 'distinct'],
             'subject_id' => ['nullable', 'integer', 'exists:question_subjects,id'],

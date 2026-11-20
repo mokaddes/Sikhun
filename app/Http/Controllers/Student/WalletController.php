@@ -7,9 +7,10 @@ use App\Http\Requests\Student\RechargeRequest;
 use App\Models\Book;
 use App\Models\Course;
 use App\Models\Order;
+use App\Services\Payment\BkashMerchantService;
 use App\Services\Payment\MhpayService;
+use App\Services\Payment\NagadMerchantService;
 use App\Services\Payment\PaymentGatewayResolver;
-use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -64,8 +65,9 @@ class WalletController extends Controller
     public function gatewaySuccess(
         Request $request,
         PurchaseService $purchases,
-        ZinipayService $zinipay,
-        MhpayService $mhpay
+        MhpayService $mhpay,
+        BkashMerchantService $bkash,
+        NagadMerchantService $nagad
     ): RedirectResponse {
         $order = Order::where('order_number', $request->input('order_number'))
             ->orWhere('gateway_invoice_id', $request->input('invoice_id'))
@@ -83,23 +85,21 @@ class WalletController extends Controller
             if ($verified) {
                 $transactionId = $verified['id'] ?? $order->gateway_invoice_id;
             }
-        } elseif ($order->payment_method === 'zinipay') {
-            $verified = $zinipay->verifiedData($order->gateway_invoice_id);
+        } elseif ($order->payment_method === 'bkash') {
+            $verified = $bkash->isEnabled() ? $bkash->queryPayment($order->gateway_invoice_id) : null;
             if ($verified) {
-                $transactionId = $verified['transaction_id'] ?? $order->gateway_invoice_id;
+                $transactionId = $verified['trxID'] ?? $order->gateway_invoice_id;
+            }
+        } elseif ($order->payment_method === 'nagad') {
+            $verified = $nagad->isEnabled() ? $nagad->verifiedData($order->gateway_invoice_id) : null;
+            if ($verified) {
+                $transactionId = $verified['issuerPaymentRefNo'] ?? $order->gateway_invoice_id;
             }
         } else {
-            // Auto-detect based on which gateway accepts this invoice ID
             $verified = $mhpay->verifiedData($order->gateway_invoice_id);
             if ($verified) {
                 $order->update(['payment_method' => 'mhpay']);
                 $transactionId = $verified['id'] ?? $order->gateway_invoice_id;
-            } else {
-                $verified = $zinipay->verifiedData($order->gateway_invoice_id);
-                if ($verified) {
-                    $order->update(['payment_method' => 'zinipay']);
-                    $transactionId = $verified['transaction_id'] ?? $order->gateway_invoice_id;
-                }
             }
         }
 
@@ -183,7 +183,8 @@ class WalletController extends Controller
         Order $order,
         PurchaseService $purchases,
         MhpayService $mhpay,
-        ZinipayService $zinipay
+        BkashMerchantService $bkash,
+        NagadMerchantService $nagad
     ): RedirectResponse {
         $student = auth('web')->user();
         abort_unless($order->student_id === $student->id, 403);
@@ -198,15 +199,12 @@ class WalletController extends Controller
 
         // Attempt automated verification if invoice ID is present
         if ($order->gateway_invoice_id) {
-            $verified = null;
-            if ($order->payment_method === 'mhpay') {
-                $verified = $mhpay->verifiedData($order->gateway_invoice_id);
-            } elseif ($order->payment_method === 'zinipay') {
-                $verified = $zinipay->verifiedData($order->gateway_invoice_id);
-            } else {
-                $verified = $mhpay->verifiedData($order->gateway_invoice_id)
-                    ?: $zinipay->verifiedData($order->gateway_invoice_id);
-            }
+            $verified = match ($order->payment_method) {
+                'mhpay' => $mhpay->verifiedData($order->gateway_invoice_id),
+                'bkash' => $bkash->isEnabled() ? $bkash->queryPayment($order->gateway_invoice_id) : null,
+                'nagad' => $nagad->isEnabled() ? $nagad->verifiedData($order->gateway_invoice_id) : null,
+                default => $mhpay->verifiedData($order->gateway_invoice_id),
+            };
 
             if ($verified) {
                 $purchases->completeGatewayOrder($order, $trxId);

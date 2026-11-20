@@ -152,8 +152,7 @@ function submitVerify() {
                     <div>
                         <label class="label">{{ t('wallet.choose_method') }}</label>
                         <select v-model="form.method" class="input">
-                            <option value="mhpay">MHPay — bKash / Nagad / Rocket</option>
-                            <option value="zinipay">{{ t('wallet.zinipay') }}</option>
+                            <option v-for="gw in ($page.props.site?.payment_methods || [{ key: 'mhpay', label: 'MHPay — bKash / Nagad / Rocket' }])" :key="gw.key" :value="gw.key">{{ gw.label }}</option>
                             <option value="manual">{{ t('wallet.manual_transfer') }}</option>
                         </select>
                     </div>

@@ -13,7 +13,8 @@ class CreateExamRequest extends FormRequest
         return [
             'title' => ['nullable', 'string', 'max:255'],
             'source_type' => ['required', 'in:book,topic,paragraph'],
-            'source_book_id' => ['required_if:source_type,book', 'nullable', 'exists:books,id'],
+            'source_book_id' => ['nullable', 'exists:books,id'],
+            'source_my_book_id' => ['nullable', 'integer', 'exists:my_books,id'],
             'chapter_ids' => ['nullable', 'array', 'max:100'],
             'chapter_ids.*' => ['integer', 'distinct', 'min:1'],
             'source_text' => ['required_if:source_type,topic,paragraph', 'nullable', 'string', 'min:3', 'max:5000'],

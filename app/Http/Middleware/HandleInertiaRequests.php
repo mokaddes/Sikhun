@@ -33,11 +33,13 @@ class HandleInertiaRequests extends Middleware
                     'id' => $student->id,
                     'name' => $student->name,
                     'email' => $student->email,
+                    'phone' => $student->phone,
                     'type' => $student->type,
                     'education_type' => $student->type,
                     'avatar' => $student->avatar,
                     'theme_mode' => $student->theme_mode,
                     'email_verified' => $student->hasVerifiedEmail(),
+                    'phone_verified' => (bool) $student->phone_verified_at,
                     'wallet_balance' => $student->wallet_balance,
                     'has_active_subscription' => (bool) $student->activeSubscription,
                     'is_in_trial' => $student->isInTrial(),
@@ -77,6 +79,10 @@ class HandleInertiaRequests extends Middleware
             'logo_url' => $this->publicAsset($all['site_logo'] ?? null),
             'favicon_url' => $this->publicAsset($all['site_favicon'] ?? null),
             'seo_image_url' => $this->publicAsset($all['seo_image'] ?? null),
+            'sms_otp_enabled' => filter_var($all['sms_otp_enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'oauth_google_enabled' => filter_var($all['oauth_google_enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'oauth_facebook_enabled' => filter_var($all['oauth_facebook_enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'payment_methods' => app(\App\Services\Payment\PaymentGatewayResolver::class)->enabledMethods(),
         ];
     }
 

@@ -31,4 +31,19 @@ class NotificationController extends BaseApiController
 
         return $this->success(null, 'All marked as read');
     }
+
+    public function destroy(Notification $notification): JsonResponse
+    {
+        abort_unless($notification->student_id === auth('sanctum')->id(), 403);
+        $notification->delete();
+
+        return $this->success(null, 'Notification deleted');
+    }
+
+    public function destroyAll(): JsonResponse
+    {
+        auth('sanctum')->user()->notifications()->delete();
+
+        return $this->success(null, 'All notifications deleted');
+    }
 }

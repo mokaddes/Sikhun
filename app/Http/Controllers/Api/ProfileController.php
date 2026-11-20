@@ -18,11 +18,34 @@ class ProfileController extends BaseApiController
 
     public function update(Request $request): JsonResponse
     {
-        $data = $request->validate(['name' => 'sometimes|string|max:255']);
         $student = auth('sanctum')->user();
+        $data = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'institution' => ['nullable', 'string', 'max:255'],
+            'type' => ['sometimes', 'string', 'in:ssc,hsc,admission,job,university'],
+            'avatar' => ['nullable', 'image', 'max:2048'],
+        ]);
+
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $data['avatar'] = '/storage/'.$path;
+        } else {
+            unset($data['avatar']);
+        }
+
         $student->update($data);
 
-        return $this->success($student);
+        return $this->success($student->fresh(), 'Profile updated');
+    }
+
+    public function updateLeaderboardOptOut(Request $request): JsonResponse
+    {
+        $validated = $request->validate(['leaderboard_opt_out' => ['required', 'boolean']]);
+        $student = auth('sanctum')->user();
+        $student->update(['leaderboard_opt_out' => $validated['leaderboard_opt_out']]);
+
+        return $this->success($student->fresh(), 'Leaderboard preference updated');
     }
 
     public function updatePassword(Request $request): JsonResponse
@@ -79,5 +102,24 @@ class ProfileController extends BaseApiController
         );
 
         return $this->success(null, 'Device registered for push notifications');
+    }
+
+    public function exportData(\App\Services\AccountDataService $accountData): JsonResponse
+    {
+        $student = auth('sanctum')->user();
+
+        return $this->success($accountData->exportForStudent($student), 'Account data exported');
+    }
+
+    public function deleteAccount(Request $request, \App\Services\AccountDataService $accountData): JsonResponse
+    {
+        $request->validate([
+            'confirmation' => ['required', 'in:DELETE'],
+        ]);
+
+        $student = auth('sanctum')->user();
+        $accountData->deleteStudentAccount($student);
+
+        return $this->success(null, 'Account deleted successfully');
     }
 }

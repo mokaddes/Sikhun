@@ -142,6 +142,12 @@ function savePassword() {
     });
 }
 
+const deleteForm = useForm({ confirmation: '' });
+
+function deleteAccount() {
+    deleteForm.delete('/profile/account');
+}
+
 const inputClass = 'w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3.5 py-2.5 text-sm transition-all focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20';
 </script>
 
@@ -355,6 +361,30 @@ const inputClass = 'w-full rounded-xl border border-[var(--border)] bg-[var(--su
                         {{ t('profile_settings_page.save_password') }}
                     </button>
                 </form>
+
+                <!-- Data Export & Account Deletion -->
+                <div class="card anim-rise rounded-2xl p-6 border border-rose-500/20 space-y-4">
+                    <h2 class="font-heading text-base font-bold text-[var(--text)]">
+                        {{ locale === 'en' ? 'Account Data & Deletion' : 'অ্যাকাউন্ট ডেটা ও ডিলিট' }}
+                    </h2>
+                    <p class="text-xs text-[var(--text-muted)]">
+                        {{ locale === 'en' ? 'Download a JSON copy of your profile, orders, and study data, or permanently delete your account.' : 'আপনার প্রোফাইল, অর্ডার ও পড়াশোনার ডেটা JSON আকারে ডাউনলোড করুন অথবা স্থায়ীভাবে অ্যাকাউন্ট ডিলিট করুন।' }}
+                    </p>
+                    <a href="/profile/export" class="btn btn-sm rounded-xl border border-[var(--border)] bg-[var(--surface2)] inline-flex items-center justify-center w-full">
+                        {{ locale === 'en' ? 'Export My Data (JSON)' : 'আমার ডেটা ডাউনলোড করুন (JSON)' }}
+                    </a>
+                    <form @submit.prevent="deleteAccount" class="pt-3 border-t border-[var(--border)] space-y-2.5">
+                        <label class="block text-xs font-medium text-rose-500">
+                            {{ locale === 'en' ? 'Type DELETE to permanently delete your account:' : 'অ্যাকাউন্ট স্থায়ীভাবে ডিলিট করতে DELETE লিখুন:' }}
+                        </label>
+                        <input v-model="deleteForm.confirmation" type="text" placeholder="DELETE" :class="inputClass" />
+                        <p v-if="deleteForm.errors.confirmation" class="text-xs text-rose-500">{{ deleteForm.errors.confirmation }}</p>
+                        <button type="submit" :disabled="deleteForm.processing || deleteForm.confirmation !== 'DELETE'"
+                            class="w-full py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold disabled:opacity-40 transition">
+                            {{ locale === 'en' ? 'Delete My Account' : 'অ্যাকাউন্ট ডিলিট করুন' }}
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </StudentLayout>

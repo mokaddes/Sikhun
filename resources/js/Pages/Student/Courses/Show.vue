@@ -938,8 +938,19 @@ function scrollToCheckout() {
                     <div class="sticky top-20 overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl transition-all">
                         <!-- Preview Thumbnail / Cover with Free Preview Button Overlay -->
                         <div class="group relative aspect-video overflow-hidden bg-[var(--surface2)]">
+                            <video
+                                v-if="course.has_demo_video && course.demo_preview_url"
+                                :src="course.demo_preview_url"
+                                :poster="course.cover_image_url || undefined"
+                                controls
+                                controlsList="nodownload"
+                                disablePictureInPicture
+                                preload="metadata"
+                                @contextmenu.prevent
+                                class="h-full w-full object-cover bg-black"
+                            />
                             <img
-                                v-if="course.cover_image_url"
+                                v-else-if="course.cover_image_url"
                                 :src="course.cover_image_url"
                                 :alt="course.title"
                                 width="480"
@@ -952,7 +963,7 @@ function scrollToCheckout() {
 
                             <!-- Floating Free Preview Badge / Trigger -->
                             <Link
-                                v-if="firstPreviewLessonUrl"
+                                v-if="firstPreviewLessonUrl && !course.has_demo_video"
                                 :href="firstPreviewLessonUrl"
                                 class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-90 sm:opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                             >
@@ -1056,11 +1067,13 @@ function scrollToCheckout() {
                                     </button>
 
                                     <button
+                                        v-for="gw in ($page.props.site?.payment_methods || []).filter(m => m.key !== 'mhpay')"
+                                        :key="gw.key"
                                         type="button"
-                                        @click="enrollAuthenticated('zinipay')"
+                                        @click="enrollAuthenticated(gw.key)"
                                         class="flex w-full items-center justify-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text)] transition pt-1"
                                     >
-                                        <span>{{ locale === 'en' ? 'Use Alternative Gateway (ZiniPay) →' : 'বিকল্প পেমেন্ট গেটওয়ে (ZiniPay) →' }}</span>
+                                        <span>{{ gw.label }} →</span>
                                     </button>
                                 </template>
                             </div>

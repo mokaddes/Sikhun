@@ -12,7 +12,7 @@ class RechargeRequest extends FormRequest
     {
         return [
             'amount' => ['required', 'numeric', 'min:50', 'max:50000'],
-            'method' => ['required', 'in:zinipay,mhpay,manual'],
+            'method' => ['required', 'in:mhpay,bkash,nagad,manual'],
             'transaction_reference' => ['required_if:method,manual', 'nullable', 'string', 'max:255'],
         ];
     }

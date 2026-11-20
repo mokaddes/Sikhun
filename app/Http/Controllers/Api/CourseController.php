@@ -12,7 +12,6 @@ use App\Services\AccessGrantService;
 use App\Services\CertificateService;
 use App\Services\CourseDeliveryService;
 use App\Services\Payment\PaymentGatewayResolver;
-use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,8 +33,8 @@ class CourseController extends BaseApiController
     {
         abort_unless($course->is_active, 404);
         $student = auth('sanctum')->user();
-        $enrollment = $student->courseEnrollments()->where('course_id', $course->id)->first();
-        $hasAccess = $grants->hasActiveAccess($student);
+        $enrollment = $student?->courseEnrollments()->where('course_id', $course->id)->first();
+        $hasAccess = $student ? $grants->hasActiveAccess($student) : false;
 
         $course->load(['mentor', 'category', 'sections.lessons'])->decorateLessonsForStudent();
 

@@ -6,7 +6,9 @@ use App\Http\Controllers\Public\ReferralController as PublicReferralController;
 use App\Http\Controllers\Student\AccessController;
 use App\Http\Controllers\Student\AiChatController;
 use App\Http\Controllers\Student\Auth\EmailVerificationController;
+use App\Http\Controllers\Student\Auth\OtpAuthController;
 use App\Http\Controllers\Student\Auth\PasswordResetController;
+use App\Http\Controllers\Student\Auth\SocialAuthController;
 use App\Http\Controllers\Student\Auth\StudentAuthController;
 use App\Http\Controllers\Student\BookshelfController;
 use App\Http\Controllers\Student\CourseController;
@@ -77,6 +79,7 @@ Route::get('/results', [\App\Http\Controllers\Public\ToolController::class, 'res
 // Public Courses (browse, detail, free-preview lessons & guest checkout are public)
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
 Route::get('/courses/{course:slug}', [CourseController::class, 'show'])->name('courses.show');
+Route::get('/courses/{course:slug}/demo-stream', [CourseController::class, 'streamDemo'])->name('courses.demo.stream');
 Route::post('/courses/{course}/guest-enroll', [CourseController::class, 'guestEnroll'])->name('courses.guest-enroll');
 Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}', [CourseController::class, 'lesson'])->name('courses.lesson');
 Route::get('/courses/{course:slug}/sections/{section}/lessons/{lesson}/video', [CourseController::class, 'streamVideo'])->name('courses.lesson.video');
@@ -112,6 +115,11 @@ Route::middleware('guest:web')->group(function () {
     Route::post('/register', [StudentAuthController::class, 'register'])->middleware('throttle:register');
     Route::get('/login', [StudentAuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [StudentAuthController::class, 'login'])->middleware('throttle:auth');
+    Route::post('/otp/send', [OtpAuthController::class, 'send'])->middleware('throttle:auth')->name('otp.send');
+    Route::post('/otp/login', [OtpAuthController::class, 'login'])->middleware('throttle:auth')->name('otp.login');
+    Route::post('/otp/register', [OtpAuthController::class, 'register'])->middleware('throttle:register')->name('otp.register');
+    Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])->name('oauth.redirect');
+    Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'])->name('oauth.callback');
 
     // Password reset (email link). Always rate-limited so the endpoint
     // cannot be used to spam a student's inbox or enumerate accounts.
@@ -299,6 +307,8 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/profile/settings', [ProfileController::class, 'settings'])->name('profile.settings');
     Route::match(['put', 'post'], '/profile/info', [ProfileController::class, 'updateProfile'])->name('profile.info');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::get('/profile/export', [ProfileController::class, 'exportData'])->name('profile.export');
+    Route::delete('/profile/account', [ProfileController::class, 'deleteAccount'])->name('profile.delete');
 
     // Coupons / free-access status
     Route::get('/access', [AccessController::class, 'index'])->name('access.index');

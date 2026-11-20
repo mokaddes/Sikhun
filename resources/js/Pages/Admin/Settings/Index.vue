@@ -73,6 +73,41 @@ const form = useForm({
     pagepilot_webhook_url: props.settings.pagepilot_webhook_url ?? 'https://pagepilotbd.com/api/v1/pages/1299709296552706/trigger',
     pagepilot_api_key: props.settings.pagepilot_api_key ?? 'pp_sec_44350dm0rtZ3kshrDTYM9CcmXS1VaPH2y2sh',
     pagepilot_auto_publish: props.settings.pagepilot_auto_publish === undefined ? true : Boolean(Number(props.settings.pagepilot_auto_publish) || props.settings.pagepilot_auto_publish === 'true' || props.settings.pagepilot_auto_publish === true),
+    // SMS OTP
+    sms_otp_enabled: Boolean(Number(props.settings.sms_otp_enabled) || props.settings.sms_otp_enabled === 'true' || props.settings.sms_otp_enabled === true),
+    sms_provider: props.settings.sms_provider ?? 'generic_http',
+    sms_api_url: props.settings.sms_api_url ?? '',
+    sms_api_key: props.settings.sms_api_key ?? '',
+    sms_sender_id: props.settings.sms_sender_id ?? 'Sikhun',
+    // Payment Gateways
+    payment_mhpay_enabled: props.settings.payment_mhpay_enabled === undefined ? true : Boolean(Number(props.settings.payment_mhpay_enabled) || props.settings.payment_mhpay_enabled === 'true' || props.settings.payment_mhpay_enabled === true),
+    payment_bkash_enabled: Boolean(Number(props.settings.payment_bkash_enabled) || props.settings.payment_bkash_enabled === 'true' || props.settings.payment_bkash_enabled === true),
+    payment_bkash_sandbox: props.settings.payment_bkash_sandbox === undefined ? true : Boolean(Number(props.settings.payment_bkash_sandbox) || props.settings.payment_bkash_sandbox === 'true' || props.settings.payment_bkash_sandbox === true),
+    payment_bkash_app_key: props.settings.payment_bkash_app_key ?? '',
+    payment_bkash_app_secret: props.settings.payment_bkash_app_secret ?? '',
+    payment_bkash_username: props.settings.payment_bkash_username ?? '',
+    payment_bkash_password: props.settings.payment_bkash_password ?? '',
+    payment_nagad_enabled: Boolean(Number(props.settings.payment_nagad_enabled) || props.settings.payment_nagad_enabled === 'true' || props.settings.payment_nagad_enabled === true),
+    payment_nagad_sandbox: props.settings.payment_nagad_sandbox === undefined ? true : Boolean(Number(props.settings.payment_nagad_sandbox) || props.settings.payment_nagad_sandbox === 'true' || props.settings.payment_nagad_sandbox === true),
+    payment_nagad_merchant_id: props.settings.payment_nagad_merchant_id ?? '',
+    payment_nagad_merchant_number: props.settings.payment_nagad_merchant_number ?? '',
+    payment_nagad_public_key: props.settings.payment_nagad_public_key ?? '',
+    payment_nagad_private_key: props.settings.payment_nagad_private_key ?? '',
+    // FCM Push
+    fcm_enabled: Boolean(Number(props.settings.fcm_enabled) || props.settings.fcm_enabled === 'true' || props.settings.fcm_enabled === true),
+    fcm_project_id: props.settings.fcm_project_id ?? '',
+    fcm_server_key: props.settings.fcm_server_key ?? '',
+    fcm_service_account_json: props.settings.fcm_service_account_json ?? '',
+    // AI Cost Governance
+    ai_default_monthly_cost_limit_usd: props.settings.ai_default_monthly_cost_limit_usd ?? '',
+    // Social OAuth & Observability
+    oauth_google_enabled: Boolean(Number(props.settings.oauth_google_enabled) || props.settings.oauth_google_enabled === 'true' || props.settings.oauth_google_enabled === true),
+    oauth_google_client_id: props.settings.oauth_google_client_id ?? '',
+    oauth_google_client_secret: props.settings.oauth_google_client_secret ?? '',
+    oauth_facebook_enabled: Boolean(Number(props.settings.oauth_facebook_enabled) || props.settings.oauth_facebook_enabled === 'true' || props.settings.oauth_facebook_enabled === true),
+    oauth_facebook_client_id: props.settings.oauth_facebook_client_id ?? '',
+    oauth_facebook_client_secret: props.settings.oauth_facebook_client_secret ?? '',
+    observability_webhook_url: props.settings.observability_webhook_url ?? '',
 });
 
 const logoPreview = ref(props.settings.site_logo_url ?? null);
@@ -679,6 +714,128 @@ function submit() {
                                 min="1"
                                 class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)] focus:border-[var(--primary)] focus:outline-none"
                             />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SMS OTP, Payment Gateways, FCM & AI Cost Governance -->
+                <div class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 space-y-6">
+                    <h2 class="text-base font-bold text-[var(--text)]">SMS OTP Authentication</h2>
+                    <label class="flex items-center gap-2.5 text-sm font-medium text-[var(--text)]">
+                        <input v-model="form.sms_otp_enabled" type="checkbox" class="rounded" />
+                        <span>Enable SMS OTP Login &amp; Registration (turn ON after configuring SMS API)</span>
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">SMS Provider</label>
+                            <select v-model="form.sms_provider" class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]">
+                                <option value="generic_http">Generic HTTP API</option>
+                                <option value="sslwireless">SSLWireless</option>
+                                <option value="bulksmsbd">BulkSMSBD</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Sender ID</label>
+                            <input v-model="form.sms_sender_id" type="text" class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">SMS API URL</label>
+                            <input v-model="form.sms_api_url" type="text" placeholder="https://api.example.com/sms?to={phone}&msg={message}" class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">SMS API Key / Token</label>
+                            <input v-model="form.sms_api_key" type="password" class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 space-y-6">
+                    <h2 class="text-base font-bold text-[var(--text)]">Payment Gateways (MHPay, bKash &amp; Nagad Merchant)</h2>
+                    <div class="space-y-4">
+                        <label class="flex items-center gap-2.5 text-sm font-medium text-[var(--text)]">
+                            <input v-model="form.payment_mhpay_enabled" type="checkbox" class="rounded" />
+                            <span>Enable MHPay (bKash / Nagad / Rocket / Upay)</span>
+                        </label>
+
+                        <div class="rounded-xl border border-[var(--border)] p-4 space-y-3">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <label class="flex items-center gap-2.5 text-sm font-semibold text-[var(--text)]">
+                                    <input v-model="form.payment_bkash_enabled" type="checkbox" class="rounded" />
+                                    <span>Enable Direct bKash Merchant</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+                                    <input v-model="form.payment_bkash_sandbox" type="checkbox" class="rounded" />
+                                    <span>Sandbox Mode</span>
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <input v-model="form.payment_bkash_app_key" type="text" placeholder="bKash App Key" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)]" />
+                                <input v-model="form.payment_bkash_app_secret" type="password" placeholder="bKash App Secret" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)]" />
+                                <input v-model="form.payment_bkash_username" type="text" placeholder="bKash Username" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)]" />
+                                <input v-model="form.payment_bkash_password" type="password" placeholder="bKash Password" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)]" />
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-[var(--border)] p-4 space-y-3">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <label class="flex items-center gap-2.5 text-sm font-semibold text-[var(--text)]">
+                                    <input v-model="form.payment_nagad_enabled" type="checkbox" class="rounded" />
+                                    <span>Enable Direct Nagad Merchant</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+                                    <input v-model="form.payment_nagad_sandbox" type="checkbox" class="rounded" />
+                                    <span>Sandbox Mode</span>
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <input v-model="form.payment_nagad_merchant_id" type="text" placeholder="Nagad Merchant ID" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)]" />
+                                <input v-model="form.payment_nagad_merchant_number" type="text" placeholder="Nagad Merchant Number" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)]" />
+                                <textarea v-model="form.payment_nagad_public_key" rows="2" placeholder="Nagad Public Key (PEM)" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-xs text-[var(--text)]" />
+                                <textarea v-model="form.payment_nagad_private_key" rows="2" placeholder="Merchant Private Key (PEM)" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-xs text-[var(--text)]" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 space-y-4">
+                    <h2 class="text-base font-bold text-[var(--text)]">Push Notifications (FCM) &amp; AI Cost Limit</h2>
+                    <label class="flex items-center gap-2.5 text-sm font-medium text-[var(--text)]">
+                        <input v-model="form.fcm_enabled" type="checkbox" class="rounded" />
+                        <span>Enable FCM Push Notifications</span>
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input v-model="form.fcm_project_id" type="text" placeholder="Firebase Project ID" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+                        <input v-model="form.fcm_server_key" type="password" placeholder="FCM Legacy Server Key (optional)" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+                        <textarea v-model="form.fcm_service_account_json" rows="2" placeholder="Firebase Service Account JSON (for FCM v1)" class="md:col-span-2 rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-xs text-[var(--text)]" />
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Default Monthly AI Cost Cap per Student (USD)</label>
+                            <input v-model="form.ai_default_monthly_cost_limit_usd" type="number" step="0.01" min="0" placeholder="e.g. 1.50 (blank = unlimited)" class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Observability Alert Webhook URL</label>
+                            <input v-model="form.observability_webhook_url" type="url" placeholder="https://hooks.slack.com/... (queue & health alerts)" class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 space-y-4">
+                    <h2 class="text-base font-bold text-[var(--text)]">Social OAuth (Google &amp; Facebook Login)</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2 rounded-xl border border-[var(--border)] p-4">
+                            <label class="flex items-center gap-2 text-sm font-semibold text-[var(--text)]">
+                                <input v-model="form.oauth_google_enabled" type="checkbox" class="rounded" />
+                                <span>Enable Google Login</span>
+                            </label>
+                            <input v-model="form.oauth_google_client_id" type="text" placeholder="Google Client ID" class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)]" />
+                            <input v-model="form.oauth_google_client_secret" type="password" placeholder="Google Client Secret" class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)]" />
+                        </div>
+                        <div class="space-y-2 rounded-xl border border-[var(--border)] p-4">
+                            <label class="flex items-center gap-2 text-sm font-semibold text-[var(--text)]">
+                                <input v-model="form.oauth_facebook_enabled" type="checkbox" class="rounded" />
+                                <span>Enable Facebook Login</span>
+                            </label>
+                            <input v-model="form.oauth_facebook_client_id" type="text" placeholder="Facebook App ID" class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)]" />
+                            <input v-model="form.oauth_facebook_client_secret" type="password" placeholder="Facebook App Secret" class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)]" />
                         </div>
                     </div>
                 </div>

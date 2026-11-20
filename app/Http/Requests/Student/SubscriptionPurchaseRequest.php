@@ -17,7 +17,7 @@ class SubscriptionPurchaseRequest extends FormRequest
             'is_custom' => ['nullable', 'boolean'],
             'custom_config' => ['nullable', 'array'],
             'months' => ['required', 'integer', 'min:1', 'max:12'],
-            'payment_method' => ['required', 'in:wallet,zinipay,mhpay,free'],
+            'payment_method' => ['required', 'in:wallet,mhpay,bkash,nagad,free'],
         ];
     }
 

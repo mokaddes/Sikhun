@@ -8,7 +8,6 @@ use App\Models\Book;
 use App\Models\Category;
 use App\Services\BookAccessService;
 use App\Services\Payment\PaymentGatewayResolver;
-use App\Services\Payment\ZinipayService;
 use App\Services\PurchaseService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -135,7 +134,7 @@ class LibraryController extends Controller
         abort_unless($chapter->book_id === $book->id, 404);
 
         $validated = $request->validate([
-            'payment_method' => ['required', 'in:wallet,zinipay,mhpay'],
+            'payment_method' => ['required', 'in:wallet,mhpay,bkash,nagad'],
         ]);
 
         $student = auth('web')->user();
@@ -164,7 +163,7 @@ class LibraryController extends Controller
         $validated = $request->validate([
             'chapter_ids' => ['required', 'array', 'min:1'],
             'chapter_ids.*' => ['integer', 'exists:book_chapters,id'],
-            'payment_method' => ['required', 'in:wallet,zinipay,mhpay'],
+            'payment_method' => ['required', 'in:wallet,mhpay,bkash,nagad'],
         ]);
 
         $chapters = $book->chapters()->whereIn('id', $validated['chapter_ids'])->get()->all();

@@ -148,8 +148,8 @@ onUnmounted(() => revealObserver?.disconnect());
                     <div><p class="home-kicker">{{ en ? 'From the library' : 'লাইব্রেরি থেকে' }}</p><h2 class="home-heading mt-2">{{ en ? 'Keep a good book close.' : 'পছন্দের বই পাশে রাখুন।' }}</h2></div>
                     <Link href="/library" class="home-text-link">{{ en ? 'Browse books' : 'বই দেখুন' }} →</Link>
                 </div>
-                <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <Link v-for="book in popularBooks.slice(0, 4)" :key="book.id" :href="`/library/${book.slug}`" class="home-book home-reveal">
+                <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    <Link v-for="book in popularBooks.slice(0, 5)" :key="book.id" :href="`/library/${book.slug}`" class="home-book home-reveal">
                         <img v-if="book.cover_image_url" :src="book.cover_image_url" :alt="book.title" loading="lazy" />
                         <span v-else class="home-book-placeholder">{{ en ? 'READ' : 'পড়ুন' }}</span>
                         <span class="home-book-title">{{ book.title }}</span>

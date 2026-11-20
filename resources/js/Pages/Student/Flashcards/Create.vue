@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import { useI18n } from '@/i18n';
 import {
@@ -16,20 +16,34 @@ import {
 
 const props = defineProps({
     books: { type: Array, default: () => [] },
+    myBooks: { type: Array, default: () => [] },
     subjects: { type: Array, default: () => [] },
     exams: { type: Array, default: () => [] },
+    canUseQuestionBank: { type: Boolean, default: null },
     prefill: { type: Object, default: () => ({}) },
 });
 
 const { t, locale } = useI18n();
+const page = usePage();
 
-const sourceType = ref(props.prefill?.source_type || 'topic');
+const allowQuestionBank = computed(() => {
+    if (props.canUseQuestionBank !== null) return props.canUseQuestionBank;
+    const student = page.props.auth?.student;
+    return !student || ['admission', 'job'].includes(student.type);
+});
+
+const sourceType = ref(
+    (!allowQuestionBank.value && props.prefill?.source_type === 'question_bank')
+        ? 'topic'
+        : (props.prefill?.source_type || 'topic')
+);
 
 const form = useForm({
     title: props.prefill?.title || '',
-    source_type: props.prefill?.source_type || 'topic',
+    source_type: sourceType.value,
     source_topic: '',
     source_book_id: null,
+    source_my_book_id: null,
     chapter_ids: [],
     subject_id: props.prefill?.subject_id || null,
     origin_tag: props.prefill?.origin_tag || '',
@@ -38,10 +52,33 @@ const form = useForm({
     count: 15,
 });
 
+const selectedBookKey = ref('');
+function onBookSelectChange() {
+    form.chapter_ids = [];
+    if (!selectedBookKey.value) {
+        form.source_book_id = null;
+        form.source_my_book_id = null;
+        return;
+    }
+    const [kind, id] = selectedBookKey.value.split(':');
+    if (kind === 'my') {
+        form.source_my_book_id = Number(id);
+        form.source_book_id = null;
+    } else {
+        form.source_book_id = Number(id);
+        form.source_my_book_id = null;
+    }
+}
+
 onMounted(() => {
     if (props.prefill?.source_type) {
-        sourceType.value = props.prefill.source_type;
-        form.source_type = props.prefill.source_type;
+        if (!allowQuestionBank.value && props.prefill.source_type === 'question_bank') {
+            sourceType.value = 'topic';
+            form.source_type = 'topic';
+        } else {
+            sourceType.value = props.prefill.source_type;
+            form.source_type = props.prefill.source_type;
+        }
     }
 });
 
@@ -49,12 +86,15 @@ function switchSourceType(type) {
     sourceType.value = type;
     form.source_type = type;
     if (type !== 'book') {
+        selectedBookKey.value = '';
         form.source_book_id = null;
+        form.source_my_book_id = null;
         form.chapter_ids = [];
     }
 }
 
 const selectedBook = computed(() => props.books?.find((b) => b.id === form.source_book_id));
+const selectedMyBook = computed(() => props.myBooks?.find((b) => b.id === form.source_my_book_id));
 
 const countPresets = [5, 10, 15, 20, 25, 30];
 
@@ -63,8 +103,8 @@ function submit() {
     if (!form.title.trim()) {
         if (sourceType.value === 'topic' && form.source_topic.trim()) {
             form.title = form.source_topic.trim() + ' ফ্ল্যাশকার্ড';
-        } else if (sourceType.value === 'book' && selectedBook.value) {
-            form.title = selectedBook.value.title + ' ফ্ল্যাশকার্ড';
+        } else if (sourceType.value === 'book' && (selectedBook.value || selectedMyBook.value)) {
+            form.title = (selectedBook.value || selectedMyBook.value).title + ' ফ্ল্যাশকার্ড';
         } else if (sourceType.value === 'question_bank') {
             const subj = props.subjects?.find((s) => s.id === form.subject_id);
             form.title = (subj ? (subj.name_bn || subj.name_en) : 'প্রশ্নব্যাংক') + ' ফ্ল্যাশকার্ড';
@@ -104,8 +144,8 @@ function submit() {
                     </h1>
                     <p class="mt-1 text-sm text-[var(--text-muted)]">
                         {{ locale === 'en'
-                            ? 'Generate front-and-back study flashcards from topics, books, question banks, or notes.'
-                            : 'টপিক, বই, প্রশ্নব্যাংক বা নোট থেকে নিমেষেই ইন্টারেক্টিভ রিভিশন কার্ড তৈরি করুন।' }}
+                            ? (allowQuestionBank ? 'Generate front-and-back study flashcards from topics, books, question banks, or notes.' : 'Generate front-and-back study flashcards from topics, books, or notes.')
+                            : (allowQuestionBank ? 'টপিক, বই, প্রশ্নব্যাংক বা নোট থেকে নিমেষেই ইন্টারেক্টিভ রিভিশন কার্ড তৈরি করুন।' : 'টপিক, বই বা নোট থেকে নিমেষেই ইন্টারেক্টিভ রিভিশন কার্ড তৈরি করুন।') }}
                     </p>
                 </div>
                 <div class="hidden sm:grid h-14 w-14 place-items-center rounded-2xl bg-[var(--surface2)] text-[var(--tertiary)] shrink-0">
@@ -120,7 +160,7 @@ function submit() {
                     <label class="block text-sm font-bold text-[var(--text)] mb-2">
                         {{ locale === 'en' ? 'Choose Material Source' : 'ফ্ল্যাশকার্ড তৈরির উৎস নির্বাচন করুন' }}
                     </label>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div :class="['grid gap-2', allowQuestionBank ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3']">
                         <button
                             type="button"
                             @click="switchSourceType('topic')"
@@ -149,6 +189,7 @@ function submit() {
                             <span>{{ locale === 'en' ? 'Book' : 'বই ও অধ্যায়' }}</span>
                         </button>
                         <button
+                            v-if="allowQuestionBank"
                             type="button"
                             @click="switchSourceType('question_bank')"
                             class="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border text-xs font-bold transition text-center cursor-pointer"
@@ -196,13 +237,21 @@ function submit() {
                         {{ t('exams.source_book') }}
                     </label>
                     <select
-                        v-model="form.source_book_id"
-                        @change="form.chapter_ids = []"
+                        v-model="selectedBookKey"
+                        @change="onBookSelectChange"
                         class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-3 text-sm font-medium focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
                     >
-                        <option :value="null">— {{ locale === 'en' ? 'Select a book from your library' : 'আপনার লাইব্রেরি থেকে একটি বই নির্বাচন করুন' }} —</option>
-                        <option v-for="b in books" :key="b.id" :value="b.id">{{ b.title }}</option>
+                        <option value="">— {{ locale === 'en' ? 'Select from Bookshelf or My Books' : 'বুকশেল্ফ বা নিজের যোগ করা বই নির্বাচন করুন' }} —</option>
+                        <optgroup v-if="books.length" :label="locale === 'en' ? 'Bookshelf Books' : 'বুকশেল্ফের বই'">
+                            <option v-for="b in books" :key="'book-' + b.id" :value="'book:' + b.id">{{ b.title }}</option>
+                        </optgroup>
+                        <optgroup v-if="myBooks.length" :label="locale === 'en' ? 'My Added Books' : 'আমার যোগ করা বই'">
+                            <option v-for="mb in myBooks" :key="'my-' + mb.id" :value="'my:' + mb.id">{{ mb.title }}</option>
+                        </optgroup>
                     </select>
+                    <p v-if="!books.length && !myBooks.length" class="mt-2 text-xs text-amber-500">
+                        {{ locale === 'en' ? 'No books in your Bookshelf or My Books yet. Add a book from Library or upload your own.' : 'আপনার বুকশেল্ফ বা নিজের বইয়ের তালিকায় কোনো বই নেই। লাইব্রেরি থেকে বই যোগ করুন অথবা নিজের বই আপলোড করুন।' }}
+                    </p>
 
                     <div v-if="selectedBook?.chapters?.length" class="mt-3">
                         <label class="mb-1 block text-sm font-bold text-[var(--text)]">

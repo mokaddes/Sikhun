@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Events\NewNotificationBroadcast;
+use App\Jobs\SendPushNotificationJob;
 use App\Models\Student;
 use App\Models\StudentNotificationPreference;
 
@@ -51,6 +52,10 @@ class NotificationService
         ]);
 
         broadcast(new NewNotificationBroadcast($notification))->toOthers();
+
+        if (app(PushNotificationService::class)->isEnabled()) {
+            SendPushNotificationJob::dispatch($student->id, $title, $body, array_merge($data, ['type' => $type, 'notification_id' => $notification->id]));
+        }
 
         return true;
     }

@@ -4,6 +4,7 @@ namespace App\Services\Ai;
 
 use App\Contracts\AiProviderContract;
 use App\Models\AiProvider;
+use App\Models\Student;
 use Throwable;
 
 class LoggingAiProviderDecorator implements AiProviderContract
@@ -30,6 +31,7 @@ class LoggingAiProviderDecorator implements AiProviderContract
         $start = microtime(true);
         $mergedOptions = array_merge($this->context, $options);
         $useCase = $options['use_case'] ?? $this->useCase;
+        $this->enforceStudentCostLimit($mergedOptions);
 
         try {
             $response = $this->inner->chat($messages, $options);
@@ -98,6 +100,7 @@ class LoggingAiProviderDecorator implements AiProviderContract
         $mergedOptions = array_merge($this->context, $options);
         $useCase = $options['use_case'] ?? $this->useCase;
         $fullResponse = '';
+        $this->enforceStudentCostLimit($mergedOptions);
 
         try {
             foreach ($this->inner->stream($messages, $options) as $chunk) {
@@ -138,5 +141,16 @@ class LoggingAiProviderDecorator implements AiProviderContract
     public function isAvailable(): bool
     {
         return $this->inner->isAvailable();
+    }
+
+    protected function enforceStudentCostLimit(array $options): void
+    {
+        $student = $options['student'] ?? null;
+        if (! $student instanceof Student && ! empty($options['student_id'])) {
+            $student = Student::find($options['student_id']);
+        }
+        if ($student instanceof Student) {
+            app(AiCostGovernanceService::class)->checkLimit($student);
+        }
     }
 }

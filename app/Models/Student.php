@@ -19,7 +19,7 @@ class Student extends Authenticatable implements MustVerifyEmail
     protected $guard = 'web';
 
     protected $fillable = [
-        'name', 'email', 'phone_hash', 'password', 'type', 'status', 'trial_ends_at',
+        'name', 'email', 'phone', 'phone_verified_at', 'phone_hash', 'password', 'type', 'status', 'trial_ends_at',
         'wallet_balance', 'ai_trial_minutes_used', 'ai_trial_vision_used',
         'trial_reuploads_count', 'trial_reuploads_month', 'referral_code',
         'referred_by_student_id', 'avatar', 'theme_mode', 'leaderboard_opt_out',
@@ -32,6 +32,7 @@ class Student extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'phone_verified_at' => 'datetime',
             'trial_ends_at' => 'datetime',
             'password' => 'hashed',
             'wallet_balance' => 'decimal:2',

@@ -56,6 +56,81 @@ class AiChatController extends BaseApiController
         return $this->success(null, 'Deleted');
     }
 
+    /**
+     * Direct synchronous AI question-answering for mobile and client apps.
+     */
+    public function ask(Request $request, BookChunkRetrievalService $retrieval): JsonResponse
+    {
+        $student = auth('sanctum')->user();
+        $userMessage = trim((string) $request->input('message', ''));
+        if ($userMessage === '') {
+            return $this->error('Message cannot be empty', [], 422);
+        }
+
+        $bookId = $request->input('book_id');
+        $book = $bookId ? Book::find($bookId) : null;
+        $sessionId = $request->input('session_id');
+
+        $session = null;
+        if ($sessionId && $student) {
+            $session = $student->aiSessions()->find($sessionId);
+        }
+        if (! $session && $student) {
+            $session = $student->aiSessions()->create([
+                'source_type' => $book ? 'book' : 'none',
+                'source_book_id' => $book?->id,
+                'title' => mb_substr($userMessage, 0, 40),
+                'messages' => [],
+            ]);
+        }
+
+        $messages = $session?->messages ?? [];
+        $messages[] = ['role' => 'user', 'content' => $userMessage];
+
+        $systemPrompt = 'You are Sikhun AI Tutor (শিখুন এআই টিউটর), a helpful, encouraging and accurate study assistant for Bangladeshi students. Always respond clearly in Bengali (বাংলা) with bullet points and easy-to-understand explanations unless the user asks in English.';
+        if ($book) {
+            $contextBlocks = $retrieval->buildContext($book, $userMessage, $student);
+            if ($contextBlocks) {
+                $systemPrompt .= "\n\nUse these excerpts from \"{$book->title}\" where relevant:\n\n".$this->renderContext($contextBlocks);
+            }
+        }
+
+        $payload = array_merge([['role' => 'system', 'content' => $systemPrompt]], array_slice($messages, -10));
+        $reply = '';
+
+        try {
+            $provider = AiProviderFactory::default('book_chat', ['student' => $student]);
+            // Attempt streaming accumulation to handle any provider contract cleanly
+            foreach ($provider->stream($payload) as $chunk) {
+                $reply .= $chunk;
+            }
+            if (empty(trim($reply))) {
+                $reply = $provider->complete($payload);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('AI Chat Error: '.$e->getMessage());
+            $reply = 'দুঃখিত, এআই সার্ভার সাময়িকভাবে ব্যস্ত আছে। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।';
+        }
+
+        if (empty(trim($reply))) {
+            $reply = 'দুঃখিত, এই মুহূর্তে কোনো উত্তর তৈরি করা সম্ভব হয়নি। অনুগ্রহ করে প্রশ্নটি আবার সংক্ষেপে লিখুন।';
+        }
+
+        if ($session) {
+            $messages[] = ['role' => 'assistant', 'content' => $reply];
+            $session->update(['messages' => $messages]);
+            if ($student) {
+                $student->recordSuccessfulAiChat();
+            }
+        }
+
+        return $this->success([
+            'reply' => $reply,
+            'session_id' => $session?->id,
+            'status' => 'success',
+        ]);
+    }
+
     public function stream(Request $request, AiSession $session, BookChunkRetrievalService $retrieval): StreamedResponse
     {
         $this->authorizeSession($session);

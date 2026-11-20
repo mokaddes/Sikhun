@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AccessController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BlogController;
 use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EssayController;
 use App\Http\Controllers\Api\ExamController;
 use App\Http\Controllers\Api\FlashcardController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Api\QuestionBankController;
 use App\Http\Controllers\Api\ReaderController;
 use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\Api\ScheduleController;
+use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\WalletController;
@@ -48,15 +50,32 @@ Route::match(['get', 'post'], 'zinipay/webhook', [ZinipayWebhookController::clas
 Route::match(['get', 'post'], 'mhpay/webhook', [MhpayWebhookController::class, 'handle'])->name('mhpay.webhook');
 
 Route::get('pages/{slug}', [PageController::class, 'show']);
+Route::get('settings', [SettingController::class, 'index']);
+
+// Public catalog and content endpoints
+Route::post('ai/chat', [AiChatController::class, 'ask']);
+Route::get('library', [LibraryController::class, 'index']);
+Route::get('library/{book:slug}', [LibraryController::class, 'show']);
+Route::get('library/{book}/chapters', [LibraryController::class, 'chapters']);
+
+Route::get('question-bank', [QuestionBankController::class, 'index']);
+Route::get('question-bank/filters', [QuestionBankController::class, 'filters']);
+Route::get('question-bank/{question}', [QuestionBankController::class, 'show']);
+
+Route::get('blogs', [BlogController::class, 'index']);
+Route::get('blogs/categories', [BlogController::class, 'categories']);
+Route::get('blogs/tags', [BlogController::class, 'tags']);
+Route::get('blogs/{post:slug}', [BlogController::class, 'show']);
+
+Route::get('courses', [CourseController::class, 'index']);
+Route::get('courses/{course:slug}', [CourseController::class, 'show']);
 
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('auth/me', [AuthController::class, 'me']);
+    Route::get('dashboard', [DashboardController::class, 'index']);
 
-    Route::get('library', [LibraryController::class, 'index']);
-    Route::get('library/{book:slug}', [LibraryController::class, 'show']);
     Route::post('library/{book}/purchase', [LibraryController::class, 'purchase']);
-    Route::get('library/{book}/chapters', [LibraryController::class, 'chapters']);
     Route::get('library/{book}/access', [LibraryController::class, 'access']);
     Route::post('library/{book}/chapters/purchase', [LibraryController::class, 'purchaseChapters']);
     Route::post('library/{book}/chapters/{chapter}/purchase', [LibraryController::class, 'purchaseChapter']);
@@ -65,19 +84,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('bookshelf/{book}', [LibraryController::class, 'addToShelf']);
     Route::delete('bookshelf/{book}', [LibraryController::class, 'removeFromShelf']);
 
-    Route::get('question-bank', [QuestionBankController::class, 'index']);
-    Route::get('question-bank/filters', [QuestionBankController::class, 'filters']);
-    Route::get('question-bank/{question}', [QuestionBankController::class, 'show']);
-
-    Route::get('blogs', [BlogController::class, 'index']);
-    Route::get('blogs/categories', [BlogController::class, 'categories']);
-    Route::get('blogs/tags', [BlogController::class, 'tags']);
-    Route::get('blogs/{post:slug}', [BlogController::class, 'show']);
-
     Route::get('reader/{book}/page/{page}/url', [ReaderController::class, 'pageUrl']);
 
-    Route::get('courses', [CourseController::class, 'index']);
-    Route::get('courses/{course:slug}', [CourseController::class, 'show']);
     Route::post('courses/{course}/enroll', [CourseController::class, 'enroll']);
     Route::get('courses/{course}/sections/{section}/lessons/{lesson}', [CourseController::class, 'lesson']);
     // Media URLs used by the mobile client; access is enforced in the controller.

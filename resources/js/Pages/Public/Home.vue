@@ -70,7 +70,7 @@ onUnmounted(() => revealObserver?.disconnect());
     <PublicLayout>
         <div class="home-design">
             <section class="home-hero mx-auto grid max-w-7xl items-center gap-5 px-5 pb-12 pt-12 sm:px-8 sm:pb-16 sm:pt-16 lg:grid-cols-2 lg:gap-12 lg:pt-20">
-                <div class="relative z-10 home-reveal">
+                <div class="relative z-10">
                     <p class="home-kicker">{{ en ? 'A quieter way to make progress' : 'মনোযোগ দিয়ে শেখার একটি সহজ ঠিকানা' }}</p>
                     <h1 class="home-title mt-5 max-w-2xl">{{ en ? 'Make room for deeper learning.' : 'শেখার জন্য একটু মনোযোগী পরিসর।' }}</h1>
                     <p class="home-lede mt-5 max-w-xl">{{ en ? 'Read, practice and ask better questions—with a study companion that keeps the important things together.' : 'পড়ুন, অনুশীলন করুন, প্রশ্ন করুন—পড়াশোনার দরকারি সবকিছু থাকুক একই পরিসরে।' }}</p>
@@ -84,7 +84,7 @@ onUnmounted(() => revealObserver?.disconnect());
                         <span>{{ en ? 'AI study tools' : 'AI স্টাডি টুল' }}</span>
                     </div>
                 </div>
-                <div class="home-scene home-reveal" aria-label="Animated study scene">
+                <div class="home-scene" aria-label="Animated study scene">
                     <EducativeHeroScene :locale="locale" />
                 </div>
             </section>

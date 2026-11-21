@@ -15,7 +15,7 @@ function installScrollReveal() {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!appRoot || reducedMotion || !('IntersectionObserver' in window)) return;
 
-    const selector = '.public-shell main section, .public-shell main article, .public-shell main .card, .public-shell main [data-scroll-reveal]';
+    const selector = '.public-shell main section:not(:first-of-type), .public-shell main article, .public-shell main .card, .public-shell main [data-scroll-reveal]';
     const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
             if (!entry.isIntersecting) return;
@@ -68,7 +68,7 @@ createInertiaApp({
     resolve: (name) =>
         resolvePageComponent(
             `./Pages/${name}.vue`,
-            import.meta.glob('./Pages/**/*.vue'),
+            import.meta.glob('./Pages/**/*.vue', { eager: false }),
         ),
     setup({ el, App, props, plugin }) {
         const pinia = createPinia();

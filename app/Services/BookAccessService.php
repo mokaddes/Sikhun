@@ -26,6 +26,15 @@ class BookAccessService
 {
     public function __construct(private AccessGrantService $grants) {}
 
+    public function isBookPaid(?Book $book): bool
+    {
+        if (! $book) {
+            return false;
+        }
+
+        return ! $book->is_free && $book->price !== null && (float) $book->price > 0;
+    }
+
     public function hasPricedChapters(?Book $book): bool
     {
         if (! $book || ! $book->chapter_purchase_enabled) {
@@ -44,37 +53,46 @@ class BookAccessService
             return false;
         }
 
+        if (! $student) {
+            return (! $this->isBookPaid($book)) && ! $this->hasPricedChapters($book);
+        }
+
+        // 1. Active site-wide access grant (campaign/coupon)
+        if ($this->grants->hasActiveAccess($student)) {
+            return true;
+        }
+
+        // 2. Subscription gift containing this book
+        $subscription = $student->activeSubscription;
+        if ($subscription && $subscription->expires_at->isFuture()
+            && in_array($book->id, $subscription->plan->gift_book_ids ?? [], true)) {
+            return true;
+        }
+
+        // 3. Completed book purchase with real payment (amount > 0)
+        $hasPaidBookOrder = $student->orders()
+            ->where('orderable_type', 'book')
+            ->where('orderable_id', $book->id)
+            ->where('status', 'completed')
+            ->where('amount', '>', 0)
+            ->exists();
+
+        if ($hasPaidBookOrder) {
+            return true;
+        }
+
+        // 4. Bookshelf record with source indicating purchase/gift/subscription
+        $hasPurchasedShelf = $student->bookShelf()
+            ->where('book_id', $book->id)
+            ->whereIn('source', ['purchased', 'paid', 'gift', 'subscription'])
+            ->exists();
+
+        if ($hasPurchasedShelf) {
+            return true;
+        }
+
+        // 5. If chapter purchase is enabled and book has priced chapters, check if student owns ALL priced chapters
         if ($this->hasPricedChapters($book)) {
-            // When a book has priced chapters, full access requires:
-            // 1. Active site-wide access grant (campaign/coupon)
-            // 2. Or subscription gift containing this book
-            // 3. Or a completed book purchase with real payment (amount > 0)
-            // 4. Or ownership of ALL priced chapters
-            if (! $student) {
-                return false;
-            }
-
-            if ($this->grants->hasActiveAccess($student)) {
-                return true;
-            }
-
-            $subscription = $student->activeSubscription;
-            if ($subscription && $subscription->expires_at->isFuture()
-                && in_array($book->id, $subscription->plan->gift_book_ids ?? [], true)) {
-                return true;
-            }
-
-            $hasPaidBookOrder = $student->orders()
-                ->where('orderable_type', 'book')
-                ->where('orderable_id', $book->id)
-                ->where('status', 'completed')
-                ->where('amount', '>', 0)
-                ->exists();
-
-            if ($hasPaidBookOrder) {
-                return true;
-            }
-
             $unownedPricedCount = $book->chapters()
                 ->whereNotNull('price')
                 ->where('price', '>', 0)
@@ -89,7 +107,13 @@ class BookAccessService
             return $unownedPricedCount === 0;
         }
 
-        return in_array($this->accessType($student, $book), ['free', 'granted', 'owned', 'subscription_gift'], true);
+        // 6. If book has price and is not owned, no full access
+        if ($this->isBookPaid($book)) {
+            return false;
+        }
+
+        // 7. Free / 0-price book without priced chapters
+        return true;
     }
 
     public function accessType(?Student $student, ?Book $book): string
@@ -157,35 +181,46 @@ class BookAccessService
         }
 
         // Full book access covers every chapter.
+        // Rule 1: "with book paid all chapter unlocked even chapter has price"
         if ($this->hasAccess($student, $book)) {
             return true;
         }
 
-        // Chapters with null or 0 price are FREE to read!
+        // Check if student explicitly owns this chapter or its ancestor
+        if ($student !== null) {
+            $candidate = $chapter;
+            $chapterIds = [$candidate->id];
+
+            while ($candidate->parent_id !== null) {
+                $candidate = BookChapter::find($candidate->parent_id);
+                if (! $candidate) {
+                    break;
+                }
+                $chapterIds[] = $candidate->id;
+            }
+
+            $ownsChapter = $student->ownedChapters()
+                ->where('book_id', $book->id)
+                ->whereIn('chapter_id', $chapterIds)
+                ->exists();
+
+            if ($ownsChapter) {
+                return true;
+            }
+        }
+
+        // Rule 1: If book has price, all chapters are locked unless the book is paid (or chapter was purchased above)
+        if ($this->isBookPaid($book)) {
+            return false;
+        }
+
+        // Rule 2: If book is free or price is 0, only free chapters can be read
         if ($chapter->price === null || (float) $chapter->price <= 0) {
             return true;
         }
 
-        if ($student === null) {
-            return false;
-        }
-
-        // Walk the ancestor chain: the chapter, its parent, grandparent…
-        $candidate = $chapter;
-        $chapterIds = [$candidate->id];
-
-        while ($candidate->parent_id !== null) {
-            $candidate = BookChapter::find($candidate->parent_id);
-            if (! $candidate) {
-                break;
-            }
-            $chapterIds[] = $candidate->id;
-        }
-
-        return $student->ownedChapters()
-            ->where('book_id', $book->id)
-            ->whereIn('chapter_id', $chapterIds)
-            ->exists();
+        // Paid chapter on a free/0-price book requires payment
+        return false;
     }
 
     /**
@@ -201,7 +236,35 @@ class BookAccessService
             return $book->chapters()->pluck('id')->all();
         }
 
-        // Always include all free chapters (price is null or <= 0)
+        // Rule 1: For a paid book, only explicitly owned chapters are accessible
+        if ($this->isBookPaid($book)) {
+            if ($student === null) {
+                return null;
+            }
+
+            $owned = $student->ownedChapters()
+                ->where('book_id', $book->id)
+                ->pluck('chapter_id')
+                ->all();
+
+            if (empty($owned)) {
+                return null;
+            }
+
+            $ids = $owned;
+            do {
+                $new = $book->chapters()
+                    ->whereIn('parent_id', $ids)
+                    ->whereNotIn('id', $ids)
+                    ->pluck('id')
+                    ->all();
+                $ids = array_merge($ids, $new);
+            } while ($new);
+
+            return array_values(array_unique($ids));
+        }
+
+        // Rule 2: For a free or 0-price book, free chapters are accessible + any owned chapters
         $freeChapterIds = $book->chapters()
             ->where(function ($q) {
                 $q->whereNull('price')->orWhere('price', '<=', 0);

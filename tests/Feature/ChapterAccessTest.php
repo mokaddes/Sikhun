@@ -143,11 +143,60 @@ class ChapterAccessTest extends TestCase
     {
         $book = $this->makeBookWithChapters(['gravity text']);
         $book->update(['is_free' => true]);
+        $book->chapters()->update(['price' => null]);
         $student = $this->student();
 
         $access = app(BookAccessService::class);
 
         $this->assertTrue($access->canAccessChapter($student, $book->chapters[0]));
+    }
+
+    public function test_paid_book_locks_all_chapters_until_book_paid(): void
+    {
+        $book = $this->makeBookWithChapters(['chapter one', 'chapter two']);
+        $book->update(['price' => 199, 'is_free' => false]);
+        $book->chapters[0]->update(['price' => null]); // unpriced chapter
+        $book->chapters[1]->update(['price' => 50]);
+
+        $student = $this->student();
+        $access = app(BookAccessService::class);
+
+        // Rule 1: if book have price, all chapter locked
+        $this->assertFalse($access->canAccessChapter($student, $book->chapters[0]));
+        $this->assertFalse($access->canAccessChapter($student, $book->chapters[1]));
+        $this->assertFalse($access->canAccessChapter(null, $book->chapters[0]));
+
+        // With book paid all chapter unlocked even chapter has price
+        $student->bookShelf()->create(['book_id' => $book->id, 'source' => 'purchased']);
+        $this->assertTrue($access->hasAccess($student, $book));
+        $this->assertTrue($access->canAccessChapter($student, $book->chapters[0]));
+        $this->assertTrue($access->canAccessChapter($student, $book->chapters[1]));
+    }
+
+    public function test_free_book_with_paid_chapter_requires_payment(): void
+    {
+        $book = $this->makeBookWithChapters(['free intro', 'paid deep dive']);
+        $book->update(['is_free' => true]);
+        $book->chapters[0]->update(['price' => null]);
+        // chapters[1] retains price 50
+        $student = $this->student();
+
+        $access = app(BookAccessService::class);
+
+        // Rule 2: only free chapter can read, paid chapter need to pay
+        $this->assertTrue($access->canAccessChapter($student, $book->chapters[0]));
+        $this->assertFalse($access->canAccessChapter($student, $book->chapters[1]));
+        $this->assertFalse($access->canAccessChapter(null, $book->chapters[1]));
+
+        // Once the paid chapter is purchased, it is unlocked
+        $student->ownedChapters()->create([
+            'book_id' => $book->id,
+            'chapter_id' => $book->chapters[1]->id,
+            'source' => 'purchased',
+            'price' => 50,
+            'purchased_at' => now(),
+        ]);
+        $this->assertTrue($access->canAccessChapter($student, $book->chapters[1]));
     }
 
     /**

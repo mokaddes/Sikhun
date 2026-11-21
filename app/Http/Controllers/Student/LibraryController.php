@@ -69,9 +69,10 @@ class LibraryController extends Controller
                 ->orderBy('id')
                 ->get(['id', 'book_id', 'parent_id', 'chapter_number', 'title', 'level', 'start_page', 'end_page', 'price'])
                 ->map(function ($chapter) use ($access, $student, $book) {
-                    $isPaid = $book->chapter_purchase_enabled && $chapter->price !== null && (float) $chapter->price > 0;
+                    $isBookPaid = $access->isBookPaid($book);
                     $canAccess = $access->canAccessChapter($student, $chapter, $book);
-                    $isFree = ! $isPaid;
+                    $isPaidChapter = $book->chapter_purchase_enabled && $chapter->price !== null && (float) $chapter->price > 0;
+                    $isFree = ! $isBookPaid && ($chapter->price === null || (float) $chapter->price <= 0);
 
                     return [
                         'id' => $chapter->id,
@@ -81,11 +82,11 @@ class LibraryController extends Controller
                         'level' => $chapter->level,
                         'start_page' => $chapter->start_page,
                         'end_page' => $chapter->end_page,
-                        'price' => $isPaid ? (float) $chapter->price : null,
+                        'price' => $isPaidChapter ? (float) $chapter->price : null,
                         'is_free' => $isFree,
                         'owned' => $canAccess,
-                        'is_locked' => $isPaid && ! $canAccess,
-                        'purchasable' => ($chapter->level <= 1 || $chapter->parent_id === null) && $isPaid && ! $canAccess,
+                        'is_locked' => ! $canAccess,
+                        'purchasable' => ! $canAccess && $isPaidChapter && ($chapter->level <= 1 || $chapter->parent_id === null),
                     ];
                 });
         }

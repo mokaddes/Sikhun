@@ -690,6 +690,14 @@ const hasFullReadAccess = computed(() => {
                                             {{ locale === 'en' ? 'Pay Online' : 'অনলাইন পে' }}
                                         </button>
                                     </div>
+
+                                    <!-- Locked Non-purchasable Chapter (Requires Book Purchase) -->
+                                    <div v-else-if="chapter.is_locked" class="flex items-center gap-2">
+                                        <span class="inline-flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-500">
+                                            <LockClosedIcon class="h-3.5 w-3.5" />
+                                            {{ locale === 'bn' ? 'লক করা' : 'Locked' }}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <ul v-if="chapter.children.length" class="mt-3 ml-4 space-y-1.5 border-l-2 border-[var(--border)] pl-3 text-xs text-[var(--text-muted)]">

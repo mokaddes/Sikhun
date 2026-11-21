@@ -50,13 +50,18 @@ class ReaderController extends Controller
     public function show(Request $request, Book $book, BookAccessService $access, BookReaderService $reader): Response
     {
         $student = auth('web')->user();
-        // Reader shell access: full book access, ownership of ANY chapter, book on shelf, accessible free chapters, or globally free book.
-        $hasAccessibleChapters = $access->accessibleChapterIds($student, $book) !== null;
-        $canOpenReader = $access->hasAccess($student, $book)
-            || ($student && $student->ownedChapters()->where('book_id', $book->id)->exists())
-            || ($student && $student->bookShelf()->where('book_id', $book->id)->exists())
-            || $hasAccessibleChapters
-            || $book->is_free;
+        $isBookPaid = $access->isBookPaid($book);
+        if ($isBookPaid) {
+            $canOpenReader = $access->hasAccess($student, $book)
+                || ($student && $student->ownedChapters()->where('book_id', $book->id)->exists());
+        } else {
+            $hasAccessibleChapters = $access->accessibleChapterIds($student, $book) !== null;
+            $canOpenReader = $access->hasAccess($student, $book)
+                || ($student && $student->ownedChapters()->where('book_id', $book->id)->exists())
+                || ($student && $student->bookShelf()->where('book_id', $book->id)->exists())
+                || $hasAccessibleChapters
+                || $book->is_free;
+        }
         abort_unless($canOpenReader, 403, 'You do not have access to this book.');
 
         if ((int) $book->total_pages <= 0 && $book->pdf_path && \Illuminate\Support\Facades\Storage::disk('private')->exists($book->pdf_path)) {
@@ -148,9 +153,12 @@ class ReaderController extends Controller
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get(['id', 'parent_id', 'title', 'chapter_number', 'level', 'start_page', 'end_page', 'price'])
-            ->map(function ($ch) use ($access, $student) {
-                $isPaid = $ch->price !== null && (float) $ch->price > 0;
-                $canAccess = $access->canAccessChapter($student, $ch);
+            ->map(function ($ch) use ($access, $student, $book) {
+                $isBookPaid = $access->isBookPaid($book);
+                $canAccess = $access->canAccessChapter($student, $ch, $book);
+                $isPaidChapter = $ch->price !== null && (float) $ch->price > 0;
+                $isFree = ! $isBookPaid && ! $isPaidChapter;
+
                 return [
                     'id' => $ch->id,
                     'parent_id' => $ch->parent_id,
@@ -160,8 +168,8 @@ class ReaderController extends Controller
                     'start_page' => $ch->start_page,
                     'end_page' => $ch->end_page,
                     'price' => $ch->price ? (float) $ch->price : 0,
-                    'is_free' => ! $isPaid,
-                    'is_locked' => $isPaid && ! $canAccess,
+                    'is_free' => $isFree,
+                    'is_locked' => ! $canAccess,
                     'is_owned' => $canAccess,
                 ];
             });

@@ -25,4 +25,33 @@ export default defineConfig({
             '@/utils': '/resources/js/Utils',
         },
     },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (id.includes('node_modules')) {
+                        if (id.includes('apexcharts')) {
+                            return 'vendor-charts';
+                        }
+                        if (id.includes('jspdf') || id.includes('html2canvas')) {
+                            return 'vendor-pdf';
+                        }
+                        if (id.includes('katex')) {
+                            return 'vendor-math';
+                        }
+                        if (id.includes('@tiptap') || id.includes('prosemirror')) {
+                            return 'vendor-editor';
+                        }
+                        if (id.includes('@heroicons') || id.includes('lucide-vue-next')) {
+                            return 'vendor-icons';
+                        }
+                        if (id.includes('@inertiajs') || id.includes('vue')) {
+                            return 'vendor-framework';
+                        }
+                    }
+                },
+            },
+        },
+        chunkSizeWarningLimit: 700,
+    },
 });

@@ -37,7 +37,7 @@ class BookAccessService
 
     public function hasPricedChapters(?Book $book): bool
     {
-        if (! $book || ! $book->chapter_purchase_enabled) {
+        if (! $book) {
             return false;
         }
 
@@ -136,28 +136,27 @@ class BookAccessService
             return 'subscription_gift';
         }
 
+        if ($this->hasAccess($student, $book)) {
+            return 'owned';
+        }
+
+        // Check if student already has the book on shelf
+        if ($student->bookShelf()->where('book_id', $book->id)->exists()) {
+            return $this->hasPricedChapters($book) ? 'freemium_shelf' : 'owned';
+        }
+
+        // If the book itself is NOT paid (0 price or is_free)
+        if (! $this->isBookPaid($book)) {
+            return $this->hasPricedChapters($book) ? 'chapter_gated' : 'free';
+        }
+
+        // Paid book
         if ($this->hasPricedChapters($book)) {
-            if ($this->hasAccess($student, $book)) {
-                return 'owned';
-            }
-
-            if ($student->bookShelf()->where('book_id', $book->id)->exists()) {
-                return 'freemium_shelf';
-            }
-
-            if ($book->price > 0 && $student->wallet_balance >= $book->price) {
+            if ($student->wallet_balance >= $book->price) {
                 return 'purchasable';
             }
 
             return 'chapter_gated';
-        }
-
-        if ($book->is_free) {
-            return 'free';
-        }
-
-        if ($student->bookShelf()->where('book_id', $book->id)->exists()) {
-            return 'owned';
         }
 
         if ($student->wallet_balance >= $book->price) {

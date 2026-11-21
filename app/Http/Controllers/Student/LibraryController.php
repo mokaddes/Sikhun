@@ -61,6 +61,7 @@ class LibraryController extends Controller
         $hasFullAccess = $access->hasAccess($student, $book);
         $hasPricedChapters = $access->hasPricedChapters($book);
 
+        $isBookPaid = $access->isBookPaid($book);
         $chapters = collect();
         if ($book->chapters()->exists()) {
             $chapters = $book->chapters()
@@ -68,11 +69,10 @@ class LibraryController extends Controller
                 ->orderBy('sort_order')
                 ->orderBy('id')
                 ->get(['id', 'book_id', 'parent_id', 'chapter_number', 'title', 'level', 'start_page', 'end_page', 'price'])
-                ->map(function ($chapter) use ($access, $student, $book) {
-                    $isBookPaid = $access->isBookPaid($book);
+                ->map(function ($chapter) use ($access, $student, $book, $isBookPaid) {
                     $canAccess = $access->canAccessChapter($student, $chapter, $book);
-                    $isPaidChapter = $book->chapter_purchase_enabled && $chapter->price !== null && (float) $chapter->price > 0;
-                    $isFree = ! $isBookPaid && ($chapter->price === null || (float) $chapter->price <= 0);
+                    $isChapterPriced = $chapter->price !== null && (float) $chapter->price > 0;
+                    $isFree = ! $isBookPaid && ! $isChapterPriced;
 
                     return [
                         'id' => $chapter->id,
@@ -82,11 +82,11 @@ class LibraryController extends Controller
                         'level' => $chapter->level,
                         'start_page' => $chapter->start_page,
                         'end_page' => $chapter->end_page,
-                        'price' => $isPaidChapter ? (float) $chapter->price : null,
+                        'price' => $isChapterPriced ? (float) $chapter->price : null,
                         'is_free' => $isFree,
                         'owned' => $canAccess,
                         'is_locked' => ! $canAccess,
-                        'purchasable' => ! $canAccess && $isPaidChapter && ($chapter->level <= 1 || $chapter->parent_id === null),
+                        'purchasable' => ! $canAccess && $isChapterPriced && ($chapter->level <= 1 || $chapter->parent_id === null),
                     ];
                 });
         }
@@ -101,6 +101,7 @@ class LibraryController extends Controller
 
         return Inertia::render('Student/Library/Show', [
             'book' => $book->load(['author', 'publication', 'category']),
+            'isBookPaid' => $isBookPaid,
             'accessType' => $access->accessType($student, $book),
             'hasFullAccess' => $hasFullAccess,
             'hasPricedChapters' => $hasPricedChapters,

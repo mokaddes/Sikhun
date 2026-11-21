@@ -22,6 +22,7 @@ import {
 
 const props = defineProps({
     book: Object,
+    isBookPaid: Boolean,
     accessType: String,
     hasFullAccess: Boolean,
     hasPricedChapters: Boolean,
@@ -181,11 +182,18 @@ const chapterTree = computed(() => {
 });
 
 const showChapters = computed(() => chapterTree.value.length > 0);
+const isPaidBook = computed(() => {
+    if (typeof props.isBookPaid === 'boolean') return props.isBookPaid;
+    return !props.book.is_free && props.book.price != null && Number(props.book.price) > 0;
+});
 const hasFullReadAccess = computed(() => {
     if (props.hasPricedChapters) {
         return Boolean(props.hasFullAccess);
     }
-    return ['free', 'granted', 'owned', 'subscription_gift'].includes(props.accessType);
+    if (!isPaidBook.value) {
+        return true;
+    }
+    return ['granted', 'owned', 'subscription_gift'].includes(props.accessType) || Boolean(props.hasFullAccess);
 });
 </script>
 
@@ -323,13 +331,12 @@ const hasFullReadAccess = computed(() => {
                                         {{ locale === 'en' ? 'Book Access Price' : 'বইটির মূল্য' }}
                                     </div>
                                     <div class="mt-1 font-heading text-3xl font-extrabold">
-                                        <template v-if="hasPricedChapters && (!book.price || Number(book.price) === 0)">
+                                        <template v-if="!isPaidBook">
                                             <span class="text-emerald-500">{{ t('common.free') }}</span>
-                                            <span class="ml-2 text-xs font-medium text-[var(--text-muted)]">
-                                                ({{ locale === 'en' ? 'Free basic access + Chapter pricing' : 'ফ্রি সংস্করণ + অধ্যায়ভিত্তিক প্রিমিয়াম' }})
+                                            <span v-if="hasPricedChapters" class="ml-2 text-xs font-medium text-[var(--text-muted)]">
+                                                ({{ locale === 'en' ? 'Free chapters + Premium chapters' : 'ফ্রি সংস্করণ + অধ্যায়ভিত্তিক প্রিমিয়াম' }})
                                             </span>
                                         </template>
-                                        <span v-else-if="book.is_free" class="text-emerald-500">{{ t('common.free') }}</span>
                                         <span v-else>৳{{ book.price }}</span>
                                     </div>
                                 </div>
@@ -356,7 +363,7 @@ const hasFullReadAccess = computed(() => {
                                         </button>
 
                                         <button
-                                            v-if="!book.is_free && book.price > 0"
+                                            v-if="isPaidBook"
                                             type="button"
                                             @click="handlePurchase('mhpay')"
                                             class="inline-flex items-center gap-2 rounded-xl border border-[var(--primary)]/40 bg-[var(--primary)]/10 px-6 py-3.5 text-sm font-bold text-[var(--primary)] transition hover:bg-[var(--primary)]/20 cursor-pointer"
@@ -408,7 +415,7 @@ const hasFullReadAccess = computed(() => {
                                     </Link>
 
                                     <button
-                                        v-if="book.is_free && !onShelf"
+                                        v-if="!isPaidBook && !onShelf"
                                         type="button"
                                         @click="handleAddToShelf"
                                         class="inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-3.5 text-sm font-semibold text-emerald-500 transition hover:bg-emerald-500/20 cursor-pointer"
@@ -455,7 +462,7 @@ const hasFullReadAccess = computed(() => {
                                         </span>
 
                                         <button
-                                            v-if="book.price > 0"
+                                            v-if="isPaidBook"
                                             type="button"
                                             @click="handlePurchase('wallet')"
                                             class="inline-flex items-center gap-2 rounded-xl border border-[var(--primary)] bg-[var(--primary)]/10 px-5 py-3.5 text-sm font-bold text-[var(--primary)] hover:bg-[var(--primary)]/20 transition cursor-pointer"
@@ -463,17 +470,31 @@ const hasFullReadAccess = computed(() => {
                                             <ShoppingBagIcon class="h-5 w-5" />
                                             <span>{{ locale === 'en' ? `Buy Full Book (৳${book.price})` : `সম্পূর্ণ বই কিনুন (৳${book.price})` }}</span>
                                         </button>
+                                        <button
+                                            v-if="isPaidBook"
+                                            type="button"
+                                            @click="handlePurchase('mhpay')"
+                                            class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-pink-500/20 transition hover:opacity-95 cursor-pointer"
+                                        >
+                                            <CreditCardIcon class="h-5 w-5" />
+                                            <span>{{ locale === 'en' ? 'MFS (bKash/Nagad)' : 'বিকাশ / নগদ' }}</span>
+                                        </button>
                                     </div>
                                     <p class="text-xs text-[var(--text-muted)] flex items-center gap-1.5">
                                         <SparklesIcon class="h-4 w-4 text-orange-400 shrink-0" />
-                                        <span>{{ locale === 'en'
-                                            ? 'This book includes free chapters and premium locked chapters. Select and unlock chapters individually or together below.'
-                                            : 'এই বইটির বেশ কয়েকটি অধ্যায় সম্পূর্ণ ফ্রি। প্রিমিয়াম অধ্যায়গুলো নিচে তালিকা থেকে আলাদাভাবে বা একসাথে নির্বাচন করে কিনতে পারবেন।' }}</span>
+                                        <span>{{ isPaidBook
+                                            ? (locale === 'en'
+                                                ? 'You can buy the complete book or purchase individual chapters below.'
+                                                : 'আপনি সম্পূর্ণ বইটি কিনতে পারেন অথবা নিচে তালিকা থেকে নির্দিষ্ট অধ্যায় আলাদাভাবে কিনতে পারেন।')
+                                            : (locale === 'en'
+                                                ? 'This book includes free chapters and premium locked chapters. Select and unlock chapters individually or together below.'
+                                                : 'এই বইটির বেশ কয়েকটি অধ্যায় সম্পূর্ণ ফ্রি। প্রিমিয়াম অধ্যায়গুলো নিচে তালিকা থেকে আলাদাভাবে বা একসাথে নির্বাচন করে কিনতে পারবেন।')
+                                        }}</span>
                                     </p>
                                 </div>
 
                                 <!-- Logged-in Student: Paid Book (Purchasable via Wallet or Gateway) -->
-                                <div v-else-if="accessType === 'purchasable'" class="flex flex-wrap gap-3">
+                                <div v-else-if="isPaidBook && accessType === 'purchasable'" class="flex flex-wrap gap-3">
                                     <button
                                         type="button"
                                         @click="handlePurchase('wallet')"
@@ -501,8 +522,8 @@ const hasFullReadAccess = computed(() => {
                                     </button>
                                 </div>
 
-                                <!-- Logged-in Student: Insufficient Wallet Balance -->
-                                <div v-else class="space-y-3">
+                                <!-- Logged-in Student: Paid Book (Insufficient Wallet Balance) -->
+                                <div v-else-if="isPaidBook" class="space-y-3">
                                     <p class="text-xs font-medium text-amber-500">
                                         {{ t('book_show.insufficient_funds') }}
                                     </p>
@@ -532,6 +553,35 @@ const hasFullReadAccess = computed(() => {
                                             <span>{{ t('book_show.recharge_wallet') }}</span>
                                         </Link>
                                     </div>
+                                </div>
+
+                                <!-- Logged-in Student: Free / 0-Price Book Fallback (No payment needed) -->
+                                <div v-else class="flex flex-wrap items-center gap-3">
+                                    <Link
+                                        :href="`/library/${book.id}/read`"
+                                        class="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-[var(--primary-hover)]"
+                                    >
+                                        <BookOpenIcon class="h-5 w-5" />
+                                        <span>{{ t('book_show.read_now') }}</span>
+                                    </Link>
+
+                                    <button
+                                        v-if="!onShelf"
+                                        type="button"
+                                        @click="handleAddToShelf"
+                                        class="inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-3.5 text-sm font-semibold text-emerald-500 transition hover:bg-emerald-500/20 cursor-pointer"
+                                    >
+                                        <BookmarkSquareIcon class="h-5 w-5" />
+                                        <span>{{ t('book_show.add_to_shelf') }}</span>
+                                    </button>
+
+                                    <span
+                                        v-else
+                                        class="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs font-semibold text-emerald-500"
+                                    >
+                                        <CheckBadgeIcon class="h-4 w-4" />
+                                        {{ locale === 'en' ? 'Saved on your Bookshelf' : 'আপনার বুকশেলফে যুক্ত আছে' }}
+                                    </span>
                                 </div>
                             </div>
                         </div>

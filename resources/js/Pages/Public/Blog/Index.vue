@@ -120,7 +120,11 @@ function submitSearch() {
                                     v-if="post.featured_image_url"
                                     :src="post.featured_image_url"
                                     :alt="post.title"
-                                    loading="lazy"
+                                    :loading="idx === 0 ? 'eager' : 'lazy'"
+                                    :fetchpriority="idx === 0 ? 'high' : undefined"
+                                    decoding="async"
+                                    width="480"
+                                    height="208"
                                     class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
                                 />
                                 <div v-else class="absolute inset-0 grid place-items-center text-white/50">

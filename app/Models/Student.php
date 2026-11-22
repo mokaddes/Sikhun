@@ -7,6 +7,7 @@ use App\Notifications\VerifyEmailNotification;
 use App\Services\AccessGrantService;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\URL;
@@ -14,7 +15,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class Student extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, MustVerifyEmailTrait, Notifiable;
+    use HasApiTokens, MustVerifyEmailTrait, Notifiable, SoftDeletes;
 
     protected $guard = 'web';
 
@@ -24,6 +25,7 @@ class Student extends Authenticatable implements MustVerifyEmail
         'trial_reuploads_count', 'trial_reuploads_month', 'referral_code',
         'referred_by_student_id', 'avatar', 'theme_mode', 'leaderboard_opt_out',
         'onboarding_progress', 'onboarding_completed_at', 'first_ai_chat_at', 'activated_at',
+        'scheduled_purge_at',
     ];
 
     protected $hidden = ['password', 'remember_token', 'phone_hash'];
@@ -45,6 +47,8 @@ class Student extends Authenticatable implements MustVerifyEmail
             'onboarding_completed_at' => 'datetime',
             'first_ai_chat_at' => 'datetime',
             'activated_at' => 'datetime',
+            'deleted_at' => 'datetime',
+            'scheduled_purge_at' => 'datetime',
         ];
     }
 
@@ -58,7 +62,45 @@ class Student extends Authenticatable implements MustVerifyEmail
     public function activeSubscription() { return $this->hasOne(StudentSubscription::class)->where('status', 'active')->latest(); }
     public function walletTransactions() { return $this->hasMany(WalletTransaction::class); }
     public function orders() { return $this->hasMany(Order::class); }
+    public function invoices() { return $this->hasMany(Invoice::class); }
+    public function pushSubscriptions() { return $this->hasMany(PushSubscription::class); }
     public function aiSessions() { return $this->hasMany(AiSession::class); }
+
+    /**
+     * Soft-delete account with a 30-day recovery window (Facebook-style).
+     * Logging back in or admin restore within 30 days recovers everything.
+     */
+    public function scheduleDeletion(int $days = 30): void
+    {
+        $this->forceFill([
+            'status' => 'inactive',
+            'scheduled_purge_at' => now()->addDays($days),
+        ])->save();
+
+        $this->delete();
+    }
+
+    public function restoreFromDeletion(): void
+    {
+        if ($this->trashed()) {
+            $this->restore();
+        }
+
+        $this->forceFill([
+            'status' => 'active',
+            'scheduled_purge_at' => null,
+        ])->save();
+    }
+
+    public function daysUntilPurge(): int
+    {
+        $target = $this->scheduled_purge_at ?? $this->deleted_at?->copy()->addDays(30);
+        if (! $target || now()->gte($target)) {
+            return 0;
+        }
+
+        return (int) max(1, ceil(now()->floatDiffInDays($target)));
+    }
     public function myBooks() { return $this->hasMany(MyBook::class); }
     public function examSessions() { return $this->hasMany(ExamSession::class); }
     public function examAnswers() { return $this->hasMany(ExamAnswer::class); }

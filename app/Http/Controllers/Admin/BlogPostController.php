@@ -106,6 +106,7 @@ class BlogPostController extends Controller
 
         if ($post->status === 'published') {
             DispatchPagePilotSocialPost::dispatch('blog', $post->id);
+            app(\App\Services\NotificationService::class)->notifyBlogPublished($post);
         }
 
         return redirect()->route('admin.blog.index')->with('success', 'Blog post created.');
@@ -151,6 +152,9 @@ class BlogPostController extends Controller
 
         if ($blog->status === 'published' && (! $wasPublished || $request->boolean('share_to_social'))) {
             DispatchPagePilotSocialPost::dispatch('blog', $blog->id);
+        }
+        if ($blog->status === 'published' && ! $wasPublished) {
+            app(\App\Services\NotificationService::class)->notifyBlogPublished($blog);
         }
 
         return redirect()->route('admin.blog.index')->with('success', 'Blog post updated.');

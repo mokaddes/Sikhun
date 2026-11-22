@@ -10,6 +10,7 @@ use App\Models\Book;
 use App\Models\Course;
 use App\Services\SeoService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -45,13 +46,17 @@ class BlogController extends Controller
             }
         }
 
-        $categories = BlogCategory::active()
-            ->withCount(['posts' => fn ($q) => $q->published()])
-            ->get();
-        $tags = BlogTag::whereHas('posts', fn ($q) => $q->published())
-            ->withCount(['posts' => fn ($q) => $q->published()])
-            ->orderBy('name_bn')
-            ->get();
+        $taxonomy = Cache::remember('blog_sidebar_taxonomy_v1', 600, fn () => [
+            'categories' => BlogCategory::active()
+                ->withCount(['posts' => fn ($q) => $q->published()])
+                ->get(),
+            'tags' => BlogTag::whereHas('posts', fn ($q) => $q->published())
+                ->withCount(['posts' => fn ($q) => $q->published()])
+                ->orderBy('name_bn')
+                ->get(),
+        ]);
+        $categories = $taxonomy['categories'];
+        $tags = $taxonomy['tags'];
 
         return Inertia::render('Public/Blog/Index', [
             'posts' => $query->paginate(12)->withQueryString(),
@@ -89,13 +94,17 @@ class BlogController extends Controller
             $query->whereHas('tags', fn ($q) => $q->whereKey($activeTag->id));
         }
 
-        $categories = BlogCategory::active()
-            ->withCount(['posts' => fn ($q) => $q->published()])
-            ->get();
-        $tags = BlogTag::whereHas('posts', fn ($q) => $q->published())
-            ->withCount(['posts' => fn ($q) => $q->published()])
-            ->orderBy('name_bn')
-            ->get();
+        $taxonomy = Cache::remember('blog_sidebar_taxonomy_v1', 600, fn () => [
+            'categories' => BlogCategory::active()
+                ->withCount(['posts' => fn ($q) => $q->published()])
+                ->get(),
+            'tags' => BlogTag::whereHas('posts', fn ($q) => $q->published())
+                ->withCount(['posts' => fn ($q) => $q->published()])
+                ->orderBy('name_bn')
+                ->get(),
+        ]);
+        $categories = $taxonomy['categories'];
+        $tags = $taxonomy['tags'];
 
         return Inertia::render('Public/Blog/Index', [
             'posts' => $query->paginate(12)->withQueryString(),

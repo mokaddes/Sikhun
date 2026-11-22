@@ -18,7 +18,7 @@ class WalletService
 
             $student->wallet_balance = $lockedStudent->wallet_balance;
 
-            return WalletTransaction::create([
+            $tx = WalletTransaction::create([
                 'student_id' => $lockedStudent->id,
                 'type' => 'credit',
                 'category' => $category,
@@ -28,6 +28,23 @@ class WalletService
                 'reference' => $reference,
                 'notes' => $notes,
             ]);
+
+            try {
+                $fmtAmount = number_format($amount, 2);
+                $fmtBalance = number_format((float) $lockedStudent->wallet_balance, 2);
+                app(NotificationService::class)->send(
+                    student: $lockedStudent,
+                    type: 'wallet_transaction',
+                    title: "ওয়ালেটে ৳{$fmtAmount} যুক্ত হয়েছে",
+                    body: "আপনার শিখুন ওয়ালেটে ৳{$fmtAmount} ক্রেডিট হয়েছে। নতুন ব্যালেন্স: ৳{$fmtBalance}।".($notes ? " ({$notes})" : ''),
+                    data: ['url' => '/wallet', 'transaction_id' => $tx->id, 'amount' => $amount],
+                    mandatory: true
+                );
+            } catch (\Throwable $e) {
+                // Never break wallet transaction on notification failure
+            }
+
+            return $tx;
         });
     }
 
@@ -46,7 +63,7 @@ class WalletService
 
             $student->wallet_balance = $lockedStudent->wallet_balance;
 
-            return WalletTransaction::create([
+            $tx = WalletTransaction::create([
                 'student_id' => $lockedStudent->id,
                 'type' => 'debit',
                 'category' => $category,
@@ -56,6 +73,23 @@ class WalletService
                 'reference' => $reference,
                 'notes' => $notes,
             ]);
+
+            try {
+                if ((float) $lockedStudent->wallet_balance < 50) {
+                    app(NotificationService::class)->send(
+                        student: $lockedStudent,
+                        type: 'wallet_low_balance',
+                        title: 'ওয়ালেট ব্যালেন্স কম',
+                        body: 'আপনার শিখুন ওয়ালেট ব্যালেন্স ৳'.number_format((float) $lockedStudent->wallet_balance, 2).'। নিরবচ্ছিন্ন পড়াশোনার জন্য রিচার্জ করুন।',
+                        data: ['url' => '/wallet'],
+                        mandatory: false
+                    );
+                }
+            } catch (\Throwable $e) {
+                // Non-fatal
+            }
+
+            return $tx;
         });
     }
 }

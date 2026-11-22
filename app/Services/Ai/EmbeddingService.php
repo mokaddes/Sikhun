@@ -32,7 +32,18 @@ class EmbeddingService
 
         $provider = $this->resolveEmbeddingProvider();
 
-        $response = Http::withToken($provider->api_key)
+        $headers = [];
+        foreach ((array) $provider->custom_headers as $h) {
+            $name = trim((string) ($h['name'] ?? ''));
+            if ($name !== '') {
+                $headers[$name] = (string) ($h['value'] ?? '');
+            }
+        }
+        if (! isset($headers['Authorization']) && ! empty($provider->api_key)) {
+            $headers['Authorization'] = 'Bearer '.$provider->api_key;
+        }
+
+        $response = Http::withHeaders($headers)
             ->timeout(60)
             ->post($this->embeddingsUrl($provider), [
                 'model' => $provider->model_name,
@@ -124,7 +135,7 @@ class EmbeddingService
             ->with('provider')
             ->first();
 
-        if ($useCase && in_array($useCase->provider->type, ['openai', 'groq', 'deepseek', 'vllm', 'ollama', 'custom'], true)) {
+        if ($useCase && in_array($useCase->provider->type, ['openai_compatible', 'openai', 'groq', 'deepseek', 'vllm', 'ollama', 'custom'], true)) {
             return $useCase->provider;
         }
 

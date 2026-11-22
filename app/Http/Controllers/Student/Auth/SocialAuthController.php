@@ -12,9 +12,14 @@ use Illuminate\Support\Str;
 
 class SocialAuthController extends Controller
 {
-    public function redirect(string $provider, SocialAuthService $oauth): RedirectResponse
+    public function redirect(string $provider, Request $request, SocialAuthService $oauth): RedirectResponse
     {
         abort_unless(in_array($provider, ['google', 'facebook'], true), 404);
+
+        // Support Google OAuth redirect URIs pointing directly to /auth/google/redirect
+        if ($request->has('code') || $request->has('error')) {
+            return $this->callback($provider, $request, $oauth);
+        }
 
         $state = Str::random(40);
         session(["oauth_state_{$provider}" => $state]);

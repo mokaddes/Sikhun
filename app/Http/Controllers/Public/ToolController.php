@@ -37,7 +37,7 @@ class ToolController extends Controller
                 ->latest('published_date')
                 ->take(3)
                 ->get(['id', 'title', 'slug', 'organization', 'deadline']),
-            'seo' => $this->seo->forToolsIndex(),
+            'seo' => $this->seo->forResults(),
         ]);
     }
 }

@@ -10,6 +10,7 @@ use App\Services\BookAccessService;
 use App\Services\Payment\PaymentGatewayResolver;
 use App\Services\PurchaseService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -36,15 +37,18 @@ class LibraryController extends Controller
             ->paginate(16)
             ->withQueryString();
 
-        // Real, derived from actual book data — not a hardcoded list, so it
-        // always reflects whatever subjects your catalog actually has.
-        $subjects = Book::published()->whereNotNull('subject')->distinct()->orderBy('subject')->pluck('subject');
+        // Real, derived from actual book data — cached 15 min to avoid
+        // repeated DISTINCT/full-table lookups on every catalog view.
+        $filterOptions = Cache::remember('library_filter_options_v1', 900, fn () => [
+            'subjects' => Book::published()->whereNotNull('subject')->distinct()->orderBy('subject')->pluck('subject'),
+            'categories' => Category::orderBy('name')->get(['id', 'name']),
+        ]);
 
         return Inertia::render('Student/Library/Index', [
             'seo' => $seo->forLibrary(),
             'books' => $books,
-            'categories' => Category::orderBy('name')->get(['id', 'name']),
-            'subjects' => $subjects,
+            'categories' => $filterOptions['categories'],
+            'subjects' => $filterOptions['subjects'],
             'filters' => $request->only('level', 'subject', 'category_id', 'free', 'search', 'sort'),
         ]);
     }

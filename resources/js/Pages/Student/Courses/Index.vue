@@ -294,6 +294,9 @@ function formatLevel(lvl) {
                                     :src="course.cover_image_url"
                                     :alt="course.title"
                                     loading="lazy"
+                                    decoding="async"
+                                    width="480"
+                                    height="270"
                                     class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                 />
                                 <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-slate-800 to-indigo-950 p-4 text-slate-300">

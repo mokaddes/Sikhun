@@ -108,20 +108,38 @@ class SeoService
                         ],
                     ],
                     [
-                        '@type' => 'EducationalOrganization',
+                        '@type' => ['EducationalOrganization', 'Organization'],
                         '@id' => $this->siteUrl.'/#organization',
                         'name' => $this->siteName,
+                        'alternateName' => ['শিখুন', 'Sikhun'],
                         'url' => $this->siteUrl,
                         'logo' => [
                             '@type' => 'ImageObject',
                             'url' => $this->logoUrl(),
                         ],
-                        'description' => 'First AI-powered digital learning ecosystem in Bangladesh for HSC, SSC, Admission and Competitive Exams.',
+                        'description' => 'First AI-powered digital learning ecosystem in Bangladesh for HSC, SSC, University Admission, and Competitive Exams.',
                         'sameAs' => [
                             'https://www.facebook.com/sikhunbd',
                         ],
+                        'contactPoint' => [
+                            '@type' => 'ContactPoint',
+                            'contactType' => 'customer support',
+                            'email' => $this->settings->get('site_email', 'support@sikhun.com'),
+                            'areaServed' => 'BD',
+                            'availableLanguage' => ['Bengali', 'English'],
+                        ],
+                        'knowsAbout' => [
+                            'HSC Preparation Bangladesh',
+                            'SSC Preparation Bangladesh',
+                            'University Admission Test Bangladesh (DU, RU, BUET, GST, Medical)',
+                            'BCS and Bank Job Preparation',
+                            'AI-Powered Book Tutoring and Question Banks',
+                        ],
                         'inLanguage' => ['bn', 'en'],
-                        'areaServed' => 'BD',
+                        'areaServed' => [
+                            '@type' => 'Country',
+                            'name' => 'Bangladesh',
+                        ],
                     ],
                 ],
             ],
@@ -188,13 +206,19 @@ class SeoService
             'name' => $notice->title,
             'text' => Str::limit($descText, 300),
             'url' => $canonical,
+            'image' => $image,
             'datePosted' => ($notice->created_at ?? now())->toIso8601String(),
             'inLanguage' => 'bn',
             'category' => 'https://schema.org/EducationalOccupationalCredential',
+            'spatialCoverage' => [
+                '@type' => 'Country',
+                'name' => 'Bangladesh',
+            ],
             'publisher' => [
                 '@type' => 'EducationalOrganization',
                 'name' => $this->siteName,
                 'url' => $this->siteUrl,
+                'logo' => ['@type' => 'ImageObject', 'url' => $this->logoUrl()],
             ],
         ];
 
@@ -234,22 +258,36 @@ class SeoService
     public function forBook(Book $book): array
     {
         $canonical = $this->siteUrl.'/library/'.$book->slug;
+        $coverImage = $this->absoluteImage($book->cover_image_url, $this->socialImage());
 
         return [
             'title' => "{$book->title} — {$this->levelLabel($book->level)} | {$this->siteName}",
             'description' => Str::limit(strip_tags($book->description ?? ''), 155) ?: "{$book->title} ডিজিটাল বই সরাসরি অনলাইনে পড়ুন এবং AI স্টাডি সহকারীর সাথে আলোচনা করুন।",
-            'og_image' => $book->cover_image_url ?? $this->socialImage(),
+            'og_image' => $coverImage,
             'canonical' => $canonical,
             'keywords' => implode(', ', array_filter([$book->title, $book->subject, $book->level, 'ডিজিটাল বই', 'পাঠ্যবই', 'Sikhun'])),
             'json_ld' => array_filter([
                 '@context' => 'https://schema.org',
                 '@type' => 'Book',
                 'name' => $book->title,
-                'description' => Str::limit(strip_tags($book->description ?? ''), 200),
+                'description' => Str::limit(strip_tags($book->description ?? ''), 200) ?: "{$book->title} digital academic textbook on {$this->siteName}.",
+                'image' => $coverImage,
                 'author' => $book->author ? ['@type' => 'Person', 'name' => $book->author->name] : null,
-                'publisher' => $book->publication ? ['@type' => 'Organization', 'name' => $book->publication->name] : null,
+                'publisher' => $book->publication
+                    ? ['@type' => 'Organization', 'name' => $book->publication->name]
+                    : ['@type' => 'Organization', 'name' => $this->siteName, 'url' => $this->siteUrl],
                 'inLanguage' => 'bn',
                 'educationalLevel' => $this->levelLabel($book->level),
+                'about' => $book->subject ?: null,
+                'numberOfPages' => $book->total_pages ?: null,
+                'bookFormat' => 'https://schema.org/EBook',
+                'offers' => [
+                    '@type' => 'Offer',
+                    'price' => $book->is_free ? '0' : (string) ((float) ($book->price ?? 0)),
+                    'priceCurrency' => 'BDT',
+                    'availability' => 'https://schema.org/InStock',
+                    'url' => $canonical,
+                ],
                 'url' => $canonical,
             ]),
             'breadcrumb' => $this->breadcrumb([
@@ -266,27 +304,42 @@ class SeoService
     public function forCourse(Course $course): array
     {
         $canonical = $this->siteUrl.'/courses/'.$course->slug;
+        $coverImage = $this->absoluteImage($course->cover_image_url, $this->socialImage());
 
         return [
             'title' => "{$course->title} | {$this->siteName}",
             'description' => Str::limit(strip_tags($course->description ?? ''), 155) ?: "{$course->title} অনলাইন কোর্সে অভিজ্ঞ মেন্টর ও লাইভ ক্লাসের মাধ্যমে প্রস্তুতি নিন।",
-            'og_image' => $course->cover_image_url ?? $this->socialImage(),
+            'og_image' => $coverImage,
             'canonical' => $canonical,
             'keywords' => implode(', ', [$course->title, 'কোর্স', 'শিখুন', 'Sikhun', 'অনলাইন ক্লাস']),
-            'json_ld' => [
+            'json_ld' => array_filter([
                 '@context' => 'https://schema.org',
                 '@type' => 'Course',
                 'name' => $course->title,
-                'description' => Str::limit(strip_tags($course->description ?? ''), 200),
-                'provider' => ['@type' => 'Organization', 'name' => $this->siteName, 'url' => $this->siteUrl],
+                'description' => Str::limit(strip_tags($course->description ?? ''), 200) ?: "{$course->title} online course on {$this->siteName}.",
+                'image' => $coverImage,
+                'inLanguage' => 'bn',
+                'educationalLevel' => $course->level ? $this->levelLabel($course->level) : null,
+                'provider' => [
+                    '@type' => 'EducationalOrganization',
+                    'name' => $this->siteName,
+                    'url' => $this->siteUrl,
+                ],
+                'hasCourseInstance' => array_filter([
+                    '@type' => 'CourseInstance',
+                    'courseMode' => 'online',
+                    'instructor' => $course->mentor ? ['@type' => 'Person', 'name' => $course->mentor->name] : null,
+                ]),
                 'offers' => [
                     '@type' => 'Offer',
-                    'price' => (string) $course->price,
+                    'price' => (string) ((float) ($course->price ?? 0)),
                     'priceCurrency' => 'BDT',
                     'availability' => 'https://schema.org/InStock',
+                    'category' => (float) ($course->price ?? 0) === 0.0 ? 'Free' : 'Paid',
+                    'url' => $canonical,
                 ],
                 'url' => $canonical,
-            ],
+            ]),
             'breadcrumb' => $this->breadcrumb([
                 ['name' => 'Home', 'url' => $this->siteUrl],
                 ['name' => 'Courses', 'url' => $this->siteUrl.'/courses'],
@@ -430,7 +483,14 @@ class SeoService
                 'inLanguage' => 'bn',
                 'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $canonical],
                 'author' => ['@type' => 'Organization', 'name' => $this->siteName, 'url' => $this->siteUrl],
-                'publisher' => ['@type' => 'Organization', 'name' => $this->siteName, 'url' => $this->siteUrl],
+                'publisher' => [
+                    '@type' => 'Organization',
+                    'name' => $this->siteName,
+                    'url' => $this->siteUrl,
+                    'logo' => ['@type' => 'ImageObject', 'url' => $this->logoUrl()],
+                ],
+                'articleSection' => $post->category?->name_bn ?: $post->category?->name_en,
+                'wordCount' => str_word_count(strip_tags((string) $post->content)) ?: null,
             ]),
             'breadcrumb' => $this->breadcrumb($crumbs),
         ];
@@ -479,26 +539,34 @@ class SeoService
             'og_type' => 'article',
             'canonical' => $canonical,
             'keywords' => implode(', ', array_filter([$job->title, $job->organization, 'চাকরির খবর', 'Sikhun'])),
-            'json_ld' => [
+            'json_ld' => array_filter([
                 '@context' => 'https://schema.org',
                 '@type' => 'JobPosting',
                 'title' => $job->title,
-                'description' => Str::limit(strip_tags($job->description ?? ''), 250),
-                'datePosted' => ($job->created_at ?? now())->toIso8601String(),
+                'description' => Str::limit(strip_tags($job->description ?? ''), 400) ?: $metaDescription,
+                'datePosted' => ($job->published_date ?? $job->created_at ?? now())->toIso8601String(),
                 'validThrough' => $job->deadline?->toIso8601String(),
+                'employmentType' => $job->job_type ? strtoupper(str_replace(' ', '_', (string) $job->job_type)) : 'FULL_TIME',
+                'directApply' => (bool) $job->apply_url,
+                'identifier' => [
+                    '@type' => 'PropertyValue',
+                    'name' => $this->siteName,
+                    'value' => (string) $job->id,
+                ],
                 'hiringOrganization' => [
                     '@type' => 'Organization',
                     'name' => $job->organization ?: $this->siteName,
                 ],
                 'jobLocation' => [
                     '@type' => 'Place',
-                    'address' => [
+                    'address' => array_filter([
                         '@type' => 'PostalAddress',
+                        'addressLocality' => $job->location ?: 'Dhaka',
                         'addressCountry' => 'BD',
-                    ],
+                    ]),
                 ],
                 'url' => $canonical,
-            ],
+            ]),
             'breadcrumb' => $this->breadcrumb([
                 ['name' => 'Home', 'url' => $this->siteUrl],
                 ['name' => 'চাকরির খবর', 'url' => $this->siteUrl.'/job-news'],
@@ -529,6 +597,63 @@ class SeoService
             'breadcrumb' => $this->breadcrumb([
                 ['name' => 'Home', 'url' => $this->siteUrl],
                 ['name' => 'টুলস', 'url' => $canonical],
+            ]),
+        ];
+    }
+
+    /**
+     * Board & Admission Result Checker Page SEO.
+     */
+    public function forResults(): array
+    {
+        $canonical = $this->siteUrl.'/results';
+
+        return [
+            'title' => "পরীক্ষার ফলাফল অনুসন্ধান (SSC, HSC ও ভর্তি রেজাল্ট) | {$this->siteName}",
+            'description' => 'বাংলাদেশ শিক্ষা বোর্ডের SSC, HSC, দাখিল, আলিম ও বিশ্ববিদ্যালয় ভর্তি পরীক্ষার ফলাফল সহজেই জানুন।',
+            'og_image' => $this->socialImage(),
+            'canonical' => $canonical,
+            'keywords' => 'SSC result, HSC result, বোর্ড রেজাল্ট, পরীক্ষার ফলাফল, educationboardresults, sikhun results',
+            'json_ld' => [
+                '@context' => 'https://schema.org',
+                '@type' => 'WebPage',
+                'name' => "পরীক্ষার ফলাফল অনুসন্ধান | {$this->siteName}",
+                'url' => $canonical,
+                'inLanguage' => ['bn', 'en'],
+                'isPartOf' => ['@type' => 'WebSite', 'name' => $this->siteName, 'url' => $this->siteUrl],
+            ],
+            'breadcrumb' => $this->breadcrumb([
+                ['name' => 'Home', 'url' => $this->siteUrl],
+                ['name' => 'টুলস', 'url' => $this->siteUrl.'/tools'],
+                ['name' => 'ফলাফল অনুসন্ধান', 'url' => $canonical],
+            ]),
+        ];
+    }
+
+    /**
+     * Subscription Plans & Pricing SEO.
+     */
+    public function forPlans(): array
+    {
+        $canonical = $this->siteUrl.'/plans';
+
+        return [
+            'title' => "সাবস্ক্রিপশন প্ল্যান ও প্রাইসিং | {$this->siteName}",
+            'description' => 'HSC, SSC, বিশ্ববিদ্যালয় ভর্তি এবং BCS ও ব্যাংক জব প্রস্তুতির জন্য সাশ্রয়ী AI স্টাডি প্ল্যান ও প্যাকেজসমূহ।',
+            'og_image' => $this->socialImage(),
+            'canonical' => $canonical,
+            'keywords' => 'sikhun plans, AI study subscription, admission pass, BCS pass, শিখুন সাবস্ক্রিপশন',
+            'json_ld' => [
+                '@context' => 'https://schema.org',
+                '@type' => 'WebPage',
+                'name' => "সাবস্ক্রিপশন প্ল্যানসমূহ | {$this->siteName}",
+                'url' => $canonical,
+                'inLanguage' => ['bn', 'en'],
+                'isPartOf' => ['@type' => 'WebSite', 'name' => $this->siteName, 'url' => $this->siteUrl],
+            ],
+            'breadcrumb' => $this->breadcrumb([
+                ['name' => 'Home', 'url' => $this->siteUrl],
+                ['name' => 'প্ল্যানসমূহ', 'url' => $canonical],
             ]),
         ];
     }
@@ -614,13 +739,16 @@ class SeoService
             ];
         }
 
+        $isFilteredQuery = $this->hasFilterQueryParams($request);
+        $defaultRobots = $isFilteredQuery ? 'noindex, follow' : 'index, follow';
+
         // If controller passed an explicit 'seo' prop, use it
         if (! empty($seoProps) && is_array($seoProps)) {
             return [
                 'title' => $seoProps['title'] ?? $this->siteName,
                 'description' => $seoProps['description'] ?? 'Sikhun.com — AI-powered learning platform in Bangladesh.',
                 'canonical' => $seoProps['canonical'] ?? ($this->siteUrl.($path ? '/'.$path : '/')),
-                'robots' => $seoProps['robots'] ?? 'index, follow',
+                'robots' => $seoProps['robots'] ?? $defaultRobots,
                 'site_name' => $this->siteName,
                 'og_image' => $seoProps['og_image'] ?? $this->socialImage(),
                 'og_type' => $seoProps['og_type'] ?? 'website',
@@ -638,13 +766,15 @@ class SeoService
             $path === 'blog' => $this->forBlogIndex(),
             $path === 'admission-notice' => $this->forAdmissionIndex(),
             $path === 'job-news' => $this->forJobIndex(),
-            $path === 'tools' || $path === 'results' => $this->forToolsIndex(),
+            $path === 'plans' => $this->forPlans(),
+            $path === 'tools' => $this->forToolsIndex(),
+            $path === 'results' => $this->forResults(),
             $path === 'contact' => $this->forContact(),
             default => [
                 'title' => "{$this->siteName} — AI-চালিত শিক্ষা প্ল্যাটফর্ম",
                 'description' => 'HSC, SSC, বিশ্ববিদ্যালয় ভর্তি ও চাকরির প্রস্তুতির জন্য বাংলাদেশের শীর্ষস্থানীয় AI শিক্ষা প্ল্যাটফর্ম।',
                 'canonical' => $this->siteUrl.'/'.$path,
-                'robots' => 'index, follow',
+                'robots' => $defaultRobots,
                 'site_name' => $this->siteName,
                 'og_image' => $this->socialImage(),
                 'keywords' => 'sikhun, শিক্ষা, বই, কোর্স, মডেল টেস্ট',
@@ -654,9 +784,25 @@ class SeoService
         };
 
         $fallback['site_name'] = $this->siteName;
-        $fallback['robots'] = 'index, follow';
+        $fallback['robots'] = $defaultRobots;
 
         return $fallback;
+    }
+
+    /**
+     * Determines whether a request has high-cardinality search/filter query params
+     * that should be noindexed (while keeping follow) to protect crawl budget.
+     */
+    public function hasFilterQueryParams(Request $request): bool
+    {
+        $filterKeys = ['search', 'sort', 'tag', 'level', 'subject', 'category_id', 'free', 'category', 'type'];
+        foreach ($filterKeys as $key) {
+            if ($request->filled($key) && $request->input($key) !== 'all') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -668,8 +814,9 @@ class SeoService
             'admin',
             'dashboard',
             'bookshelf',
+            'my-books',
             'wallet',
-            'plans',
+            'invoices',
             'ai',
             'exams',
             'flashcards',
@@ -677,12 +824,17 @@ class SeoService
             'schedules',
             'leaderboard',
             'referrals',
+            'r',
             'profile',
             'notifications',
             'reader',
             'mistakes',
             'question-bank',
             'support',
+            'feedback',
+            'onboarding',
+            'access',
+            'email',
             'api',
             'sanctum',
             'horizon',
@@ -698,11 +850,6 @@ class SeoService
             if ($path === $prefix || str_starts_with($path, $prefix.'/')) {
                 return true;
             }
-        }
-
-        // If query parameters have search / filter pagination with high cardinality
-        if ($request && $request->filled('search') && strlen((string) $request->input('search')) > 0) {
-            return false; // Handled via canonical self-referencing clean URL
         }
 
         return false;

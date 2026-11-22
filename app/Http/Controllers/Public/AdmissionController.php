@@ -7,6 +7,7 @@ use App\Models\AdmissionNotice;
 use App\Models\QuestionBank;
 use App\Services\SeoService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -39,12 +40,19 @@ class AdmissionController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        $stats = [
-            'total' => AdmissionNotice::published()->count(),
-            'public' => AdmissionNotice::published()->where('university_type', 'public')->count(),
-            'guccho' => AdmissionNotice::published()->where('university_type', 'guccho')->count(),
-            'private' => AdmissionNotice::published()->where('university_type', 'private')->count(),
-        ];
+        $stats = Cache::remember('admission_notice_stats_v1', 900, function () {
+            $counts = AdmissionNotice::published()
+                ->selectRaw('university_type, COUNT(*) as cnt')
+                ->groupBy('university_type')
+                ->pluck('cnt', 'university_type');
+
+            return [
+                'total' => (int) $counts->sum(),
+                'public' => (int) ($counts['public'] ?? 0),
+                'guccho' => (int) ($counts['guccho'] ?? 0),
+                'private' => (int) ($counts['private'] ?? 0),
+            ];
+        });
 
         return Inertia::render('Public/Admissions/Index', [
             'notices' => $notices,
@@ -59,7 +67,7 @@ class AdmissionController extends Controller
 
     public function show(string $slug): Response
     {
-        $notice = AdmissionNotice::where('slug', $slug)->firstOrFail();
+        $notice = AdmissionNotice::published()->where('slug', $slug)->firstOrFail();
         $notice->increment('views_count');
 
         $relatedNotices = AdmissionNotice::published()
@@ -299,69 +307,80 @@ class AdmissionController extends Controller
 
     protected function getSampleQuestions(AdmissionNotice $notice, array $originTags, int $limit = 10): array
     {
-        $query = QuestionBank::query()
-            ->where('segment', 'admission')
-            ->whereNotNull('options')
-            ->whereNotNull('correct_option')
-            ->where('question_text', '!=', '');
+        $cacheKey = 'admission_sample_questions_v1_'.md5(implode(',', $originTags));
 
-        $matchedQuestions = collect();
+        $pool = Cache::remember($cacheKey, 900, function () use ($originTags, $limit) {
+            $poolSize = max($limit * 3, 30);
 
-        if (!empty($originTags)) {
-            $matchedQuestions = (clone $query)
-                ->whereIn('origin_tag', $originTags)
-                ->inRandomOrder()
-                ->take($limit)
-                ->get();
-        }
+            $baseQuery = QuestionBank::query()
+                ->where('segment', 'admission')
+                ->whereNotNull('options')
+                ->whereNotNull('correct_option')
+                ->where('question_text', '!=', '')
+                ->select(['id', 'question_text', 'options', 'correct_option', 'explanation', 'origin_tag', 'exam_name', 'year']);
 
-        if ($matchedQuestions->count() < $limit) {
-            $needed = $limit - $matchedQuestions->count();
-            $excludeIds = $matchedQuestions->pluck('id')->all();
+            $matched = collect();
 
-            $fallbackQuestions = (clone $query)
-                ->whereNotIn('id', $excludeIds)
-                ->whereIn('origin_tag', ['DU-A', 'DU-B', 'DU-C', 'RU-A', 'RU-C', 'BUET', 'GST-C'])
-                ->inRandomOrder()
-                ->take($needed)
-                ->get();
-
-            $matchedQuestions = $matchedQuestions->concat($fallbackQuestions);
-        }
-
-        if ($matchedQuestions->count() < $limit) {
-            $curated = $this->getCuratedFallbackQuestions();
-            $needed = $limit - $matchedQuestions->count();
-            foreach (array_slice($curated, 0, $needed) as $cur) {
-                $matchedQuestions->push((object) $cur);
+            if (! empty($originTags)) {
+                $matched = (clone $baseQuery)
+                    ->whereIn('origin_tag', $originTags)
+                    ->orderByDesc('year')
+                    ->take($poolSize)
+                    ->get();
             }
-        }
 
-        return $matchedQuestions->take($limit)->map(function ($q) {
-            $options = is_array($q->options) ? $q->options : json_decode($q->options ?? '[]', true);
-            $formattedOptions = [];
-            if (is_array($options)) {
-                foreach ($options as $opt) {
-                    if (is_array($opt) && isset($opt['key'], $opt['text'])) {
-                        $formattedOptions[] = [
-                            'key' => (string) $opt['key'],
-                            'text' => (string) $opt['text'],
-                        ];
+            if ($matched->count() < $limit) {
+                $needed = $poolSize - $matched->count();
+                $excludeIds = $matched->pluck('id')->all();
+
+                $fallback = (clone $baseQuery)
+                    ->whereNotIn('id', $excludeIds)
+                    ->whereIn('origin_tag', ['DU-A', 'DU-B', 'DU-C', 'RU-A', 'RU-C', 'BUET', 'GST-C'])
+                    ->orderByDesc('year')
+                    ->take($needed)
+                    ->get();
+
+                $matched = $matched->concat($fallback);
+            }
+
+            return $matched->map(function ($q) {
+                $options = is_array($q->options) ? $q->options : json_decode($q->options ?? '[]', true);
+                $formattedOptions = [];
+                if (is_array($options)) {
+                    foreach ($options as $opt) {
+                        if (is_array($opt) && isset($opt['key'], $opt['text'])) {
+                            $formattedOptions[] = [
+                                'key' => (string) $opt['key'],
+                                'text' => (string) $opt['text'],
+                            ];
+                        }
                     }
                 }
-            }
 
-            return [
-                'id' => $q->id ?? rand(1000, 9999),
-                'question_text' => $q->question_text,
-                'options' => $formattedOptions,
-                'correct_option' => strtoupper(trim((string) ($q->correct_option ?? 'A'))),
-                'explanation' => $q->explanation ?? 'সঠিক উত্তর দেওয়া হয়েছে। পূর্ণাঙ্গ সমাধান শিখুন ভর্তি স্পেশাল এআই মেন্টরে অন্তর্ভুক্ত।',
-                'origin_tag' => $q->origin_tag ?? 'ADMISSION',
-                'exam_name' => $q->exam_name ?? 'বিশ্ববিদ্যালয় ভর্তি পরীক্ষা',
-                'year' => $q->year ?? 2024,
-            ];
-        })->values()->all();
+                return [
+                    'id' => $q->id ?? rand(1000, 9999),
+                    'question_text' => $q->question_text,
+                    'options' => $formattedOptions,
+                    'correct_option' => strtoupper(trim((string) ($q->correct_option ?? 'A'))),
+                    'explanation' => $q->explanation ?? 'সঠিক উত্তর দেওয়া হয়েছে। পূর্ণাঙ্গ সমাধান শিখুন ভর্তি স্পেশাল এআই মেন্টরে অন্তর্ভুক্ত।',
+                    'origin_tag' => $q->origin_tag ?? 'ADMISSION',
+                    'exam_name' => $q->exam_name ?? 'বিশ্ববিদ্যালয় ভর্তি পরীক্ষা',
+                    'year' => $q->year ?? 2024,
+                ];
+            })->values()->all();
+        });
+
+        if (count($pool) < $limit) {
+            $curated = $this->getCuratedFallbackQuestions();
+            $pool = array_merge($pool, array_slice($curated, 0, $limit - count($pool)));
+        }
+
+        if (count($pool) > $limit) {
+            shuffle($pool);
+            $pool = array_slice($pool, 0, $limit);
+        }
+
+        return $pool;
     }
 
     protected function getCuratedFallbackQuestions(): array

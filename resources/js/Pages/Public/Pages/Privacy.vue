@@ -16,7 +16,7 @@ const { locale } = useI18n();
                 <h1 class="font-heading text-2xl md:text-3xl font-extrabold">{{ page.title }}</h1>
             </div>
             <p class="text-sm text-[var(--text-muted)]">
-                {{ locale === 'en' ? 'Last updated: July 2026' : 'সর্বশেষ হালনাগাদ: জুলাই ২০২৬' }}
+                {{ locale === 'en' ? 'Last updated: November 2026' : 'সর্বশেষ হালনাগাদ: নভেম্বর ২০২৬' }}
             </p>
         </section>
 

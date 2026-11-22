@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\JobCircular;
 use App\Services\SeoService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -48,13 +49,21 @@ class JobController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        $stats = [
-            'total' => JobCircular::where('title', 'not like', '%admission%')->where('title', 'not like', '%ভর্তি%')->count(),
-            'govt' => JobCircular::where('category', 'government')->where('title', 'not like', '%admission%')->where('title', 'not like', '%ভর্তি%')->count(),
-            'bank' => JobCircular::where('category', 'bank')->where('title', 'not like', '%admission%')->where('title', 'not like', '%ভর্তি%')->count(),
-            'ngo' => JobCircular::where('category', 'ngo')->where('title', 'not like', '%admission%')->where('title', 'not like', '%ভর্তি%')->count(),
-            'private' => JobCircular::whereIn('category', ['private', 'it_tech'])->where('title', 'not like', '%admission%')->where('title', 'not like', '%ভর্তি%')->count(),
-        ];
+        $stats = Cache::remember('job_circular_stats_v1', 600, function () {
+            $counts = JobCircular::where('title', 'not like', '%admission%')
+                ->where('title', 'not like', '%ভর্তি%')
+                ->selectRaw('category, COUNT(*) as cnt')
+                ->groupBy('category')
+                ->pluck('cnt', 'category');
+
+            return [
+                'total' => (int) $counts->sum(),
+                'govt' => (int) ($counts['government'] ?? 0),
+                'bank' => (int) ($counts['bank'] ?? 0),
+                'ngo' => (int) ($counts['ngo'] ?? 0),
+                'private' => (int) (($counts['private'] ?? 0) + ($counts['it_tech'] ?? 0)),
+            ];
+        });
 
         return Inertia::render('Public/Jobs/Index', [
             'jobs' => $jobs,

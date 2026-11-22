@@ -64,8 +64,10 @@ class StudentAuthController extends Controller
             \Illuminate\Support\Facades\Log::warning('Welcome mail failed: ' . $e->getMessage());
         }
 
+        $verificationSent = false;
         try {
             $student->sendEmailVerificationNotification();
+            $verificationSent = true;
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Verification mail failed: ' . $e->getMessage());
         }
@@ -78,7 +80,9 @@ class StudentAuthController extends Controller
             }
         }
 
-        return redirect()->intended(route('dashboard'))->with('success', 'স্বাগতম! আপনি ফ্রি প্ল্যানে সফলভাবে যুক্ত হয়েছেন।');
+        return redirect()->route('verification.notice')->with('success', $verificationSent
+            ? 'স্বাগতম! আপনার ইমেইলে একটি ভেরিফিকেশন লিংক পাঠানো হয়েছে। অনুগ্রহ করে ইমেইল যাচাই করুন।'
+            : 'স্বাগতম! আপনার অ্যাকাউন্ট তৈরি হয়েছে। ইমেইল যাচাই লিংক না পেলে আবার চেষ্টা করুন বা সাপোর্টে যোগাযোগ করুন।');
     }
 
     public function showLogin(\Illuminate\Http\Request $request): Response
@@ -95,6 +99,24 @@ class StudentAuthController extends Controller
     public function login(LoginRequest $request)
     {
         if (! Auth::guard('web')->attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+            // Check if this is a soft-deleted student within the 30-day recovery window (Facebook-style)
+            $trashed = Student::onlyTrashed()->where('email', $request->input('email'))->first();
+            if ($trashed && \Illuminate\Support\Facades\Hash::check((string) $request->input('password'), $trashed->password)) {
+                if ($trashed->scheduled_purge_at && now()->greaterThan($trashed->scheduled_purge_at)) {
+                    throw ValidationException::withMessages([
+                        'email' => 'This account deletion period (30 days) has expired.',
+                    ]);
+                }
+
+                $trashed->restoreFromDeletion();
+                Auth::guard('web')->login($trashed, $request->boolean('remember'));
+                $request->session()->regenerate();
+
+                return redirect()->intended(route('dashboard'))->with('success', app()->getLocale() === 'bn'
+                    ? 'স্বাগতম ফিরে আসায়! আপনার ডিলিট করা অ্যাকাউন্টটি সফলভাবে পুনরুদ্ধার করা হয়েছে।'
+                    : 'Welcome back! Your account deletion has been cancelled and your account is restored.');
+            }
+
             throw ValidationException::withMessages([
                 'email' => 'These credentials do not match our records.',
             ]);

@@ -79,6 +79,10 @@ const en = computed(() => locale.value === 'en');
                 <img
                     :src="post.featured_image_url"
                     :alt="post.title"
+                    fetchpriority="high"
+                    decoding="async"
+                    width="960"
+                    height="440"
                     class="w-full max-h-[440px] object-cover"
                 />
             </div>
@@ -120,7 +124,7 @@ const en = computed(() => locale.value === 'en');
                         :href="`/courses/${course.slug}`"
                         class="flex items-center gap-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3.5 hover:border-[var(--primary)] transition"
                     >
-                        <img v-if="course.cover_image_url" :src="course.cover_image_url" :alt="course.title" loading="lazy" class="h-14 w-14 rounded-lg object-cover shrink-0" />
+                        <img v-if="course.cover_image_url" :src="course.cover_image_url" :alt="course.title" loading="lazy" decoding="async" width="56" height="56" class="h-14 w-14 rounded-lg object-cover shrink-0" />
                         <div class="min-w-0">
                             <span class="text-[10px] font-mono uppercase text-[var(--primary)]">{{ en ? 'Course' : 'কোর্স' }}</span>
                             <div class="font-bold text-sm truncate">{{ course.title }}</div>
@@ -132,7 +136,7 @@ const en = computed(() => locale.value === 'en');
                         :href="`/library/${book.slug}`"
                         class="flex items-center gap-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3.5 hover:border-[var(--primary)] transition"
                     >
-                        <img v-if="book.cover_image_url" :src="book.cover_image_url" :alt="book.title" loading="lazy" class="h-14 w-14 rounded-lg object-cover shrink-0" />
+                        <img v-if="book.cover_image_url" :src="book.cover_image_url" :alt="book.title" loading="lazy" decoding="async" width="56" height="56" class="h-14 w-14 rounded-lg object-cover shrink-0" />
                         <div class="min-w-0">
                             <span class="text-[10px] font-mono uppercase text-[#4cd7f6]">{{ en ? 'Digital Book' : 'ডিজিটাল বই' }}</span>
                             <div class="font-bold text-sm truncate">{{ book.title }}</div>

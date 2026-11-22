@@ -46,6 +46,19 @@ class SecurityHeaders
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
+        // Server-side X-Robots-Tag for private/auth routes and high-cardinality
+        // filter/search URLs so crawlers never index thin or redirected endpoints.
+        if (! $response->headers->has('X-Robots-Tag')) {
+            $seo = app(\App\Services\SeoService::class);
+            $path = trim($request->path(), '/');
+
+            if ($seo->isPrivateRoute($path, $request)) {
+                $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+            } elseif ($seo->hasFilterQueryParams($request)) {
+                $response->headers->set('X-Robots-Tag', 'noindex, follow');
+            }
+        }
+
         return $response;
     }
 }

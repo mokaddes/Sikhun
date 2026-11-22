@@ -34,7 +34,7 @@ class SocialAuthService
 
             return 'https://accounts.google.com/o/oauth2/v2/auth?'.http_build_query([
                 'client_id' => $clientId,
-                'redirect_uri' => route('oauth.callback', 'google'),
+                'redirect_uri' => route('oauth.redirect', 'google'),
                 'response_type' => 'code',
                 'scope' => 'openid email profile',
                 'state' => $state,
@@ -64,7 +64,7 @@ class SocialAuthService
                 'code' => $code,
                 'client_id' => trim((string) $this->settings->get('oauth_google_client_id', config('services.google.client_id'))),
                 'client_secret' => trim((string) $this->settings->get('oauth_google_client_secret', config('services.google.client_secret'))),
-                'redirect_uri' => route('oauth.callback', 'google'),
+                'redirect_uri' => route('oauth.redirect', 'google'),
                 'grant_type' => 'authorization_code',
             ]);
             if (! $tokenResp->successful() || ! $tokenResp->json('access_token')) {
@@ -127,8 +127,14 @@ class SocialAuthService
 
     public function findOrCreateStudent(array $profile, Request $request): Student
     {
-        $student = Student::where('email', $profile['email'])->first();
+        $student = Student::withTrashed()->where('email', $profile['email'])->first();
         if ($student) {
+            if ($student->trashed()) {
+                if ($student->scheduled_purge_at && now()->greaterThan($student->scheduled_purge_at)) {
+                    throw new \RuntimeException('This deleted account has passed the 30-day recovery period.');
+                }
+                $student->restoreFromDeletion();
+            }
             if (! $student->email_verified_at) {
                 $student->forceFill(['email_verified_at' => now()])->save();
             }

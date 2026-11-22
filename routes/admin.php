@@ -113,11 +113,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('ai-logs/clear', [AiLogController::class, 'clear'])->name('ai-logs.clear');
 
         Route::get('students', [StudentController::class, 'index'])->name('students.index');
-        Route::get('students/{student}', [StudentController::class, 'show'])->name('students.show');
+        Route::get('students/{student}', [StudentController::class, 'show'])->withTrashed()->name('students.show');
+        Route::put('students/{student}', [StudentController::class, 'update'])->name('students.update');
+        Route::delete('students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
+        Route::post('students/{student}/restore', [StudentController::class, 'restore'])->withTrashed()->name('students.restore');
+        Route::post('students/{student}/verify-email', [StudentController::class, 'verifyEmail'])->name('students.verify-email');
         Route::patch('students/{student}/toggle-status', [StudentController::class, 'toggleStatus'])->name('students.toggle-status');
         Route::post('students/{student}/wallet-adjust', [StudentController::class, 'adjustWallet'])->name('students.wallet-adjust');
         Route::post('students/{student}/assign-subscription', [StudentController::class, 'assignSubscription'])->name('students.assign-subscription');
         Route::post('students/{student}/grant-access', [StudentController::class, 'grantAccess'])->name('students.grant-access');
+        Route::post('students/{student}/send-offer', [StudentController::class, 'sendOffer'])->name('students.send-offer');
+        Route::post('students/{student}/bookshelf', [StudentController::class, 'addBookToShelf'])->name('students.bookshelf.add');
+        Route::delete('students/{student}/bookshelf/{book}', [StudentController::class, 'removeBookFromShelf'])->name('students.bookshelf.remove');
+        Route::delete('students/{student}/my-books/{myBook}', [StudentController::class, 'deleteUploadedBook'])->name('students.my-books.delete');
 
         Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
         Route::post('orders/{order}/approve', [OrderController::class, 'approve'])->name('orders.approve');

@@ -70,7 +70,7 @@ class AiConnectionTester
         $payload = [
             'model' => $provider->model_name ?: 'gpt-3.5-turbo',
             'messages' => [['role' => 'user', 'content' => 'ping']],
-            'max_tokens' => 1,
+            'max_tokens' => 16,
         ];
 
         $response = Http::withHeaders($headers)->timeout(12)->post($targetUrl, $payload);

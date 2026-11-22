@@ -11,12 +11,16 @@ import {
     EyeIcon,
     CheckCircleIcon,
     NoSymbolIcon,
-    BanknotesIcon,
+    TrashIcon,
+    ArrowPathIcon,
+    ShieldCheckIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     students: Object,
     filters: { type: Object, default: () => ({ search: '', type: '', status: '' }) },
+    trashedCount: { type: Number, default: 0 },
+    unverifiedCount: { type: Number, default: 0 },
 });
 
 const { t, locale } = useI18n();
@@ -41,16 +45,49 @@ function toggleStatus(student) {
     router.patch(`/admin/students/${student.id}/toggle-status`, {}, { preserveScroll: true });
 }
 
+function verifyEmail(student) {
+    router.post(`/admin/students/${student.id}/verify-email`, {}, { preserveScroll: true });
+}
+
+function deleteStudent(student) {
+    if (!confirm(`Soft-delete ${student.name}? The account can be restored within 30 days.`)) return;
+    router.delete(`/admin/students/${student.id}`, { preserveScroll: true });
+}
+
+function restoreStudent(student) {
+    router.post(`/admin/students/${student.id}/restore`, {}, { preserveScroll: true });
+}
+
 function getStudentActions(student) {
-    return [
-        { label: locale.value === 'en' ? 'View Profile' : 'প্রোফাইল দেখুন', href: `/admin/students/${student.id}`, icon: EyeIcon },
-        {
-            label: student.status === 'active' ? (locale.value === 'en' ? 'Deactivate' : 'নিষ্ক্রিয় করুন') : (locale.value === 'en' ? 'Activate' : 'সক্রিয় করুন'),
-            onClick: () => toggleStatus(student),
-            danger: student.status === 'active',
-            icon: student.status === 'active' ? NoSymbolIcon : CheckCircleIcon,
-        },
+    if (student.deleted_at) {
+        return [
+            { label: locale.value === 'en' ? 'View Profile' : 'প্রোফাইল দেখুন', href: `/admin/students/${student.id}`, icon: EyeIcon },
+            { label: locale.value === 'en' ? 'Restore Account' : 'পুনরুদ্ধার করুন', onClick: () => restoreStudent(student), icon: ArrowPathIcon },
+        ];
+    }
+    const actions = [
+        { label: locale.value === 'en' ? 'View / Manage' : 'প্রোফাইল ও ম্যানেজ', href: `/admin/students/${student.id}`, icon: EyeIcon },
     ];
+    if (!student.email_verified_at) {
+        actions.push({
+            label: locale.value === 'en' ? 'Approve / Verify Email' : 'ইমেইল অনুমোদন করুন',
+            onClick: () => verifyEmail(student),
+            icon: ShieldCheckIcon,
+        });
+    }
+    actions.push({
+        label: student.status === 'active' ? (locale.value === 'en' ? 'Deactivate' : 'নিষ্ক্রিয় করুন') : (locale.value === 'en' ? 'Activate' : 'সক্রিয় করুন'),
+        onClick: () => toggleStatus(student),
+        danger: student.status === 'active',
+        icon: student.status === 'active' ? NoSymbolIcon : CheckCircleIcon,
+    });
+    actions.push({
+        label: locale.value === 'en' ? 'Delete (30-day recovery)' : 'ডিলিট (৩০ দিন রিকভারি)',
+        onClick: () => deleteStudent(student),
+        danger: true,
+        icon: TrashIcon,
+    });
+    return actions;
 }
 </script>
 
@@ -91,6 +128,7 @@ function getStudentActions(student) {
                 <option value="">{{ t('common.all') }} — {{ t('admin.students.type_filter') }}</option>
                 <option value="ssc">SSC</option>
                 <option value="hsc">HSC</option>
+                <option value="admission">Admission</option>
                 <option value="university">University</option>
                 <option value="job">Job</option>
             </select>
@@ -102,6 +140,8 @@ function getStudentActions(student) {
                 <option value="">{{ t('common.all') }} — {{ t('admin.students.status_filter') }}</option>
                 <option value="active">{{ t('common.active') }}</option>
                 <option value="inactive">{{ t('common.inactive') }}</option>
+                <option value="unverified">Unverified Email ({{ unverifiedCount }})</option>
+                <option value="trashed">Deleted / 30-Day Recovery ({{ trashedCount }})</option>
             </select>
         </div>
 
@@ -140,7 +180,9 @@ function getStudentActions(student) {
                             </td>
 
                             <td class="px-5 py-4 text-[var(--text-muted)]">
-                                {{ s.email }}
+                                <div>{{ s.email || '—' }}</div>
+                                <span v-if="s.email_verified_at" class="inline-block mt-0.5 text-[10px] font-semibold text-emerald-500">✓ Verified</span>
+                                <span v-else class="inline-block mt-0.5 text-[10px] font-semibold text-amber-500">⚠ Unverified</span>
                             </td>
 
                             <td class="px-5 py-4">

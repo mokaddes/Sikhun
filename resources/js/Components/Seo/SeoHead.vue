@@ -22,6 +22,7 @@ const siteName = computed(() => site?.name || 'Sikhun.com');
         <title>{{ seo.title }}</title>
         <meta name="description" :content="seo.description" />
         <meta v-if="seo.keywords" name="keywords" :content="seo.keywords" />
+        <meta v-if="seo.robots" name="robots" :content="seo.robots" />
         <link rel="canonical" :href="seo.canonical" />
 
         <!-- Open Graph -->

@@ -108,6 +108,7 @@ class AdmissionNoticeController extends Controller
 
         if ($notice->status === 'published') {
             DispatchPagePilotSocialPost::dispatch('admission', $notice->id);
+            app(\App\Services\NotificationService::class)->notifyAdmissionPublished($notice);
         }
 
         return redirect()->route('admin.admissions.index')->with('success', 'ভর্তি বিজ্ঞপ্তি সফলভাবে তৈরি করা হয়েছে।');
@@ -159,6 +160,9 @@ class AdmissionNoticeController extends Controller
 
         if ($admission->status === 'published' && (! $wasPublished || $request->boolean('share_to_social'))) {
             DispatchPagePilotSocialPost::dispatch('admission', $admission->id);
+        }
+        if ($admission->status === 'published' && ! $wasPublished) {
+            app(\App\Services\NotificationService::class)->notifyAdmissionPublished($admission);
         }
 
         return redirect()->route('admin.admissions.index')->with('success', 'ভর্তি বিজ্ঞপ্তি সফলভাবে আপডেট করা হয়েছে।');

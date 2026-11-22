@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
+import { router } from '@inertiajs/vue3';
 import { XMarkIcon } from '@heroicons/vue/24/outline';
 import { useNotificationStore } from '@/Stores/notifications';
 import { useI18n } from '@/i18n';
@@ -20,6 +21,19 @@ function toggle() {
 
 function openItem(item) {
     if (!item.read_at) store.markRead(item.id);
+    const link = item?.data?.url || item?.data?.action_url;
+    if (link) {
+        open.value = false;
+        if (link.startsWith('http://') || link.startsWith('https://')) {
+            if (link.startsWith(window.location.origin)) {
+                router.visit(link.slice(window.location.origin.length) || '/');
+            } else {
+                window.open(link, '_blank', 'noopener,noreferrer');
+            }
+        } else {
+            router.visit(link);
+        }
+    }
 }
 
 async function dismiss(item) {

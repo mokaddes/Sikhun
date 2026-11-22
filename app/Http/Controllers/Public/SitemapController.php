@@ -62,7 +62,9 @@ class SitemapController extends Controller
             ['path' => '/admission-notice', 'priority' => '0.9', 'changefreq' => 'daily'],
             ['path' => '/blog', 'priority' => '0.9', 'changefreq' => 'daily'],
             ['path' => '/job-news', 'priority' => '0.8', 'changefreq' => 'daily'],
+            ['path' => '/plans', 'priority' => '0.8', 'changefreq' => 'weekly'],
             ['path' => '/tools', 'priority' => '0.7', 'changefreq' => 'monthly'],
+            ['path' => '/results', 'priority' => '0.7', 'changefreq' => 'monthly'],
             ['path' => '/contact', 'priority' => '0.5', 'changefreq' => 'monthly'],
         ];
 
@@ -121,8 +123,9 @@ class SitemapController extends Controller
             ];
         }
 
-        // 6. Active Blog Categories
+        // 6. Active Blog Categories (only those with at least 1 published post to avoid thin/empty pages)
         $categories = BlogCategory::where('is_active', true)
+            ->whereHas('posts', fn ($q) => $q->published())
             ->select(['slug', 'updated_at'])
             ->get();
 
@@ -150,10 +153,15 @@ class SitemapController extends Controller
             ];
         }
 
-        // 8. Active Job Circulars
+        // 8. Active Job Circulars (exclude admission circulars, prioritize open deadlines)
         $jobs = JobCircular::select(['slug', 'updated_at'])
+            ->where('title', 'not like', '%admission%')
+            ->where('title', 'not like', '%ভর্তি%')
+            ->where('slug', 'not like', '%admission%')
+            ->where('slug', 'not like', '%coursework%')
+            ->orderByRaw('CASE WHEN deadline >= CURRENT_DATE THEN 0 ELSE 1 END ASC')
             ->orderByDesc('updated_at')
-            ->take(50)
+            ->take(300)
             ->get();
 
         foreach ($jobs as $job) {

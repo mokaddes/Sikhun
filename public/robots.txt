@@ -1,7 +1,6 @@
 # robots.txt for https://sikhun.com
 # Sikhun.com — AI-Powered Education Platform in Bangladesh
-# Note: robots.txt is a public crawler directive, not an access-control or authentication mechanism.
-# Authenticated, private, and student dashboard pages enforce strict authentication and server-side noindex headers.
+# Authenticated, private, and student dashboard pages enforce strict authentication and server-side X-Robots-Tag: noindex, nofollow headers.
 
 # General search engine crawlers (Googlebot, Bingbot, Yahoo, DuckDuckGo, etc.)
 User-agent: *
@@ -11,21 +10,25 @@ Allow: /courses
 Allow: /blog
 Allow: /admission-notice
 Allow: /job-news
+Allow: /plans
 Allow: /tools
+Allow: /results
 Allow: /contact
 Allow: /p/
+Allow: /llms.txt
 Allow: /build/
 Allow: /storage/
 Allow: /images/
 Allow: /favicon.ico
 Allow: /favicon.svg
 
-# Block internal authenticated student & admin portals from indexing
+# Block internal authenticated student & admin portals and utility endpoints from indexing
 Disallow: /admin/
 Disallow: /dashboard/
 Disallow: /bookshelf/
+Disallow: /my-books/
 Disallow: /wallet/
-Disallow: /plans/
+Disallow: /invoices/
 Disallow: /ai/
 Disallow: /exams/
 Disallow: /flashcards/
@@ -33,12 +36,17 @@ Disallow: /essays/
 Disallow: /schedules/
 Disallow: /leaderboard/
 Disallow: /referrals/
+Disallow: /r/
 Disallow: /profile/
 Disallow: /notifications/
 Disallow: /reader/
 Disallow: /mistakes/
 Disallow: /question-bank/
 Disallow: /support/
+Disallow: /feedback
+Disallow: /onboarding
+Disallow: /access
+Disallow: /email/
 Disallow: /api/
 Disallow: /sanctum/
 Disallow: /horizon/
@@ -47,21 +55,69 @@ Disallow: /register
 Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /*?*search=*
+Disallow: /*?*sort=*
+Disallow: /*?*category_id=*
 
-# OpenAI Search Bot (ChatGPT Search engine retrieval)
+# AI Search & Generative Engine Crawlers (ChatGPT Search, Perplexity, Claude, Google AI)
 User-agent: OAI-SearchBot
 Allow: /
+Allow: /llms.txt
 Disallow: /admin/
 Disallow: /dashboard/
 Disallow: /exams/
 Disallow: /reader/
 Disallow: /mistakes/
+Disallow: /question-bank/
 Disallow: /wallet/
 Disallow: /api/
 
-# OpenAI AI Model Training Scraper (disallow content scraping for model training)
 User-agent: GPTBot
-Disallow: /
+Allow: /
+Allow: /llms.txt
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /exams/
+Disallow: /reader/
+Disallow: /mistakes/
+Disallow: /question-bank/
+Disallow: /wallet/
+Disallow: /api/
 
-# Sitemap Index & Dynamic Endpoints
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /exams/
+Disallow: /reader/
+Disallow: /mistakes/
+Disallow: /question-bank/
+Disallow: /wallet/
+Disallow: /api/
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /llms.txt
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /exams/
+Disallow: /reader/
+Disallow: /mistakes/
+Disallow: /question-bank/
+Disallow: /wallet/
+Disallow: /api/
+
+User-agent: Google-Extended
+Allow: /
+Allow: /llms.txt
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /exams/
+Disallow: /reader/
+Disallow: /mistakes/
+Disallow: /question-bank/
+Disallow: /wallet/
+Disallow: /api/
+
+# Sitemap & LLM Discovery
 Sitemap: https://sikhun.com/sitemap.xml

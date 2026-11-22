@@ -69,6 +69,10 @@ class BookController extends Controller
 
         $book = Book::create($data);
 
+        if ($book->is_published) {
+            app(\App\Services\NotificationService::class)->notifyBookPublished($book);
+        }
+
         // PDFs are attached in a separate step (admin.books.pdf-upload) so a
         // large upload never blocks the metadata form. Processing runs in a
         // background job and can take a few minutes for big files.
@@ -99,7 +103,12 @@ class BookController extends Controller
             $data['cover_image'] = $request->file('cover_image')->store('books/covers', 'public');
         }
 
+        $wasPublished = (bool) $book->is_published;
         $book->update($data);
+
+        if (! $wasPublished && $book->is_published) {
+            app(\App\Services\NotificationService::class)->notifyBookPublished($book);
+        }
 
         // Changing the PDF is intentionally NOT part of this form — it lives
         // on the dedicated admin.books.pdf-upload page and is processed in a

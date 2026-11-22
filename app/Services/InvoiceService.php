@@ -186,6 +186,35 @@ class InvoiceService
                         'amount' => $subtotal,
                     ]);
 
+                    // Auto-send renewal invoice email + mandatory push/in-app notification 7 days before expiry
+                    $daysUntilExpiry = (int) max(0, today()->diffInDays($subscription->expires_at->copy()->startOfDay()));
+                    try {
+                        if (! empty($subscription->student->email)) {
+                            Mail::to($subscription->student->email)->send(new InvoiceReminderMail($invoice, $daysUntilExpiry));
+                        }
+                    } catch (\Throwable $e) {
+                        Log::warning('Auto renewal invoice mail failed', ['invoice' => $invoice->id, 'error' => $e->getMessage()]);
+                    }
+
+                    app(NotificationService::class)->send(
+                        student: $subscription->student,
+                        type: 'subscription_expiry',
+                        title: $bn ? "নবায়ন ইনভয়েস তৈরি হয়েছে ({$subscription->plan->name})" : "Renewal Invoice Ready ({$subscription->plan->name})",
+                        body: $bn
+                            ? "আপনার {$subscription->plan->name} প্ল্যানের মেয়াদ {$daysUntilExpiry} দিন পর শেষ হবে। ইনভয়েস {$invoice->invoice_number} (৳{$invoice->total}) পরিশোধ করে নিরবচ্ছিন্ন সেবা চালু রাখুন।"
+                            : "Your {$subscription->plan->name} plan expires in {$daysUntilExpiry} day(s). Pay invoice {$invoice->invoice_number} (৳{$invoice->total}) to stay active.",
+                        data: [
+                            'invoice_id' => $invoice->id,
+                            'invoice_number' => $invoice->invoice_number,
+                            'url' => '/invoices/'.$invoice->id,
+                        ],
+                        mandatory: true
+                    );
+
+                    $meta = $invoice->meta ?? [];
+                    $meta['reminders'] = array_values(array_unique([...($meta['reminders'] ?? []), $daysUntilExpiry]));
+                    $invoice->update(['meta' => $meta]);
+
                     $created++;
                 }
             });
@@ -203,7 +232,7 @@ class InvoiceService
     }
 
     /**
-     * Emails + in-app notifications for invoices due in 5 or 1 days.
+     * Emails + in-app + Firebase push notifications for invoices due in 7, 3, or 0 (same day) days.
      * The offsets already sent are stored in meta.reminders, so re-running
      * the command never duplicates a reminder.
      */
@@ -216,16 +245,16 @@ class InvoiceService
             ->whereIn('status', ['sent', 'overdue'])
             ->whereNotNull('due_at')
             ->whereDate('due_at', '>=', today())
-            ->whereDate('due_at', '<=', today()->addDays(5))
+            ->whereDate('due_at', '<=', today()->addDays(7))
             ->chunkById(200, function ($invoices) use (&$sent, $bn) {
                 foreach ($invoices as $invoice) {
                     if (! $invoice->student || ! $invoice->due_at) {
                         continue;
                     }
 
-                    $daysLeft = (int) today()->diffInDays($invoice->due_at);
+                    $daysLeft = (int) today()->diffInDays($invoice->due_at->copy()->startOfDay());
 
-                    if (! in_array($daysLeft, [5, 1], true)) {
+                    if (! in_array($daysLeft, [7, 3, 0], true)) {
                         continue;
                     }
 
@@ -236,7 +265,9 @@ class InvoiceService
                     }
 
                     try {
-                        Mail::to($invoice->student->email)->send(new InvoiceReminderMail($invoice, $daysLeft));
+                        if (! empty($invoice->student->email)) {
+                            Mail::to($invoice->student->email)->send(new InvoiceReminderMail($invoice, $daysLeft));
+                        }
                     } catch (\Throwable $e) {
                         Log::warning('Invoice reminder mail failed', [
                             'invoice' => $invoice->id,
@@ -244,18 +275,30 @@ class InvoiceService
                         ]);
                     }
 
-                    InAppNotification::create([
-                        'student_id' => $invoice->student_id,
-                        'type' => 'invoice_reminder',
-                        'title' => $bn ? 'ইনভয়েস পরিশোধের সময় আসছে' : 'Invoice due soon',
-                        'body' => $bn
-                            ? "ইনভয়েস {$invoice->invoice_number} এর {$daysLeft} দিন পর ৳{$invoice->total} পরিশোধ করতে হবে।"
-                            : "Invoice {$invoice->invoice_number} for ৳{$invoice->total} is due in {$daysLeft} day(s).",
-                        'data' => [
+                    if ($daysLeft === 0) {
+                        $title = $bn ? 'আজই আপনার প্ল্যান ও ইনভয়েসের শেষ দিন!' : 'Invoice due today — plan expires today!';
+                        $body = $bn
+                            ? "ইনভয়েস {$invoice->invoice_number} (৳{$invoice->total}) আজই পরিশোধের শেষ দিন। এখনই পরিশোধ করতে ক্লিক করুন।"
+                            : "Invoice {$invoice->invoice_number} for ৳{$invoice->total} is due today. Click to pay now and keep your access active.";
+                    } else {
+                        $title = $bn ? "ইনভয়েস পরিশোধের {$daysLeft} দিন বাকি" : "Invoice due in {$daysLeft} days";
+                        $body = $bn
+                            ? "ইনভয়েস {$invoice->invoice_number} এর {$daysLeft} দিন পর ৳{$invoice->total} পরিশোধ করতে হবে। বিস্তারিত দেখতে ক্লিক করুন।"
+                            : "Invoice {$invoice->invoice_number} for ৳{$invoice->total} is due in {$daysLeft} day(s). Click to view & pay.";
+                    }
+
+                    app(NotificationService::class)->send(
+                        student: $invoice->student,
+                        type: 'subscription_expiry',
+                        title: $title,
+                        body: $body,
+                        data: [
                             'invoice_id' => $invoice->id,
                             'invoice_number' => $invoice->invoice_number,
+                            'url' => '/invoices/'.$invoice->id,
                         ],
-                    ]);
+                        mandatory: true
+                    );
 
                     $meta = $invoice->meta ?? [];
                     $meta['reminders'] = [...$alreadySent, $daysLeft];

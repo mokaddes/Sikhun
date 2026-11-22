@@ -7,16 +7,21 @@ use App\Http\Requests\Admin\AssignSubscriptionRequest;
 use App\Http\Requests\Admin\GrantAccessRequest;
 use App\Http\Requests\Admin\WalletAdjustRequest;
 use App\Mail\AdminStudentActionMail;
+use App\Models\Book;
+use App\Models\BookShelf;
 use App\Models\Coupon;
+use App\Models\MyBook;
 use App\Models\Plan;
 use App\Models\Student;
 use App\Services\AccessGrantService;
+use App\Services\NotificationService;
 use App\Services\SubscriptionService;
 use App\Services\WalletService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,11 +29,21 @@ class StudentController extends Controller
 {
     public function index(Request $request): Response
     {
-        $students = Student::query()
-            ->when($request->search, fn ($q) => $q->where('name', 'like', "%{$request->search}%")
-                ->orWhere('email', 'like', "%{$request->search}%"))
+        $isTrashed = $request->status === 'trashed';
+
+        $query = $isTrashed ? Student::onlyTrashed() : Student::query();
+
+        $students = $query
+            ->when($request->search, function ($q, $search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                });
+            })
             ->when($request->type, fn ($q) => $q->where('type', $request->type))
-            ->when($request->status, fn ($q) => $q->where('status', $request->status))
+            ->when(! $isTrashed && $request->status === 'unverified', fn ($q) => $q->whereNull('email_verified_at'))
+            ->when(! $isTrashed && in_array($request->status, ['active', 'inactive'], true), fn ($q) => $q->where('status', $request->status))
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -36,16 +51,107 @@ class StudentController extends Controller
         return Inertia::render('Admin/Students/Index', [
             'students' => $students,
             'filters' => $request->only('search', 'type', 'status'),
+            'trashedCount' => Student::onlyTrashed()->count(),
+            'unverifiedCount' => Student::whereNull('email_verified_at')->count(),
         ]);
     }
 
     public function show(Student $student, AccessGrantService $grants): Response
     {
+        $student->load([
+            'activeSubscription.plan',
+            'subscriptions' => fn ($q) => $q->with('plan:id,name,price_monthly')->latest()->limit(20),
+            'walletTransactions' => fn ($q) => $q->latest()->limit(50),
+            'orders' => fn ($q) => $q->latest()->limit(50),
+            'invoices' => fn ($q) => $q->latest()->limit(30),
+            'bookShelf' => fn ($q) => $q->with('book:id,title,slug,price,is_free')->latest('added_at'),
+            'myBooks' => fn ($q) => $q->latest(),
+            'courseEnrollments' => fn ($q) => $q->with('course:id,title,slug,price')->latest(),
+            'ownedChapters' => fn ($q) => $q->with('chapter:id,book_id,title,price', 'chapter.book:id,title,slug')->latest(),
+        ]);
+
         return Inertia::render('Admin/Students/Show', [
-            'student' => $student->load(['activeSubscription.plan', 'walletTransactions' => fn ($q) => $q->latest()->limit(20)]),
+            'student' => array_merge($student->toArray(), [
+                'is_trashed' => $student->trashed(),
+                'days_until_purge' => $student->trashed() ? $student->daysUntilPurge() : null,
+            ]),
             'plans' => Plan::where('is_active', true)->get(['id', 'name', 'price_monthly']),
+            'allBooks' => Book::orderBy('title')->get(['id', 'title', 'slug', 'price']),
             'access' => $grants->accessSummary($student),
         ]);
+    }
+
+    public function update(Request $request, Student $student): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('students', 'email')->ignore($student->id)],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'type' => ['required', 'in:ssc,hsc,admission,university,job'],
+            'status' => ['required', 'in:active,inactive'],
+        ]);
+
+        $student->update($validated);
+
+        return back()->with('success', 'Student profile updated successfully.');
+    }
+
+    public function destroy(Student $student): RedirectResponse
+    {
+        $student->tokens()->delete();
+        $student->pushSubscriptions()->delete();
+        $student->scheduleDeletion(30);
+
+        $this->notifyStudent(
+            $student,
+            'Your Sikhun account is scheduled for deletion',
+            'Account Scheduled for Deletion (30-Day Recovery)',
+            'Your Sikhun account has been deactivated and scheduled for permanent deletion in 30 days. You can log back in within 30 days to restore your account.',
+            ['Recovery Window' => '30 days']
+        );
+
+        return redirect()->route('admin.students.index')->with('success', 'Student moved to deleted accounts (recoverable for 30 days).');
+    }
+
+    public function restore(Student $student): RedirectResponse
+    {
+        $student->restoreFromDeletion();
+
+        $this->notifyStudent(
+            $student,
+            'Your Sikhun account has been restored',
+            'Account Restored',
+            'An administrator has restored your Sikhun student account. You can now log in normally.',
+            ['Account Status' => 'Active']
+        );
+
+        return back()->with('success', 'Student account restored successfully.');
+    }
+
+    public function verifyEmail(Student $student, NotificationService $notifications): RedirectResponse
+    {
+        if (! $student->hasVerifiedEmail()) {
+            $student->forceFill(['email_verified_at' => now()])->save();
+        }
+
+        $notifications->send(
+            student: $student,
+            type: 'admin_broadcast',
+            title: 'ইমেইল ভেরিফিকেশন সম্পন্ন হয়েছে',
+            body: 'অ্যাডমিন আপনার ইমেইল সফলভাবে অনুমোদন করেছেন। এখন আপনি সব ফিচার ব্যবহার করতে পারবেন।',
+            data: ['url' => '/dashboard'],
+            mandatory: true
+        );
+
+        $this->notifyStudent(
+            $student,
+            'Your Sikhun email has been verified',
+            'Email Approved & Verified',
+            'An administrator has manually verified your email address on Sikhun.com. Your account is now fully active.',
+            ['Email' => (string) $student->email]
+        );
+
+        return back()->with('success', 'Student email manually verified & approved.');
     }
 
     public function toggleStatus(Student $student): RedirectResponse
@@ -118,12 +224,7 @@ class StudentController extends Controller
         return back()->with('success', 'Subscription assigned.');
     }
 
-    /**
-     * Quick "give this student full access" — creates a direct-assign
-     * coupon so books, courses and AI are unlocked without a package
-     * (or beyond it) for the requested duration.
-     */
-    public function grantAccess(GrantAccessRequest $request, Student $student, AccessGrantService $grants): RedirectResponse
+    public function grantAccess(GrantAccessRequest $request, Student $student, AccessGrantService $grants, NotificationService $notifications): RedirectResponse
     {
         $label = $request->name ?: "Access grant for {$student->name}";
         $coupon = Coupon::create([
@@ -145,6 +246,15 @@ class StudentController extends Controller
             $details['Notes'] = (string) $request->notes;
         }
 
+        $notifications->send(
+            student: $student,
+            type: 'plan_update',
+            title: "ফ্রি ফুল অ্যাক্সেস যুক্ত হয়েছে ({$request->duration_days} দিন)",
+            body: "অ্যাডমিন আপনার অ্যাকাউন্টে {$request->duration_days} দিনের জন্য সব বই, কোর্স ও AI টুল আনলক করেছেন।",
+            data: ['url' => '/dashboard'],
+            mandatory: true
+        );
+
         $this->notifyStudent(
             $student,
             "Free Full Access Granted ({$request->duration_days} days)",
@@ -154,6 +264,79 @@ class StudentController extends Controller
         );
 
         return back()->with('success', 'Full access granted to student.');
+    }
+
+    public function sendOffer(Request $request, Student $student, NotificationService $notifications): RedirectResponse
+    {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'body' => ['required', 'string', 'max:1500'],
+            'action_url' => ['nullable', 'string', 'max:500'],
+            'send_email' => ['nullable', 'boolean'],
+        ]);
+
+        $actionUrl = trim((string) ($validated['action_url'] ?? '')) ?: '/dashboard';
+
+        $notifications->send(
+            student: $student,
+            type: 'special_offer',
+            title: $validated['title'],
+            body: $validated['body'],
+            data: ['url' => $actionUrl],
+            mandatory: true
+        );
+
+        if ($request->boolean('send_email', true)) {
+            $this->notifyStudent(
+                $student,
+                $validated['title'],
+                $validated['title'],
+                $validated['body'],
+                ['Link' => str_starts_with($actionUrl, 'http') ? $actionUrl : url($actionUrl)]
+            );
+        }
+
+        return back()->with('success', 'Personal offer sent via Notification, Firebase Push'.($request->boolean('send_email', true) ? ' & Email.' : '.'));
+    }
+
+    public function addBookToShelf(Request $request, Student $student, NotificationService $notifications): RedirectResponse
+    {
+        $validated = $request->validate([
+            'book_id' => ['required', 'exists:books,id'],
+        ]);
+
+        $book = Book::findOrFail($validated['book_id']);
+
+        BookShelf::updateOrCreate(
+            ['student_id' => $student->id, 'book_id' => $book->id],
+            ['source' => 'admin', 'added_at' => now()]
+        );
+
+        $notifications->send(
+            student: $student,
+            type: 'plan_update',
+            title: "নতুন বই বুকশেলফে যুক্ত হয়েছে: {$book->title}",
+            body: "অ্যাডমিন '{$book->title}' বইটি আপনার বুকশেলফে যুক্ত করেছেন। এখনই পড়া শুরু করুন!",
+            data: ['url' => '/library/'.$book->slug, 'book_id' => $book->id],
+            mandatory: true
+        );
+
+        return back()->with('success', "Book '{$book->title}' added to student's bookshelf.");
+    }
+
+    public function removeBookFromShelf(Student $student, Book $book): RedirectResponse
+    {
+        BookShelf::where('student_id', $student->id)->where('book_id', $book->id)->delete();
+
+        return back()->with('success', "Book '{$book->title}' removed from student's bookshelf.");
+    }
+
+    public function deleteUploadedBook(Student $student, MyBook $myBook): RedirectResponse
+    {
+        abort_unless((int) $myBook->student_id === (int) $student->id, 404);
+        $myBook->delete();
+
+        return back()->with('success', 'Uploaded personal book removed.');
     }
 
     /**

@@ -136,7 +136,7 @@ onUnmounted(() => revealObserver?.disconnect());
                 </div>
                 <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <Link v-for="course in topCourses.slice(0, 3)" :key="course.id" :href="`/courses/${course.slug}`" class="home-course home-reveal">
-                        <img v-if="course.cover_image_url" :src="course.cover_image_url" :alt="course.title" loading="lazy" />
+                        <img v-if="course.cover_image_url" :src="course.cover_image_url" :alt="course.title" loading="lazy" decoding="async" width="400" height="150" />
                         <div v-else class="home-course-cover"><span>✳</span></div>
                         <div class="p-4"><p class="home-course-meta">{{ course.mentor?.name || (en ? 'Mentor-led course' : 'মেন্টর পরিচালিত কোর্স') }}</p><h3>{{ course.title }}</h3><p class="home-course-price">{{ Number(course.price) === 0 ? (en ? 'Free' : 'বিনামূল্যে') : `৳${course.price}` }}</p></div>
                     </Link>
@@ -150,7 +150,7 @@ onUnmounted(() => revealObserver?.disconnect());
                 </div>
                 <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                     <Link v-for="book in popularBooks.slice(0, 5)" :key="book.id" :href="`/library/${book.slug}`" class="home-book home-reveal">
-                        <img v-if="book.cover_image_url" :src="book.cover_image_url" :alt="book.title" loading="lazy" />
+                        <img v-if="book.cover_image_url" :src="book.cover_image_url" :alt="book.title" loading="lazy" decoding="async" width="56" height="74" />
                         <span v-else class="home-book-placeholder">{{ en ? 'READ' : 'পড়ুন' }}</span>
                         <span class="home-book-title">{{ book.title }}</span>
                     </Link>

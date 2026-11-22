@@ -39,6 +39,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::get('/sitemap.xml', [\App\Http\Controllers\Public\SitemapController::class, 'index'])->name('sitemap');
+Route::get('/llms.txt', [\App\Http\Controllers\Public\LlmsController::class, 'index'])->name('llms');
 Route::get('/firebase-messaging-sw.js', \App\Http\Controllers\FirebaseServiceWorkerController::class)->name('firebase.sw');
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/contact', [\App\Http\Controllers\Public\ContactController::class, 'show'])->name('contact.show');

@@ -84,6 +84,7 @@ class JobCircularController extends Controller
         $job = JobCircular::create($data);
 
         DispatchPagePilotSocialPost::dispatch('job', $job->id);
+        app(\App\Services\NotificationService::class)->notifyJobPublished($job);
 
         return redirect()->route('admin.jobs.index')->with('success', 'চাকরির সার্কুলার সফলভাবে তৈরি করা হয়েছে।');
     }

@@ -237,6 +237,8 @@ const hasFullReadAccess = computed(() => {
                                     v-if="book.cover_image_url"
                                     :src="book.cover_image_url"
                                     :alt="book.title"
+                                    fetchpriority="high"
+                                    decoding="async"
                                     width="400"
                                     height="533"
                                     class="h-full w-full object-cover"
@@ -836,7 +838,7 @@ const hasFullReadAccess = computed(() => {
                         class="group flex flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] transition hover:-translate-y-1 hover:border-[var(--primary)]/50 hover:shadow-lg"
                     >
                         <div class="relative aspect-[3/4] overflow-hidden bg-[var(--surface2)]">
-                            <img v-if="rel.cover_image_url" :src="rel.cover_image_url" :alt="rel.title" loading="lazy" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                            <img v-if="rel.cover_image_url" :src="rel.cover_image_url" :alt="rel.title" loading="lazy" decoding="async" width="240" height="320" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                             <div v-else class="flex h-full w-full items-center justify-center text-[var(--text-muted)]">
                                 <BookOpenIcon class="h-10 w-10 opacity-40" />
                             </div>

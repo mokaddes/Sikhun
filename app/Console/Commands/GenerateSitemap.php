@@ -2,84 +2,38 @@
 
 namespace App\Console\Commands;
 
-use App\Models\BlogCategory;
-use App\Models\BlogPost;
-use App\Models\Book;
-use App\Models\Course;
-use App\Models\CustomPage;
+use App\Http\Controllers\Public\SitemapController;
 use Illuminate\Console\Command;
-use Spatie\Sitemap\Sitemap;
-use Spatie\Sitemap\Tags\Url;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\URL;
 
 class GenerateSitemap extends Command
 {
     protected $signature = 'sitemap:generate';
 
-    protected $description = 'Regenerate public/sitemap.xml from published books, active courses, blog posts, and CMS pages';
+    protected $description = 'Refresh the dynamic XML sitemap cache (and remove any stale static public/sitemap.xml)';
 
-    public function handle(): int
+    public function handle(SitemapController $controller): int
     {
-        // Always emit the public production URL even when generated on a
-        // dev machine whose APP_URL points at localhost. forceRootUrl() is
-        // required in addition to the config change: the URL generator is
-        // already resolved by the time an artisan command runs, so it keeps
-        // the boot-time root unless we force it.
-        $base = rtrim(env('SEO_SITEMAP_BASE_URL', 'https://sikhun.com'), '/');
+        $base = rtrim(env('SEO_SITEMAP_BASE_URL', config('app.url', 'https://sikhun.com')), '/');
 
         config(['app.url' => $base]);
-        \Illuminate\Support\Facades\URL::forceRootUrl($base);
-        \Illuminate\Support\Facades\URL::forceScheme('https');
+        URL::forceRootUrl($base);
+        URL::forceScheme('https');
 
-        $sitemap = Sitemap::create()
-            ->add(Url::create('/')->setPriority(1.0))
-            ->add(Url::create('/blog')->setPriority(0.9))
-            ->add(Url::create('/library')->setPriority(0.9))
-            ->add(Url::create('/courses')->setPriority(0.9))
-            ->add(Url::create('/contact')->setPriority(0.5));
-
-        foreach (BlogCategory::active()->get() as $category) {
-            $sitemap->add(
-                Url::create("/blog/category/{$category->slug}")
-                    ->setLastModificationDate($category->updated_at)
-                    ->setPriority(0.7)
-            );
+        // Remove any legacy static public/sitemap.xml so Nginx always delegates
+        // /sitemap.xml to SitemapController::index() (single source of truth).
+        $staticPath = public_path('sitemap.xml');
+        if (is_file($staticPath)) {
+            @unlink($staticPath);
         }
 
-        foreach (BlogPost::published()->get() as $post) {
-            $sitemap->add(
-                Url::create("/blog/{$post->slug}")
-                    ->setLastModificationDate($post->updated_at)
-                    ->setPriority(0.8)
-            );
-        }
+        SitemapController::clearCache();
+        $xml = $controller->buildSitemapXml();
+        Cache::put('sitemap_xml_payload', $xml, 3600);
 
-        foreach (CustomPage::published()->where('slug', '!=', 'contact')->get() as $page) {
-            $sitemap->add(
-                Url::create("/p/{$page->slug}")
-                    ->setLastModificationDate($page->updated_at)
-                    ->setPriority(0.6)
-            );
-        }
-
-        foreach (Book::published()->get() as $book) {
-            $sitemap->add(
-                Url::create("/library/{$book->slug}")
-                    ->setLastModificationDate($book->updated_at)
-                    ->setPriority(0.8)
-            );
-        }
-
-        foreach (Course::active()->get() as $course) {
-            $sitemap->add(
-                Url::create("/courses/{$course->slug}")
-                    ->setLastModificationDate($course->updated_at)
-                    ->setPriority(0.8)
-            );
-        }
-
-        $sitemap->writeToFile(public_path('sitemap.xml'));
-
-        $this->info('Sitemap written to public/sitemap.xml.');
+        $urlCount = substr_count($xml, '<url>');
+        $this->info("Dynamic sitemap cache refreshed with {$urlCount} URLs.");
 
         return self::SUCCESS;
     }

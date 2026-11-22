@@ -17,7 +17,7 @@ class GenerateAiNotification implements ShouldQueue
 
     public $tries = 2;
 
-    public $timeout = 30;
+    public $timeout = 60;
 
     public function __construct()
     {

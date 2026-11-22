@@ -15,9 +15,9 @@ class SubscriptionService
      * Phase 3). Expires any currently active subscription first so a
      * student never holds two "active" rows at once.
      */
-    public function assign(Student $student, Plan $plan, int $months): StudentSubscription
+    public function assign(Student $student, Plan $plan, int $months, bool $notify = true): StudentSubscription
     {
-        return DB::transaction(function () use ($student, $plan, $months) {
+        $subscription = DB::transaction(function () use ($student, $plan, $months) {
             $student->subscriptions()->where('status', 'active')->update(['status' => 'expired']);
 
             return StudentSubscription::create([
@@ -32,6 +32,23 @@ class SubscriptionService
                 'expires_at' => now()->addMonths($months),
             ]);
         });
+
+        if ($notify && ! $plan->is_free && (float) $plan->price_monthly > 0) {
+            try {
+                app(NotificationService::class)->send(
+                    student: $student,
+                    type: 'plan_update',
+                    title: "প্ল্যান অ্যাক্টিভ হয়েছে: {$plan->name}",
+                    body: "আপনার অ্যাকাউন্টে {$plan->name} প্ল্যান ({$months} মাস) সফলভাবে চালু হয়েছে। মেয়াদ: {$subscription->expires_at->format('d M Y')}।",
+                    data: ['url' => '/subscription/plans', 'plan_id' => $plan->id],
+                    mandatory: true
+                );
+            } catch (\Throwable $e) {
+                // Non-fatal
+            }
+        }
+
+        return $subscription;
     }
 
     public function assignCustom(Student $student, array $config, int $months = 1): StudentSubscription

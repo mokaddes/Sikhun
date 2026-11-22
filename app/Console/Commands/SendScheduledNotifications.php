@@ -20,19 +20,25 @@ class SendScheduledNotifications extends Command
             ->get();
 
         foreach ($due as $scheduled) {
-            $students = $scheduled->target_audience === 'all'
-                ? Student::where('status', 'active')->get()
-                : Student::where('status', 'active')->where('type', $scheduled->target_audience)->get();
+            $data = $scheduled->action_url ? ['url' => $scheduled->action_url] : [];
 
-            $sent = 0;
-            foreach ($students as $student) {
-                if ($notifications->send($student, $scheduled->type, $scheduled->title, $scheduled->body)) {
-                    $sent++;
-                }
+            if ($scheduled->target_student_id) {
+                $student = Student::where('status', 'active')->find($scheduled->target_student_id);
+                $sent = $student && $notifications->send($student, $scheduled->type, $scheduled->title, $scheduled->body, $data, true) ? 1 : 0;
+            } else {
+                $sent = $notifications->sendToAudience(
+                    audience: $scheduled->target_audience,
+                    type: $scheduled->type,
+                    title: $scheduled->title,
+                    body: $scheduled->body,
+                    data: $data,
+                    mandatory: true,
+                    sendEmail: (bool) $scheduled->send_email
+                );
             }
 
             $scheduled->update(['sent_at' => now()]);
-            $this->info("Sent scheduled notification #{$scheduled->id} to {$sent}/{$students->count()} students.");
+            $this->info("Sent scheduled notification #{$scheduled->id} to {$sent} student(s).");
         }
 
         if ($due->isEmpty()) {

@@ -214,6 +214,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::put('profile/leaderboard-opt-out', [ProfileController::class, 'updateLeaderboardOptOut']);
     Route::put('profile/notifications', [ProfileController::class, 'updateNotifications']);
     Route::post('profile/fcm-token', [ProfileController::class, 'registerFcmToken']);
+    Route::delete('profile/fcm-token', [ProfileController::class, 'unregisterFcmToken']);
     Route::get('profile/export', [ProfileController::class, 'exportData']);
     Route::delete('profile/account', [ProfileController::class, 'deleteAccount']);
 

@@ -47,10 +47,19 @@ class AuthController extends BaseApiController
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $student = Student::where('email', $request->email)->first();
+        $student = Student::withTrashed()->where('email', $request->email)->first();
 
         if (! $student || ! Auth::guard('web')->getProvider()->validateCredentials($student, ['password' => $request->password])) {
             return $this->error('These credentials do not match our records.', [], 401);
+        }
+
+        $restored = false;
+        if ($student->trashed()) {
+            if ($student->scheduled_purge_at && now()->greaterThan($student->scheduled_purge_at)) {
+                return $this->error('This account deletion period (30 days) has expired.', [], 403);
+            }
+            $student->restoreFromDeletion();
+            $restored = true;
         }
 
         if ($student->status === 'inactive') {
@@ -63,7 +72,8 @@ class AuthController extends BaseApiController
             'student' => $student,
             'token' => $token,
             'email_verified' => $student->hasVerifiedEmail(),
-        ], 'Logged in successfully');
+            'restored' => $restored,
+        ], $restored ? 'Welcome back! Your deleted account has been restored.' : 'Logged in successfully');
     }
 
     public function logout(Request $request): JsonResponse

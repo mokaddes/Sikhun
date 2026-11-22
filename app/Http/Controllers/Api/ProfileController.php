@@ -104,6 +104,20 @@ class ProfileController extends BaseApiController
         return $this->success(null, 'Device registered for push notifications');
     }
 
+    public function unregisterFcmToken(Request $request): JsonResponse
+    {
+        $student = auth('sanctum')->user();
+        $token = trim((string) $request->input('fcm_token', ''));
+
+        $query = PushSubscription::where('student_id', $student->id)->where('channel', 'fcm');
+        if ($token !== '') {
+            $query->where('token', $token);
+        }
+        $query->delete();
+
+        return $this->success(null, 'Device unregistered from push notifications');
+    }
+
     public function exportData(\App\Services\AccountDataService $accountData): JsonResponse
     {
         $student = auth('sanctum')->user();

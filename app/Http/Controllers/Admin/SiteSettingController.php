@@ -135,6 +135,12 @@ class SiteSettingController extends Controller
             // FCM Push Notifications
             'fcm_enabled' => ['nullable', 'boolean'],
             'fcm_project_id' => ['nullable', 'string', 'max:255'],
+            'fcm_api_key' => ['nullable', 'string', 'max:255'],
+            'fcm_auth_domain' => ['nullable', 'string', 'max:255'],
+            'fcm_storage_bucket' => ['nullable', 'string', 'max:255'],
+            'fcm_messaging_sender_id' => ['nullable', 'string', 'max:255'],
+            'fcm_app_id' => ['nullable', 'string', 'max:255'],
+            'fcm_vapid_key' => ['nullable', 'string', 'max:255'],
             'fcm_server_key' => ['nullable', 'string', 'max:500'],
             'fcm_service_account_json' => ['nullable', 'string', 'max:10000'],
             // AI Cost Governance
@@ -189,6 +195,8 @@ class SiteSettingController extends Controller
             }
         }
 
+        \Illuminate\Support\Facades\Cache::forget('fcm_v1_oauth_token');
+
         return back()->with('success', 'Settings saved.');
     }
 
@@ -228,6 +236,26 @@ class SiteSettingController extends Controller
         }
 
         return back()->with('error', 'PagePilotBD সংযোগে ব্যর্থ হয়েছে: ' . ($result['message'] ?? 'অজানা ত্রুটি'));
+    }
+
+    public function testFcm(Request $request, \App\Services\PushNotificationService $push): RedirectResponse
+    {
+        $request->validate([
+            'token' => ['required', 'string', 'max:512'],
+        ]);
+
+        $result = $push->sendTestToToken(
+            trim((string) $request->input('token')),
+            'Sikhun.com — Firebase Test Push',
+            'অভিনন্দন! আপনার Firebase Push Notification সঠিকভাবে কাজ করছে।',
+            ['type' => 'admin_broadcast', 'url' => url('/dashboard')]
+        );
+
+        if ($result['ok']) {
+            return back()->with('success', 'Test push notification sent successfully!');
+        }
+
+        return back()->with('error', 'FCM Test Failed: '.($result['error'] ?? 'Unknown error'));
     }
 
     public function syncPagePilotKnowledge(\App\Services\Social\PagePilotSyncService $sync): RedirectResponse

@@ -39,6 +39,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::get('/sitemap.xml', [\App\Http\Controllers\Public\SitemapController::class, 'index'])->name('sitemap');
+Route::get('/firebase-messaging-sw.js', \App\Http\Controllers\FirebaseServiceWorkerController::class)->name('firebase.sw');
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/contact', [\App\Http\Controllers\Public\ContactController::class, 'show'])->name('contact.show');
 Route::post('/contact', [\App\Http\Controllers\Public\ContactController::class, 'submit'])
@@ -292,6 +293,7 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     // Notifications (bell dropdown)
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/push-subscription', [NotificationController::class, 'subscribePush'])->name('notifications.push-subscribe');
+    Route::delete('/notifications/push-subscription', [NotificationController::class, 'unsubscribePush'])->name('notifications.push-unsubscribe');
     Route::put('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::put('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');

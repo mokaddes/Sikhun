@@ -96,6 +96,12 @@ const form = useForm({
     // FCM Push
     fcm_enabled: Boolean(Number(props.settings.fcm_enabled) || props.settings.fcm_enabled === 'true' || props.settings.fcm_enabled === true),
     fcm_project_id: props.settings.fcm_project_id ?? '',
+    fcm_api_key: props.settings.fcm_api_key ?? '',
+    fcm_auth_domain: props.settings.fcm_auth_domain ?? '',
+    fcm_storage_bucket: props.settings.fcm_storage_bucket ?? '',
+    fcm_messaging_sender_id: props.settings.fcm_messaging_sender_id ?? '',
+    fcm_app_id: props.settings.fcm_app_id ?? '',
+    fcm_vapid_key: props.settings.fcm_vapid_key ?? '',
     fcm_server_key: props.settings.fcm_server_key ?? '',
     fcm_service_account_json: props.settings.fcm_service_account_json ?? '',
     // AI Cost Governance
@@ -113,6 +119,12 @@ const form = useForm({
 const logoPreview = ref(props.settings.site_logo_url ?? null);
 const faviconPreview = ref(props.settings.site_favicon_url ?? null);
 const seoPreview = ref(props.settings.seo_image_url ?? null);
+
+const testFcmForm = useForm({ token: '' });
+function sendTestFcm() {
+    if (!testFcmForm.token.trim()) return;
+    testFcmForm.post('/admin/settings/test-fcm', { preserveScroll: true });
+}
 const admissionSeoPreview = ref(props.settings.seo_admission_image_url ?? null);
 const jobSeoPreview = ref(props.settings.seo_job_image_url ?? null);
 const blogSeoPreview = ref(props.settings.seo_blog_image_url ?? null);
@@ -798,15 +810,32 @@ function submit() {
                 </div>
 
                 <div class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 space-y-4">
-                    <h2 class="text-base font-bold text-[var(--text)]">Push Notifications (FCM) &amp; AI Cost Limit</h2>
+                    <h2 class="text-base font-bold text-[var(--text)]">Push Notifications (Google Firebase FCM) &amp; AI Cost Limit</h2>
                     <label class="flex items-center gap-2.5 text-sm font-medium text-[var(--text)]">
                         <input v-model="form.fcm_enabled" type="checkbox" class="rounded" />
-                        <span>Enable FCM Push Notifications</span>
+                        <span>Enable Firebase Cloud Messaging (Web &amp; Mobile Push Notifications)</span>
                     </label>
+                    <p class="text-xs text-[var(--text-muted)]">
+                        Firebase Console → Project Settings → General (Web App Config) + Cloud Messaging (Web Push VAPID Key) + Service Accounts (Generate new private key JSON for FCM HTTP v1).
+                    </p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input v-model="form.fcm_project_id" type="text" placeholder="Firebase Project ID" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
-                        <input v-model="form.fcm_server_key" type="password" placeholder="FCM Legacy Server Key (optional)" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
-                        <textarea v-model="form.fcm_service_account_json" rows="2" placeholder="Firebase Service Account JSON (for FCM v1)" class="md:col-span-2 rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-xs text-[var(--text)]" />
+                        <input v-model="form.fcm_project_id" type="text" placeholder="Firebase Project ID (e.g. sikhun-app)" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+                        <input v-model="form.fcm_api_key" type="text" placeholder="Firebase Web API Key (AIza...)" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+                        <input v-model="form.fcm_auth_domain" type="text" placeholder="Firebase Auth Domain (e.g. sikhun-app.firebaseapp.com)" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+                        <input v-model="form.fcm_storage_bucket" type="text" placeholder="Firebase Storage Bucket (optional)" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+                        <input v-model="form.fcm_messaging_sender_id" type="text" placeholder="Firebase Messaging Sender ID (numeric)" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+                        <input v-model="form.fcm_app_id" type="text" placeholder="Firebase Web App ID (1:...:web:...)" class="rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+                        <input v-model="form.fcm_vapid_key" type="text" placeholder="Web Push Certificate Key Pair (VAPID Key)" class="md:col-span-2 rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+                        <textarea v-model="form.fcm_service_account_json" rows="4" placeholder='Firebase Service Account JSON (for FCM HTTP v1 — paste full JSON starting with {"type": "service_account", ...})' class="md:col-span-2 rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 font-mono text-xs text-[var(--text)]" />
+                        <input v-model="form.fcm_server_key" type="password" placeholder="FCM Legacy Server Key (optional fallback)" class="md:col-span-2 rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />
+
+                        <div class="md:col-span-2 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface2)]/60 p-3">
+                            <input v-model="testFcmForm.token" type="text" placeholder="Paste a browser/device FCM token to test push delivery (save settings first)" class="min-w-[260px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text)]" />
+                            <button type="button" :disabled="testFcmForm.processing || !testFcmForm.token.trim()" @click="sendTestFcm" class="rounded-lg bg-[var(--primary)] px-4 py-2 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50">
+                                {{ testFcmForm.processing ? 'Sending...' : 'Send Test Push' }}
+                            </button>
+                        </div>
+
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Default Monthly AI Cost Cap per Student (USD)</label>
                             <input v-model="form.ai_default_monthly_cost_limit_usd" type="number" step="0.01" min="0" placeholder="e.g. 1.50 (blank = unlimited)" class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-2.5 text-sm text-[var(--text)]" />

@@ -13,16 +13,52 @@ class NotificationController extends Controller
     public function subscribePush(Request $request): JsonResponse
     {
         $request->validate([
-            'subscription' => 'required',
+            'token' => ['nullable', 'string', 'max:512'],
+            'subscription' => ['nullable'],
         ]);
 
         $student = auth('web')->user();
-        $token = is_array($request->subscription) ? json_encode($request->subscription) : (string) $request->subscription;
+        $token = trim((string) ($request->input('token') ?? ''));
 
-        PushSubscription::updateOrCreate(
-            ['student_id' => $student->id, 'channel' => 'web'],
-            ['token' => $token]
-        );
+        if ($token === '' && $request->filled('subscription')) {
+            $sub = $request->input('subscription');
+            $token = is_array($sub) ? json_encode($sub) : trim((string) $sub);
+        }
+
+        if ($token === '') {
+            return response()->json(['success' => false, 'message' => 'FCM token is required.'], 422);
+        }
+
+        // Save under channel='fcm' so PushNotificationService dispatches to it.
+        // Using (student_id, channel, token) allows a student to receive pushes across multiple devices/browsers.
+        $existing = PushSubscription::where('student_id', $student->id)
+            ->where('channel', 'fcm')
+            ->where('token', $token)
+            ->first();
+
+        if ($existing) {
+            $existing->touch();
+        } else {
+            PushSubscription::create([
+                'student_id' => $student->id,
+                'channel' => 'fcm',
+                'token' => $token,
+            ]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    public function unsubscribePush(Request $request): JsonResponse
+    {
+        $student = auth('web')->user();
+        $token = trim((string) $request->input('token', ''));
+
+        $query = PushSubscription::where('student_id', $student->id)->where('channel', 'fcm');
+        if ($token !== '') {
+            $query->where('token', $token);
+        }
+        $query->delete();
 
         return response()->json(['success' => true]);
     }

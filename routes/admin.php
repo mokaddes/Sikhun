@@ -135,6 +135,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('settings', [SiteSettingController::class, 'update'])->name('settings.update');
         Route::post('settings/test-pagepilot', [SiteSettingController::class, 'testPagePilot'])->name('settings.test-pagepilot');
         Route::post('settings/sync-pagepilot-knowledge', [SiteSettingController::class, 'syncPagePilotKnowledge'])->name('settings.sync-pagepilot-knowledge');
+        Route::post('settings/test-fcm', [SiteSettingController::class, 'testFcm'])->name('settings.test-fcm');
 
         // Admin account: profile information + password
         Route::get('profile', [ProfileController::class, 'settings'])->name('profile.settings');

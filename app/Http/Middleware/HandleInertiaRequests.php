@@ -83,6 +83,7 @@ class HandleInertiaRequests extends Middleware
             'oauth_google_enabled' => filter_var($all['oauth_google_enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'oauth_facebook_enabled' => filter_var($all['oauth_facebook_enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'payment_methods' => app(\App\Services\Payment\PaymentGatewayResolver::class)->enabledMethods(),
+            'fcm' => app(\App\Services\PushNotificationService::class)->webConfig(),
         ];
     }
 

@@ -9,11 +9,12 @@ const {
     permission,
     isSupported,
     isConfigured,
+    isOptedOut,
     isLoading,
     error,
     foregroundNotice,
     enablePush,
-    syncIfGranted,
+    autoEnableForNewUser,
     dismissForegroundNotice,
 } = useFirebasePush();
 
@@ -28,8 +29,12 @@ onMounted(() => {
     if (typeof window === 'undefined') return;
     if (!isSupported.value || !isConfigured.value) return;
 
-    if (permission.value === 'granted') {
-        syncIfGranted();
+    // Default-enabled for new users: auto-prompt & register unless user explicitly disabled it
+    if (!isOptedOut.value) {
+        autoEnableForNewUser();
+    }
+
+    if (permission.value === 'granted' || isOptedOut.value) {
         return;
     }
 
@@ -119,9 +124,9 @@ function dismissPrompt() {
         </div>
     </Transition>
 
-    <!-- Push Notification Prompt Banner -->
+    <!-- Push Notification Prompt Banner (fallback if browser requires manual click) -->
     <div
-        v-if="isSupported && isConfigured && permission === 'default' && !isDismissed"
+        v-if="isSupported && isConfigured && !isOptedOut && permission === 'default' && !isDismissed"
         class="anim-rise mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--secondary)]/30 bg-gradient-to-r from-[var(--secondary)]/10 via-[var(--surface)] to-[var(--primary)]/10 p-4 shadow-sm"
     >
         <div class="flex items-center gap-3">

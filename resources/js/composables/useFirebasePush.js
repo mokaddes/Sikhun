@@ -4,12 +4,15 @@ import axios from 'axios';
 import { useNotificationStore } from '@/Stores/notifications';
 
 const TOKEN_STORAGE_KEY = 'sikhun_fcm_token';
+const OPT_OUT_KEY = 'sikhun_fcm_opt_out';
+const AUTO_PROMPT_SESSION_KEY = 'sikhun_fcm_auto_prompted';
 
 // Shared singleton state across components (banner, profile settings, foreground toast)
 const permission = ref(typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default');
 const isLoading = ref(false);
 const error = ref('');
 const registeredToken = ref(typeof window !== 'undefined' ? (localStorage.getItem(TOKEN_STORAGE_KEY) || '') : '');
+const isOptedOut = ref(typeof window !== 'undefined' ? localStorage.getItem(OPT_OUT_KEY) === '1' : false);
 const foregroundNotice = ref(null);
 
 let messagingInstance = null;
@@ -23,13 +26,24 @@ function isBrowserPushCapable() {
         && 'PushManager' in window;
 }
 
+function formatPushError(err, locale = 'bn') {
+    const msg = String(err?.message || err || '');
+    if (msg.toLowerCase().includes('push service not available') || err?.name === 'AbortError') {
+        return locale === 'en'
+            ? 'Push service is unavailable in this browser (e.g. Incognito mode, Brave with Google Push disabled, or an embedded browser). Please use standard Chrome, Edge, or Firefox.'
+            : 'এই ব্রাউজারে পুশ সার্ভিস সাপোর্ট করছে না (যেমন: Incognito মোড, Brave ব্রাউজারে Google Push বন্ধ থাকা বা এমবেডেড ব্রাউজার)। অনুগ্রহ করে সাধারণ Chrome, Edge বা Firefox ব্যবহার করুন।';
+    }
+    return msg || (locale === 'en' ? 'Could not enable push notifications.' : 'পুশ নোটিফিকেশন চালু করা যায়নি।');
+}
+
 export function useFirebasePush() {
     const page = usePage();
 
     const fcmConfig = computed(() => page.props?.site?.fcm || {});
+    const locale = computed(() => page.props?.locale || 'bn');
     const isConfigured = computed(() => Boolean(fcmConfig.value?.configured));
     const isSupported = computed(() => isBrowserPushCapable());
-    const isSubscribed = computed(() => permission.value === 'granted' && Boolean(registeredToken.value));
+    const isSubscribed = computed(() => !isOptedOut.value && permission.value === 'granted' && Boolean(registeredToken.value));
 
     async function initMessaging() {
         if (messagingInstance) return messagingInstance;
@@ -69,12 +83,13 @@ export function useFirebasePush() {
         foregroundListenerAttached = true;
 
         onMessage(messaging, (payload) => {
+            if (isOptedOut.value) return;
+
             const title = payload?.notification?.title || payload?.data?.title || 'Sikhun.com';
             const body = payload?.notification?.body || payload?.data?.body || '';
             const url = payload?.fcmOptions?.link || payload?.data?.url || '/dashboard';
             const notifId = payload?.data?.notification_id ? Number(payload.data.notification_id) : null;
 
-            // Update the notification bell store if not already added via Reverb
             try {
                 const store = useNotificationStore();
                 const alreadyExists = notifId && store.items.some((n) => Number(n.id) === notifId);
@@ -93,7 +108,6 @@ export function useFirebasePush() {
                 // Store unavailable
             }
 
-            // Show foreground toast
             foregroundNotice.value = { title, body, url };
             if (foregroundToastTimer) clearTimeout(foregroundToastTimer);
             foregroundToastTimer = setTimeout(() => {
@@ -130,19 +144,22 @@ export function useFirebasePush() {
     }
 
     /**
-     * Requests browser permission (must be called from a user click/gesture)
-     * and registers the device's FCM token with the backend.
+     * Requests browser permission and registers the device's FCM token with the backend.
+     * Clears any previous opt-out flag so notifications are active again.
      */
-    async function enablePush() {
-        error.value = '';
+    async function enablePush({ silent = false } = {}) {
+        if (!silent) error.value = '';
         if (!isBrowserPushCapable()) {
-            error.value = 'Push notifications are not supported in this browser.';
+            if (!silent) error.value = formatPushError('Push notifications are not supported in this browser.', locale.value);
             return false;
         }
         if (!isConfigured.value) {
-            error.value = 'Firebase Push Notifications are not configured yet.';
+            if (!silent) error.value = 'Firebase Push Notifications are not configured yet.';
             return false;
         }
+
+        isOptedOut.value = false;
+        localStorage.removeItem(OPT_OUT_KEY);
 
         isLoading.value = true;
         try {
@@ -156,8 +173,12 @@ export function useFirebasePush() {
             await fetchAndSyncToken();
             return true;
         } catch (err) {
-            console.error('Firebase push enable failed:', err);
-            error.value = err?.message || 'Could not enable push notifications.';
+            if (!silent) {
+                console.error('Firebase push enable failed:', err);
+                error.value = formatPushError(err, locale.value);
+            } else {
+                console.warn('Silent Firebase push auto-enable skipped:', err?.message || err);
+            }
             return false;
         } finally {
             isLoading.value = false;
@@ -165,11 +186,34 @@ export function useFirebasePush() {
     }
 
     /**
-     * Silently refreshes the FCM token and attaches the foreground listener
-     * when the student has already granted browser notification permission.
+     * Default-enabled flow for new users:
+     * - If the user explicitly disabled push (isOptedOut), do nothing.
+     * - If permission is already 'granted', silently sync token & attach foreground listener.
+     * - If permission is 'default' (new user), automatically trigger the browser permission prompt once per session.
      */
-    async function syncIfGranted() {
+    async function autoEnableForNewUser() {
         if (!isBrowserPushCapable() || !isConfigured.value) return;
+        if (isOptedOut.value) return;
+
+        permission.value = Notification.permission;
+
+        if (permission.value === 'granted') {
+            try {
+                await fetchAndSyncToken();
+            } catch (err) {
+                console.warn('Silent FCM token sync skipped:', err?.message || err);
+            }
+            return;
+        }
+
+        if (permission.value === 'default' && sessionStorage.getItem(AUTO_PROMPT_SESSION_KEY) !== '1') {
+            sessionStorage.setItem(AUTO_PROMPT_SESSION_KEY, '1');
+            await enablePush({ silent: true });
+        }
+    }
+
+    async function syncIfGranted() {
+        if (!isBrowserPushCapable() || !isConfigured.value || isOptedOut.value) return;
         permission.value = Notification.permission;
         if (permission.value !== 'granted') return;
 
@@ -181,7 +225,8 @@ export function useFirebasePush() {
     }
 
     /**
-     * Unsubscribes this browser device from FCM push notifications.
+     * Unsubscribes this browser device from FCM push notifications and marks user opted-out
+     * so it stays disabled until they manually re-enable it.
      */
     async function disablePush() {
         error.value = '';
@@ -201,10 +246,12 @@ export function useFirebasePush() {
             });
             registeredToken.value = '';
             localStorage.removeItem(TOKEN_STORAGE_KEY);
+            isOptedOut.value = true;
+            localStorage.setItem(OPT_OUT_KEY, '1');
             return true;
         } catch (err) {
             console.error('Firebase push disable failed:', err);
-            error.value = err?.message || 'Could not disable push notifications.';
+            error.value = formatPushError(err, locale.value);
             return false;
         } finally {
             isLoading.value = false;
@@ -220,12 +267,14 @@ export function useFirebasePush() {
         isSupported,
         isConfigured,
         isSubscribed,
+        isOptedOut,
         isLoading,
         error,
         registeredToken,
         foregroundNotice,
         enablePush,
         disablePush,
+        autoEnableForNewUser,
         syncIfGranted,
         dismissForegroundNotice,
     };

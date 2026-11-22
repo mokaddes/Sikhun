@@ -14,6 +14,7 @@ const {
     isSupported,
     isConfigured,
     isSubscribed,
+    isOptedOut,
     isLoading: pushLoading,
     error: pushError,
     enablePush,
@@ -102,6 +103,12 @@ function savePreferences() {
                         >
                             {{ locale === 'en' ? 'Active on this device' : 'এই ডিভাইসে চালু আছে' }}
                         </span>
+                        <span
+                            v-else-if="isOptedOut"
+                            class="rounded-full border border-[var(--border)] bg-[var(--surface2)] px-3 py-1 text-xs font-semibold text-[var(--text-muted)]"
+                        >
+                            {{ locale === 'en' ? 'Disabled' : 'বন্ধ করা আছে' }}
+                        </span>
                         <button
                             v-if="isSubscribed"
                             type="button"
@@ -118,7 +125,7 @@ function savePreferences() {
                             type="button"
                             :disabled="pushLoading || permission === 'denied'"
                             class="btn btn-primary btn-sm"
-                            @click="enablePush"
+                            @click="enablePush()"
                         >
                             {{ pushLoading
                                 ? (locale === 'en' ? 'Enabling...' : 'চালু হচ্ছে...')

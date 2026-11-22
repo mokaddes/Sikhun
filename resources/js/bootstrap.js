@@ -13,24 +13,22 @@ window.axios.defaults.withCredentials = true;
 window.axios.defaults.xsrfCookieName = 'XSRF-TOKEN';
 window.axios.defaults.xsrfHeaderName = 'X-XSRF-TOKEN';
 
-// Ensure `fetch` (used by Inertia) sends credentials by default. Some proxy
-// or cross-origin setups drop the session cookie on the first XHR visit
-// unless `credentials: 'include'` is set; that manifests as "first click
-// reloads the current page, second click works". Wrapping `fetch` forces
-// credentials to be included for Inertia's requests.
+// Ensure `fetch` (used by Inertia) sends credentials by default for same-origin
+// requests only. Never inject `credentials: 'include'` on cross-origin third-party
+// APIs (such as Firebase / Google APIs), or browsers will reject them via CORS.
 const originalFetch = window.fetch.bind(window);
 window.fetch = async (input, init = {}) => {
-    const url = typeof input === 'string' ? input : input?.url;
-    try {
-        console.debug('[fetch wrapper] request', url, init);
-    } catch (e) { /* ignore */ }
+    const rawUrl = typeof input === 'string' ? input : input?.url;
+    let isSameOrigin = true;
+    if (rawUrl) {
+        try {
+            const parsed = new URL(rawUrl, window.location.origin);
+            isSameOrigin = parsed.origin === window.location.origin;
+        } catch {
+            isSameOrigin = true;
+        }
+    }
 
-    const res = await originalFetch(input, { credentials: 'include', ...init });
-
-    try {
-        console.debug('[fetch wrapper] response', url, res.status, 'x-inertia=', res.headers.get('x-inertia'), 'x-inertia-location=', res.headers.get('x-inertia-location'));
-        console.debug('[fetch wrapper] document.cookie', document.cookie);
-    } catch (e) { /* ignore */ }
-
-    return res;
+    const fetchInit = isSameOrigin ? { credentials: 'include', ...init } : init;
+    return originalFetch(input, fetchInit);
 };

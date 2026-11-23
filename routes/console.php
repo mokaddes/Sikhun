@@ -20,7 +20,8 @@ Schedule::command('invoices:generate-recurring --days=7')->dailyAt('08:00');
 Schedule::command('invoices:send-reminders')->dailyAt('09:15');
 Schedule::command('invoices:mark-overdue')->dailyAt('00:45');
 Schedule::command('students:purge-deleted')->dailyAt('01:30');
-Schedule::command('blog:scrape')->weekly()->mondays()->at('03:00');
+// Disabled automatic blog scraping schedule; manual scraping remains available in Admin -> Blog -> Sources.
+// Schedule::command('blog:scrape')->weekly()->mondays()->at('03:00');
 Schedule::command('jobs:scrape')->twiceDaily(6, 18);
 Schedule::command('admissions:scrape')->dailyAt('04:00');
 Schedule::command('orders:reconcile-gateways')->dailyAt('02:00');

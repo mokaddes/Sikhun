@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import axios from 'axios';
 import { useI18n } from '@/i18n';
 
@@ -39,7 +39,7 @@ function safeHref(value) {
 
 function messageParts(message) {
     const source = String(message ?? '');
-    const pattern = /\[([^\]]+)\]\((https:\/\/[^\s)]+|\/(?!\/)[^\s)]+)\)|(https:\/\/[^\s<>]+|\/(?:library|bookshelf|courses|plans|wallet|ai\/chat|exams|flashcards|essays|schedules|leaderboard|referrals|notifications|profile|access|contact|support\/tickets)(?:\/[A-Za-z0-9_-]+)*(?:\?[^\s<>]*)?)/g;
+    const pattern = /\*\*([^*]+)\*\*|\[([^\]]+)\]\((https:\/\/[^\s)]+|\/(?!\/)[^\s)]+)\)|(https:\/\/[^\s<>]+|\/(?:library|bookshelf|my-books|questions|courses|plans|wallet|ai\/chat|exams|flashcards|essays|schedules|leaderboard|referrals|notifications|profile|access|contact|support\/tickets)(?:\/[A-Za-z0-9_-]+)*(?:\?[^\s<>]*)?)/g;
     const parts = [];
     let cursor = 0;
     let match;
@@ -47,26 +47,92 @@ function messageParts(message) {
     while ((match = pattern.exec(source)) !== null) {
         if (match.index > cursor) parts.push({ text: source.slice(cursor, match.index) });
 
-        const markdownLabel = match[1];
-        let href = markdownLabel ? match[2] : match[3];
-        let suffix = '';
-        if (!markdownLabel) {
-            const trailing = href.match(/[.,!?;:]+$/)?.[0] ?? '';
-            href = href.slice(0, href.length - trailing.length);
-            suffix = trailing;
-        }
-        const safeUrl = safeHref(href);
-        if (safeUrl) {
-            parts.push({ text: markdownLabel ?? href, href: safeUrl, external: safeUrl.startsWith('https://') });
-            if (suffix) parts.push({ text: suffix });
+        if (match[1] !== undefined) {
+            parts.push({ text: match[1], bold: true });
         } else {
-            parts.push({ text: match[0] });
+            const markdownLabel = match[2];
+            let href = markdownLabel ? match[3] : match[4];
+            let suffix = '';
+            if (!markdownLabel) {
+                const trailing = href.match(/[.,!?;:]+$/)?.[0] ?? '';
+                href = href.slice(0, href.length - trailing.length);
+                suffix = trailing;
+            }
+            const safeUrl = safeHref(href);
+            if (safeUrl) {
+                parts.push({ text: markdownLabel ?? href, href: safeUrl, external: safeUrl.startsWith('https://') });
+                if (suffix) parts.push({ text: suffix });
+            } else {
+                parts.push({ text: match[0] });
+            }
         }
         cursor = match.index + match[0].length;
     }
 
     if (cursor < source.length) parts.push({ text: source.slice(cursor) });
     return parts;
+}
+
+const quickGuides = computed(() => {
+    const bn = locale.value === 'bn';
+
+    return [
+        {
+            id: 'chat_book',
+            label: bn ? '📖 বইয়ের সাথে AI চ্যাট' : '📖 Chat with a Book',
+            question: bn ? 'বইয়ের সাথে AI চ্যাট কীভাবে করব?' : 'How to chat with a book using AI?',
+            answer: bn
+                ? `হ্যালো!\n\nকোনো নির্দিষ্ট বই নিয়ে AI-এর সাথে চ্যাট করতে হলে প্রথমে বইটি চ্যাটে যুক্ত (Attach) করতে হবে।\n\nঅনুগ্রহ করে নিচের ধাপগুলো অনুসরণ করুন:\n\n1. **বইটি বুকশেলফে যোগ করুন:** প্রথমে [লাইব্রেরি](/library) পেজে যান এবং আপনার পছন্দের বইটি বুকশেলফে (Bookshelf) যোগ করুন।\n2. **AI চ্যাটে বই যুক্ত করুন:** এবার [AI চ্যাট](/ai/chat) ওপেন করে যে বইটি নিয়ে আলোচনা করতে চান সেটি Attach করুন।\n3. **চ্যাট শুরু করুন:** বইটি যুক্ত হয়ে গেলে বইয়ের যেকোনো টপিক নিয়ে প্রশ্ন করতে ও ব্যাখ্যা জানতে পারবেন।\n\n**বিকল্প উপায়:** যেকোনো বইয়ের **Read (পড়ুন)** পেজে গেলেও সরাসরি **পেজ-ভিত্তিক (Page-wise) AI চ্যাট** অপশন পাবেন, যেখান থেকে আপনি ঠিক যে পৃষ্ঠাটি পড়ছেন সেটির ওপর প্রশ্ন করতে পারবেন।\n\n**আরও নিখুঁত উত্তরের জন্য উপরের যেকোনো একটি পদ্ধতি অনুসরণ করুন**, যাতে AI বইয়ের সঠিক অংশকে রেফারেন্স হিসেবে ব্যবহার করতে পারে।`
+                : `Hello,\n\nTo chat with AI about a specific book, you need to attach that book to the chat first.\n\nPlease follow these steps:\n\n1. **Add a Book to Your Bookshelf:** Go to the [Library](/library) and add your desired book to your [Bookshelf](/bookshelf).\n2. **Attach the Book to AI Chat:** Open [AI Chat](/ai/chat) and attach the book you want to discuss.\n3. **Start Chatting:** Once the book is attached, you can ask questions and discuss its content with AI.\n\n**Alternatively:** You can visit the **Read** page of any book. There, you'll find a **page-wise chat** option that allows you to ask questions about the specific page you're reading.\n\n**For more accurate answers, please follow one of these workflows** so the AI can use the relevant book content as context.`,
+        },
+        {
+            id: 'how_it_works',
+            label: bn ? '❓ কীভাবে কাজ করে?' : '❓ How it works',
+            question: bn ? 'Sikhun.com কীভাবে কাজ করে?' : 'How does Sikhun.com work?',
+            answer: bn
+                ? `হ্যালো! **Sikhun.com** হলো বাংলাদেশের প্রথম AI-চালিত স্মার্ট শিক্ষা প্ল্যাটফর্ম।\n\nএখানে আপনি ৪টি সহজ ধাপে প্রস্তুতি নিতে পারবেন:\n\n1. **ডিজিটাল লাইব্রেরি:** [লাইব্রেরি](/library) থেকে ফ্রি ও পেইড বই ব্রাউজারে পড়ুন এবং পেজ-ভিত্তিক AI টিউটরের সাহায্য নিন।\n2. **প্রশ্নব্যাংক ও মডেল টেস্ট:** [প্রশ্নব্যাংক](/questions) থেকে ৩৮,০০০+ বিগত বছরের প্রশ্ন প্র্যাকটিস করুন এবং টাইমড এক্সাম দিন।\n3. **নিজের PDF আপলোড:** [My Books](/my-books)-এ নিজের ক্লাস নোট বা PDF আপলোড করে তার ওপর AI চ্যাট ও ফ্ল্যাশকার্ড তৈরি করুন।\n4. **কোর্স ও স্টুডেন্ট টুলস:** [কোর্স](/courses) করুন এবং ফ্রি স্টাডি টুলস ব্যবহার করুন।`
+                : `Hello! **Sikhun.com** is Bangladesh's AI-powered learning platform.\n\nHere is how it works in 4 simple steps:\n\n1. **Digital Library:** Browse free and paid textbooks in the [Library](/library) and read with a page-aware AI Tutor.\n2. **Question Bank & Mock Tests:** Practice 38,000+ past exam MCQs in the [Question Bank](/questions) or take timed model tests.\n3. **Upload Your Own PDF:** Upload your study notes in [My Books](/my-books) to chat with AI and generate flashcards.\n4. **Courses & Smart Tools:** Join mentor-led [Courses](/courses) and download formula & routine PDFs from Student Tools.`,
+        },
+        {
+            id: 'buy_book',
+            label: bn ? '🛒 বই কীভাবে কিনব?' : '🛒 How to buy a book',
+            question: bn ? 'ডিজিটাল বই বা চ্যাপ্টার কীভাবে কিনব?' : 'How to buy a book or chapter?',
+            answer: bn
+                ? `হ্যালো! Sikhun.com-এ আপনি **পুরো বই** অথবা শুধু **নির্দিষ্ট চ্যাপ্টার** আলাদাভাবে কিনতে পারবেন:\n\n1. **বই নির্বাচন করুন:** [লাইব্রেরি](/library) থেকে আপনার পছন্দের বইটিতে ক্লিক করুন (ফ্রি বইগুলোতে সরাসরি **পড়ুন** বাটন পাবেন)।\n2. **ক্রয় অপশন বেছে নিন:** পেইড বইয়ের ক্ষেত্রে **পুরো বই কিনুন** অথবা নির্দিষ্ট অধ্যায়ের পাশে থাকা **চ্যাপ্টার কিনুন** বাটনে ক্লিক করুন।\n3. **পেমেন্ট সম্পন্ন করুন:** আপনার [ওয়ালেট](/wallet) ব্যালেন্স অথবা অনলাইন পেমেন্ট গেটওয়ে (bKash/Nagad/Card) দিয়ে পেমেন্ট করুন।\n4. **তাৎক্ষণিক অ্যাক্সেস:** পেমেন্ট নিশ্চিত হওয়া মাত্রই বইটি আপনার [বুকশেলফে](/bookshelf) আনলক হয়ে যাবে।`
+                : `Hello! On Sikhun.com, you can buy either a **full book** or **individual chapters**:\n\n1. **Pick a Book:** Open any book from the [Library](/library) (free books can be read immediately).\n2. **Choose Purchase Option:** Click **Buy Full Book** or unlock only the specific **Chapter** you need.\n3. **Complete Payment:** Pay using your [Wallet](/wallet) balance or mobile banking/card checkout.\n4. **Instant Access:** Your unlocked book or chapter immediately appears in your [Bookshelf](/bookshelf).`,
+        },
+        {
+            id: 'plans',
+            label: bn ? '💎 সাবস্ক্রিপশন প্ল্যান' : '💎 Plans & Pricing',
+            question: bn ? 'সাবস্ক্রিপশন প্ল্যান ও সুবিধা কী কী?' : 'How do subscription plans work?',
+            answer: bn
+                ? `হ্যালো! আপনার প্রয়োজন অনুযায়ী সাশ্রয়ী AI স্টাডি প্ল্যান বেছে নিতে পারবেন:\n\n1. **প্ল্যান দেখুন:** [সাবস্ক্রিপশন প্ল্যান](/plans) পেজে গিয়ে Free, Starter, Pro, Admission Pass এবং BCS/Job Pass তুলনা করুন।\n2. **অ্যাক্টিভেট করুন:** পছন্দের প্ল্যান সিলেক্ট করে [ওয়ালেট](/wallet) বা অনলাইন পেমেন্টের মাধ্যমে সাবস্ক্রাইব করুন।\n3. **সুবিধাসমূহ:** প্ল্যান অনুযায়ী আনলিমিটেড মক টেস্ট, AI বুক চ্যাট, ফ্ল্যাশকার্ড, রচনা মূল্যায়ন এবং স্টাডি প্ল্যানার আনলক হয়ে যাবে।`
+                : `Hello! You can choose an affordable AI Study Plan tailored to your exam:\n\n1. **Compare Plans:** Visit [Subscription Plans](/plans) to view Free, Starter, Pro, Admission Crash Pass, and BCS & Bank Pass.\n2. **Subscribe:** Pay via your [Wallet](/wallet) or online checkout.\n3. **Instant Activation:** Your AI Tutor minutes, mock tests, flashcards, and Mistake Review unlock immediately.`,
+        },
+        {
+            id: 'mock_test',
+            label: bn ? '📝 মডেল টেস্ট ও MCQ' : '📝 Mock Tests & MCQs',
+            question: bn ? 'প্রশ্নব্যাংক ও মডেল টেস্ট কীভাবে দেব?' : 'How to practice MCQs and take mock tests?',
+            answer: bn
+                ? `হ্যালো! পরীক্ষা প্রস্তুতির জন্য দুইভাবে প্র্যাকটিস করতে পারবেন:\n\n1. **ফ্রি পাবলিক প্রশ্নব্যাংক:** লগইন ছাড়াই [প্রশ্নব্যাংক](/questions) পেজে বিসিএস, প্রাইমারি, ঢাবি, রাবি, গুচ্ছ ও বুয়েটের ৩৮,০০০+ প্রশ্ন ও ব্যাখ্যা প্র্যাকটিস করুন।\n2. **টাইমড মক টেস্ট:** অ্যাকাউন্টে লগইন করে [এক্সাম সেন্টার](/exams) থেকে নেগেটিভ মার্কিংসহ কাস্টম পরীক্ষা দিন এবং ভুল উত্তরগুলো **"আমার ভুলসমূহ"** সেকশনে রিভিশন করুন।`
+                : `Hello! You can practice in two ways:\n\n1. **Free Public Question Bank:** Visit [Question Bank](/questions) to practice 38,000+ past BCS, Primary, DU, RU, GST & BUET MCQs with explanations — no login needed.\n2. **Timed Mock Tests:** Log in and open [Exams](/exams) to take custom timed tests with negative marking and automatic Mistake Review.`,
+        },
+        {
+            id: 'my_pdf',
+            label: bn ? '📄 নিজের PDF আপলোড' : '📄 Upload My PDF',
+            question: bn ? 'নিজের নোট বা PDF আপলোড করে কীভাবে পড়ব?' : 'How to upload my own PDF notes?',
+            answer: bn
+                ? `হ্যালো! আপনি নিজের যেকোনো PDF বই বা ক্লাস নোট আপলোড করে AI-এর সাথে পড়তে পারবেন:\n\n1. লগইন করে [My Books](/my-books) পেজে যান।\n2. **Upload PDF** বাটনে ক্লিক করে আপনার ফাইল আপলোড করুন।\n3. আমাদের সিস্টেম অটোমেটিক OCR করে বইটি তৈরি করে দেবে—এরপর আপনি সরাসরি পেজ পড়ে AI চ্যাট ও পরীক্ষা দিতে পারবেন।`
+                : `Hello! You can upload your own PDF notes or books to study with AI:\n\n1. Log in and go to [My Books](/my-books).\n2. Click **Upload PDF** and select your study file.\n3. Our system automatically processes your PDF so you can read it online, chat with AI page-by-page, and generate quizzes.`,
+        },
+    ];
+});
+
+function triggerQuickGuide(guide) {
+    if (sending.value) return;
+    messages.value.push({ sender_type: 'student', message: guide.question });
+    messages.value.push({ sender_type: 'bot', message: guide.answer });
+    scrollToBottom();
 }
 
 async function toggle() {
@@ -196,6 +262,7 @@ async function handoff() {
                                 class="font-semibold underline decoration-current underline-offset-2 hover:opacity-85">
                                 {{ part.text }}
                             </a>
+                            <strong v-else-if="part.bold" class="font-bold">{{ part.text }}</strong>
                             <span v-else>{{ part.text }}</span>
                         </template>
                     </div>
@@ -226,6 +293,22 @@ async function handoff() {
                 <button v-else type="button" @click="handoff" :disabled="handingOff || sending" class="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface2)] px-3 py-2 text-xs font-semibold text-[var(--text)] transition-colors disabled:opacity-60">
                     {{ handingOff ? t('support.handoff_sending') : t('support.handoff') }}
                 </button>
+            </div>
+
+            <!-- Quick Help Action Chips (Instant Guided Answers) -->
+            <div v-if="!ticketUrl" class="border-t border-[var(--border)] bg-[var(--surface)] px-2.5 pt-2 pb-1">
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                    <button
+                        v-for="guide in quickGuides"
+                        :key="guide.id"
+                        type="button"
+                        :disabled="sending"
+                        class="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors disabled:opacity-50"
+                        @click="triggerQuickGuide(guide)"
+                    >
+                        {{ guide.label }}
+                    </button>
+                </div>
             </div>
 
             <!-- Chat Input Form -->

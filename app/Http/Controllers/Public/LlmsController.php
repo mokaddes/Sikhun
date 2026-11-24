@@ -9,6 +9,7 @@ use App\Models\Book;
 use App\Models\Course;
 use App\Models\JobCircular;
 use App\Models\QuestionBank;
+use App\Services\PublicQuestionCatalog;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 
@@ -26,6 +27,36 @@ class LlmsController extends Controller
     {
         $content = Cache::remember('llms_txt_payload_v1', 3600, function () {
             return $this->buildLlmsText();
+        });
+
+        return response($content, 200, [
+            'Content-Type' => 'text/plain; charset=utf-8',
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
+    }
+
+    /**
+     * Extended /llms-full.txt with detailed Bangladesh exam Q&A collections and facts for GEO.
+     */
+    public function full(): Response
+    {
+        $content = Cache::remember('llms_full_txt_payload_v1', 3600, function () {
+            $baseUrl = rtrim(config('app.url', 'https://sikhun.com'), '/');
+            $lines = [$this->buildLlmsText(), '## Public Question Bank Collections (Free Practice & Solutions)', ''];
+
+            foreach (PublicQuestionCatalog::collections() as $slug => $meta) {
+                $lines[] = "### {$meta['title_bn']} ({$meta['title_en']})";
+                $lines[] = "- URL: {$baseUrl}/questions/{$slug}";
+                $lines[] = "- Institution: {$meta['institution_bn']}";
+                $lines[] = "- Overview: {$meta['description_bn']}";
+                foreach ($meta['faqs'] ?? [] as $faq) {
+                    $lines[] = "- Q: {$faq['question']}";
+                    $lines[] = "  A: {$faq['answer']}";
+                }
+                $lines[] = '';
+            }
+
+            return implode("\n", $lines);
         });
 
         return response($content, 200, [
@@ -96,6 +127,8 @@ class LlmsController extends Controller
             '## Key Public Hubs',
             '',
             "- [Home]({$baseUrl}/): AI-powered learning ecosystem overview, live stats, and featured content.",
+            "- [Public Question Bank Hub]({$baseUrl}/questions): Free searchable 38,499+ past exam MCQs and solutions for BCS, Primary Teacher (DPE), Bangladesh Bank, NTRCA, DU, RU, GST, and BUET.",
+            "- [Extended LLM Knowledge File]({$baseUrl}/llms-full.txt): Detailed Bangladesh exam collections, Q&As, and structured citations.",
             "- [Digital Library]({$baseUrl}/library): HSC, SSC, Admission, and Job textbooks with embedded AI study companion.",
             "- [Online Courses]({$baseUrl}/courses): Mentor-led live and recorded courses with certificates.",
             "- [University Admission Notices]({$baseUrl}/admission-notice): Official admission circulars, unit eligibility, deadlines, and past question banks for DU, RU, BUET, GST, Medical, CU, and JU.",

@@ -109,7 +109,7 @@ class AdmissionController extends Controller
                         'origin' => 'DU-A',
                         'count' => 1693,
                         'subjects' => 'পদার্থ, রসায়ন, গণিত, জীববিজ্ঞান',
-                        'link' => '/question-bank?segment=admission&origin=DU-A',
+                        'link' => '/questions/du-a-unit',
                     ],
                     [
                         'name' => 'খ ইউনিট (কলা, আইন ও সামাজিক বিজ্ঞান)',
@@ -117,7 +117,7 @@ class AdmissionController extends Controller
                         'origin' => 'DU-B',
                         'count' => 840,
                         'subjects' => 'বাংলা, ইংরেজি, সাধারণ জ্ঞান',
-                        'link' => '/question-bank?segment=admission&origin=DU-B',
+                        'link' => '/questions/du-b-unit',
                     ],
                     [
                         'name' => 'গ ইউনিট (ব্যবসায় শিক্ষা অনুষদ)',
@@ -125,7 +125,7 @@ class AdmissionController extends Controller
                         'origin' => 'DU-C',
                         'count' => 1395,
                         'subjects' => 'হিসাববিজ্ঞান, ব্যবসায় নীতি, ফিন্যান্স/মার্কেটিং',
-                        'link' => '/question-bank?segment=admission&origin=DU-C',
+                        'link' => '/questions/du-c-unit',
                     ],
                     [
                         'name' => 'ঘ ইউনিট / আইবিএ (বিভাগ পরিবর্তন)',
@@ -152,7 +152,7 @@ class AdmissionController extends Controller
                         'origin' => 'RU-A',
                         'count' => 2529,
                         'subjects' => 'বাংলা, ইংরেজি, সাধারণ জ্ঞান',
-                        'link' => '/question-bank?segment=admission&origin=RU-A',
+                        'link' => '/questions/ru-admission',
                     ],
                     [
                         'name' => 'B ইউনিট (ব্যবসায় শিক্ষা অনুষদ ও IBA)',
@@ -187,7 +187,7 @@ class AdmissionController extends Controller
                         'origin' => 'BUET',
                         'count' => 851,
                         'subjects' => 'উচ্চতর গণিত, পদার্থবিজ্ঞান, রসায়ন',
-                        'link' => '/question-bank?segment=admission&origin=BUET',
+                        'link' => '/questions/buet-admission',
                     ],
                     [
                         'name' => 'রুয়েট ভর্তি প্রশ্নব্যাংক',
@@ -222,7 +222,7 @@ class AdmissionController extends Controller
                         'origin' => 'GST-A',
                         'count' => 500,
                         'subjects' => 'পদার্থবিজ্ঞান, রসায়ন, গণিত/জীববিজ্ঞান, আইসিটি',
-                        'link' => '/question-bank?segment=admission&origin=GST-A',
+                        'link' => '/questions/gst-cluster',
                     ],
                     [
                         'name' => 'B ইউনিট (মানবিক শাখা)',

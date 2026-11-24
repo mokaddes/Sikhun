@@ -34,6 +34,7 @@ function adjustDisplay(key, amount) {
 }
 
 const nav = computed(() => [
+    { label: locale.value === 'bn' ? 'প্রশ্নব্যাংক' : 'Question Bank', href: '/questions' },
     { label: t('nav.courses'), href: '/courses' },
     { label: t('nav.library'), href: '/library' },
     {

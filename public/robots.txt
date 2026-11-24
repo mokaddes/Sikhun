@@ -5,6 +5,7 @@
 # General search engine crawlers (Googlebot, Bingbot, Yahoo, DuckDuckGo, etc.)
 User-agent: *
 Allow: /
+Allow: /questions
 Allow: /library
 Allow: /courses
 Allow: /blog
@@ -16,6 +17,7 @@ Allow: /results
 Allow: /contact
 Allow: /p/
 Allow: /llms.txt
+Allow: /llms-full.txt
 Allow: /build/
 Allow: /storage/
 Allow: /images/

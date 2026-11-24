@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
@@ -23,8 +23,38 @@ import {
 const props = defineProps({
     job: Object,
     relatedJobs: Array,
+    practiceCollection: Object,
+    sampleQuestions: Array,
     seo: Object,
 });
+
+const quizAnswers = ref({});
+const quizSubmitted = ref(false);
+
+function pickQuizOption(questionId, optionKey) {
+    if (quizSubmitted.value) return;
+    quizAnswers.value[questionId] = optionKey;
+}
+
+const quizScore = computed(() => {
+    const qs = props.sampleQuestions || [];
+    let correct = 0;
+    let wrong = 0;
+    for (const q of qs) {
+        const picked = quizAnswers.value[q.id];
+        if (picked) {
+            if (picked === q.correct_option) correct++;
+            else wrong++;
+        }
+    }
+    const net = Math.max(0, +(correct - wrong * 0.25).toFixed(2));
+    return { total: qs.length, correct, wrong, answered: correct + wrong, net };
+});
+
+function resetMiniQuiz() {
+    quizAnswers.value = {};
+    quizSubmitted.value = false;
+}
 
 const { locale } = useI18n();
 const en = computed(() => locale.value === 'en');
@@ -202,6 +232,108 @@ const ogImage = computed(() => {
                             </a>
                         </div>
                     </div>
+
+                    <!-- Embedded Free Job Exam Mini-Test Widget (Circular-to-Practice Funnel) -->
+                    <section
+                        v-if="sampleQuestions && sampleQuestions.length"
+                        class="rounded-3xl border border-amber-500/30 bg-white dark:bg-[#171c28] p-6 md:p-8 shadow-xl text-gray-900 dark:text-white"
+                    >
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                            <div>
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[11px] font-bold mb-2">
+                                    <AcademicCapIcon class="w-4 h-4" />
+                                    <span>{{ en ? 'FREE 5-QUESTION MINI MODEL TEST' : 'ফ্রি ৫-প্রশ্নের মিনি মডেল টেস্ট' }}</span>
+                                </span>
+                                <h2 class="font-heading text-lg md:text-xl font-extrabold text-gray-900 dark:text-white">
+                                    {{ en ? `Test Your Readiness: ${practiceCollection?.title_en || 'Job Exam'}` : `নিজেকে যাচাই করুন: ${practiceCollection?.title_bn || 'চাকরি পরীক্ষা'}` }}
+                                </h2>
+                            </div>
+                            <Link
+                                v-if="practiceCollection?.url"
+                                :href="practiceCollection.url"
+                                class="text-xs font-bold text-[var(--primary)] hover:underline"
+                            >
+                                {{ en ? 'Open Full Question Bank →' : 'সম্পূর্ণ প্রশ্নব্যাংক দেখুন →' }}
+                            </Link>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div
+                                v-for="(q, idx) in sampleQuestions"
+                                :key="q.id"
+                                class="rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50/70 dark:bg-[#0e1320]/70 p-4"
+                            >
+                                <div class="text-sm font-bold text-gray-900 dark:text-white mb-3">
+                                    {{ idx + 1 }}. {{ q.question_text }}
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <button
+                                        v-for="opt in q.options"
+                                        :key="opt.key"
+                                        type="button"
+                                        :class="[
+                                            'text-left px-3 py-2 rounded-xl border text-xs font-medium transition flex items-center gap-2',
+                                            quizSubmitted && opt.key === q.correct_option
+                                                ? 'border-emerald-500 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold'
+                                                : quizSubmitted && quizAnswers[q.id] === opt.key && opt.key !== q.correct_option
+                                                    ? 'border-rose-500 bg-rose-500/15 text-rose-700 dark:text-rose-300'
+                                                    : quizAnswers[q.id] === opt.key
+                                                        ? 'border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] font-bold'
+                                                        : 'border-gray-200 dark:border-white/10 bg-white dark:bg-[#171c28] text-gray-700 dark:text-gray-300 hover:border-[var(--primary)]/50'
+                                        ]"
+                                        @click="pickQuizOption(q.id, opt.key)"
+                                    >
+                                        <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-current text-[10px] font-bold">
+                                            {{ opt.key }}
+                                        </span>
+                                        <span>{{ opt.text }}</span>
+                                    </button>
+                                </div>
+                                <div
+                                    v-if="quizSubmitted && q.explanation"
+                                    class="mt-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20 px-3 py-2 text-xs text-gray-700 dark:text-gray-300"
+                                >
+                                    <strong class="text-emerald-700 dark:text-emerald-400">{{ en ? 'Explanation:' : 'ব্যাখ্যা:' }}</strong>
+                                    {{ q.explanation }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-200 dark:border-white/10">
+                            <template v-if="!quizSubmitted">
+                                <span class="text-xs text-gray-500 dark:text-gray-400">
+                                    {{ en ? `Answered ${quizScore.answered} of ${quizScore.total}` : `${quizScore.total}টির মধ্যে ${quizScore.answered}টি উত্তর দিয়েছেন` }}
+                                </span>
+                                <button
+                                    type="button"
+                                    class="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold transition shadow-md"
+                                    @click="quizSubmitted = true"
+                                >
+                                    {{ en ? 'Submit & See Score' : 'সাবমিট করুন ও রেজাল্ট দেখুন' }}
+                                </button>
+                            </template>
+                            <template v-else>
+                                <div class="text-xs font-bold flex flex-wrap items-center gap-3">
+                                    <span class="text-emerald-600 dark:text-emerald-400">✓ {{ quizScore.correct }} {{ en ? 'Correct' : 'সঠিক' }}</span>
+                                    <span class="text-rose-600 dark:text-rose-400">✕ {{ quizScore.wrong }} {{ en ? 'Wrong' : 'ভুল' }}</span>
+                                    <span class="px-2.5 py-1 rounded-lg bg-[var(--primary)]/15 text-[var(--primary)]">
+                                        {{ en ? 'Net Score:' : 'নেট স্কোর:' }} {{ quizScore.net }} / {{ quizScore.total }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" class="px-4 py-2 rounded-xl border border-gray-300 dark:border-white/15 text-xs font-bold hover:bg-gray-100 dark:hover:bg-white/5" @click="resetMiniQuiz">
+                                        {{ en ? 'Retry' : 'আবার দিন' }}
+                                    </button>
+                                    <Link
+                                        :href="practiceCollection?.url || '/questions'"
+                                        class="px-4 py-2 rounded-xl bg-[var(--primary)] text-white text-xs font-bold hover:opacity-90"
+                                    >
+                                        {{ en ? 'Practice More Free MCQs →' : 'আরো ফ্রি MCQ প্র্যাকটিস করুন →' }}
+                                    </Link>
+                                </div>
+                            </template>
+                        </div>
+                    </section>
                 </main>
 
                 <!-- Right Sidebar Column (4 Cols) -->

@@ -10,6 +10,8 @@ use App\Models\Book;
 use App\Models\Course;
 use App\Models\CustomPage;
 use App\Models\JobCircular;
+use App\Models\QuestionSubject;
+use App\Services\PublicQuestionCatalog;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -57,6 +59,7 @@ class SitemapController extends Controller
 
         // 2. Core Educational Hubs
         $coreSections = [
+            ['path' => '/questions', 'priority' => '0.95', 'changefreq' => 'daily'],
             ['path' => '/library', 'priority' => '0.9', 'changefreq' => 'daily'],
             ['path' => '/courses', 'priority' => '0.9', 'changefreq' => 'daily'],
             ['path' => '/admission-notice', 'priority' => '0.9', 'changefreq' => 'daily'],
@@ -74,6 +77,30 @@ class SitemapController extends Controller
                 'lastmod' => $now,
                 'changefreq' => $section['changefreq'],
                 'priority' => $section['priority'],
+            ];
+        }
+
+        // 2b. Public Programmatic SEO Question Bank Collections & Subjects
+        foreach (PublicQuestionCatalog::collections() as $slug => $meta) {
+            $urls[] = [
+                'loc' => "{$baseUrl}/questions/{$slug}",
+                'lastmod' => $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.9',
+            ];
+        }
+
+        $subjects = QuestionSubject::where('is_active', true)
+            ->whereHas('questions', fn ($q) => $q->published())
+            ->select(['slug', 'updated_at'])
+            ->get();
+
+        foreach ($subjects as $sub) {
+            $urls[] = [
+                'loc' => "{$baseUrl}/questions/subject/{$sub->slug}",
+                'lastmod' => ($sub->updated_at ?? now())->toIso8601String(),
+                'changefreq' => 'weekly',
+                'priority' => '0.8',
             ];
         }
 

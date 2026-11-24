@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}">
+<html lang="{{ app()->getLocale() === 'en' ? 'en' : 'bn-BD' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="content-language" content="bn-BD, en">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta property="fb:app_id" content="1562071828675426">
 
@@ -103,7 +104,8 @@
     <meta property="og:image" content="{{ $seoData['og_image'] }}">
     <meta property="og:image:alt" content="{{ $seoData['title'] }}">
     @endif
-    <meta property="og:locale" content="{{ app()->getLocale() === 'bn' ? 'bn_BD' : 'en_US' }}">
+    <meta property="og:locale" content="{{ app()->getLocale() === 'en' ? 'en_US' : 'bn_BD' }}">
+    <meta property="og:locale:alternate" content="{{ app()->getLocale() === 'en' ? 'bn_BD' : 'en_US' }}">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
@@ -114,15 +116,15 @@
     <meta name="twitter:image" content="{{ $seoData['og_image'] }}">
     @endif
 
-    <!-- Bilingual alternate tags -->
-    <link rel="alternate" hreflang="bn" href="{{ $seoData['canonical'] }}">
-    <link rel="alternate" hreflang="en" href="{{ $seoData['canonical'] }}">
-    <link rel="alternate" hreflang="x-default" href="{{ $seoData['canonical'] }}">
-
     <!-- Structured Data (JSON-LD) for Search & GEO Engine Citations -->
     @if(!empty($seoData['json_ld']))
     <script type="application/ld+json">
     {!! json_encode($seoData['json_ld'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    </script>
+    @endif
+    @if(!empty($seoData['faq_json_ld']))
+    <script type="application/ld+json">
+    {!! json_encode($seoData['faq_json_ld'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
     </script>
     @endif
     @if(!empty($seoData['breadcrumb']))
@@ -154,5 +156,25 @@
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
     @inertia
+    @if(($seoData['robots'] ?? 'index, follow') !== 'noindex, nofollow')
+    <noscript>
+        <main style="max-width:960px;margin:24px auto;padding:16px;font-family:sans-serif;line-height:1.6;">
+            <h1>{{ $seoData['title'] }}</h1>
+            <p>{{ $seoData['description'] }}</p>
+            @if(!empty($seoData['noscript_html']))
+                {!! $seoData['noscript_html'] !!}
+            @endif
+            <nav aria-label="Sikhun.com Navigation" style="margin-top:24px;border-top:1px solid #ddd;padding-top:12px;">
+                <a href="{{ url('/') }}">হোম (Home)</a> |
+                <a href="{{ url('/questions') }}">প্রশ্নব্যাংক (Question Bank)</a> |
+                <a href="{{ url('/admission-notice') }}">ভর্তি বিজ্ঞপ্তি (Admissions)</a> |
+                <a href="{{ url('/job-news') }}">চাকরির খবর (Job Circulars)</a> |
+                <a href="{{ url('/library') }}">ডিজিটাল লাইব্রেরি (Library)</a> |
+                <a href="{{ url('/courses') }}">কোর্সসমূহ (Courses)</a> |
+                <a href="{{ url('/blog') }}">ব্লগ (Blog)</a>
+            </nav>
+        </main>
+    </noscript>
+    @endif
 </body>
 </html>

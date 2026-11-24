@@ -17,10 +17,11 @@ class SetLocale
 
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = $request->session()->get('locale', config('app.locale'));
+        $locale = $request->session()->get('locale');
 
-        if (! in_array($locale, self::SUPPORTED, true)) {
-            $locale = 'bn';
+        if (! $locale || ! in_array($locale, self::SUPPORTED, true)) {
+            $configured = config('app.locale', 'bn');
+            $locale = in_array($configured, self::SUPPORTED, true) ? $configured : 'bn';
         }
 
         app()->setLocale($locale);

@@ -40,6 +40,10 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/sitemap.xml', [\App\Http\Controllers\Public\SitemapController::class, 'index'])->name('sitemap');
 Route::get('/llms.txt', [\App\Http\Controllers\Public\LlmsController::class, 'index'])->name('llms');
+Route::get('/llms-full.txt', [\App\Http\Controllers\Public\LlmsController::class, 'full'])->name('llms.full');
+Route::get('/'.\App\Services\IndexNowService::KEY.'.txt', function () {
+    return response(\App\Services\IndexNowService::KEY, 200, ['Content-Type' => 'text/plain; charset=utf-8']);
+})->name('indexnow.key');
 Route::get('/firebase-messaging-sw.js', \App\Http\Controllers\FirebaseServiceWorkerController::class)->name('firebase.sw');
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/contact', [\App\Http\Controllers\Public\ContactController::class, 'show'])->name('contact.show');
@@ -67,6 +71,13 @@ Route::get('/job-news/{slug}', [\App\Http\Controllers\Public\JobController::clas
 Route::redirect('/jobs', '/job-news', 301);
 Route::get('/jobs/{slug}', function (string $slug) {
     return redirect("/job-news/{$slug}", 301);
+});
+
+// Public Programmatic SEO Question Bank (accessible without login)
+Route::prefix('questions')->name('public.questions.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Public\PublicQuestionBankController::class, 'hub'])->name('hub');
+    Route::get('/subject/{slug}', [\App\Http\Controllers\Public\PublicQuestionBankController::class, 'subject'])->name('subject');
+    Route::get('/{slug}', [\App\Http\Controllers\Public\PublicQuestionBankController::class, 'collection'])->name('collection');
 });
 
 // Public University Admission Notices Portal (accessible without login)

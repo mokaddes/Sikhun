@@ -118,9 +118,18 @@ class SeoService
                             'url' => $this->logoUrl(),
                         ],
                         'description' => 'First AI-powered digital learning ecosystem in Bangladesh for HSC, SSC, University Admission, and Competitive Exams.',
-                        'sameAs' => [
-                            'https://www.facebook.com/sikhunbd',
+                        'address' => [
+                            '@type' => 'PostalAddress',
+                            'addressLocality' => 'Dhaka',
+                            'addressRegion' => 'Dhaka Division',
+                            'addressCountry' => 'BD',
                         ],
+                        'sameAs' => array_values(array_filter([
+                            'https://www.facebook.com/sikhunbd',
+                            $this->settings->get('social_youtube'),
+                            $this->settings->get('social_linkedin'),
+                            $this->settings->get('playstore_url'),
+                        ])),
                         'contactPoint' => [
                             '@type' => 'ContactPoint',
                             'contactType' => 'customer support',
@@ -230,6 +239,41 @@ class SeoService
             $schema['webVerification'] = $notice->apply_url;
         }
 
+        $deadlineStr = $notice->application_deadline
+            ? $notice->application_deadline->format('d F Y')
+            : 'অফিসিয়াল বিজ্ঞপ্তি দেখুন';
+
+        $faqJsonLd = [
+            '@context' => 'https://schema.org',
+            '@type' => 'FAQPage',
+            'mainEntity' => [
+                [
+                    '@type' => 'Question',
+                    'name' => "{$notice->institution_name} ভর্তি পরীক্ষার আবেদনের শেষ তারিখ কবে?",
+                    'acceptedAnswer' => [
+                        '@type' => 'Answer',
+                        'text' => "{$notice->institution_name} ২০২৬-২০২৭ শিক্ষাবর্ষের ভর্তির আবেদনের শেষ তারিখ {$deadlineStr}।",
+                    ],
+                ],
+                [
+                    '@type' => 'Question',
+                    'name' => "{$notice->institution_name} ভর্তি পরীক্ষার বিগত বছরের প্রশ্ন কোথায় প্র্যাকটিস করব?",
+                    'acceptedAnswer' => [
+                        '@type' => 'Answer',
+                        'text' => "Sikhun.com-এর ফ্রি পাবলিক প্রশ্নব্যাংকে ({$this->siteUrl}/questions) {$notice->institution_name} সহ বাংলাদেশের সকল বিশ্ববিদ্যালয়ের বিগত বছরের আসল MCQ প্রশ্ন ও ব্যাখ্যা প্র্যাকটিস করা যায়।",
+                    ],
+                ],
+            ],
+        ];
+
+        $noscriptHtml = sprintf(
+            '<section><h2>%s</h2><p><strong>প্রতিষ্ঠান:</strong> %s | <strong>আবেদনের শেষ তারিখ:</strong> %s</p><p>%s</p></section>',
+            e($notice->title),
+            e($notice->institution_name),
+            e($deadlineStr),
+            e(Str::limit($descText, 600))
+        );
+
         return [
             'title' => $metaTitle,
             'description' => $metaDescription,
@@ -244,6 +288,8 @@ class SeoService
                 'Sikhun',
             ])),
             'json_ld' => $schema,
+            'faq_json_ld' => $faqJsonLd,
+            'noscript_html' => $noscriptHtml,
             'breadcrumb' => $this->breadcrumb([
                 ['name' => 'Home', 'url' => $this->siteUrl],
                 ['name' => 'ভর্তি বিজ্ঞপ্তি', 'url' => $this->siteUrl.'/admission-notice'],
@@ -532,6 +578,41 @@ class SeoService
         $canonical = $this->siteUrl.'/job-news/'.$job->slug;
         $metaDescription = Str::limit(strip_tags($job->description ?? ''), 155) ?: "{$job->title} চাকরির নিয়োগ বিজ্ঞপ্তি, আবেদনের যোগ্যতা ও বিস্তারিত।";
 
+        $deadlineStr = $job->deadline ? $job->deadline->format('d F Y') : 'সার্কুলার দেখুন';
+        $orgName = $job->organization ?: 'সরকারি/বেসরকারি প্রতিষ্ঠান';
+
+        $faqJsonLd = [
+            '@context' => 'https://schema.org',
+            '@type' => 'FAQPage',
+            'mainEntity' => [
+                [
+                    '@type' => 'Question',
+                    'name' => "{$job->title} আবেদনের শেষ তারিখ কবে?",
+                    'acceptedAnswer' => [
+                        '@type' => 'Answer',
+                        'text' => "{$orgName}-এর {$job->title} পদে আবেদনের শেষ তারিখ {$deadlineStr}।",
+                    ],
+                ],
+                [
+                    '@type' => 'Question',
+                    'name' => "{$orgName} নিয়োগ পরীক্ষার প্রস্তুতি ও বিগত বছরের প্রশ্ন কোথায় পাওয়া যাবে?",
+                    'acceptedAnswer' => [
+                        '@type' => 'Answer',
+                        'text' => "Sikhun.com-এর ফ্রি প্রশ্নব্যাংকে ({$this->siteUrl}/questions) ২৪,৭০০+ সরকারি চাকরি, বিসিএস, প্রাইমারি ও ব্যাংক জবের বিগত বছরের MCQ প্রশ্ন ও ব্যাখ্যা প্র্যাকটিস করা যায়।",
+                    ],
+                ],
+            ],
+        ];
+
+        $noscriptHtml = sprintf(
+            '<section><h2>%s</h2><table><tr><th>প্রতিষ্ঠান</th><td>%s</td></tr><tr><th>আবেদনের শেষ তারিখ</th><td>%s</td></tr><tr><th>কর্মস্থল</th><td>%s</td></tr></table><p>%s</p></section>',
+            e($job->title),
+            e($orgName),
+            e($deadlineStr),
+            e($job->location ?: 'বাংলাদেশ'),
+            e(Str::limit(strip_tags($job->description ?? ''), 600))
+        );
+
         return [
             'title' => "{$job->title} | {$this->siteName}",
             'description' => $metaDescription,
@@ -567,6 +648,8 @@ class SeoService
                 ],
                 'url' => $canonical,
             ]),
+            'faq_json_ld' => $faqJsonLd,
+            'noscript_html' => $noscriptHtml,
             'breadcrumb' => $this->breadcrumb([
                 ['name' => 'Home', 'url' => $this->siteUrl],
                 ['name' => 'চাকরির খবর', 'url' => $this->siteUrl.'/job-news'],
@@ -713,6 +796,165 @@ class SeoService
     }
 
     /**
+     * Public Question Bank Hub SEO (/questions).
+     */
+    public function forQuestionsHub(int $totalQuestions, array $collections = []): array
+    {
+        $canonical = $this->siteUrl.'/questions';
+        $formatted = number_format($totalQuestions);
+        $title = "ফ্রি প্রশ্নব্যাংক ও সমাধান ({$formatted}+ বিসিএস, ভার্সিটি ও জব MCQ) | {$this->siteName}";
+        $description = "বাংলাদেশের সকল বিশ্ববিদ্যালয় ভর্তি (ঢাবি, রাবি, গুচ্ছ, বুয়েট) ও সরকারি চাকরির (বিসিএস, প্রাইমারি, ব্যাংক, NTRCA) {$formatted}+ বিগত বছরের আসল MCQ প্রশ্ন ও ব্যাখ্যা ফ্রিতে প্র্যাকটিস করুন।";
+
+        $listHtml = '<ul>';
+        foreach ($collections as $c) {
+            $listHtml .= sprintf(
+                '<li><a href="%s">%s</a> (%s টি প্রশ্ন)</li>',
+                e("{$this->siteUrl}/questions/{$c['slug']}"),
+                e($c['title_bn']),
+                number_format((int) ($c['count'] ?? 0))
+            );
+        }
+        $listHtml .= '</ul>';
+
+        return [
+            'title' => $title,
+            'description' => $description,
+            'og_image' => $this->socialImage(),
+            'canonical' => $canonical,
+            'keywords' => 'প্রশ্নব্যাংক, বিসিএস প্রশ্ন সমাধান, ঢাবি ভর্তি প্রশ্ন, প্রাইমারি শিক্ষক প্রশ্নব্যাংক, bangladesh mcq question bank, sikhun questions',
+            'json_ld' => [
+                '@context' => 'https://schema.org',
+                '@type' => 'CollectionPage',
+                'name' => $title,
+                'description' => $description,
+                'url' => $canonical,
+                'inLanguage' => ['bn-BD', 'en-US'],
+                'isPartOf' => ['@type' => 'WebSite', 'name' => $this->siteName, 'url' => $this->siteUrl],
+            ],
+            'noscript_html' => $listHtml,
+            'breadcrumb' => $this->breadcrumb([
+                ['name' => 'Home', 'url' => $this->siteUrl],
+                ['name' => 'প্রশ্নব্যাংক', 'url' => $canonical],
+            ]),
+        ];
+    }
+
+    /**
+     * Public Question Bank Collection SEO (/questions/{slug}).
+     */
+    public function forQuestionCollection(array $collection, int $totalCount, array $questions = []): array
+    {
+        $canonical = $this->siteUrl.'/questions/'.$collection['slug'];
+        $title = "{$collection['title_bn']} | {$this->siteName}";
+        $description = $collection['description_bn'];
+
+        $faqJsonLd = null;
+        if (! empty($collection['faqs'])) {
+            $faqJsonLd = [
+                '@context' => 'https://schema.org',
+                '@type' => 'FAQPage',
+                'mainEntity' => collect($collection['faqs'])->map(fn ($qa) => [
+                    '@type' => 'Question',
+                    'name' => $qa['question'],
+                    'acceptedAnswer' => ['@type' => 'Answer', 'text' => $qa['answer']],
+                ])->all(),
+            ];
+        }
+
+        $noscriptHtml = sprintf(
+            '<section><h2>%s (%s+ MCQ)</h2><p>%s</p><ol>',
+            e($collection['title_bn']),
+            number_format($totalCount),
+            e($description)
+        );
+        foreach (array_slice($questions, 0, 15) as $q) {
+            $ansText = $q['correct_option_text'] ?? $q['correct_option'] ?? '';
+            $noscriptHtml .= sprintf(
+                '<li><strong>%s</strong><br>উত্তর: %s%s</li>',
+                e($q['question_text'] ?? ''),
+                e($ansText),
+                ! empty($q['explanation']) ? ' — '.e(Str::limit((string) $q['explanation'], 220)) : ''
+            );
+        }
+        $noscriptHtml .= '</ol></section>';
+
+        return [
+            'title' => $title,
+            'description' => $description,
+            'og_image' => $this->socialImage(),
+            'canonical' => $canonical,
+            'keywords' => $collection['keywords'] ?? 'প্রশ্নব্যাংক, MCQ সমাধান, Sikhun',
+            'json_ld' => [
+                '@context' => 'https://schema.org',
+                '@type' => 'Quiz',
+                'name' => $collection['title_bn'],
+                'about' => $collection['institution_bn'] ?? $collection['short_bn'],
+                'description' => $description,
+                'inLanguage' => 'bn-BD',
+                'educationalAlignment' => [
+                    '@type' => 'AlignmentObject',
+                    'alignmentType' => 'educationalSubject',
+                    'targetName' => $collection['short_bn'] ?? $collection['title_en'],
+                ],
+                'provider' => [
+                    '@type' => 'EducationalOrganization',
+                    'name' => $this->siteName,
+                    'url' => $this->siteUrl,
+                ],
+                'url' => $canonical,
+            ],
+            'faq_json_ld' => $faqJsonLd,
+            'noscript_html' => $noscriptHtml,
+            'breadcrumb' => $this->breadcrumb([
+                ['name' => 'Home', 'url' => $this->siteUrl],
+                ['name' => 'প্রশ্নব্যাংক', 'url' => $this->siteUrl.'/questions'],
+                ['name' => $collection['short_bn'] ?? $collection['title_bn'], 'url' => $canonical],
+            ]),
+        ];
+    }
+
+    /**
+     * Public Question Bank Subject SEO (/questions/subject/{slug}).
+     */
+    public function forQuestionSubject(object $subject, int $totalCount, array $questions = []): array
+    {
+        $canonical = $this->siteUrl.'/questions/subject/'.$subject->slug;
+        $nameBn = $subject->name_bn ?: $subject->name_en;
+        $title = "{$nameBn} MCQ প্রশ্নব্যাংক ও সমাধান ({$subject->name_en}) | {$this->siteName}";
+        $description = "{$nameBn} বিষয়ের ".number_format($totalCount)."টি বিগত বছরের বিশ্ববিদ্যালয় ভর্তি, বিসিএস ও সরকারি চাকরির আসল MCQ প্রশ্ন, উত্তর ও ব্যাখ্যা ফ্রিতে প্র্যাকটিস করুন।";
+
+        $noscriptHtml = sprintf('<section><h2>%s (%s+ MCQ)</h2><ol>', e($nameBn), number_format($totalCount));
+        foreach (array_slice($questions, 0, 15) as $q) {
+            $ansText = $q['correct_option_text'] ?? $q['correct_option'] ?? '';
+            $noscriptHtml .= sprintf('<li><strong>%s</strong> — উত্তর: %s</li>', e($q['question_text'] ?? ''), e($ansText));
+        }
+        $noscriptHtml .= '</ol></section>';
+
+        return [
+            'title' => $title,
+            'description' => $description,
+            'og_image' => $this->socialImage(),
+            'canonical' => $canonical,
+            'keywords' => implode(', ', array_filter([$nameBn, $subject->name_en, 'MCQ প্রশ্নব্যাংক', 'প্রশ্ন সমাধান', 'Sikhun'])),
+            'json_ld' => [
+                '@context' => 'https://schema.org',
+                '@type' => 'Quiz',
+                'name' => "{$nameBn} MCQ প্রশ্নব্যাংক",
+                'about' => $nameBn,
+                'description' => $description,
+                'inLanguage' => 'bn-BD',
+                'url' => $canonical,
+            ],
+            'noscript_html' => $noscriptHtml,
+            'breadcrumb' => $this->breadcrumb([
+                ['name' => 'Home', 'url' => $this->siteUrl],
+                ['name' => 'প্রশ্নব্যাংক', 'url' => $this->siteUrl.'/questions'],
+                ['name' => $nameBn, 'url' => $canonical],
+            ]),
+        ];
+    }
+
+    /**
      * Dynamic Central Resolver for Server-Side Blade Rendering.
      *
      * Ensures every single request (public or private) gets safe, escaped,
@@ -754,6 +996,8 @@ class SeoService
                 'og_type' => $seoProps['og_type'] ?? 'website',
                 'keywords' => $seoProps['keywords'] ?? null,
                 'json_ld' => $seoProps['json_ld'] ?? null,
+                'faq_json_ld' => $seoProps['faq_json_ld'] ?? null,
+                'noscript_html' => $seoProps['noscript_html'] ?? null,
                 'breadcrumb' => $seoProps['breadcrumb'] ?? null,
             ];
         }

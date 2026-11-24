@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { downloadBrandedPdf } from '@/utils/studentPdfExport';
 import {
     CalendarDaysIcon,
     PlusIcon,
     TrashIcon,
     PrinterIcon,
+    ArrowDownTrayIcon,
     ArrowPathIcon,
     CheckCircleIcon,
     SparklesIcon,
@@ -16,8 +18,62 @@ const props = defineProps({
 });
 
 const studentName = ref('');
-const examTarget = ref('HSC 2026 / BCS Preparation');
+const examTarget = ref('HSC 2026 / Exam Preparation');
+const examDate = ref('');
+const isDownloadingPdf = ref(false);
 const currentDate = new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
+
+const daysUntilExam = computed(() => {
+    if (!examDate.value) return null;
+    const diff = new Date(examDate.value).getTime() - new Date().setHours(0, 0, 0, 0);
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return days >= 0 ? days : null;
+});
+
+async function downloadRoutinePdf() {
+    if (!slots.value.length || isDownloadingPdf.value) return;
+    isDownloadingPdf.value = true;
+    try {
+        const rows = slots.value.map((s, idx) => `
+            <tr>
+                <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;font-weight:700;">${idx + 1}</td>
+                <td style="padding:8px;border:1px solid #cbd5e1;font-family:monospace;">${s.time}</td>
+                <td style="padding:8px;border:1px solid #cbd5e1;font-weight:700;">${s.subject}</td>
+                <td style="padding:8px;border:1px solid #cbd5e1;">${s.topic}</td>
+                <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">${s.hours}h</td>
+            </tr>
+        `).join('');
+
+        const bodyHtml = `
+            <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:9px;border:1px solid #cbd5e1;width:36px;">নং</th>
+                        <th style="padding:9px;border:1px solid #cbd5e1;width:145px;text-align:left;">সময়সূচি</th>
+                        <th style="padding:9px;border:1px solid #cbd5e1;width:135px;text-align:left;">বিষয়</th>
+                        <th style="padding:9px;border:1px solid #cbd5e1;text-align:left;">অধ্যায় ও পড়ার লক্ষ্য</th>
+                        <th style="padding:9px;border:1px solid #cbd5e1;width:60px;">ঘণ্টা</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+            <div style="margin-top:14px;padding:10px 14px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;font-weight:700;display:flex;justify-content:space-between;">
+                <span>মোট দৈনিক পড়ার লক্ষ্য: ${totalPlannedHours.value} ঘণ্টা</span>
+                ${daysUntilExam.value !== null ? `<span style="color:#d97706;">পরীক্ষার বাকি: ${daysUntilExam.value} দিন</span>` : ''}
+            </div>
+        `;
+
+        await downloadBrandedPdf({
+            title: 'দৈনিক পড়ার রুটিন ও স্টাডি প্ল্যানার',
+            subtitle: examTarget.value || 'Academic Study Plan',
+            studentName: studentName.value.trim(),
+            bodyHtml,
+            fileName: 'Sikhun_Study_Routine.pdf',
+        });
+    } finally {
+        isDownloadingPdf.value = false;
+    }
+}
 
 const slots = ref([
     { id: 1, time: '06:30 AM - 08:30 AM', subject: 'পদার্থবিজ্ঞান / গণিত', topic: 'অধ্যায় ৩: থিওরি ও গাণিতিক সমস্যা', hours: 2, done: false },
@@ -234,11 +290,20 @@ function loadTemplate(type) {
             <div class="flex items-center gap-2 flex-wrap">
                 <button
                     type="button"
+                    :disabled="isDownloadingPdf || !slots.length"
+                    class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md transition"
+                    @click="downloadRoutinePdf"
+                >
+                    <ArrowDownTrayIcon class="w-4 h-4" />
+                    <span>{{ isDownloadingPdf ? (en ? 'Generating PDF...' : 'PDF তৈরি হচ্ছে...') : (en ? 'Download Routine PDF' : 'রুটিন PDF ডাউনলোড') }}</span>
+                </button>
+                <button
+                    type="button"
                     @click="printRoutine"
-                    class="btn btn-primary text-xs py-2 px-3.5 flex items-center gap-1.5 shadow-md shadow-indigo-500/25"
+                    class="px-3.5 py-2 rounded-xl bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/15 text-xs font-bold flex items-center gap-1.5"
                 >
                     <PrinterIcon class="w-4 h-4" />
-                    <span>{{ en ? 'Print / Save as PDF' : 'প্রিন্ট / PDF ডাউনলোড' }}</span>
+                    <span>{{ en ? 'Print' : 'প্রিন্ট' }}</span>
                 </button>
             </div>
         </div>

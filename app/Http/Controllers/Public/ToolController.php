@@ -10,18 +10,38 @@ use Inertia\Response;
 
 class ToolController extends Controller
 {
+    public const SLUG_MAP = [
+        'formula-sheet' => 'formulas',
+        'gpa-calculator' => 'gpa',
+        'study-routine' => 'routine',
+        'photo-resizer' => 'resizer',
+        'age-calculator' => 'age',
+        'negative-marking' => 'negative_marking',
+        'image-to-pdf' => 'image_to_pdf',
+        'pomodoro-timer' => 'pomodoro',
+    ];
+
     public function __construct(
         private readonly SeoService $seo
     ) {}
 
-    public function tools(): Response
+    public function tools(?string $toolSlug = null): Response
     {
+        $initialTool = 'catalog';
+        if ($toolSlug !== null) {
+            abort_unless(isset(self::SLUG_MAP[$toolSlug]), 404);
+            $initialTool = self::SLUG_MAP[$toolSlug];
+        }
+
         return Inertia::render('Public/Tools/Index', [
+            'initialTool' => $initialTool,
             'recentJobs' => JobCircular::where('deadline', '>=', now())
                 ->latest('published_date')
                 ->take(3)
                 ->get(['id', 'title', 'slug', 'organization', 'deadline']),
-            'seo' => $this->seo->forToolsIndex(),
+            'seo' => $toolSlug
+                ? $this->seo->forSpecificTool($toolSlug)
+                : $this->seo->forToolsIndex(),
         ]);
     }
 

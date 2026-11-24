@@ -36,6 +36,10 @@ class SubmitIndexNowCommand extends Command
             "{$base}/results",
         ];
 
+        foreach (\App\Http\Controllers\Public\ToolController::SLUG_MAP as $toolSlug => $_) {
+            $urls[] = "{$base}/tools/{$toolSlug}";
+        }
+
         foreach (PublicQuestionCatalog::collections() as $slug => $meta) {
             $urls[] = "{$base}/questions/{$slug}";
         }

@@ -666,20 +666,100 @@ class SeoService
         $canonical = $this->siteUrl.'/tools';
 
         return [
-            'title' => "স্টুডেন্ট টুলস ও রেজাল্ট ক্যালকুলেটর | {$this->siteName}",
-            'description' => 'শিক্ষার্থীদের জন্য প্রয়োজনীয় অনলাইন শিক্ষামূলক টুলস: GPA ক্যালকুলেটর, বয়স ক্যালকুলেটর ও পরীক্ষার ফলাফল অনুসন্ধান।',
+            'title' => "স্মার্ট স্টুডেন্ট টুলস হাব — সূত্র ব্যাংক PDF, GPA, রুটিন ও কনভার্টার | {$this->siteName}",
+            'description' => 'শিক্ষার্থীদের জন্য ১০০% ফ্রি স্মার্ট টুলস: বিজ্ঞান ও গণিত সূত্র ব্যাংক (PDF ডাউনলোড), একক কনভার্টার, জিপিএ ও ভর্তি যোগ্যতা যাচাই, পড়ার রুটিন মেকার, ছবি-স্বাক্ষর স্টুডিও, বয়স ও নেগেটিভ মার্কিং ক্যালকুলেটর।',
             'og_image' => $this->socialImage(),
             'canonical' => $canonical,
-            'keywords' => 'স্টুডেন্ট টুলস, GPA ক্যালকুলেটর, বয়স ক্যালকুলেটর, রেজাল্ট অনুসন্ধান, sikhun tools',
+            'keywords' => 'স্টুডেন্ট টুলস, বিজ্ঞান ও গণিত সূত্র pdf, একক কনভার্টার, GPA ক্যালকুলেটর, বয়স ক্যালকুলেটর, ছবি ও স্বাক্ষর রিসাইজার, নেগেটিভ মার্কিং ক্যালকুলেটর, sikhun tools',
             'json_ld' => [
                 '@context' => 'https://schema.org',
-                '@type' => 'WebPage',
-                'name' => "স্টুডেন্ট টুলস | {$this->siteName}",
+                '@type' => 'CollectionPage',
+                'name' => "স্মার্ট স্টুডেন্ট টুলস হাব | {$this->siteName}",
+                'url' => $canonical,
+                'inLanguage' => ['bn-BD', 'en-US'],
+            ],
+            'breadcrumb' => $this->breadcrumb([
+                ['name' => 'Home', 'url' => $this->siteUrl],
+                ['name' => 'স্টুডেন্ট টুলস', 'url' => $canonical],
+            ]),
+        ];
+    }
+
+    /**
+     * Individual Student Tool SEO (/tools/{toolSlug}).
+     */
+    public function forSpecificTool(string $toolSlug): array
+    {
+        $catalog = [
+            'formula-sheet' => [
+                'name' => 'বিজ্ঞান ও গণিত সূত্র ব্যাংক এবং একক কনভার্টার (PDF ডাউনলোড)',
+                'desc' => 'SSC, HSC, বিশ্ববিদ্যালয় ভর্তি ও চাকরি পরীক্ষার পদার্থবিজ্ঞান, গণিত ও রসায়নের গুরুত্বপূর্ণ সূত্রাবলি, লাইভ সলভার, একক কনভার্টার এবং ফ্রি A4 PDF চিটশিট ডাউনলোড।',
+                'kw' => 'বিজ্ঞান ও গণিত সূত্র pdf, physics math formula sheet bangla, একক কনভার্টার, HSC formula pdf',
+            ],
+            'gpa-calculator' => [
+                'name' => 'জিপিএ ক্যালকুলেটর ও বিশ্ববিদ্যালয় যোগ্যতা যাচাই (GPA & CGPA)',
+                'desc' => 'বিজ্ঞান, মানবিক ও ব্যবসায় শিক্ষা বিভাগের ৪র্থ বিষয়সহ SSC/HSC বোর্ড GPA, ভার্সিটি ভর্তি যোগ্যতা যাচাই ও অনার্স CGPA ক্যালকুলেটর এবং মার্কশিট PDF।',
+                'kw' => 'GPA calculator bangladesh, SSC HSC GPA calculator, CGPA calculator, ভার্সিটি যোগ্যতা যাচাই',
+            ],
+            'study-routine' => [
+                'name' => 'দৈনিক পড়ার রুটিন ও স্টাডি প্ল্যানার মেকার (A4 PDF)',
+                'desc' => 'নিজের পড়ার সময়সূচি সাজান এবং ১-ক্লিকে প্রিন্ট-রেডি A4 স্টাডি রুটিন PDF ডাউনলোড করুন।',
+                'kw' => 'পড়ার রুটিন pdf, daily study routine maker bangla, student planner pdf',
+            ],
+            'photo-resizer' => [
+                'name' => 'ছবি ও স্বাক্ষর স্টুডিও (Photo & Signature Resizer Pro)',
+                'desc' => 'যেকোনো অনলাইন ফরম ও ডকুমেন্টের জন্য ছবি (300x300 px) ও স্বাক্ষর (300x80 px) বা কাস্টম মাপে রিসাইজ ও কমপ্রেস করুন।',
+                'kw' => 'photo and signature resizer, 300x300 photo resizer, 300x80 signature resizer, ছবি রিসাইজার',
+            ],
+            'age-calculator' => [
+                'name' => 'বয়স ক্যালকুলেটর (Age Calculator)',
+                'desc' => 'জন্মতারিখ থেকে আজকের দিন বা যেকোনো নির্দিষ্ট তারিখ পর্যন্ত নির্ভুল বছর, মাস, দিন, সপ্তাহ, জন্মবার ও পরবর্তী জন্মদিনের হিসাব ও PDF রিপোর্ট।',
+                'kw' => 'age calculator bangla, বয়স ক্যালকুলেটর, exact age calculator',
+            ],
+            'negative-marking' => [
+                'name' => 'ওএমআর ও নেগেটিভ মার্কিং স্কোর ক্যালকুলেটর',
+                'desc' => 'MCQ পরীক্ষায় ভুল উত্তরের নেগেটিভ নম্বর (-০.২৫ বা -০.৫০) বাদ দিয়ে আসল নেট নম্বর, সঠিকতার হার ও কাট-মার্ক সেফ জোন হিসাব করুন।',
+                'kw' => 'negative marking calculator, নেগেটিভ মার্কিং ক্যালকুলেটর, MCQ score calculator',
+            ],
+            'image-to-pdf' => [
+                'name' => 'নোটের ছবি থেকে পিডিএফ মেকার (Image to PDF)',
+                'desc' => 'খাতার নোট বা একাধিক ছবি (JPG, PNG, WebP) যুক্ত করে ব্রাউজারেই ১-ক্লিকে পরিচ্ছন্ন A4 PDF তৈরি ও ডাউনলোড করুন।',
+                'kw' => 'image to pdf converter, ছবি থেকে পিডিএফ, notes to pdf',
+            ],
+            'pomodoro-timer' => [
+                'name' => 'পোমোডোরো স্টাডি ফোকাস টাইমার',
+                'desc' => '২৫ মিনিট মনোযোগী পড়াশোনা ও ৫ মিনিট বিরতির পোমোডোরো টাইমার, সাথে বৃষ্টির শব্দ ও ফোকাস ট্র্যাকার।',
+                'kw' => 'pomodoro study timer, স্টাডি টাইমার, focus timer online',
+            ],
+        ];
+
+        $meta = $catalog[$toolSlug] ?? $catalog['formula-sheet'];
+        $canonical = "{$this->siteUrl}/tools/{$toolSlug}";
+
+        return [
+            'title' => "{$meta['name']} | {$this->siteName}",
+            'description' => $meta['desc'],
+            'og_image' => $this->socialImage(),
+            'canonical' => $canonical,
+            'keywords' => $meta['kw'],
+            'json_ld' => [
+                '@context' => 'https://schema.org',
+                '@type' => 'WebApplication',
+                'name' => $meta['name'],
+                'description' => $meta['desc'],
+                'applicationCategory' => 'EducationalApplication',
+                'operatingSystem' => 'All',
+                'offers' => [
+                    '@type' => 'Offer',
+                    'price' => '0',
+                    'priceCurrency' => 'BDT',
+                ],
                 'url' => $canonical,
             ],
             'breadcrumb' => $this->breadcrumb([
                 ['name' => 'Home', 'url' => $this->siteUrl],
-                ['name' => 'টুলস', 'url' => $canonical],
+                ['name' => 'স্টুডেন্ট টুলস', 'url' => $this->siteUrl.'/tools'],
+                ['name' => $meta['name'], 'url' => $canonical],
             ]),
         ];
     }

@@ -104,6 +104,16 @@ class SitemapController extends Controller
             ];
         }
 
+        // 2c. Dedicated Smart Student Tool Pages (/tools/{slug})
+        foreach (array_keys(\App\Http\Controllers\Public\ToolController::SLUG_MAP) as $toolSlug) {
+            $urls[] = [
+                'loc' => "{$baseUrl}/tools/{$toolSlug}",
+                'lastmod' => $now,
+                'changefreq' => 'monthly',
+                'priority' => '0.75',
+            ];
+        }
+
         // 3. Published Books
         $books = Book::published()
             ->select(['slug', 'updated_at'])

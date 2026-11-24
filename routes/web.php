@@ -86,6 +86,7 @@ Route::get('/admission-notice/{slug}', [\App\Http\Controllers\Public\AdmissionCo
 
 // Public Student Tools Hub & Result Checker (accessible without login)
 Route::get('/tools', [\App\Http\Controllers\Public\ToolController::class, 'tools'])->name('tools.index');
+Route::get('/tools/{toolSlug}', [\App\Http\Controllers\Public\ToolController::class, 'tools'])->name('tools.show');
 Route::redirect('/calculators', '/tools', 301);
 Route::get('/results', [\App\Http\Controllers\Public\ToolController::class, 'results'])->name('tools.results');
 

@@ -218,4 +218,171 @@ class QuestionBankPracticeTest extends TestCase
         $this->assertEquals(1, $session->total);
         $this->assertStringContainsString('/exams/' . $session->id, $response->json('redirect_url'));
     }
+
+    public function test_hsc_student_sees_hsc_questions_and_shared_admission_segment_subjects(): void
+    {
+        $student = $this->createStudent(['type' => 'hsc']);
+        $physics = $this->createSubject([
+            'name_bn' => 'পদার্থবিজ্ঞান',
+            'name_en' => 'Physics',
+            'slug' => 'physics-test-' . uniqid(),
+            'segment' => 'admission',
+        ]);
+
+        QuestionBank::create([
+            'segment' => 'hsc',
+            'allowed_student_types' => ['all'],
+            'subject_id' => $physics->id,
+            'exam_name' => 'HSC Physics 1st Paper Board Test',
+            'origin_tag' => 'HSC-PHY-TEST',
+            'year' => 2024,
+            'question_text' => 'ভেক্টর রাশি কোনটি?',
+            'question_type' => 'mcq',
+            'options' => [
+                ['key' => 'A', 'text' => 'বেগ'],
+                ['key' => 'B', 'text' => 'দ্রুতি'],
+                ['key' => 'C', 'text' => 'কাজ'],
+                ['key' => 'D', 'text' => 'শক্তি'],
+            ],
+            'correct_option' => 'A',
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($student, 'web')
+            ->get(route('student.question-bank.index'));
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->component('Student/QuestionBank/Index')
+            ->where('isUnavailable', false)
+            ->where('lockedToGoal', false)
+            ->where('activeSector', 'hsc')
+            ->has('questions.data', 1)
+            ->has('subjects', 1)
+            ->where('subjects.0.id', $physics->id)
+        );
+    }
+
+    public function test_ssc_and_university_students_can_browse_and_switch_sectors(): void
+    {
+        $subject = $this->createSubject(['segment' => 'admission']);
+
+        QuestionBank::create([
+            'segment' => 'hsc',
+            'subject_id' => $subject->id,
+            'origin_tag' => 'HSC-SAMPLE',
+            'question_text' => 'HSC Sample MCQ',
+            'question_type' => 'mcq',
+            'options' => [['key' => 'A', 'text' => 'Opt A'], ['key' => 'B', 'text' => 'Opt B']],
+            'correct_option' => 'A',
+            'status' => 'active',
+        ]);
+
+        QuestionBank::create([
+            'segment' => 'admission',
+            'subject_id' => $subject->id,
+            'origin_tag' => 'DU-A',
+            'question_text' => 'Admission Sample MCQ',
+            'question_type' => 'mcq',
+            'options' => [['key' => 'A', 'text' => 'Opt A'], ['key' => 'B', 'text' => 'Opt B']],
+            'correct_option' => 'A',
+            'status' => 'active',
+        ]);
+
+        foreach (['ssc', 'university'] as $type) {
+            $student = $this->createStudent(['type' => $type]);
+
+            $this->actingAs($student, 'web')
+                ->get(route('student.question-bank.index'))
+                ->assertStatus(200)
+                ->assertInertia(fn ($page) => $page
+                    ->where('isUnavailable', false)
+                    ->where('lockedToGoal', false)
+                );
+
+            $this->actingAs($student, 'web')
+                ->get(route('student.question-bank.index', ['sector' => 'hsc']))
+                ->assertStatus(200)
+                ->assertInertia(fn ($page) => $page
+                    ->where('activeSector', 'hsc')
+                    ->has('questions.data', 1)
+                );
+
+            $this->actingAs($student, 'web')
+                ->get(route('student.question-bank.index', ['sector' => 'admission']))
+                ->assertStatus(200)
+                ->assertInertia(fn ($page) => $page
+                    ->where('activeSector', 'admission')
+                    ->has('questions.data', 1)
+                );
+        }
+    }
+
+    public function test_hsc_student_can_ai_explain_any_question_and_generate_hsc_mock_test(): void
+    {
+        $student = $this->createStudent(['type' => 'hsc']);
+
+        $plan = Plan::create([
+            'name' => 'HSC Pro',
+            'slug' => 'hsc-pro-' . uniqid(),
+            'price_monthly' => 300,
+            'is_active' => true,
+        ]);
+
+        StudentSubscription::create([
+            'student_id' => $student->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'started_at' => now()->subDay(),
+            'expires_at' => now()->addMonth(),
+        ]);
+
+        $subject = $this->createSubject(['segment' => 'admission']);
+
+        $admissionQuestion = QuestionBank::create([
+            'segment' => 'admission',
+            'subject_id' => $subject->id,
+            'origin_tag' => 'DU-A',
+            'question_text' => 'Admission Q',
+            'question_type' => 'mcq',
+            'options' => [['key' => 'A', 'text' => 'Opt A']],
+            'correct_option' => 'A',
+            'explanation' => 'Admission explanation.',
+            'status' => 'active',
+        ]);
+
+        QuestionBank::create([
+            'segment' => 'hsc',
+            'subject_id' => $subject->id,
+            'origin_tag' => 'HSC-TEST',
+            'question_text' => 'HSC Q',
+            'question_type' => 'mcq',
+            'options' => [['key' => 'A', 'text' => 'Opt A'], ['key' => 'B', 'text' => 'Opt B']],
+            'correct_option' => 'A',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($student, 'web')
+            ->postJson(route('student.question-bank.ai-explain', $admissionQuestion->id))
+            ->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'explanation' => 'Admission explanation.',
+            ]);
+
+        $testRes = $this->actingAs($student, 'web')
+            ->postJson(route('student.question-bank.generate-test', [
+                'sector' => 'hsc',
+                'subject_id' => $subject->id,
+                'question_count' => 5,
+                'duration_minutes' => 10,
+            ]));
+
+        $testRes->assertStatus(200)
+            ->assertJsonStructure(['success', 'exam_id', 'redirect_url']);
+
+        $session = ExamSession::find($testRes->json('exam_id'));
+        $this->assertNotNull($session);
+        $this->assertCount(1, $session->questions);
+    }
 }

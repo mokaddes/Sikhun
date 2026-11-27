@@ -26,40 +26,28 @@ class QuestionBankController extends BaseApiController
             'ssc' => QuestionBank::published()->where('segment', 'ssc')->count(),
         ];
 
-        $isUnavailable = false;
-        if ($student) {
-            if ($studentType === 'job') {
-                $activeSector = 'job';
-            } elseif ($studentType === 'admission') {
-                $activeSector = 'admission';
-            } else {
-                $activeSector = in_array($studentType, ['hsc', 'ssc', 'university'], true) ? $studentType : 'ssc';
-                $isUnavailable = true;
-            }
+        $validSectors = ['admission', 'job', 'hsc', 'ssc'];
+        $requestedSector = $request->input('sector');
+
+        if ($requestedSector && in_array($requestedSector, $validSectors, true)) {
+            $activeSector = $requestedSector;
+        } elseif ($student && in_array($studentType, $validSectors, true) && ($sectorCounts[$studentType] ?? 0) > 0) {
+            $activeSector = $studentType;
         } else {
-            $requestedSector = $request->input('sector');
-            $activeSector = ($requestedSector && in_array($requestedSector, ['admission', 'job'], true))
-                ? $requestedSector
-                : 'admission';
+            $fallbackOrder = $studentType === 'ssc'
+                ? ['hsc', 'admission', 'job', 'ssc']
+                : ['admission', 'hsc', 'job', 'ssc'];
+
+            $activeSector = 'admission';
+            foreach ($fallbackOrder as $candidate) {
+                if (($sectorCounts[$candidate] ?? 0) > 0) {
+                    $activeSector = $candidate;
+                    break;
+                }
+            }
         }
 
         $isPaid = (bool) ($student?->activeSubscription || ($student && app(AccessGrantService::class)->hasActiveAccess($student)));
-
-        if ($isUnavailable) {
-            return $this->success([
-                'questions' => [],
-                'subjects' => [],
-                'exams' => [],
-                'filters' => ['sector' => $activeSector],
-                'is_paid' => $isPaid,
-                'student_type' => $studentType,
-                'locked_to_goal' => true,
-                'student_goal' => $student->type,
-                'active_sector' => $activeSector,
-                'sector_counts' => $sectorCounts,
-                'is_unavailable' => true,
-            ], 'Question bank is currently available only for Admission and Job preparation.');
-        }
 
         $query = QuestionBank::query()
             ->with(['subject', 'topic'])
@@ -102,9 +90,6 @@ class QuestionBankController extends BaseApiController
         $questions = $query->latest('id')->paginate(20);
 
         $subjects = QuestionSubject::active()
-            ->where(function ($q) use ($activeSector) {
-                $q->where('segment', $activeSector)->orWhere('segment', 'both');
-            })
             ->whereHas('questions', function ($q) use ($activeSector) {
                 $q->published()->where('segment', $activeSector);
             })
@@ -139,7 +124,7 @@ class QuestionBankController extends BaseApiController
             ]),
             'is_paid' => $isPaid,
             'student_type' => $studentType,
-            'locked_to_goal' => (bool) $student,
+            'locked_to_goal' => false,
             'student_goal' => $student?->type,
             'active_sector' => $activeSector,
             'sector_counts' => $sectorCounts,
@@ -149,13 +134,7 @@ class QuestionBankController extends BaseApiController
 
     public function aiExplain(int $id): JsonResponse
     {
-        /** @var Student|null $student */
-        $student = auth('sanctum')->user();
         $question = QuestionBank::with('subject')->findOrFail($id);
-
-        if ($student && (! in_array($student->type, ['admission', 'job'], true) || $question->segment !== $student->type)) {
-            return $this->error('আপনার শিক্ষা লক্ষ্য অনুযায়ী এই প্রশ্নের অ্যাক্সেস নেই।', [], 403);
-        }
 
         if (! empty($question->meta['ai_explanation'])) {
             return $this->success(['explanation' => $question->meta['ai_explanation']]);
@@ -186,15 +165,12 @@ class QuestionBankController extends BaseApiController
         $student = auth('sanctum')->user();
         $studentType = $student->type ?? '';
 
-        if (! in_array($studentType, ['admission', 'job'], true)) {
-            return $this->error('SSC, HSC এবং বিশ্ববিদ্যালয় অ্যাকাডেমিক শিক্ষার্থীদের জন্য প্রশ্নব্যাংক এখনো চালু হয়নি।', [], 403);
-        }
-
         if (! $student->activeSubscription && ! app(AccessGrantService::class)->hasActiveAccess($student)) {
             return $this->error('প্রশ্নব্যাংক থেকে আনলিমিটেড মক টেস্ট তৈরি করতে Sikhun প্রিমিয়াম প্ল্যানে আপগ্রেড করুন।', ['requires_upgrade' => true], 403);
         }
 
         $validated = $request->validate([
+            'sector' => ['nullable', 'string', 'in:admission,job,hsc,ssc'],
             'subject_id' => ['nullable', 'integer'],
             'origin_tag' => ['nullable', 'string'],
             'question_count' => ['nullable', 'integer', 'min:5', 'max:100'],
@@ -206,10 +182,14 @@ class QuestionBankController extends BaseApiController
         $durationMinutes = (int) ($validated['duration_minutes'] ?? 20);
         $negativeMarking = $request->has('negative_marking') ? $request->boolean('negative_marking') : true;
 
+        $segment = $validated['sector'] ?? (in_array($studentType, ['admission', 'job', 'hsc', 'ssc'], true) ? $studentType : null);
+
         $query = QuestionBank::query()
             ->with('subject')
-            ->published()
-            ->where('segment', $studentType);
+            ->published();
+        if ($segment) {
+            $query->where('segment', $segment);
+        }
 
         $subjectName = null;
         if (! empty($validated['subject_id'])) {

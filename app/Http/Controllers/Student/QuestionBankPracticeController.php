@@ -32,51 +32,30 @@ class QuestionBankPracticeController extends Controller
             'ssc' => QuestionBank::published()->where('segment', 'ssc')->count(),
         ];
 
-        // Determine active sector strictly based on student education goal when logged in
-        $isUnavailable = false;
+        // Determine active sector without locking out any student goal
+        $validSectors = ['admission', 'job', 'hsc', 'ssc'];
+        $requestedSector = $request->input('sector');
 
-        if ($student) {
-            if ($studentType === 'job') {
-                $activeSector = 'job';
-            } elseif ($studentType === 'admission') {
-                $activeSector = 'admission';
-            } else {
-                // Only admission and job students can access Question Bank
-                $activeSector = in_array($studentType, ['hsc', 'ssc', 'university'], true) ? $studentType : 'ssc';
-                $isUnavailable = true;
-            }
-
-            // If user requested another sector via query string, strip it to maintain strict goal isolation
-            if ($request->filled('sector') && $request->input('sector') !== $activeSector) {
-                return redirect()->route('student.question-bank.index', $request->except('sector'));
-            }
+        if ($requestedSector && in_array($requestedSector, $validSectors, true)) {
+            $activeSector = $requestedSector;
+        } elseif ($student && in_array($studentType, $validSectors, true) && ($sectorCounts[$studentType] ?? 0) > 0) {
+            $activeSector = $studentType;
         } else {
-            $requestedSector = $request->input('sector');
-            $activeSector = ($requestedSector && in_array($requestedSector, ['admission', 'job'], true))
-                ? $requestedSector
-                : 'admission';
+            $fallbackOrder = $studentType === 'ssc'
+                ? ['hsc', 'admission', 'job', 'ssc']
+                : ['admission', 'hsc', 'job', 'ssc'];
+
+            $activeSector = 'admission';
+            foreach ($fallbackOrder as $candidate) {
+                if (($sectorCounts[$candidate] ?? 0) > 0) {
+                    $activeSector = $candidate;
+                    break;
+                }
+            }
         }
 
         // Check if student is a paid subscriber
         $isPaid = (bool) ($student?->activeSubscription || ($student && app(AccessGrantService::class)->hasActiveAccess($student)));
-
-        if ($isUnavailable) {
-            return Inertia::render('Student/QuestionBank/Index', [
-                'questions' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20),
-                'subjects' => [],
-                'exams' => [],
-                'filters' => [
-                    'sector' => $activeSector,
-                ],
-                'isPaid' => $isPaid,
-                'studentType' => $studentType,
-                'lockedToGoal' => true,
-                'studentGoal' => $student->type,
-                'activeSector' => $activeSector,
-                'sectorCounts' => $sectorCounts,
-                'isUnavailable' => true,
-            ]);
-        }
 
         $query = QuestionBank::query()
             ->with(['subject', 'topic'])
@@ -120,12 +99,8 @@ class QuestionBankPracticeController extends Controller
 
         $questions = $query->latest('id')->paginate(20)->withQueryString();
 
-        // Available subjects for the active sector
+        // Available subjects for the active sector (derive from published questions so shared subjects like Physics/Chemistry/Biology also show for HSC)
         $subjects = QuestionSubject::active()
-            ->where(function ($q) use ($activeSector) {
-                $q->where('segment', $activeSector)
-                  ->orWhere('segment', 'both');
-            })
             ->whereHas('questions', function ($q) use ($activeSector) {
                 $q->published()->where('segment', $activeSector);
             })
@@ -155,7 +130,7 @@ class QuestionBankPracticeController extends Controller
             ]),
             'isPaid' => $isPaid,
             'studentType' => $studentType,
-            'lockedToGoal' => (bool) $student,
+            'lockedToGoal' => false,
             'studentGoal' => $student?->type,
             'activeSector' => $activeSector,
             'sectorCounts' => $sectorCounts,
@@ -168,17 +143,7 @@ class QuestionBankPracticeController extends Controller
      */
     public function aiExplain(Request $request, int $id): JsonResponse
     {
-        $student = auth('web')->user();
         $question = QuestionBank::with('subject')->findOrFail($id);
-
-        if ($student) {
-            if (!in_array($student->type, ['admission', 'job'], true) || $question->segment !== $student->type) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'আপনার শিক্ষা লক্ষ্য অনুযায়ী এই প্রশ্নের অ্যাক্সেস নেই।',
-                ], 403);
-            }
-        }
 
         // If question already has an explanation in meta['ai_explanation'] or in explanation field, return it.
         if (!empty($question->meta['ai_explanation'])) {
@@ -224,12 +189,6 @@ class QuestionBankPracticeController extends Controller
         }
 
         $studentType = $student->type ?? '';
-        if (!in_array($studentType, ['admission', 'job'], true)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'SSC, HSC এবং বিশ্ববিদ্যালয় অ্যাকাডেমিক শিক্ষার্থীদের জন্য প্রশ্নব্যাংক এখনো চালু হয়নি।'
-            ], 403);
-        }
 
         // Check paid access
         if (!$student->activeSubscription && !app(AccessGrantService::class)->hasActiveAccess($student)) {
@@ -242,6 +201,7 @@ class QuestionBankPracticeController extends Controller
 
         // Validate params
         $validated = $request->validate([
+            'sector' => ['nullable', 'string', 'in:admission,job,hsc,ssc'],
             'subject_id' => ['nullable', 'integer'],
             'origin_tag' => ['nullable', 'string'],
             'question_count' => ['nullable', 'integer', 'min:5', 'max:100'],
@@ -253,11 +213,15 @@ class QuestionBankPracticeController extends Controller
         $durationMinutes = (int) ($validated['duration_minutes'] ?? 20);
         $negativeMarking = $request->has('negative_marking') ? $request->boolean('negative_marking') : true;
 
-        // Query random questions matching criteria and strictly isolated to student's segment
+        $segment = $validated['sector'] ?? (in_array($studentType, ['admission', 'job', 'hsc', 'ssc'], true) ? $studentType : null);
+
+        // Query random questions matching criteria
         $query = QuestionBank::query()
             ->with('subject')
-            ->published()
-            ->where('segment', $studentType);
+            ->published();
+        if ($segment) {
+            $query->where('segment', $segment);
+        }
 
         $subjectName = null;
         if (!empty($validated['subject_id'])) {

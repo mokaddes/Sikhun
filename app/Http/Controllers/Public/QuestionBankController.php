@@ -18,15 +18,15 @@ class QuestionBankController extends Controller
     {
         $student = $request->user('web');
         $studentType = strtolower($student?->type ?? '');
+        $validSegments = ['admission', 'job', 'hsc', 'ssc'];
 
-        if ($student) {
-            abort_unless(in_array($studentType, ['admission', 'job'], true), 403, 'Question Bank is available only for Admission and Job students.');
+        $requestedSegment = $request->input('segment');
+        if ($requestedSegment && in_array($requestedSegment, $validSegments, true)) {
+            $segment = $requestedSegment;
+        } elseif (in_array($studentType, $validSegments, true)) {
             $segment = $studentType;
         } else {
-            $segment = $request->input('segment');
-            if (! in_array($segment, ['admission', 'job'], true)) {
-                $segment = 'admission';
-            }
+            $segment = 'admission';
         }
 
         $query = QuestionBank::query()
@@ -84,7 +84,7 @@ class QuestionBankController extends Controller
         });
 
         $subjects = QuestionSubject::active()
-            ->forSegment($segment)
+            ->whereHas('questions', fn ($q) => $q->published()->where('segment', $segment))
             ->get(['id', 'name_bn', 'name_en', 'slug', 'icon']);
 
         $origins = QuestionBank::published()
@@ -120,6 +120,18 @@ class QuestionBankController extends Controller
                       ->orWhereJsonContains('allowed_student_types', $studentType);
                 })->count(),
             'job' => QuestionBank::published()->where('segment', 'job')
+                ->where(function ($q) use ($studentType) {
+                    $q->whereNull('allowed_student_types')
+                      ->orWhereJsonContains('allowed_student_types', 'all')
+                      ->orWhereJsonContains('allowed_student_types', $studentType);
+                })->count(),
+            'hsc' => QuestionBank::published()->where('segment', 'hsc')
+                ->where(function ($q) use ($studentType) {
+                    $q->whereNull('allowed_student_types')
+                      ->orWhereJsonContains('allowed_student_types', 'all')
+                      ->orWhereJsonContains('allowed_student_types', $studentType);
+                })->count(),
+            'ssc' => QuestionBank::published()->where('segment', 'ssc')
                 ->where(function ($q) use ($studentType) {
                     $q->whereNull('allowed_student_types')
                       ->orWhereJsonContains('allowed_student_types', 'all')

@@ -28,8 +28,7 @@ const page = usePage();
 
 const allowQuestionBank = computed(() => {
     if (props.canUseQuestionBank !== null) return props.canUseQuestionBank;
-    const student = page.props.auth?.student;
-    return !student || ['admission', 'job'].includes(student.type);
+    return true;
 });
 
 const sourceType = ref(

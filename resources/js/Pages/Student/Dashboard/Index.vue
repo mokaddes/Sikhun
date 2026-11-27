@@ -40,9 +40,7 @@ const isAdmission = computed(() => {
     return student?.education_type === 'admission' || student?.type === 'admission';
 });
 
-const canAccessQuestionBank = computed(() => {
-    return ['admission', 'job'].includes(student?.type);
-});
+const canAccessQuestionBank = computed(() => true);
 
 const showVerifyModal = ref(false);
 const verifyForm = useForm({
@@ -274,13 +272,13 @@ const today = computed(() => new Date().toLocaleDateString(locale.value === 'bn'
                         <span class="grid h-11 w-11 place-items-center rounded-xl bg-amber-500/15 text-amber-500 text-xl group-hover:scale-110 transition-transform">
                             🏛️
                         </span>
-                        <span class="rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-400">২০,০০০+ প্রশ্ন</span>
+                        <span class="rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-400">৪৬,০০০+ প্রশ্ন</span>
                     </div>
                     <div class="mt-3">
                         <h3 class="font-heading font-bold text-sm text-[var(--text)] group-hover:text-amber-500 transition-colors">
-                            বিগত প্রশ্নব্যাংক (DU/RU/GST/BUET/BCS)
+                            প্রশ্নব্যাংক (HSC / ভর্তি / BCS ও চাকরি)
                         </h3>
-                        <p class="text-[11px] text-[var(--text-muted)] mt-1 leading-relaxed">বিশ্ববিদ্যালয় ভর্তি, মেডিকেল ও বিসিএস বিগত প্রশ্নের সমাধান ও AI ব্যাখ্যা</p>
+                        <p class="text-[11px] text-[var(--text-muted)] mt-1 leading-relaxed">এইচএসসি, বিশ্ববিদ্যালয় ভর্তি ও বিসিএস বিগত প্রশ্নের সমাধান ও AI ব্যাখ্যা</p>
                     </div>
                 </Link>
 

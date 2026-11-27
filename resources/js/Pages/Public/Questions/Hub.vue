@@ -34,12 +34,12 @@ const filteredCollections = computed(() => {
                         <span>{{ (stats?.total || 0).toLocaleString() }}+ MCQ</span>
                     </span>
                     <h1 class="font-heading text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white leading-tight">
-                        {{ en ? 'Bangladesh Exam Question Bank & Solutions' : 'বিসিএস, বিশ্ববিদ্যালয় ভর্তি ও সরকারি চাকরির প্রশ্নব্যাংক' }}
+                        {{ en ? 'HSC, Admission & Job Question Bank' : 'এইচএসসি, ভর্তি ও সরকারি চাকরির প্রশ্নব্যাংক' }}
                     </h1>
                     <p class="mt-4 text-slate-600 dark:text-slate-300 text-base md:text-lg leading-relaxed">
                         {{ en
-                            ? 'Practice verified past MCQs from DU, RU, GST, BUET, BCS Preliminary, Primary Assistant Teacher (DPE), Bangladesh Bank, and NTRCA with instant answers and explanations.'
-                            : 'ঢাকা বিশ্ববিদ্যালয়, রাজশাহী বিশ্ববিদ্যালয়, গুচ্ছ, বুয়েট, বিসিএস প্রিলিমিনারি, প্রাথমিক শিক্ষক নিয়োগ, বাংলাদেশ ব্যাংক ও NTRCA-এর বিগত বছরের আসল MCQ প্রশ্ন ও ব্যাখ্যা সরাসরি অনলাইনে ফ্রি প্র্যাকটিস করুন।'
+                            ? 'Practice verified past MCQs from HSC boards, DU, RU, GST, BUET, BCS Preliminary, Primary Assistant Teacher (DPE), Bangladesh Bank, and NTRCA with instant answers and explanations.'
+                            : 'এইচএসসি (HSC) বোর্ড ও টেস্ট পেপার, ঢাকা বিশ্ববিদ্যালয়, রাজশাহী বিশ্ববিদ্যালয়, গুচ্ছ, বুয়েট, বিসিএস প্রিলিমিনারি, প্রাথমিক শিক্ষক নিয়োগ, বাংলাদেশ ব্যাংক ও NTRCA-এর বিগত বছরের আসল MCQ প্রশ্ন ও ব্যাখ্যা সরাসরি অনলাইনে ফ্রি প্র্যাকটিস করুন।'
                         }}
                     </p>
                 </div>
@@ -81,6 +81,7 @@ const filteredCollections = computed(() => {
                     <button
                         v-for="tab in [
                             { key: 'all', label: en ? 'All Exams' : 'সকল পরীক্ষা' },
+                            { key: 'hsc', label: en ? 'HSC' : 'এইচএসসি (HSC)' },
                             { key: 'job', label: en ? 'BCS & Job' : 'বিসিএস ও চাকরি' },
                             { key: 'admission', label: en ? 'University Admission' : 'বিশ্ববিদ্যালয় ভর্তি' },
                         ]"
@@ -110,12 +111,14 @@ const filteredCollections = computed(() => {
                             <span
                                 :class="[
                                     'px-2.5 py-0.5 rounded-full text-[11px] font-bold',
-                                    col.segment === 'job'
-                                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
-                                        : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                                    col.segment === 'hsc'
+                                        ? 'bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-500/20'
+                                        : (col.segment === 'job'
+                                            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                                            : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20')
                                 ]"
                             >
-                                {{ col.segment === 'job' ? (en ? 'Job & BCS' : 'বিসিএস ও চাকরি') : (en ? 'Admission' : 'বিশ্ববিদ্যালয় ভর্তি') }}
+                                {{ col.segment === 'hsc' ? (en ? 'HSC' : 'এইচএসসি (HSC)') : (col.segment === 'job' ? (en ? 'Job & BCS' : 'বিসিএস ও চাকরি') : (en ? 'Admission' : 'বিশ্ববিদ্যালয় ভর্তি')) }}
                             </span>
                             <span class="text-xs font-mono font-bold text-slate-600 dark:text-slate-300">
                                 {{ (col.count || 0).toLocaleString() }} MCQ
@@ -173,8 +176,8 @@ const filteredCollections = computed(() => {
                     </h2>
                     <p class="mt-2 text-slate-300 text-sm md:text-base">
                         {{ en
-                            ? 'Create a free Sikhun account to unlock full custom exams, Mistake Review ("আমার ভুলসমূহ"), and AI-powered explanations for all 38,499+ questions.'
-                            : 'মাত্র ৩০ সেকেন্ডে ফ্রি অ্যাকাউন্ট খুলুন এবং ৩৮,৪৯৯+ প্রশ্নের ওপর কাস্টম মডেল টেস্ট, "আমার ভুলসমূহ" ট্র্যাকার এবং ২৪/৭ AI টিউটরের সহায়তা নিন।'
+                            ? `Create a free Sikhun account to unlock full custom exams, Mistake Review ("আমার ভুলসমূহ"), and AI-powered explanations for all ${(stats?.total || 0).toLocaleString()}+ questions.`
+                            : `মাত্র ৩০ সেকেন্ডে ফ্রি অ্যাকাউন্ট খুলুন এবং ${(stats?.total || 0).toLocaleString()}+ প্রশ্নের ওপর কাস্টম মডেল টেস্ট, "আমার ভুলসমূহ" ট্র্যাকার এবং ২৪/৭ AI টিউটরের সহায়তা নিন।`
                         }}
                     </p>
                 </div>

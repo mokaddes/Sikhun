@@ -90,7 +90,7 @@ class DashboardController extends BaseApiController
             'my_rank' => $myRank,
             'active_subscription' => $student->activeSubscription()->with('plan')->first(),
             'access' => $grants->accessSummary($student),
-            'can_access_question_bank' => in_array($student->type, ['admission', 'job'], true),
+            'can_access_question_bank' => true,
             'onboarding' => [
                 'completed' => (bool) $student->onboarding_completed_at,
                 'progress' => $student->onboarding_progress ?? [],

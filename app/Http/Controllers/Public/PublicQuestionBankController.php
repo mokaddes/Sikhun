@@ -28,10 +28,11 @@ class PublicQuestionBankController extends Controller
 
     public function hub(): Response
     {
-        $payload = Cache::remember('public_questions_hub_v1', 1800, function () {
+        $payload = Cache::remember('public_questions_hub_v2', 1800, function () {
             $totalQuestions = QuestionBank::published()->count();
             $admissionCount = QuestionBank::published()->where('segment', 'admission')->count();
             $jobCount = QuestionBank::published()->where('segment', 'job')->count();
+            $hscCount = QuestionBank::published()->where('segment', 'hsc')->count();
 
             $collections = [];
             foreach (PublicQuestionCatalog::collections() as $slug => $meta) {
@@ -54,6 +55,7 @@ class PublicQuestionBankController extends Controller
                     'total' => $totalQuestions,
                     'admission' => $admissionCount,
                     'job' => $jobCount,
+                    'hsc' => $hscCount,
                     'collections' => count($collections),
                 ],
                 'collections' => $collections,

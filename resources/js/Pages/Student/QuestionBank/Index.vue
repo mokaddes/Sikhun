@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, router, Link } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
 import Pagination from '@/Components/UI/Pagination.vue';
@@ -95,18 +95,21 @@ const sectors = [
     },
 ];
 
-const activeSectors = computed(() => sectors.filter((s) => ['admission', 'job'].includes(s.key)));
+const activeSectors = computed(() => {
+    const list = sectors.filter((s) => (props.sectorCounts?.[s.key] ?? 0) > 0);
+    return list.length ? list : sectors.filter((s) => ['admission', 'job', 'hsc'].includes(s.key));
+});
 
 const currentSector = ref(props.activeSector || 'admission');
+watch(() => props.activeSector, (val) => {
+    if (val) currentSector.value = val;
+});
+
 const activeSectorData = computed(() => {
     return sectors.find((s) => s.key === currentSector.value) || sectors[0];
 });
 
-const isSectorUnavailable = computed(() => {
-    if (props.isUnavailable) return true;
-    if (props.lockedToGoal && !['admission', 'job'].includes(props.studentGoal)) return true;
-    return (props.sectorCounts?.[currentSector.value] ?? 0) === 0;
-});
+const isSectorUnavailable = computed(() => Boolean(props.isUnavailable));
 
 // State for active practice interaction
 const selectedAnswers = ref({}); // { [questionId]: 'A' }
@@ -167,7 +170,6 @@ const testError = ref('');
 
 // Switch sector
 function setSector(secKey) {
-    if (props.lockedToGoal) return;
     if (currentSector.value === secKey) return;
     currentSector.value = secKey;
     selectedSubjectId.value = '';
@@ -254,7 +256,10 @@ async function handleGenerateTest() {
     testError.value = '';
 
     try {
-        const res = await axios.post('/question-bank/generate-test', testForm.value);
+        const res = await axios.post('/question-bank/generate-test', {
+            ...testForm.value,
+            sector: currentSector.value,
+        });
         if (res.data.success && res.data.redirect_url) {
             window.location.href = res.data.redirect_url;
         }
@@ -269,54 +274,47 @@ async function handleGenerateTest() {
 <template>
     <Head title="প্রশ্নব্যাংক ও অনুশীলন | Sikhun.com" />
     <StudentLayout>
-        <!-- Locked Student Goal Indicator (When student is logged in) -->
-        <div v-if="props.lockedToGoal" class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 shadow-xs">
-            <div class="flex items-center gap-2.5">
-                <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
-                    :class="currentSector === 'job' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20' : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20'">
-                    <component :is="activeSectorData.icon" class="h-3.5 w-3.5 shrink-0" />
-                    <span>আপনার লক্ষ্য: {{ activeSectorData.shortTitle }}</span>
-                </span>
-                <span class="text-xs text-[var(--text-muted)] hidden sm:inline">
-                    আপনার শিক্ষা লক্ষ্য অনুসারে প্রশ্নব্যাংকটি প্রদর্শিত হচ্ছে।
-                </span>
-            </div>
-            <Link href="/profile/settings" class="inline-flex items-center gap-1 text-xs font-semibold text-[var(--primary)] hover:underline">
+        <!-- Sector Selector Navigation Pills (All Students & Guests) -->
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <nav class="flex flex-wrap items-center gap-2" aria-label="Question Bank Sectors">
+                <button
+                    v-for="sec in activeSectors"
+                    :key="sec.key"
+                    @click="setSector(sec.key)"
+                    type="button"
+                    class="flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                    :class="[
+                        currentSector === sec.key
+                            ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/20 ring-2 ring-[var(--primary)]/30'
+                            : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--primary)]/40 hover:text-[var(--text)]'
+                    ]"
+                >
+                    <component :is="sec.icon" class="h-4 w-4 shrink-0" />
+                    <span>{{ sec.shortTitle }}</span>
+                    <span
+                        class="rounded-full px-2 py-0.5 text-[10px] font-mono font-bold"
+                        :class="[
+                            currentSector === sec.key
+                                ? 'bg-white/20 text-white'
+                                : (props.sectorCounts?.[sec.key] > 0
+                                    ? 'bg-[var(--surface2)] text-[var(--text)]'
+                                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400')
+                        ]"
+                    >
+                        {{ props.sectorCounts?.[sec.key] > 0 ? toBnDigits(props.sectorCounts[sec.key]) : 'শীঘ্রই' }}
+                    </span>
+                </button>
+            </nav>
+
+            <Link
+                v-if="props.studentGoal"
+                href="/profile/settings"
+                class="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--primary)] hover:border-[var(--primary)]/40 transition"
+            >
                 <span>শিক্ষা লক্ষ্য পরিবর্তন করুন</span>
                 <ArrowRightIcon class="h-3.5 w-3.5" />
             </Link>
         </div>
-
-        <!-- Sector Selector Navigation Pills (Guest Browsing Only) -->
-        <nav v-else class="mb-4 flex flex-wrap items-center gap-2" aria-label="Question Bank Sectors">
-            <button
-                v-for="sec in activeSectors"
-                :key="sec.key"
-                @click="setSector(sec.key)"
-                type="button"
-                class="flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer shadow-xs"
-                :class="[
-                    currentSector === sec.key
-                        ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/20 ring-2 ring-[var(--primary)]/30'
-                        : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--primary)]/40 hover:text-[var(--text)]'
-                ]"
-            >
-                <component :is="sec.icon" class="h-4 w-4 shrink-0" />
-                <span>{{ sec.shortTitle }}</span>
-                <span
-                    class="rounded-full px-2 py-0.5 text-[10px] font-mono font-bold"
-                    :class="[
-                        currentSector === sec.key
-                            ? 'bg-white/20 text-white'
-                            : (props.sectorCounts?.[sec.key] > 0
-                                ? 'bg-[var(--surface2)] text-[var(--text)]'
-                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400')
-                    ]"
-                >
-                    {{ props.sectorCounts?.[sec.key] > 0 ? toBnDigits(props.sectorCounts[sec.key]) : 'শীঘ্রই' }}
-                </span>
-            </button>
-        </nav>
 
         <!-- Unavailable / Coming Soon state for SSC, HSC, and University students -->
         <div v-if="isSectorUnavailable" class="mb-6 rounded-3xl border border-dashed border-amber-500/30 bg-amber-500/5 p-8 md:p-12 text-center">
@@ -681,11 +679,19 @@ async function handleGenerateTest() {
                             {{ activeSectorData.title }} দ্রুত যুক্ত করা হচ্ছে
                         </h2>
                         <p class="text-xs sm:text-sm text-[var(--text-muted)] max-w-lg mx-auto mt-1 leading-relaxed">
-                            বর্তমানে শিখুনে বিশ্ববিদ্যালয় ভর্তি (১৫,০০০+ প্রশ্ন) এবং বিসিএস ও চাকরি প্রশ্নব্যাংক (৩৪,০০০+ প্রশ্ন) সক্রিয় রয়েছে। এইচএসসি ও এসএসসি প্রশ্নব্যাংক প্রস্তুত করার কাজ দ্রুতগতিতে চলছে।
+                            বর্তমানে শিখুনে বিশ্ববিদ্যালয় ভর্তি, বিসিএস ও চাকরি এবং এইচএসসি (HSC) প্রশ্নব্যাংক সক্রিয় রয়েছে। এসএসসি প্রশ্নব্যাংক প্রস্তুত করার কাজ চলছে।
                         </p>
                     </div>
 
                     <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+                        <button
+                            type="button"
+                            @click="setSector('hsc')"
+                            class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm cursor-pointer flex items-center gap-1.5"
+                        >
+                            <BookOpenIcon class="w-4 h-4" />
+                            <span>এইচএসসি (HSC) প্রশ্নব্যাংক দেখুন ({{ toBnDigits(props.sectorCounts?.hsc || 0) }})</span>
+                        </button>
                         <button
                             type="button"
                             @click="setSector('admission')"
@@ -882,18 +888,11 @@ async function handleGenerateTest() {
                         </div>
 
                         <!-- Sector selection -->
-                        <div v-if="props.lockedToGoal" class="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface2)]">
-                            <span class="block text-[10px] font-bold uppercase text-[var(--text-muted)] mb-1">আপনার স্টাডি লক্ষ্য</span>
-                            <div class="font-bold text-sm text-[var(--text)]">{{ activeSectorData.shortTitle }}</div>
-                            <Link href="/profile/settings" class="mt-2 text-xs font-semibold text-[var(--primary)] hover:underline inline-flex items-center gap-1">
-                                লক্ষ্য পরিবর্তন করুন →
-                            </Link>
-                        </div>
-                        <div v-else>
+                        <div>
                             <label class="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase">সেক্টর নির্বাচন</label>
                             <div class="grid grid-cols-2 gap-2">
                                 <button
-                                    v-for="sec in sectors"
+                                    v-for="sec in activeSectors"
                                     :key="sec.key"
                                     @click="setSector(sec.key); showMobileDrawer = false;"
                                     type="button"

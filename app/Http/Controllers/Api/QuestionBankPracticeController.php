@@ -12,22 +12,34 @@ use Illuminate\Http\Request;
 
 class QuestionBankPracticeController extends BaseApiController
 {
-    private function resolveAllowedSector(): ?string
+    private function resolveAllowedSector(?Request $request = null): string
     {
+        $validSectors = ['admission', 'job', 'hsc', 'ssc'];
+        $requested = $request?->input('sector');
+        if ($requested && in_array($requested, $validSectors, true)) {
+            return $requested;
+        }
+
         $student = auth('sanctum')->user();
         $type = $student?->type ?? '';
 
-        return in_array($type, ['admission', 'job'], true) ? $type : null;
+        if (in_array($type, $validSectors, true) && QuestionBank::published()->where('segment', $type)->exists()) {
+            return $type;
+        }
+
+        foreach (['admission', 'hsc', 'job', 'ssc'] as $candidate) {
+            if (QuestionBank::published()->where('segment', $candidate)->exists()) {
+                return $candidate;
+            }
+        }
+
+        return 'admission';
     }
 
     public function index(Request $request): JsonResponse
     {
         $student = auth('sanctum')->user();
-        $sector = $this->resolveAllowedSector();
-
-        if (! $sector) {
-            return $this->error('Question Bank is available only for Admission and Job preparation students.', [], 403);
-        }
+        $sector = $this->resolveAllowedSector($request);
 
         $query = QuestionBank::query()
             ->with(['subject', 'topic'])
@@ -55,7 +67,7 @@ class QuestionBankPracticeController extends BaseApiController
             'sector' => $sector,
             'is_paid' => $isPaid,
             'subjects' => QuestionSubject::where('is_active', true)
-                ->where(fn ($q) => $q->where('segment', $sector)->orWhere('segment', 'both'))
+                ->whereHas('questions', fn ($q) => $q->published()->where('segment', $sector))
                 ->orderBy('name_en')
                 ->get(['id', 'name_en', 'name_bn']),
         ]);
@@ -64,11 +76,6 @@ class QuestionBankPracticeController extends BaseApiController
     public function askAi(Request $request, QuestionBank $question, QuestionAiStructuringService $aiService): JsonResponse
     {
         $student = auth('sanctum')->user();
-        $sector = $this->resolveAllowedSector();
-
-        if (! $sector || $question->segment !== $sector) {
-            return $this->error('You do not have access to this question segment.', [], 403);
-        }
 
         $isPaid = (bool) ($student?->activeSubscription || ($student && app(AccessGrantService::class)->hasActiveAccess($student)));
 
@@ -92,13 +99,10 @@ class QuestionBankPracticeController extends BaseApiController
     public function startExam(Request $request): JsonResponse
     {
         $student = auth('sanctum')->user();
-        $sector = $this->resolveAllowedSector();
-
-        if (! $sector) {
-            return $this->error('Question Bank is available only for Admission and Job preparation students.', [], 403);
-        }
+        $sector = $this->resolveAllowedSector($request);
 
         $validated = $request->validate([
+            'sector' => ['nullable', 'string', 'in:admission,job,hsc,ssc'],
             'subject_id' => ['nullable', 'integer', 'exists:question_subjects,id'],
             'origin_tag' => ['nullable', 'string', 'max:255'],
             'question_count' => ['nullable', 'integer', 'min:5', 'max:100'],

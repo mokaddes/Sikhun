@@ -28,8 +28,11 @@ class FlashcardController extends BaseApiController
     public function createData(BookAccessService $access): JsonResponse
     {
         $student = auth('sanctum')->user();
-        $canUseQuestionBank = in_array($student->type, ['admission', 'job'], true);
-        $studentSector = $student->type === 'job' ? 'job' : 'admission';
+        $canUseQuestionBank = true;
+        $validSectors = ['admission', 'job', 'hsc', 'ssc'];
+        $studentSector = (in_array($student->type, $validSectors, true) && QuestionBank::published()->where('segment', $student->type)->exists())
+            ? $student->type
+            : 'admission';
 
         $books = Book::query()
             ->where(function ($query) use ($student) {
@@ -50,26 +53,27 @@ class FlashcardController extends BaseApiController
             ->where('processing_status', 'completed')
             ->get(['id', 'title', 'total_pages']);
 
-        $subjects = $canUseQuestionBank
-            ? QuestionSubject::active()
-                ->where(function ($q) use ($studentSector) {
-                    $q->where('segment', $studentSector)->orWhere('segment', 'both');
-                })
-                ->orderBy('name_bn')
-                ->get(['id', 'name_bn', 'name_en', 'segment'])
-            : collect();
+        $subjects = QuestionSubject::active()
+            ->whereHas('questions', fn ($q) => $q->published()->where('segment', $studentSector))
+            ->orderBy('name_bn')
+            ->get(['id', 'name_bn', 'name_en', 'segment']);
 
-        $exams = $canUseQuestionBank
-            ? QuestionBank::published()
-                ->where('segment', $studentSector)
-                ->whereNotNull('origin_tag')
-                ->selectRaw('origin_tag, exam_name, count(*) as count')
-                ->groupBy('origin_tag', 'exam_name')
-                ->having('count', '>', 0)
-                ->orderByDesc('count')
-                ->limit(30)
-                ->get()
-            : collect();
+        if ($subjects->isEmpty()) {
+            $subjects = QuestionSubject::active()
+                ->whereHas('questions', fn ($q) => $q->published())
+                ->orderBy('name_bn')
+                ->get(['id', 'name_bn', 'name_en', 'segment']);
+        }
+
+        $exams = QuestionBank::published()
+            ->where('segment', $studentSector)
+            ->whereNotNull('origin_tag')
+            ->selectRaw('origin_tag, exam_name, count(*) as count')
+            ->groupBy('origin_tag', 'exam_name')
+            ->having('count', '>', 0)
+            ->orderByDesc('count')
+            ->limit(30)
+            ->get();
 
         return $this->success([
             'books' => $books,
@@ -105,11 +109,12 @@ class FlashcardController extends BaseApiController
             $sourceLabel = $source['source_label'];
             $sourceReferences = $source['references'];
         } elseif ($sourceType === 'question_bank') {
-            abort_unless(in_array($student->type, ['admission', 'job'], true), 403, 'Question Bank flashcards are currently available only for Admission and Job students.');
+            $validSectors = ['admission', 'job', 'hsc', 'ssc'];
+            $sector = $request->input('sector') ?: (in_array($student->type, $validSectors, true) ? $student->type : null);
             $source = $sources->fromQuestionBank(
                 (int) $request->subject_id,
                 $request->origin_tag,
-                $student->type
+                $sector
             );
             $sourceText = $source['content'];
             $sourceLabel = $source['source_label'];

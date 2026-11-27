@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
+import CouponInput from '@/Components/Checkout/CouponInput.vue';
 import { useI18n } from '@/i18n';
 import {
     AcademicCapIcon,
@@ -116,8 +117,16 @@ const guestForm = useForm({
 const loginRedirectUrl = computed(() => `/login?redirect=${encodeURIComponent(`/courses/${props.course.slug}`)}`);
 const registerRedirectUrl = computed(() => `/register?redirect=${encodeURIComponent(`/courses/${props.course.slug}`)}`);
 
+const appliedCourseCoupon = ref(null);
+const effectiveCoursePrice = computed(() => (
+    appliedCourseCoupon.value ? Number(appliedCourseCoupon.value.final_amount || 0) : Number(props.course?.price || 0)
+));
+
 function enrollAuthenticated(method) {
-    router.post(`/courses/${props.course.id}/enroll`, { payment_method: method });
+    router.post(`/courses/${props.course.id}/enroll`, {
+        payment_method: method,
+        coupon_code: appliedCourseCoupon.value?.code || undefined,
+    });
 }
 
 function submitGuestCheckout() {
@@ -1048,33 +1057,53 @@ function scrollToCheckout() {
                                 </button>
 
                                 <template v-else>
-                                    <button
-                                        type="button"
-                                        @click="enrollAuthenticated('mhpay')"
-                                        class="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-600 via-pink-600 to-amber-600 px-6 py-4 text-sm font-bold text-white shadow-xl shadow-pink-500/25 transition hover:opacity-95 hover:scale-[1.02] active:scale-[0.98]"
-                                    >
-                                        <CreditCardIcon class="h-5 w-5" />
-                                        <span>{{ locale === 'en' ? 'Pay with MFS (bKash/Nagad)' : 'বিকাশ / নগদ / রকেটে পেমেন্ট করুন' }} (৳{{ money(course.price) }})</span>
-                                    </button>
+                                    <CouponInput
+                                        v-model="appliedCourseCoupon"
+                                        target-type="course"
+                                        :target-id="course.id"
+                                        :subtotal="Number(course.price || 0)"
+                                        compact
+                                    />
 
                                     <button
+                                        v-if="appliedCourseCoupon?.is_free"
                                         type="button"
-                                        @click="enrollAuthenticated('wallet')"
-                                        class="flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface2)]/80 px-6 py-3 text-xs font-bold text-[var(--text)] transition hover:border-[var(--primary)] hover:bg-[var(--surface2)]"
+                                        @click="enrollAuthenticated('coupon')"
+                                        class="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-6 py-4 text-sm font-bold text-white shadow-xl transition hover:scale-[1.02] active:scale-[0.98]"
                                     >
-                                        <WalletIcon class="h-4 w-4 text-[var(--secondary)]" />
-                                        <span>{{ t('book_show.pay_with_wallet') }} ({{ locale === 'en' ? 'Balance' : 'ব্যালেন্স' }}: ৳{{ money(walletBalance) }})</span>
+                                        <CheckBadgeIcon class="h-5 w-5" />
+                                        <span>{{ locale === 'en' ? 'Enroll Free with Coupon (৳0)' : 'কুপন দিয়ে ফ্রিতে এনরোল করুন (৳০)' }}</span>
                                     </button>
 
-                                    <button
-                                        v-for="gw in ($page.props.site?.payment_methods || []).filter(m => m.key !== 'mhpay')"
-                                        :key="gw.key"
-                                        type="button"
-                                        @click="enrollAuthenticated(gw.key)"
-                                        class="flex w-full items-center justify-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text)] transition pt-1"
-                                    >
-                                        <span>{{ gw.label }} →</span>
-                                    </button>
+                                    <template v-else>
+                                        <button
+                                            type="button"
+                                            @click="enrollAuthenticated('mhpay')"
+                                            class="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-600 via-pink-600 to-amber-600 px-6 py-4 text-sm font-bold text-white shadow-xl shadow-pink-500/25 transition hover:opacity-95 hover:scale-[1.02] active:scale-[0.98]"
+                                        >
+                                            <CreditCardIcon class="h-5 w-5" />
+                                            <span>{{ locale === 'en' ? 'Pay with MFS (bKash/Nagad)' : 'বিকাশ / নগদ / রকেটে পেমেন্ট করুন' }} (৳{{ money(effectiveCoursePrice) }})</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            @click="enrollAuthenticated('wallet')"
+                                            class="flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface2)]/80 px-6 py-3 text-xs font-bold text-[var(--text)] transition hover:border-[var(--primary)] hover:bg-[var(--surface2)]"
+                                        >
+                                            <WalletIcon class="h-4 w-4 text-[var(--secondary)]" />
+                                            <span>{{ t('book_show.pay_with_wallet') }} (৳{{ money(effectiveCoursePrice) }} · {{ locale === 'en' ? 'Balance' : 'ব্যালেন্স' }}: ৳{{ money(walletBalance) }})</span>
+                                        </button>
+
+                                        <button
+                                            v-for="gw in ($page.props.site?.payment_methods || []).filter(m => m.key !== 'mhpay')"
+                                            :key="gw.key"
+                                            type="button"
+                                            @click="enrollAuthenticated(gw.key)"
+                                            class="flex w-full items-center justify-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text)] transition pt-1"
+                                        >
+                                            <span>{{ gw.label }} →</span>
+                                        </button>
+                                    </template>
                                 </template>
                             </div>
 

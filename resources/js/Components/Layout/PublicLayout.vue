@@ -8,10 +8,11 @@ import SupportWidget from '@/Components/Support/SupportWidget.vue';
 import BrandLogo from '@/Components/BrandLogo.vue';
 
 const { t, locale } = useI18n();
+const page = usePage();
 const mobileOpen = ref(false);
 const display = ref({ text: 1, buttons: 1 });
-const student = usePage().props.auth?.student;
-const site = usePage().props.site;
+const student = computed(() => page.props.auth?.student);
+const site = computed(() => page.props.site);
 
 onMounted(() => {
     try {
@@ -51,10 +52,10 @@ const nav = computed(() => [
 </script>
 
 <template>
-    <div :lang="locale" class="public-shell min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-200">
+    <div :lang="locale" class="public-shell min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-200 overflow-x-clip">
         <!-- Classical Nav Header -->
         <header class="public-header sticky top-0 z-40 border-b border-slate-200/80 dark:border-white/5 bg-white/95 dark:bg-[#0b0f19]/95 text-slate-900 dark:text-[#dfe2f1] backdrop-blur-xl shadow-xs transition-colors duration-200">
-            <div class="max-w-7xl mx-auto px-4 md:px-6 h-16 xl:h-18 flex items-center justify-between gap-4">
+            <div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 h-16 xl:h-18 flex items-center justify-between gap-2 sm:gap-4">
                 <BrandLogo href="/" />
 
                 <nav class="hidden xl:flex items-center gap-1 text-sm font-medium">
@@ -79,17 +80,17 @@ const nav = computed(() => [
                     </Link>
                 </nav>
 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
                     <LanguageSwitcher class="hidden sm:flex" />
                     <ThemeToggle />
                     <template v-if="student">
-                        <Link href="/dashboard" class="btn btn-primary hidden sm:inline-flex h-9 px-4 text-xs font-bold rounded-xl">
+                        <Link href="/dashboard" class="btn btn-primary inline-flex h-8 sm:h-9 px-2.5 sm:px-4 text-[11px] sm:text-xs font-bold rounded-xl whitespace-nowrap shrink-0">
                             {{ t('nav.dashboard') }}
                         </Link>
                     </template>
                     <template v-else>
-                        <Link href="/login" class="btn btn-ghost hidden md:inline-flex h-9 px-3 text-xs text-slate-700 dark:text-[#dfe2f1] hover:text-slate-900 dark:hover:text-white">{{ t('nav.login') }}</Link>
-                        <Link href="/register" class="btn btn-primary h-9 px-4 text-xs font-bold rounded-xl shadow-xs">{{ locale === 'bn' ? 'ফ্রি শুরু করুন' : 'Get Started Free' }}</Link>
+                        <Link href="/login" class="btn btn-ghost hidden md:inline-flex h-9 px-3 text-xs text-slate-700 dark:text-[#dfe2f1] hover:text-slate-900 dark:hover:text-white whitespace-nowrap">{{ t('nav.login') }}</Link>
+                        <Link href="/register" class="btn btn-primary h-8 sm:h-9 px-2.5 sm:px-4 text-[11px] sm:text-xs font-bold rounded-xl shadow-xs whitespace-nowrap shrink-0">{{ locale === 'bn' ? 'ফ্রি শুরু করুন' : 'Get Started Free' }}</Link>
                     </template>
                     <button
                         class="xl:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-800 dark:text-white"
@@ -127,14 +128,15 @@ const nav = computed(() => [
                         <div class="my-2 border-t border-slate-200 dark:border-white/10"></div>
                         <div class="flex items-center gap-2 pt-1">
                             <LanguageSwitcher />
-                            <Link v-if="!student" href="/login" class="flex-1 btn btn-outline h-9 text-xs" @click="mobileOpen = false">{{ t('nav.login') }}</Link>
+                            <Link v-if="student" href="/dashboard" class="flex-1 btn btn-primary h-9 text-xs font-bold" @click="mobileOpen = false">{{ t('nav.dashboard') }}</Link>
+                            <Link v-else href="/login" class="flex-1 btn btn-outline h-9 text-xs" @click="mobileOpen = false">{{ t('nav.login') }}</Link>
                         </div>
                     </div>
                 </div>
             </transition>
         </header>
 
-        <main class="flex-1">
+        <main class="flex-1 min-w-0 overflow-x-clip">
             <slot />
         </main>
 

@@ -8,6 +8,10 @@ import { ArrowLeftIcon, PlusIcon, TrashIcon } from '@heroicons/vue/24/outline';
 const props = defineProps({
     invoice: Object,
     vatPercent: { type: Number, default: 0 },
+    students: { type: Array, default: () => [] },
+    plans: { type: Array, default: () => [] },
+    courses: { type: Array, default: () => [] },
+    books: { type: Array, default: () => [] },
 });
 
 const { t, locale, money } = useI18n();
@@ -20,10 +24,23 @@ const toDateInput = (value) => {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
+const meta = props.invoice.meta ?? {};
+
 const form = useForm({
+    student_id: props.invoice.student_id,
+    type: props.invoice.type ?? 'one_time',
     status: props.invoice.status,
     issued_at: toDateInput(props.invoice.issued_at),
     due_at: toDateInput(props.invoice.due_at),
+    period_start: toDateInput(props.invoice.period_start),
+    period_end: toDateInput(props.invoice.period_end),
+    recurrence_interval: meta.recurrence_interval ?? 'monthly',
+    recurrence_days: meta.recurrence_days ?? 30,
+    auto_generate_next: meta.auto_generate_next ?? true,
+    plan_id: meta.plan_id ?? '',
+    course_id: meta.course_id ?? '',
+    book_id: meta.book_id ?? '',
+    notify_student: false,
     notes: props.invoice.notes ?? '',
     discount: Number(props.invoice.discount ?? 0),
     vat_percent: Number(props.vatPercent ?? 0),
@@ -39,9 +56,14 @@ if (!form.items.length) {
 }
 
 const statuses = ['draft', 'sent', 'paid', 'overdue', 'void'];
+const intervals = [
+    { value: 'weekly', label: 'সাপ্তাহিক (৭ দিন)' },
+    { value: 'monthly', label: 'মাসিক (১ মাস)' },
+    { value: 'quarterly', label: 'ত্রৈমাসিক (৩ মাস)' },
+    { value: 'yearly', label: 'বার্ষিক (১ বছর)' },
+    { value: 'custom', label: 'কাস্টম দিন' },
+];
 
-// Mirrors InvoiceService::recalculate() so the admin sees the server's
-// numbers before saving. The server still recomputes everything.
 const subtotal = computed(() =>
     form.items.reduce((sum, item) => sum + Math.round(Number(item.qty || 0) * Number(item.unit_price || 0) * 100) / 100, 0),
 );
@@ -78,6 +100,40 @@ function submit() {
 
         <form class="grid gap-5 lg:grid-cols-3" @submit.prevent="submit">
             <div class="space-y-5 lg:col-span-2">
+                <div class="card rounded-2xl p-5 space-y-4">
+                    <h2 class="font-heading text-sm font-bold uppercase tracking-wider text-[var(--text-muted)]">{{ t('invoices.student') }} & লিংকিং</h2>
+                    <div>
+                        <label class="mb-1 block text-xs font-semibold text-[var(--text-muted)]">শিক্ষার্থী</label>
+                        <select v-model="form.student_id" :disabled="invoice.status === 'paid'" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm disabled:opacity-60">
+                            <option v-for="s in students" :key="s.id" :value="s.id">{{ s.name }} — {{ s.email }}</option>
+                        </select>
+                        <p v-if="invoice.status === 'paid'" class="mt-1 text-[11px] text-[var(--text-muted)]">পরিশোধিত ইনভয়েসের শিক্ষার্থী পরিবর্তন করা যায় না।</p>
+                    </div>
+                    <div class="grid sm:grid-cols-3 gap-3 pt-2 border-t border-[var(--border)]">
+                        <div>
+                            <label class="mb-1 block text-xs font-semibold text-[var(--text-muted)]">লিংক প্ল্যান</label>
+                            <select v-model="form.plan_id" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs">
+                                <option value="">— কোনো প্ল্যান নয় —</option>
+                                <option v-for="p in plans" :key="p.id" :value="p.id">{{ p.name }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-semibold text-[var(--text-muted)]">লিংক কোর্স</label>
+                            <select v-model="form.course_id" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs">
+                                <option value="">— কোনো কোর্স নয় —</option>
+                                <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.title }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-semibold text-[var(--text-muted)]">লিংক বই</label>
+                            <select v-model="form.book_id" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs">
+                                <option value="">— কোনো বই নয় —</option>
+                                <option v-for="b in books" :key="b.id" :value="b.id">{{ b.title }}</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card rounded-2xl p-5">
                     <h2 class="mb-4 font-heading text-sm font-bold uppercase tracking-wider text-[var(--text-muted)]">
                         {{ t('invoices.items') }}
@@ -91,47 +147,22 @@ function submit() {
                         >
                             <div class="sm:col-span-6">
                                 <label class="mb-1 block text-[11px] font-semibold text-[var(--text-muted)]">{{ t('invoices.description') }}</label>
-                                <input
-                                    v-model="item.description"
-                                    type="text"
-                                    required
-                                    class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
-                                />
-                                <p v-if="form.errors[`items.${index}.description`]" class="mt-1 text-[11px] text-[var(--accent)]">
-                                    {{ form.errors[`items.${index}.description`] }}
-                                </p>
+                                <input v-model="item.description" type="text" required class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm" />
                             </div>
                             <div class="sm:col-span-2">
                                 <label class="mb-1 block text-[11px] font-semibold text-[var(--text-muted)]">{{ t('invoices.qty') }}</label>
-                                <input
-                                    v-model="item.qty"
-                                    type="number"
-                                    min="0.01"
-                                    step="0.01"
-                                    required
-                                    class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
-                                />
+                                <input v-model="item.qty" type="number" min="0.01" step="0.01" required class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm" />
                             </div>
                             <div class="sm:col-span-2">
                                 <label class="mb-1 block text-[11px] font-semibold text-[var(--text-muted)]">{{ t('invoices.unit_price') }}</label>
-                                <input
-                                    v-model="item.unit_price"
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    required
-                                    class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
-                                />
+                                <input v-model="item.unit_price" type="number" min="0" step="0.01" required class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm" />
                             </div>
                             <div class="flex items-end justify-between gap-2 sm:col-span-2">
-                                <div class="text-right text-sm font-semibold">
-                                    ৳{{ money(Number(item.qty || 0) * Number(item.unit_price || 0)) }}
-                                </div>
+                                <div class="text-right text-sm font-semibold">৳{{ money(Number(item.qty || 0) * Number(item.unit_price || 0)) }}</div>
                                 <button
                                     type="button"
                                     class="rounded-lg border border-[var(--border)] p-2 text-[var(--text-muted)] transition hover:border-red-400 hover:text-red-500 disabled:opacity-40"
                                     :disabled="form.items.length === 1"
-                                    :title="t('common.delete')"
                                     @click="removeItem(index)"
                                 >
                                     <TrashIcon class="h-4 w-4" />
@@ -169,21 +200,78 @@ function submit() {
 
                     <div class="space-y-4">
                         <div>
+                            <label class="mb-1.5 block text-sm font-medium">ইনভয়েসের ধরন</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    @click="form.type = 'one_time'"
+                                    class="rounded-xl border px-3 py-2 text-xs font-bold transition cursor-pointer"
+                                    :class="form.type === 'one_time' ? 'border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]' : 'border-[var(--border)] text-[var(--text-muted)]'"
+                                >
+                                    {{ t('invoices.one_time') }}
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="form.type = 'recurring'"
+                                    class="rounded-xl border px-3 py-2 text-xs font-bold transition cursor-pointer"
+                                    :class="form.type === 'recurring' ? 'border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]' : 'border-[var(--border)] text-[var(--text-muted)]'"
+                                >
+                                    {{ t('invoices.recurring') }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
                             <label class="mb-1.5 block text-sm font-medium">{{ t('invoices.status') }}</label>
                             <select v-model="form.status" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm">
                                 <option v-for="s in statuses" :key="s" :value="s">{{ t(`invoices.${s}`) }}</option>
                             </select>
                         </div>
 
-                        <div>
-                            <label class="mb-1.5 block text-sm font-medium">{{ t('invoices.issued') }}</label>
-                            <input v-model="form.issued_at" type="date" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm" />
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="mb-1.5 block text-xs font-medium">{{ t('invoices.issued') }}</label>
+                                <input v-model="form.issued_at" type="date" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs" />
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-xs font-medium">{{ t('invoices.due') }}</label>
+                                <input v-model="form.due_at" type="date" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs" />
+                            </div>
                         </div>
 
-                        <div>
-                            <label class="mb-1.5 block text-sm font-medium">{{ t('invoices.due') }}</label>
-                            <input v-model="form.due_at" type="date" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm" />
-                        </div>
+                        <template v-if="form.type === 'recurring'">
+                            <div class="border-t border-[var(--border)] pt-3 space-y-3">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="mb-1 block text-xs font-medium">পিরিয়ড শুরু</label>
+                                        <input v-model="form.period_start" type="date" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs" />
+                                    </div>
+                                    <div>
+                                        <label class="mb-1 block text-xs font-medium">পিরিয়ড শেষ</label>
+                                        <input v-model="form.period_end" type="date" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-xs font-medium">পুনরাবৃত্তির সময়কাল</label>
+                                    <select v-model="form.recurrence_interval" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs">
+                                        <option v-for="iv in intervals" :key="iv.value" :value="iv.value">{{ iv.label }}</option>
+                                    </select>
+                                </div>
+                                <div v-if="form.recurrence_interval === 'custom'">
+                                    <label class="mb-1 block text-xs font-medium">কত দিন পর পর?</label>
+                                    <input v-model="form.recurrence_days" type="number" min="1" max="3650" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs" />
+                                </div>
+                                <label class="flex items-center gap-2 text-xs">
+                                    <input v-model="form.auto_generate_next" type="checkbox" class="rounded" />
+                                    <span>স্বয়ংক্রিয় পরবর্তী ইনভয়েস</span>
+                                </label>
+                            </div>
+                        </template>
+
+                        <label class="flex items-center gap-2 text-xs pt-2 border-t border-[var(--border)]">
+                            <input v-model="form.notify_student" type="checkbox" class="rounded" />
+                            <span>আপডেটের পর শিক্ষার্থীকে নোটিফাই করুন</span>
+                        </label>
                     </div>
                 </div>
 
@@ -193,41 +281,18 @@ function submit() {
                             <span class="text-[var(--text-muted)]">{{ t('invoices.subtotal') }}</span>
                             <span class="font-semibold">৳{{ money(subtotal) }}</span>
                         </div>
-
                         <div class="flex items-center justify-between gap-3">
                             <label for="invoice-discount" class="text-[var(--text-muted)]">{{ t('invoices.discount') }}</label>
-                            <input
-                                id="invoice-discount"
-                                v-model="form.discount"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                class="w-28 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2 py-1 text-right text-sm"
-                            />
+                            <input id="invoice-discount" v-model="form.discount" type="number" min="0" step="0.01" class="w-28 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2 py-1 text-right text-sm" />
                         </div>
-
                         <div class="flex items-center justify-between gap-3">
                             <label for="invoice-vat" class="text-[var(--text-muted)]">{{ t('invoices.vat') }} %</label>
-                            <input
-                                id="invoice-vat"
-                                v-model="form.vat_percent"
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.01"
-                                class="w-28 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2 py-1 text-right text-sm"
-                            />
+                            <input id="invoice-vat" v-model="form.vat_percent" type="number" min="0" max="100" step="0.01" class="w-28 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2 py-1 text-right text-sm" />
                         </div>
-
                         <div class="flex items-center justify-between gap-3 border-t border-[var(--border)] pt-3 text-base">
                             <span class="font-heading font-extrabold">{{ t('invoices.total') }}</span>
                             <span class="font-heading font-extrabold">৳{{ money(total) }}</span>
                         </div>
-                        <p class="text-[11px] text-[var(--text-muted)]">
-                            {{ locale === 'en'
-                                ? 'Totals are recalculated on the server when you save.'
-                                : 'সেভ করলে সার্ভারে টোটাল আবার হিসাব হবে।' }}
-                        </p>
                     </div>
                 </div>
 

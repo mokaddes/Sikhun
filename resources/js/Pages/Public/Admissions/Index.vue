@@ -271,7 +271,7 @@ function getTypeBadge(type) {
                             </div>
 
                             <!-- Key Specs -->
-                            <div class="p-6 pt-4 space-y-2.5 text-xs">
+                            <div class="p-4 sm:p-6 pt-4 space-y-2.5 text-xs">
                                 <div v-if="notice.application_start_text" class="flex items-center justify-between text-gray-600 dark:text-gray-400">
                                     <span class="flex items-center gap-1.5">
                                         <span class="material-symbols-outlined !text-sm text-emerald-500">event_available</span>
@@ -302,13 +302,23 @@ function getTypeBadge(type) {
                                     </span>
                                 </div>
 
-                                <div v-if="notice.application_fee" class="flex items-center justify-between text-gray-600 dark:text-gray-400">
+                                <div v-if="notice.application_fee" class="flex items-center justify-between gap-2 text-gray-600 dark:text-gray-400">
                                     <span class="flex items-center gap-1.5">
                                         <span class="material-symbols-outlined !text-sm text-emerald-500">payments</span>
                                         <span>{{ en ? 'Application Fee:' : 'আবেদন ফি:' }}</span>
                                     </span>
-                                    <span class="font-bold text-emerald-600 dark:text-emerald-400">
+                                    <span class="font-bold text-emerald-600 dark:text-emerald-400 text-right">
                                         {{ notice.application_fee }}
+                                    </span>
+                                </div>
+
+                                <div v-if="notice.updated_at" class="flex items-center justify-between gap-2 text-gray-500 dark:text-gray-400">
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined !text-sm text-emerald-500">update</span>
+                                        <span>{{ en ? 'Updated:' : 'সর্বশেষ আপডেট:' }}</span>
+                                    </span>
+                                    <span class="font-semibold text-gray-700 dark:text-gray-300">
+                                        {{ formatDate(notice.updated_at) }}
                                     </span>
                                 </div>
 

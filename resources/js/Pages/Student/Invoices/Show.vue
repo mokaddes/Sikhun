@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import StudentLayout from '@/Components/Layout/StudentLayout.vue';
+import CouponInput from '@/Components/Checkout/CouponInput.vue';
 import { useI18n } from '@/i18n';
 import { ArrowLeftIcon, PrinterIcon, CreditCardIcon, XMarkIcon } from '@heroicons/vue/24/outline';
 
@@ -10,11 +11,22 @@ const props = defineProps({ invoice: Object });
 const { t, locale, money, digits } = useI18n();
 
 const showPayModal = ref(false);
+const appliedCoupon = ref(null);
+const effectiveTotal = computed(() => (appliedCoupon.value ? Number(appliedCoupon.value.final_amount || 0) : Number(props.invoice?.total || 0)));
+
 const payForm = useForm({
     payment_method: 'mhpay',
+    coupon_code: '',
 });
 
 function submitPayment() {
+    payForm.coupon_code = appliedCoupon.value?.code || '';
+    if (effectiveTotal.value <= 0) {
+        payForm.payment_method = 'coupon';
+    } else if (payForm.payment_method === 'coupon') {
+        payForm.payment_method = 'mhpay';
+    }
+
     payForm.post(`/invoices/${props.invoice.id}/pay`, {
         onSuccess: () => {
             showPayModal.value = false;
@@ -70,15 +82,31 @@ const fmtDate = (value) => (value ? new Date(value).toLocaleDateString(locale.va
                     </button>
                 </div>
 
-                <div class="my-4 p-4 rounded-xl bg-[var(--surface2)]/60 text-sm">
+                <div class="my-4 p-4 rounded-xl bg-[var(--surface2)]/60 text-sm space-y-2">
                     <div class="flex justify-between">
-                        <span class="text-[var(--text-muted)]">{{ locale === 'bn' ? 'মোট প্রদেয়:' : 'Total Payable:' }}</span>
-                        <span class="font-bold text-base text-[var(--primary)]">৳{{ money(invoice.total) }}</span>
+                        <span class="text-[var(--text-muted)]">{{ locale === 'bn' ? 'মূল প্রদেয়:' : 'Invoice Total:' }}</span>
+                        <span class="font-semibold">৳{{ money(invoice.total) }}</span>
+                    </div>
+                    <div v-if="appliedCoupon" class="flex justify-between text-emerald-600 dark:text-emerald-400">
+                        <span>{{ locale === 'bn' ? `কুপন ছাড় (${appliedCoupon.code}):` : `Coupon (${appliedCoupon.code}):` }}</span>
+                        <span class="font-bold">−৳{{ money(appliedCoupon.discount_amount) }}</span>
+                    </div>
+                    <div class="flex justify-between pt-1.5 border-t border-[var(--border)]">
+                        <span class="font-bold text-[var(--text)]">{{ locale === 'bn' ? 'সর্বমোট প্রদেয়:' : 'Total Payable:' }}</span>
+                        <span class="font-bold text-base text-[var(--primary)]">৳{{ money(effectiveTotal) }}</span>
                     </div>
                 </div>
 
                 <form @submit.prevent="submitPayment" class="space-y-4">
-                    <div>
+                    <CouponInput
+                        v-model="appliedCoupon"
+                        target-type="invoice"
+                        :target-id="invoice.id"
+                        :subtotal="Number(invoice.total || 0)"
+                        compact
+                    />
+
+                    <div v-if="effectiveTotal > 0">
                         <label class="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">
                             {{ locale === 'bn' ? 'পেমেন্ট মাধ্যম বেছে নিন' : 'Select Payment Method' }}
                         </label>
@@ -111,7 +139,11 @@ const fmtDate = (value) => (value ? new Date(value).toLocaleDateString(locale.va
                             {{ locale === 'bn' ? 'বাতিল' : 'Cancel' }}
                         </button>
                         <button type="submit" :disabled="payForm.processing" class="btn btn-primary text-sm font-bold">
-                            {{ payForm.processing ? (locale === 'bn' ? 'প্রক্রিয়াকরণ হচ্ছে...' : 'Processing...') : (locale === 'bn' ? 'এখনই পরিশোধ করুন' : 'Proceed to Pay') }}
+                            {{ payForm.processing
+                                ? (locale === 'bn' ? 'প্রক্রিয়াকরণ হচ্ছে...' : 'Processing...')
+                                : (effectiveTotal <= 0
+                                    ? (locale === 'bn' ? 'ফ্রিতে পরিশোধ নিশ্চিত করুন' : 'Complete Free with Coupon')
+                                    : (locale === 'bn' ? 'এখনই পরিশোধ করুন' : 'Proceed to Pay')) }}
                         </button>
                     </div>
                 </form>

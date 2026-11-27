@@ -140,18 +140,20 @@ class LibraryController extends Controller
         abort_unless($chapter->book_id === $book->id, 404);
 
         $validated = $request->validate([
-            'payment_method' => ['required', 'in:wallet,mhpay,bkash,nagad'],
+            'payment_method' => ['required', 'in:wallet,mhpay,bkash,nagad,coupon'],
+            'coupon_code' => ['nullable', 'string', 'max:64'],
         ]);
 
         $student = auth('web')->user();
 
         try {
-            $gateway = $resolver->resolve($validated['payment_method']);
+            $gateway = $validated['payment_method'] === 'coupon' ? null : $resolver->resolve($validated['payment_method']);
             $result = $purchases->purchaseChapter(
                 $student,
                 $chapter,
                 $validated['payment_method'],
-                $gateway
+                $gateway,
+                $validated['coupon_code'] ?? null
             );
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
@@ -169,7 +171,8 @@ class LibraryController extends Controller
         $validated = $request->validate([
             'chapter_ids' => ['required', 'array', 'min:1'],
             'chapter_ids.*' => ['integer', 'exists:book_chapters,id'],
-            'payment_method' => ['required', 'in:wallet,mhpay,bkash,nagad'],
+            'payment_method' => ['required', 'in:wallet,mhpay,bkash,nagad,coupon'],
+            'coupon_code' => ['nullable', 'string', 'max:64'],
         ]);
 
         $chapters = $book->chapters()->whereIn('id', $validated['chapter_ids'])->get()->all();
@@ -180,13 +183,14 @@ class LibraryController extends Controller
         $student = auth('web')->user();
 
         try {
-            $gateway = $resolver->resolve($validated['payment_method']);
+            $gateway = $validated['payment_method'] === 'coupon' ? null : $resolver->resolve($validated['payment_method']);
             $result = $purchases->purchaseChapters(
                 $student,
                 $book,
                 $chapters,
                 $validated['payment_method'],
-                $gateway
+                $gateway,
+                $validated['coupon_code'] ?? null
             );
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
@@ -204,12 +208,13 @@ class LibraryController extends Controller
         $student = auth('web')->user();
 
         try {
-            $gateway = $resolver->resolve($request->payment_method);
+            $gateway = $request->payment_method === 'coupon' ? null : $resolver->resolve($request->payment_method);
             $result = $purchases->purchaseBook(
                 $student,
                 $book,
                 $request->payment_method,
-                $gateway
+                $gateway,
+                $request->input('coupon_code')
             );
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());

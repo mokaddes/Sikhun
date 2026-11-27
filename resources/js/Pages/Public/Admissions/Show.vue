@@ -309,9 +309,9 @@ const typeLabel = computed(() => {
             <div class="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     <!-- Main Article Column (8 cols) -->
-                    <main class="lg:col-span-8">
-                        <article class="bg-white dark:bg-[#171c28] rounded-3xl border border-gray-200 dark:border-white/5 p-6 md:p-10 shadow-sm dark:shadow-none">
-                            <!-- Category Badge & Year -->
+                    <main class="lg:col-span-8 min-w-0">
+                        <article class="bg-white dark:bg-[#171c28] rounded-3xl border border-gray-200 dark:border-white/5 p-4 sm:p-6 md:p-10 shadow-sm dark:shadow-none overflow-hidden">
+                            <!-- Category Badge, Year & Last Updated -->
                             <div class="flex flex-wrap items-center gap-2 mb-4">
                                 <span class="px-3 py-1 rounded-full text-xs font-bold bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
                                     {{ typeLabel }}
@@ -319,7 +319,14 @@ const typeLabel = computed(() => {
                                 <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300">
                                     {{ en ? 'Session:' : 'শিক্ষাবর্ষ:' }} {{ notice.academic_year }}
                                 </span>
-                                <span class="text-xs text-gray-500 dark:text-gray-400 ml-auto flex items-center gap-1">
+                                <span
+                                    v-if="notice.updated_at"
+                                    class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 inline-flex items-center gap-1"
+                                >
+                                    <span class="material-symbols-outlined !text-xs">update</span>
+                                    <span>{{ en ? 'Last Updated:' : 'সর্বশেষ আপডেট:' }} {{ formatDateTimeBn(notice.updated_at) }}</span>
+                                </span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 sm:ml-auto flex items-center gap-1">
                                     <span class="material-symbols-outlined !text-xs">visibility</span>
                                     <span>{{ notice.views_count }} {{ en ? 'views' : 'বার দেখা হয়েছে' }}</span>
                                 </span>
@@ -337,7 +344,7 @@ const typeLabel = computed(() => {
                             </div>
 
                             <!-- Real-Time Countdown Hero Banner (Matching official portal admission.eis.du.ac.bd) -->
-                            <div class="my-6 rounded-3xl overflow-hidden border border-blue-200 dark:border-blue-500/25 bg-gradient-to-br from-blue-50/70 via-white to-slate-50 dark:from-[#0c1938] dark:via-[#101e42] dark:to-[#0c1630] text-slate-900 dark:text-white p-6 md:p-8 shadow-sm dark:shadow-xl relative">
+                            <div class="my-6 rounded-3xl overflow-hidden border border-blue-200 dark:border-blue-500/25 bg-gradient-to-br from-blue-50/70 via-white to-slate-50 dark:from-[#0c1938] dark:via-[#101e42] dark:to-[#0c1630] text-slate-900 dark:text-white p-4 sm:p-6 md:p-8 shadow-sm dark:shadow-xl relative">
                                 <div class="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl"></div>
 
                                 <div class="relative z-10 text-center max-w-xl mx-auto">
@@ -351,30 +358,30 @@ const typeLabel = computed(() => {
                                     </div>
 
                                     <!-- 4-Block Live Countdown Timer (দিন : ঘণ্টা : মিনিট : সেকেন্ড) -->
-                                    <div v-if="!isExpired" class="flex items-center justify-center gap-2 sm:gap-4 my-4 font-mono">
+                                    <div v-if="!isExpired" class="flex items-center justify-center gap-1.5 sm:gap-4 my-4 font-mono">
                                         <div class="flex flex-col items-center">
-                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-white dark:bg-[#172554]/95 border border-blue-200 dark:border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-slate-900 dark:text-white shadow-xs dark:shadow-inner">
+                                            <div class="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white dark:bg-[#172554]/95 border border-blue-200 dark:border-blue-400/40 flex items-center justify-center text-lg sm:text-3xl font-black text-slate-900 dark:text-white shadow-xs dark:shadow-inner">
                                                 {{ timer.days }}
                                             </div>
                                             <span class="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-blue-300 mt-1.5">{{ en ? 'Days' : 'দিন' }}</span>
                                         </div>
-                                        <span class="text-xl sm:text-3xl font-bold text-blue-500 dark:text-blue-400 -mt-5">:</span>
+                                        <span class="text-lg sm:text-3xl font-bold text-blue-500 dark:text-blue-400 -mt-5">:</span>
                                         <div class="flex flex-col items-center">
-                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-white dark:bg-[#172554]/95 border border-blue-200 dark:border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-slate-900 dark:text-white shadow-xs dark:shadow-inner">
+                                            <div class="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white dark:bg-[#172554]/95 border border-blue-200 dark:border-blue-400/40 flex items-center justify-center text-lg sm:text-3xl font-black text-slate-900 dark:text-white shadow-xs dark:shadow-inner">
                                                 {{ timer.hours }}
                                             </div>
                                             <span class="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-blue-300 mt-1.5">{{ en ? 'Hours' : 'ঘণ্টা' }}</span>
                                         </div>
-                                        <span class="text-xl sm:text-3xl font-bold text-blue-500 dark:text-blue-400 -mt-5">:</span>
+                                        <span class="text-lg sm:text-3xl font-bold text-blue-500 dark:text-blue-400 -mt-5">:</span>
                                         <div class="flex flex-col items-center">
-                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-white dark:bg-[#172554]/95 border border-blue-200 dark:border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-slate-900 dark:text-white shadow-xs dark:shadow-inner">
+                                            <div class="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white dark:bg-[#172554]/95 border border-blue-200 dark:border-blue-400/40 flex items-center justify-center text-lg sm:text-3xl font-black text-slate-900 dark:text-white shadow-xs dark:shadow-inner">
                                                 {{ timer.minutes }}
                                             </div>
                                             <span class="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-blue-300 mt-1.5">{{ en ? 'Minutes' : 'মিনিট' }}</span>
                                         </div>
-                                        <span class="text-xl sm:text-3xl font-bold text-blue-500 dark:text-blue-400 -mt-5">:</span>
+                                        <span class="text-lg sm:text-3xl font-bold text-blue-500 dark:text-blue-400 -mt-5">:</span>
                                         <div class="flex flex-col items-center">
-                                            <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-white dark:bg-[#172554]/95 border border-blue-200 dark:border-blue-400/40 flex items-center justify-center text-xl sm:text-3xl font-black text-slate-900 dark:text-white shadow-xs dark:shadow-inner">
+                                            <div class="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white dark:bg-[#172554]/95 border border-blue-200 dark:border-blue-400/40 flex items-center justify-center text-lg sm:text-3xl font-black text-slate-900 dark:text-white shadow-xs dark:shadow-inner">
                                                 {{ timer.seconds }}
                                             </div>
                                             <span class="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-blue-300 mt-1.5">{{ en ? 'Seconds' : 'সেকেন্ড' }}</span>
@@ -847,6 +854,31 @@ const typeLabel = computed(() => {
                                             </tr>
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+
+                            <!-- Merged Update History Timeline -->
+                            <div v-if="notice.update_history?.length" class="my-8 pt-6 border-t border-gray-200 dark:border-white/10">
+                                <h3 class="text-base md:text-lg font-bold font-heading text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-emerald-500 !text-xl">history</span>
+                                    <span>{{ en ? 'Recent Updates & Notices Log' : 'সাম্প্রতিক আপডেট ও সংশ্লিষ্ট নোটিশসমূহ' }}</span>
+                                </h3>
+                                <div class="space-y-3">
+                                    <div
+                                        v-for="(item, idx) in notice.update_history"
+                                        :key="idx"
+                                        class="p-4 rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50/80 dark:bg-white/[0.03]"
+                                    >
+                                        <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                                            <h4 class="text-sm font-bold text-gray-900 dark:text-white">{{ item.title }}</h4>
+                                            <span v-if="item.updated_at" class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                {{ formatDateTimeBn(item.updated_at) }}
+                                            </span>
+                                        </div>
+                                        <p v-if="item.summary" class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-3">
+                                            {{ item.summary }}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 

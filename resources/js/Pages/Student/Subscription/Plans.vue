@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
+import CouponInput from '@/Components/Checkout/CouponInput.vue';
 import { useI18n } from '@/i18n';
 import {
     CreditCardIcon,
@@ -27,10 +28,46 @@ const student = computed(() => page.props.auth?.student);
 
 const activeTab = ref('general'); // general | admission | job | custom
 const months = ref(1);
+const appliedPlanCoupon = ref(null);
+const appliedCustomCoupon = ref(null);
+const selectedCouponPlanId = ref('');
 
 const generalPlans = computed(() => (props.plans || []).filter(p => !p.target_segment || p.target_segment === 'all' || p.target_segment === 'custom'));
 const admissionPlans = computed(() => (props.plans || []).filter(p => p.target_segment === 'admission'));
 const jobPlans = computed(() => (props.plans || []).filter(p => p.target_segment === 'job'));
+
+const paidTabPlans = computed(() => {
+    const list = activeTab.value === 'admission'
+        ? admissionPlans.value
+        : (activeTab.value === 'job' ? jobPlans.value : generalPlans.value);
+    return list.filter((p) => !p.is_free && Number(p.price_total || p.price_monthly || 0) > 0);
+});
+
+watch(paidTabPlans, (list) => {
+    if (!list.length) {
+        selectedCouponPlanId.value = '';
+        return;
+    }
+    if (!list.some((p) => Number(p.id) === Number(selectedCouponPlanId.value))) {
+        selectedCouponPlanId.value = list[0].id;
+    }
+}, { immediate: true });
+
+const selectedCouponPlan = computed(() => paidTabPlans.value.find((p) => Number(p.id) === Number(selectedCouponPlanId.value)) || null);
+const selectedCouponMonths = computed(() => {
+    if (!selectedCouponPlan.value) return months.value;
+    if (activeTab.value === 'admission' || activeTab.value === 'job') {
+        return Number(selectedCouponPlan.value.duration_months || 1);
+    }
+    return months.value;
+});
+const selectedCouponSubtotal = computed(() => {
+    if (!selectedCouponPlan.value) return 0;
+    if (activeTab.value === 'admission' || activeTab.value === 'job') {
+        return Number(selectedCouponPlan.value.price_total || selectedCouponPlan.value.price_monthly || 0);
+    }
+    return getPlanPricing(selectedCouponPlan.value).total;
+});
 
 // Custom Plan Configurator State
 const customMinutes = ref(350);
@@ -116,7 +153,12 @@ function subscribe(plan, method) {
         }
         return;
     }
-    router.post('/plans/purchase', { plan_id: plan.id, months: months.value, payment_method: method });
+    router.post('/plans/purchase', {
+        plan_id: plan.id,
+        months: months.value,
+        payment_method: method,
+        coupon_code: appliedPlanCoupon.value?.code || undefined,
+    });
 }
 
 function subscribeCustom(method) {
@@ -128,6 +170,7 @@ function subscribeCustom(method) {
         is_custom: true,
         months: 1,
         payment_method: method,
+        coupon_code: appliedCustomCoupon.value?.code || undefined,
         custom_config: {
             minutes: customMinutes.value,
             images: customImages.value,
@@ -148,6 +191,7 @@ function subscribePlan(plan, method) {
         plan_id: plan.id,
         months: plan.duration_months || months.value || 1,
         payment_method: method,
+        coupon_code: appliedPlanCoupon.value?.code || undefined,
     });
 }
 
@@ -204,7 +248,7 @@ function subscribeSpecial(pack, method) {
         </div>
 
         <!-- Main Categories Tab Navigation -->
-        <div class="mb-8 flex items-center justify-start sm:justify-center gap-2 p-1.5 rounded-2xl bg-[var(--surface2)] border border-[var(--border)] max-w-2xl mx-auto overflow-x-auto">
+        <div class="mb-6 flex items-center justify-start sm:justify-center gap-2 p-1.5 rounded-2xl bg-[var(--surface2)] border border-[var(--border)] max-w-2xl mx-auto overflow-x-auto">
             <button
                 type="button"
                 @click="activeTab = 'general'"
@@ -245,6 +289,29 @@ function subscribeSpecial(pack, method) {
                 {{ locale === 'en' ? 'Custom Plan Builder' : 'কাস্টম প্ল্যান তৈরি' }}
             </button>
         </div>
+
+            <div class="mb-6 flex items-center justify-center">
+                <div v-if="student && activeTab !== 'custom' && paidTabPlans.length" class="w-full max-w-2xl rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3.5 space-y-2.5">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-2.5">
+                        <label class="text-xs font-bold text-[var(--text-muted)] shrink-0">
+                            {{ locale === 'en' ? 'Plan for coupon:' : 'প্ল্যান নির্বাচন:' }}
+                        </label>
+                        <select v-model="selectedCouponPlanId" class="flex-1 rounded-xl border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-xs font-semibold text-[var(--text)]">
+                            <option v-for="p in paidTabPlans" :key="p.id" :value="p.id">
+                                {{ p.name }} (৳{{ Math.round(p.price_total || p.price_monthly) }})
+                            </option>
+                        </select>
+                    </div>
+                    <CouponInput
+                        v-model="appliedPlanCoupon"
+                        target-type="plan"
+                        :target-id="selectedCouponPlanId"
+                        :months="selectedCouponMonths"
+                        :subtotal="selectedCouponSubtotal"
+                        compact
+                    />
+                </div>
+            </div>
 
         <!-- ========================================== -->
         <!-- TAB 1: GENERAL STUDY PLANS (Free, Starter, Pro, Elite) -->
@@ -398,6 +465,15 @@ function subscribeSpecial(pack, method) {
                             </button>
                         </template>
 
+                        <template v-else-if="appliedPlanCoupon?.is_free && Number(selectedCouponPlanId) === Number(plan.id)">
+                            <button
+                                @click="subscribe(plan, 'coupon')"
+                                class="btn w-full bg-emerald-600 hover:bg-emerald-700 text-white border-0 text-xs py-2.5 font-bold cursor-pointer"
+                            >
+                                {{ locale === 'en' ? 'Claim Free with Coupon (৳0)' : 'কুপন দিয়ে ফ্রিতে চালু করুন (৳০)' }}
+                            </button>
+                        </template>
+
                         <template v-else>
                             <button
                                 @click="subscribe(plan, 'mhpay')"
@@ -478,18 +554,27 @@ function subscribeSpecial(pack, method) {
 
                     <div class="space-y-2">
                         <button
-                            @click="subscribePlan(plan, 'mhpay')"
-                            class="btn btn-primary w-full shadow-md shadow-pink-500/20 bg-gradient-to-r from-rose-600 to-pink-600 border-0 text-xs py-2.5 font-bold cursor-pointer"
+                            v-if="appliedPlanCoupon?.is_free && Number(selectedCouponPlanId) === Number(plan.id)"
+                            @click="subscribePlan(plan, 'coupon')"
+                            class="btn w-full bg-emerald-600 hover:bg-emerald-700 text-white border-0 text-xs py-2.5 font-bold cursor-pointer"
                         >
-                            {{ locale === 'en' ? `Start ${plan.duration_months || 1} Months with bKash / Nagad` : `বিকাশ / নগদ দিয়ে ${plan.duration_months || 1} মাস শুরু করুন` }}
+                            {{ locale === 'en' ? 'Claim Free with Coupon (৳0)' : 'কুপন দিয়ে ফ্রিতে চালু করুন (৳০)' }}
                         </button>
-                        <button
-                            v-if="student"
-                            @click="subscribePlan(plan, 'wallet')"
-                            class="btn btn-outline w-full text-xs py-2 font-bold cursor-pointer"
-                        >
-                            {{ locale === 'en' ? `Pay with Wallet (৳${Math.round(plan.price_total || plan.price_monthly)})` : `ওয়ালেট দিয়ে পরিশোধ (৳${Math.round(plan.price_total || plan.price_monthly)})` }}
-                        </button>
+                        <template v-else>
+                            <button
+                                @click="subscribePlan(plan, 'mhpay')"
+                                class="btn btn-primary w-full shadow-md shadow-pink-500/20 bg-gradient-to-r from-rose-600 to-pink-600 border-0 text-xs py-2.5 font-bold cursor-pointer"
+                            >
+                                {{ locale === 'en' ? `Start ${plan.duration_months || 1} Months with bKash / Nagad` : `বিকাশ / নগদ দিয়ে ${plan.duration_months || 1} মাস শুরু করুন` }}
+                            </button>
+                            <button
+                                v-if="student"
+                                @click="subscribePlan(plan, 'wallet')"
+                                class="btn btn-outline w-full text-xs py-2 font-bold cursor-pointer"
+                            >
+                                {{ locale === 'en' ? `Pay with Wallet (৳${Math.round(plan.price_total || plan.price_monthly)})` : `ওয়ালেট দিয়ে পরিশোধ (৳${Math.round(plan.price_total || plan.price_monthly)})` }}
+                            </button>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -558,18 +643,27 @@ function subscribeSpecial(pack, method) {
 
                     <div class="space-y-2">
                         <button
-                            @click="subscribePlan(plan, 'mhpay')"
-                            class="btn btn-primary w-full shadow-md shadow-pink-500/20 bg-gradient-to-r from-rose-600 to-pink-600 border-0 text-xs py-2.5 font-bold cursor-pointer"
+                            v-if="appliedPlanCoupon?.is_free && Number(selectedCouponPlanId) === Number(plan.id)"
+                            @click="subscribePlan(plan, 'coupon')"
+                            class="btn w-full bg-emerald-600 hover:bg-emerald-700 text-white border-0 text-xs py-2.5 font-bold cursor-pointer"
                         >
-                            {{ locale === 'en' ? `Start ${plan.duration_months || 1} Months with bKash / Nagad` : `বিকাশ / নগদ দিয়ে ${plan.duration_months || 1} মাস শুরু করুন` }}
+                            {{ locale === 'en' ? 'Claim Free with Coupon (৳0)' : 'কুপন দিয়ে ফ্রিতে চালু করুন (৳০)' }}
                         </button>
-                        <button
-                            v-if="student"
-                            @click="subscribePlan(plan, 'wallet')"
-                            class="btn btn-outline w-full text-xs py-2 font-bold cursor-pointer"
-                        >
-                            {{ locale === 'en' ? `Pay with Wallet (৳${Math.round(plan.price_total || plan.price_monthly)})` : `ওয়ালেট দিয়ে পরিশোধ (৳${Math.round(plan.price_total || plan.price_monthly)})` }}
-                        </button>
+                        <template v-else>
+                            <button
+                                @click="subscribePlan(plan, 'mhpay')"
+                                class="btn btn-primary w-full shadow-md shadow-pink-500/20 bg-gradient-to-r from-rose-600 to-pink-600 border-0 text-xs py-2.5 font-bold cursor-pointer"
+                            >
+                                {{ locale === 'en' ? `Start ${plan.duration_months || 1} Months with bKash / Nagad` : `বিকাশ / নগদ দিয়ে ${plan.duration_months || 1} মাস শুরু করুন` }}
+                            </button>
+                            <button
+                                v-if="student"
+                                @click="subscribePlan(plan, 'wallet')"
+                                class="btn btn-outline w-full text-xs py-2 font-bold cursor-pointer"
+                            >
+                                {{ locale === 'en' ? `Pay with Wallet (৳${Math.round(plan.price_total || plan.price_monthly)})` : `ওয়ালেট দিয়ে পরিশোধ (৳${Math.round(plan.price_total || plan.price_monthly)})` }}
+                            </button>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -767,7 +861,7 @@ function subscribeSpecial(pack, method) {
                             {{ locale === 'en' ? 'Total Payable Amount:' : 'সর্বমোট প্রদেয় মূল্য:' }}
                         </div>
                         <div class="font-heading text-3xl font-extrabold text-[var(--text)] flex items-baseline gap-1">
-                            ৳{{ customTotalMonthly }}
+                            ৳{{ appliedCustomCoupon ? appliedCustomCoupon.final_amount : customTotalMonthly }}
                             <span class="text-xs font-normal text-[var(--text-muted)]">/ {{ locale === 'en' ? '1 Month' : '১ মাস' }}</span>
                         </div>
                         <p class="text-[11px] text-[var(--text-muted)] mt-1 leading-relaxed">
@@ -778,22 +872,40 @@ function subscribeSpecial(pack, method) {
                         </p>
                     </div>
 
+                    <CouponInput
+                        v-if="student"
+                        v-model="appliedCustomCoupon"
+                        target-type="custom_subscription"
+                        :subtotal="customTotalMonthly"
+                        compact
+                    />
+
                     <div class="space-y-2 pt-2">
                         <button
+                            v-if="appliedCustomCoupon?.is_free"
                             type="button"
-                            @click="subscribeCustom('mhpay')"
-                            class="btn btn-primary w-full shadow-md shadow-pink-500/20 bg-gradient-to-r from-rose-600 to-pink-600 border-0 text-xs py-2.5 font-bold"
+                            @click="subscribeCustom('coupon')"
+                            class="btn w-full bg-emerald-600 hover:bg-emerald-700 text-white border-0 text-xs py-2.5 font-bold"
                         >
-                            {{ locale === 'en' ? 'Activate with bKash / Nagad' : 'বিকাশ / নগদ দিয়ে সক্রিয় করুন' }}
+                            {{ locale === 'en' ? 'Activate Free with Coupon (৳0)' : 'কুপন দিয়ে ফ্রিতে সক্রিয় করুন (৳০)' }}
                         </button>
-                        <button
-                            v-if="student"
-                            type="button"
-                            @click="subscribeCustom('wallet')"
-                            class="btn btn-outline w-full text-xs py-2 font-bold"
-                        >
-                            {{ locale === 'en' ? `Pay with Wallet (৳${customTotalMonthly})` : `ওয়ালেট দিয়ে পরিশোধ (৳${customTotalMonthly})` }}
-                        </button>
+                        <template v-else>
+                            <button
+                                type="button"
+                                @click="subscribeCustom('mhpay')"
+                                class="btn btn-primary w-full shadow-md shadow-pink-500/20 bg-gradient-to-r from-rose-600 to-pink-600 border-0 text-xs py-2.5 font-bold"
+                            >
+                                {{ locale === 'en' ? 'Activate with bKash / Nagad' : 'বিকাশ / নগদ দিয়ে সক্রিয় করুন' }}
+                            </button>
+                            <button
+                                v-if="student"
+                                type="button"
+                                @click="subscribeCustom('wallet')"
+                                class="btn btn-outline w-full text-xs py-2 font-bold"
+                            >
+                                {{ locale === 'en' ? `Pay with Wallet (৳${appliedCustomCoupon ? appliedCustomCoupon.final_amount : customTotalMonthly})` : `ওয়ালেট দিয়ে পরিশোধ (৳${appliedCustomCoupon ? appliedCustomCoupon.final_amount : customTotalMonthly})` }}
+                            </button>
+                        </template>
                     </div>
                 </div>
             </div>

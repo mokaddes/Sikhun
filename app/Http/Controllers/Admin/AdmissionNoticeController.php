@@ -214,4 +214,18 @@ class AdmissionNoticeController extends Controller
 
         return back()->with('success', "স্ক্র্যাপিং সম্পন্ন হয়েছে। {$count} টি নতুন/হালনাগাদ ভর্তি বিজ্ঞপ্তি সংগ্রহ করা হয়েছে।");
     }
+
+    public function mergeDuplicates(): RedirectResponse
+    {
+        $result = $this->scraperService->mergeDuplicates();
+
+        if ($result['deleted_count'] === 0) {
+            return back()->with('success', 'কোনো ডুপ্লিকেট ভর্তি বিজ্ঞপ্তি পাওয়া যায়নি। সব বিজ্ঞপ্তি ইতোমধ্যেই একত্রিত রয়েছে।');
+        }
+
+        return back()->with(
+            'success',
+            "{$result['groups_merged']}টি বিশ্ববিদ্যালয়ের {$result['deleted_count']}টি ডুপ্লিকেট বিজ্ঞপ্তি একত্রিত করা হয়েছে। এখন মোট {$result['remaining_count']}টি বিজ্ঞপ্তি রয়েছে।"
+        );
+    }
 }

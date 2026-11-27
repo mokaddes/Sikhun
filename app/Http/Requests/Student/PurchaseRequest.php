@@ -11,7 +11,8 @@ class PurchaseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'payment_method' => ['required', 'in:wallet,mhpay,bkash,nagad'],
+            'payment_method' => ['required', 'in:wallet,mhpay,bkash,nagad,coupon'],
+            'coupon_code' => ['nullable', 'string', 'max:64'],
         ];
     }
 }

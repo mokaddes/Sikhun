@@ -130,13 +130,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
         Route::post('orders/{order}/approve', [OrderController::class, 'approve'])->name('orders.approve');
 
-        // Invoices: list, create, inspect, edit totals/items, print
+        // Invoices: list, create, inspect, edit totals/items, notify, duplicate, delete, print
         Route::get('invoices', [\App\Http\Controllers\Admin\InvoiceController::class, 'index'])->name('invoices.index');
         Route::get('invoices/create', [\App\Http\Controllers\Admin\InvoiceController::class, 'create'])->name('invoices.create');
         Route::post('invoices', [\App\Http\Controllers\Admin\InvoiceController::class, 'store'])->name('invoices.store');
         Route::get('invoices/{invoice}', [\App\Http\Controllers\Admin\InvoiceController::class, 'show'])->name('invoices.show');
         Route::get('invoices/{invoice}/edit', [\App\Http\Controllers\Admin\InvoiceController::class, 'edit'])->name('invoices.edit');
         Route::put('invoices/{invoice}', [\App\Http\Controllers\Admin\InvoiceController::class, 'update'])->name('invoices.update');
+        Route::post('invoices/{invoice}/notify', [\App\Http\Controllers\Admin\InvoiceController::class, 'notify'])->name('invoices.notify');
+        Route::post('invoices/{invoice}/duplicate', [\App\Http\Controllers\Admin\InvoiceController::class, 'duplicate'])->name('invoices.duplicate');
+        Route::delete('invoices/{invoice}', [\App\Http\Controllers\Admin\InvoiceController::class, 'destroy'])->name('invoices.destroy');
         Route::get('invoices/{invoice}/print', [\App\Http\Controllers\Admin\InvoiceController::class, 'print'])->name('invoices.print');
 
         Route::get('settings', [SiteSettingController::class, 'edit'])->name('settings.edit');
@@ -163,6 +166,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // University Admission Notices module
         Route::post('admissions/scrape-now', [\App\Http\Controllers\Admin\AdmissionNoticeController::class, 'scrapeNow'])->name('admissions.scrape-now');
+        Route::post('admissions/merge-duplicates', [\App\Http\Controllers\Admin\AdmissionNoticeController::class, 'mergeDuplicates'])->name('admissions.merge-duplicates');
         Route::patch('admissions/{admission}/toggle-publish', [\App\Http\Controllers\Admin\AdmissionNoticeController::class, 'togglePublish'])->name('admissions.toggle-publish');
         Route::post('admissions/{admission}/share-facebook', [\App\Http\Controllers\Admin\AdmissionNoticeController::class, 'shareToFacebook'])->name('admissions.share-facebook');
         Route::resource('admissions', \App\Http\Controllers\Admin\AdmissionNoticeController::class)->except(['show']);

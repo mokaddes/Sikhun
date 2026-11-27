@@ -4,28 +4,36 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import Pagination from '@/Components/UI/Pagination.vue';
 import { useI18n } from '@/i18n';
-import { MagnifyingGlassIcon, InboxIcon, EyeIcon, PencilSquareIcon, PlusIcon } from '@heroicons/vue/24/outline';
+import { MagnifyingGlassIcon, InboxIcon, EyeIcon, PencilSquareIcon, PlusIcon, PaperAirplaneIcon, DocumentDuplicateIcon, TrashIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     invoices: Object,
-    filters: { type: Object, default: () => ({ status: '', search: '' }) },
+    filters: { type: Object, default: () => ({ status: '', type: '', search: '' }) },
 });
 
 const { t, locale, money } = useI18n();
 
 const search = ref(props.filters.search ?? '');
 const status = ref(props.filters.status ?? '');
+const type = ref(props.filters.type ?? '');
 
 let debounceTimer = null;
-watch([search, status], () => {
+watch([search, status, type], () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
         router.get('/admin/invoices', {
             search: search.value || undefined,
             status: status.value || undefined,
+            type: type.value || undefined,
         }, { preserveState: true, replace: true });
     }, 300);
 });
+
+function deleteInvoice(invoice) {
+    if (confirm(`"${invoice.invoice_number}" ইনভয়েসটি কি মুছে ফেলতে চান?`)) {
+        router.delete(`/admin/invoices/${invoice.id}`, { preserveScroll: true });
+    }
+}
 
 const statuses = ['paid', 'sent', 'overdue', 'void', 'draft'];
 
@@ -66,25 +74,33 @@ const statusClass = (s) => ({
                 />
             </div>
 
-            <div class="flex flex-wrap items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1">
-                <button
-                    type="button"
-                    class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
-                    :class="!status ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text)]'"
-                    @click="status = ''"
-                >
-                    {{ t('common.all') }}
-                </button>
-                <button
-                    v-for="s in statuses"
-                    :key="s"
-                    type="button"
-                    class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
-                    :class="status === s ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text)]'"
-                    @click="status = s"
-                >
-                    {{ t(`invoices.${s}`) }}
-                </button>
+            <div class="flex flex-wrap items-center gap-2">
+                <div class="flex flex-wrap items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1">
+                    <button type="button" class="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors" :class="!type ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)]'" @click="type = ''">সব ধরন</button>
+                    <button type="button" class="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors" :class="type === 'one_time' ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)]'" @click="type = 'one_time'">{{ t('invoices.one_time') }}</button>
+                    <button type="button" class="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors" :class="type === 'recurring' ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)]'" @click="type = 'recurring'">{{ t('invoices.recurring') }}</button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1">
+                    <button
+                        type="button"
+                        class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+                        :class="!status ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text)]'"
+                        @click="status = ''"
+                    >
+                        {{ t('common.all') }}
+                    </button>
+                    <button
+                        v-for="s in statuses"
+                        :key="s"
+                        type="button"
+                        class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+                        :class="status === s ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text)]'"
+                        @click="status = s"
+                    >
+                        {{ t(`invoices.${s}`) }}
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -121,13 +137,22 @@ const statusClass = (s) => ({
                                 </span>
                             </td>
                             <td class="px-5 py-4">
-                                <div class="flex items-center justify-end gap-2">
+                                <div class="flex items-center justify-end gap-1.5">
                                     <Link :href="`/admin/invoices/${invoice.id}`" class="rounded-lg border border-[var(--border)] p-1.5 hover:border-[var(--primary)]" :title="t('invoices.view')">
                                         <EyeIcon class="h-4 w-4" />
                                     </Link>
                                     <Link :href="`/admin/invoices/${invoice.id}/edit`" class="rounded-lg border border-[var(--border)] p-1.5 hover:border-[var(--primary)]" :title="t('invoices.edit')">
                                         <PencilSquareIcon class="h-4 w-4" />
                                     </Link>
+                                    <button type="button" @click="router.post(`/admin/invoices/${invoice.id}/notify`, {}, { preserveScroll: true })" class="rounded-lg border border-[var(--border)] p-1.5 hover:border-sky-500 hover:text-sky-500 cursor-pointer" title="নোটিফিকেশন পাঠান">
+                                        <PaperAirplaneIcon class="h-4 w-4" />
+                                    </button>
+                                    <button type="button" @click="router.post(`/admin/invoices/${invoice.id}/duplicate`)" class="rounded-lg border border-[var(--border)] p-1.5 hover:border-emerald-500 hover:text-emerald-500 cursor-pointer" title="ডুপ্লিকেট করুন">
+                                        <DocumentDuplicateIcon class="h-4 w-4" />
+                                    </button>
+                                    <button v-if="invoice.status !== 'paid'" type="button" @click="deleteInvoice(invoice)" class="rounded-lg border border-[var(--border)] p-1.5 hover:border-rose-500 hover:text-rose-500 cursor-pointer" title="মুছে ফেলুন">
+                                        <TrashIcon class="h-4 w-4" />
+                                    </button>
                                 </div>
                             </td>
                         </tr>

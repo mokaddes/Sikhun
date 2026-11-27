@@ -325,7 +325,8 @@ Route::middleware(['auth:web', 'student.active'])->group(function () {
     Route::get('/profile/export', [ProfileController::class, 'exportData'])->name('profile.export');
     Route::delete('/profile/account', [ProfileController::class, 'deleteAccount'])->name('profile.delete');
 
-    // Coupons / free-access status
+    // Coupons / free-access status & discount checkout validation
+    Route::post('/coupons/apply', [\App\Http\Controllers\Student\CouponController::class, 'apply'])->name('coupons.apply');
     Route::get('/access', [AccessController::class, 'index'])->name('access.index');
     Route::post('/access/redeem', [AccessController::class, 'redeem'])->name('access.redeem');
 });

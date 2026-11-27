@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
+import CouponInput from '@/Components/Checkout/CouponInput.vue';
 import { useI18n } from '@/i18n';
 import {
     BookOpenIcon,
@@ -62,15 +63,34 @@ function handleAddToShelf() {
     });
 }
 
+const appliedBookCoupon = ref(null);
+const appliedChaptersCoupon = ref(null);
+
+const effectiveBookPrice = computed(() => {
+    if (appliedBookCoupon.value) return Number(appliedBookCoupon.value.final_amount || 0);
+    return Number(props.book?.price || 0);
+});
+
+const effectiveSelectedChaptersTotal = computed(() => {
+    if (appliedChaptersCoupon.value) return Number(appliedChaptersCoupon.value.final_amount || 0);
+    return selectedChaptersTotal.value;
+});
+
 function handlePurchase(method) {
     requireAuthOrRun(() => {
-        router.post(`/library/${props.book.id}/purchase`, { payment_method: method });
+        router.post(`/library/${props.book.id}/purchase`, {
+            payment_method: method,
+            coupon_code: appliedBookCoupon.value?.code || undefined,
+        });
     });
 }
 
 function handlePurchaseChapter(chapter, method) {
     requireAuthOrRun(() => {
-        router.post(`/library/${props.book.id}/chapters/${chapter.id}/purchase`, { payment_method: method }, {
+        router.post(`/library/${props.book.id}/chapters/${chapter.id}/purchase`, {
+            payment_method: method,
+            coupon_code: appliedBookCoupon.value?.code || undefined,
+        }, {
             preserveScroll: true,
         });
     });
@@ -119,6 +139,7 @@ function handlePurchaseSelectedChapters(method) {
         router.post(`/library/${props.book.id}/chapters/purchase`, {
             chapter_ids: selectedChapterIds.value,
             payment_method: method,
+            coupon_code: appliedChaptersCoupon.value?.code || undefined,
         }, {
             preserveScroll: true,
             onFinish: () => {
@@ -437,6 +458,15 @@ const hasFullReadAccess = computed(() => {
 
                                 <!-- Logged-in Student with Freemium / Partial Access (Book has priced chapters, student can read free chapters & buy chapters below) -->
                                 <div v-else-if="hasPricedChapters" class="space-y-3">
+                                    <div v-if="isPaidBook && isLoggedIn" class="w-full max-w-md">
+                                        <CouponInput
+                                            v-model="appliedBookCoupon"
+                                            target-type="book"
+                                            :target-id="book.id"
+                                            :subtotal="Number(book.price || 0)"
+                                            compact
+                                        />
+                                    </div>
                                     <div class="flex flex-wrap items-center gap-3">
                                         <Link
                                             :href="`/library/${book.id}/read`"
@@ -464,23 +494,32 @@ const hasFullReadAccess = computed(() => {
                                         </span>
 
                                         <button
-                                            v-if="isPaidBook"
+                                            v-if="isPaidBook && appliedBookCoupon?.is_free"
                                             type="button"
-                                            @click="handlePurchase('wallet')"
-                                            class="inline-flex items-center gap-2 rounded-xl border border-[var(--primary)] bg-[var(--primary)]/10 px-5 py-3.5 text-sm font-bold text-[var(--primary)] hover:bg-[var(--primary)]/20 transition cursor-pointer"
+                                            @click="handlePurchase('coupon')"
+                                            class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-3.5 text-sm font-bold text-white shadow-lg transition cursor-pointer"
                                         >
-                                            <ShoppingBagIcon class="h-5 w-5" />
-                                            <span>{{ locale === 'en' ? `Buy Full Book (৳${book.price})` : `সম্পূর্ণ বই কিনুন (৳${book.price})` }}</span>
+                                            <CheckBadgeIcon class="h-5 w-5" />
+                                            <span>{{ locale === 'en' ? 'Claim Free with Coupon (৳0)' : 'কুপন দিয়ে ফ্রিতে আনলক করুন (৳০)' }}</span>
                                         </button>
-                                        <button
-                                            v-if="isPaidBook"
-                                            type="button"
-                                            @click="handlePurchase('mhpay')"
-                                            class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-pink-500/20 transition hover:opacity-95 cursor-pointer"
-                                        >
-                                            <CreditCardIcon class="h-5 w-5" />
-                                            <span>{{ locale === 'en' ? 'MFS (bKash/Nagad)' : 'বিকাশ / নগদ' }}</span>
-                                        </button>
+                                        <template v-else-if="isPaidBook">
+                                            <button
+                                                type="button"
+                                                @click="handlePurchase('wallet')"
+                                                class="inline-flex items-center gap-2 rounded-xl border border-[var(--primary)] bg-[var(--primary)]/10 px-5 py-3.5 text-sm font-bold text-[var(--primary)] hover:bg-[var(--primary)]/20 transition cursor-pointer"
+                                            >
+                                                <ShoppingBagIcon class="h-5 w-5" />
+                                                <span>{{ locale === 'en' ? `Buy Full Book (৳${effectiveBookPrice})` : `সম্পূর্ণ বই কিনুন (৳${effectiveBookPrice})` }}</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                @click="handlePurchase('mhpay')"
+                                                class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-pink-500/20 transition hover:opacity-95 cursor-pointer"
+                                            >
+                                                <CreditCardIcon class="h-5 w-5" />
+                                                <span>{{ locale === 'en' ? 'MFS (bKash/Nagad)' : 'বিকাশ / নগদ' }}</span>
+                                            </button>
+                                        </template>
                                     </div>
                                     <p class="text-xs text-[var(--text-muted)] flex items-center gap-1.5">
                                         <SparklesIcon class="h-4 w-4 text-orange-400 shrink-0" />
@@ -496,64 +535,105 @@ const hasFullReadAccess = computed(() => {
                                 </div>
 
                                 <!-- Logged-in Student: Paid Book (Purchasable via Wallet or Gateway) -->
-                                <div v-else-if="isPaidBook && accessType === 'purchasable'" class="flex flex-wrap gap-3">
-                                    <button
-                                        type="button"
-                                        @click="handlePurchase('wallet')"
-                                        class="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-[var(--primary-hover)]"
-                                    >
-                                        <WalletIcon class="h-5 w-5" />
-                                        <span>{{ t('book_show.pay_with_wallet') }} (৳{{ book.price }})</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        @click="handlePurchase('mhpay')"
-                                        class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-pink-500/20 transition hover:opacity-95"
-                                    >
-                                        <CreditCardIcon class="h-5 w-5" />
-                                        <span>{{ locale === 'en' ? 'MFS (bKash/Nagad/Rocket)' : 'বিকাশ / নগদ / রকেট' }}</span>
-                                    </button>
-                                    <button
-                                        v-for="gw in ($page.props.site?.payment_methods || []).filter(m => m.key !== 'mhpay')"
-                                        :key="gw.key"
-                                        type="button"
-                                        @click="handlePurchase(gw.key)"
-                                        class="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-5 py-3.5 text-xs font-semibold text-[var(--text-muted)] hover:text-white transition"
-                                    >
-                                        <span>{{ gw.label }}</span>
-                                    </button>
-                                </div>
-
-                                <!-- Logged-in Student: Paid Book (Insufficient Wallet Balance) -->
-                                <div v-else-if="isPaidBook" class="space-y-3">
-                                    <p class="text-xs font-medium text-amber-500">
-                                        {{ t('book_show.insufficient_funds') }}
-                                    </p>
-                                    <div class="flex flex-wrap gap-3">
+                                <div v-else-if="isPaidBook && accessType === 'purchasable'" class="space-y-3">
+                                    <div class="max-w-md">
+                                        <CouponInput
+                                            v-model="appliedBookCoupon"
+                                            target-type="book"
+                                            :target-id="book.id"
+                                            :subtotal="Number(book.price || 0)"
+                                            compact
+                                        />
+                                    </div>
+                                    <div v-if="appliedBookCoupon?.is_free" class="flex flex-wrap gap-3">
+                                        <button
+                                            type="button"
+                                            @click="handlePurchase('coupon')"
+                                            class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition cursor-pointer"
+                                        >
+                                            <CheckBadgeIcon class="h-5 w-5" />
+                                            <span>{{ locale === 'en' ? 'Get Full Book Free with Coupon (৳0)' : 'কুপন দিয়ে ফ্রিতে বই আনলক করুন (৳০)' }}</span>
+                                        </button>
+                                    </div>
+                                    <div v-else class="flex flex-wrap gap-3">
+                                        <button
+                                            type="button"
+                                            @click="handlePurchase('wallet')"
+                                            class="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-[var(--primary-hover)]"
+                                        >
+                                            <WalletIcon class="h-5 w-5" />
+                                            <span>{{ t('book_show.pay_with_wallet') }} (৳{{ effectiveBookPrice }})</span>
+                                        </button>
                                         <button
                                             type="button"
                                             @click="handlePurchase('mhpay')"
                                             class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-pink-500/20 transition hover:opacity-95"
                                         >
                                             <CreditCardIcon class="h-5 w-5" />
-                                            <span>{{ locale === 'en' ? 'Pay with MFS (bKash / Nagad / Rocket)' : 'বিকাশ / নগদ / রকেটে কিনুন' }} (৳{{ book.price }})</span>
+                                            <span>{{ locale === 'en' ? 'MFS (bKash/Nagad/Rocket)' : 'বিকাশ / নগদ / রকেট' }} (৳{{ effectiveBookPrice }})</span>
                                         </button>
                                         <button
                                             v-for="gw in ($page.props.site?.payment_methods || []).filter(m => m.key !== 'mhpay')"
                                             :key="gw.key"
                                             type="button"
                                             @click="handlePurchase(gw.key)"
-                                            class="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-medium text-[var(--text-muted)] hover:text-white transition"
+                                            class="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-5 py-3.5 text-xs font-semibold text-[var(--text-muted)] hover:text-white transition"
                                         >
-                                            <span>{{ gw.label }} (৳{{ book.price }})</span>
+                                            <span>{{ gw.label }}</span>
                                         </button>
-                                        <Link
-                                            href="/wallet"
-                                            class="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-5 py-3.5 text-sm font-semibold transition hover:bg-[var(--surface2)]"
+                                    </div>
+                                </div>
+
+                                <!-- Logged-in Student: Paid Book (Insufficient Wallet Balance) -->
+                                <div v-else-if="isPaidBook" class="space-y-3">
+                                    <div class="max-w-md">
+                                        <CouponInput
+                                            v-model="appliedBookCoupon"
+                                            target-type="book"
+                                            :target-id="book.id"
+                                            :subtotal="Number(book.price || 0)"
+                                            compact
+                                        />
+                                    </div>
+                                    <p v-if="!appliedBookCoupon?.is_free" class="text-xs font-medium text-amber-500">
+                                        {{ t('book_show.insufficient_funds') }}
+                                    </p>
+                                    <div class="flex flex-wrap gap-3">
+                                        <button
+                                            v-if="appliedBookCoupon?.is_free"
+                                            type="button"
+                                            @click="handlePurchase('coupon')"
+                                            class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition cursor-pointer"
                                         >
-                                            <WalletIcon class="h-5 w-5 text-[var(--secondary)]" />
-                                            <span>{{ t('book_show.recharge_wallet') }}</span>
-                                        </Link>
+                                            <CheckBadgeIcon class="h-5 w-5" />
+                                            <span>{{ locale === 'en' ? 'Get Full Book Free with Coupon (৳0)' : 'কুপন দিয়ে ফ্রিতে আনলক করুন (৳০)' }}</span>
+                                        </button>
+                                        <template v-else>
+                                            <button
+                                                type="button"
+                                                @click="handlePurchase('mhpay')"
+                                                class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-pink-500/20 transition hover:opacity-95"
+                                            >
+                                                <CreditCardIcon class="h-5 w-5" />
+                                                <span>{{ locale === 'en' ? 'Pay with MFS (bKash / Nagad / Rocket)' : 'বিকাশ / নগদ / রকেটে কিনুন' }} (৳{{ effectiveBookPrice }})</span>
+                                            </button>
+                                            <button
+                                                v-for="gw in ($page.props.site?.payment_methods || []).filter(m => m.key !== 'mhpay')"
+                                                :key="gw.key"
+                                                type="button"
+                                                @click="handlePurchase(gw.key)"
+                                                class="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-medium text-[var(--text-muted)] hover:text-white transition"
+                                            >
+                                                <span>{{ gw.label }} (৳{{ effectiveBookPrice }})</span>
+                                            </button>
+                                            <Link
+                                                href="/wallet"
+                                                class="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-5 py-3.5 text-sm font-semibold transition hover:bg-[var(--surface2)]"
+                                            >
+                                                <WalletIcon class="h-5 w-5 text-[var(--secondary)]" />
+                                                <span>{{ t('book_show.recharge_wallet') }}</span>
+                                            </Link>
+                                        </template>
                                     </div>
                                 </div>
 
@@ -764,55 +844,78 @@ const hasFullReadAccess = computed(() => {
                         <!-- Multi-chapter Sticky Checkout Bar -->
                         <div
                             v-if="selectedChapterIds.length > 0"
-                            class="sticky bottom-4 z-40 mt-6 p-4 rounded-2xl border border-orange-500/50 bg-[var(--surface)]/95 backdrop-blur-md shadow-2xl flex flex-wrap items-center justify-between gap-4"
+                            class="sticky bottom-4 z-40 mt-6 p-4 rounded-2xl border border-orange-500/50 bg-[var(--surface)]/95 backdrop-blur-md shadow-2xl space-y-3"
                         >
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold text-base">
-                                    {{ locale === 'bn' ? toBengaliDigits(selectedChapterIds.length) : selectedChapterIds.length }}
-                                </div>
-                                <div>
-                                    <div class="font-bold text-sm text-[var(--text)]">
-                                        {{ locale === 'bn'
-                                            ? `${toBengaliDigits(selectedChapterIds.length)}টি অধ্যায় নির্বাচিত`
-                                            : `${selectedChapterIds.length} chapter${selectedChapterIds.length > 1 ? 's' : ''} selected` }}
-                                    </div>
-                                    <div class="text-xs text-[var(--text-muted)] flex items-center gap-2">
-                                        <span>{{ locale === 'bn' ? 'মোট মূল্য:' : 'Total:' }}</span>
-                                        <span class="font-extrabold text-base text-orange-500">
-                                            ৳{{ locale === 'bn' ? toBengaliDigits(selectedChaptersTotal) : selectedChaptersTotal }}
-                                        </span>
-                                        <span v-if="props.book.price && selectedChaptersTotal >= Number(props.book.price)" class="text-[11px] text-emerald-500 font-medium">
-                                            ({{ locale === 'bn' ? 'পুরো বইয়ের দাম ৳' + toBengaliDigits(props.book.price) : 'Full book price ৳' + props.book.price }})
-                                        </span>
-                                    </div>
-                                </div>
+                            <div v-if="isLoggedIn" class="max-w-md">
+                                <CouponInput
+                                    v-model="appliedChaptersCoupon"
+                                    target-type="book_chapters"
+                                    :target-id="book.id"
+                                    :chapter-ids="selectedChapterIds"
+                                    :subtotal="selectedChaptersTotal"
+                                    compact
+                                />
                             </div>
-                            <div class="flex items-center gap-2.5">
-                                <button
-                                    type="button"
-                                    @click="selectedChapterIds = []"
-                                    class="px-3 py-2 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text)] transition cursor-pointer"
-                                >
-                                    {{ locale === 'bn' ? 'বাতিল' : 'Clear' }}
-                                </button>
-                                <button
-                                    v-if="isLoggedIn && walletBalance >= selectedChaptersTotal"
-                                    type="button"
-                                    @click="handlePurchaseSelectedChapters('wallet')"
-                                    :disabled="purchasingMulti"
-                                    class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50"
-                                >
-                                    {{ locale === 'bn' ? 'ওয়ালেট দিয়ে কিনুন' : 'Pay via Wallet' }}
-                                </button>
-                                <button
-                                    type="button"
-                                    @click="handlePurchaseSelectedChapters('mhpay')"
-                                    :disabled="purchasingMulti"
-                                    class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold transition shadow-md shadow-orange-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-                                >
-                                    <ShoppingBagIcon class="w-4 h-4" />
-                                    <span>{{ locale === 'bn' ? 'একসাথে কিনুন (বিকাশ/নগদ/কার্ড)' : 'Buy Selected Chapters (bKash/Nagad)' }}</span>
-                                </button>
+                            <div class="flex flex-wrap items-center justify-between gap-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold text-base">
+                                        {{ locale === 'bn' ? toBengaliDigits(selectedChapterIds.length) : selectedChapterIds.length }}
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-sm text-[var(--text)]">
+                                            {{ locale === 'bn'
+                                                ? `${toBengaliDigits(selectedChapterIds.length)}টি অধ্যায় নির্বাচিত`
+                                                : `${selectedChapterIds.length} chapter${selectedChapterIds.length > 1 ? 's' : ''} selected` }}
+                                        </div>
+                                        <div class="text-xs text-[var(--text-muted)] flex items-center gap-2">
+                                            <span>{{ locale === 'bn' ? 'মোট মূল্য:' : 'Total:' }}</span>
+                                            <span class="font-extrabold text-base text-orange-500">
+                                                ৳{{ locale === 'bn' ? toBengaliDigits(effectiveSelectedChaptersTotal) : effectiveSelectedChaptersTotal }}
+                                            </span>
+                                            <span v-if="props.book.price && selectedChaptersTotal >= Number(props.book.price)" class="text-[11px] text-emerald-500 font-medium">
+                                                ({{ locale === 'bn' ? 'পুরো বইয়ের দাম ৳' + toBengaliDigits(props.book.price) : 'Full book price ৳' + props.book.price }})
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2.5">
+                                    <button
+                                        type="button"
+                                        @click="selectedChapterIds = []"
+                                        class="px-3 py-2 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text)] transition cursor-pointer"
+                                    >
+                                        {{ locale === 'bn' ? 'বাতিল' : 'Clear' }}
+                                    </button>
+                                    <button
+                                        v-if="appliedChaptersCoupon?.is_free"
+                                        type="button"
+                                        @click="handlePurchaseSelectedChapters('coupon')"
+                                        :disabled="purchasingMulti"
+                                        class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-md cursor-pointer disabled:opacity-50"
+                                    >
+                                        {{ locale === 'bn' ? 'কুপন দিয়ে ফ্রিতে আনলক করুন (৳০)' : 'Claim Free with Coupon (৳0)' }}
+                                    </button>
+                                    <template v-else>
+                                        <button
+                                            v-if="isLoggedIn && walletBalance >= effectiveSelectedChaptersTotal"
+                                            type="button"
+                                            @click="handlePurchaseSelectedChapters('wallet')"
+                                            :disabled="purchasingMulti"
+                                            class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50"
+                                        >
+                                            {{ locale === 'bn' ? 'ওয়ালেট দিয়ে কিনুন' : 'Pay via Wallet' }}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            @click="handlePurchaseSelectedChapters('mhpay')"
+                                            :disabled="purchasingMulti"
+                                            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold transition shadow-md shadow-orange-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                                        >
+                                            <ShoppingBagIcon class="w-4 h-4" />
+                                            <span>{{ locale === 'bn' ? 'একসাথে কিনুন (বিকাশ/নগদ/কার্ড)' : 'Buy Selected Chapters (bKash/Nagad)' }}</span>
+                                        </button>
+                                    </template>
+                                </div>
                             </div>
                         </div>
                     </div>

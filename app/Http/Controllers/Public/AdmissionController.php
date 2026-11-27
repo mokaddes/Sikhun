@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AdmissionNotice;
 use App\Models\QuestionBank;
 use App\Services\SeoService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -65,9 +66,22 @@ class AdmissionController extends Controller
         ]);
     }
 
-    public function show(string $slug): Response
+    public function show(string $slug): Response|RedirectResponse
     {
-        $notice = AdmissionNotice::published()->where('slug', $slug)->firstOrFail();
+        $notice = AdmissionNotice::published()->where('slug', $slug)->first();
+
+        if (! $notice) {
+            $redirectTarget = AdmissionNotice::published()
+                ->whereJsonContains('merged_slugs', $slug)
+                ->first();
+
+            if ($redirectTarget) {
+                return redirect("/admission-notice/{$redirectTarget->slug}", 301);
+            }
+
+            abort(404);
+        }
+
         $notice->increment('views_count');
 
         $relatedNotices = AdmissionNotice::published()

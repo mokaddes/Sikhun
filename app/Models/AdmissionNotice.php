@@ -43,6 +43,8 @@ class AdmissionNotice extends Model
         'views_count',
         'source_name',
         'source_url',
+        'update_history',
+        'merged_slugs',
         'meta_title',
         'meta_description',
         'published_at',
@@ -60,6 +62,8 @@ class AdmissionNotice extends Model
         return [
             'units' => 'array',
             'exam_dates' => 'array',
+            'update_history' => 'array',
+            'merged_slugs' => 'array',
             'application_start' => 'datetime',
             'application_deadline' => 'datetime',
             'published_at' => 'datetime',

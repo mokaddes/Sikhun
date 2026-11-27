@@ -84,8 +84,24 @@
     letter-spacing: normal !important;
 }
 
-html { background-color: var(--bg); scroll-behavior: smooth; }
+html { background-color: var(--bg); scroll-behavior: smooth; overflow-x: clip; max-width: 100%; }
+body { overflow-x: clip; max-width: 100%; }
 html { font-size: calc(16px * var(--text-scale, 1)); }
+
+@media (max-width: 768px) {
+    .prose table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .prose img,
+    .prose iframe,
+    .prose video {
+        max-width: 100%;
+        height: auto;
+    }
+}
 
 /* Public pages and the student dashboard share the same quiet, editorial voice. */
 .public-shell main,

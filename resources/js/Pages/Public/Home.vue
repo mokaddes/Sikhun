@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, onUnmounted } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
 import EducativeHeroScene from '@/Components/Three/EducativeHeroScene.vue';
@@ -13,6 +13,8 @@ const props = defineProps({
 });
 
 const { locale } = useI18n();
+const page = usePage();
+const student = computed(() => page.props.auth?.student);
 const en = computed(() => locale.value === 'en');
 let revealObserver;
 
@@ -75,7 +77,8 @@ onUnmounted(() => revealObserver?.disconnect());
                     <h1 class="home-title mt-5 max-w-2xl">{{ en ? 'Make room for deeper learning.' : 'শেখার জন্য একটু মনোযোগী পরিসর।' }}</h1>
                     <p class="home-lede mt-5 max-w-xl">{{ en ? 'Read, practice and ask better questions—with a study companion that keeps the important things together.' : 'পড়ুন, অনুশীলন করুন, প্রশ্ন করুন—পড়াশোনার দরকারি সবকিছু থাকুক একই পরিসরে।' }}</p>
                     <div class="mt-7 flex flex-wrap items-center gap-3">
-                        <Link href="/register" class="home-primary">{{ en ? 'Begin studying' : 'শেখা শুরু করুন' }} <span aria-hidden="true">↗</span></Link>
+                        <Link v-if="student" href="/dashboard" class="home-primary">{{ en ? 'Go to Dashboard' : 'ড্যাশবোর্ডে যান' }} <span aria-hidden="true">↗</span></Link>
+                        <Link v-else href="/register" class="home-primary">{{ en ? 'Begin studying' : 'শেখা শুরু করুন' }} <span aria-hidden="true">↗</span></Link>
                         <Link href="/courses" class="home-secondary">{{ en ? 'Explore learning' : 'শেখার উপকরণ দেখুন' }}</Link>
                     </div>
                     <div class="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[var(--text-muted)]">
@@ -194,7 +197,8 @@ onUnmounted(() => revealObserver?.disconnect());
             <section class="home-closing mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
                 <div class="home-closing-inner home-reveal">
                     <div><p class="home-kicker">{{ en ? 'Your next chapter starts here' : 'আপনার পরের অধ্যায় শুরু হোক' }}</p><h2 class="home-heading mt-2">{{ en ? 'One focused step at a time.' : 'একবারে একটি মনোযোগী পদক্ষেপ।' }}</h2></div>
-                    <Link href="/register" class="home-primary">{{ en ? 'Create a free account' : 'বিনামূল্যে অ্যাকাউন্ট খুলুন' }} <span aria-hidden="true">↗</span></Link>
+                    <Link v-if="student" href="/dashboard" class="home-primary">{{ en ? 'Open your Dashboard' : 'আপনার ড্যাশবোর্ডে যান' }} <span aria-hidden="true">↗</span></Link>
+                    <Link v-else href="/register" class="home-primary">{{ en ? 'Create a free account' : 'বিনামূল্যে অ্যাকাউন্ট খুলুন' }} <span aria-hidden="true">↗</span></Link>
                 </div>
             </section>
         </div>
@@ -211,7 +215,7 @@ onUnmounted(() => revealObserver?.disconnect());
 .dark .home-design { --home-accent: #d2ad7c; }
 .home-hero { min-height: 480px; }
 .home-title, .home-heading { font-family: 'Playfair Display', 'Noto Serif Bengali', Georgia, serif; }
-.home-title { max-width: 12ch; font-size: clamp(2.7rem, 6vw, 5.2rem); font-weight: 600; letter-spacing: -.045em; line-height: 1.06; }
+.home-title { max-width: 12ch; font-size: clamp(2rem, 6vw, 5.2rem); font-weight: 600; letter-spacing: -.045em; line-height: 1.06; }
 .home-heading { font-size: clamp(1.65rem, 3.2vw, 2.5rem); font-weight: 600; letter-spacing: -.025em; line-height: 1.2; }
 .home-lede { color: var(--text-muted); font-size: clamp(1rem, 1.4vw, 1.12rem); line-height: 1.8; }
 .home-kicker { color: var(--home-accent); font-size: .72rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
@@ -263,6 +267,6 @@ onUnmounted(() => revealObserver?.disconnect());
 .home-closing-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.5rem; border-radius: 1.25rem; background: var(--surface2); padding: clamp(1.25rem, 4vw, 2.5rem); }
 .home-reveal { opacity: 0; transform: translateY(16px); transition: opacity .65s ease, transform .65s cubic-bezier(.2,.75,.25,1); }
 .home-reveal.is-visible { opacity: 1; transform: translateY(0); }
-@media (max-width: 640px) { .home-hero { min-height: unset; } .home-title { max-width: 11ch; } .home-note { left: 2%; bottom: 4%; font-size: .72rem; } }
+@media (max-width: 640px) { .home-hero { min-height: unset; } .home-title { max-width: 100%; } .home-scene > div:first-child { min-height: 290px; } .home-note { left: 2%; bottom: 4%; font-size: .72rem; } }
 @media (prefers-reduced-motion: reduce) { .home-reveal { opacity: 1; transform: none; transition: none; } }
 </style>

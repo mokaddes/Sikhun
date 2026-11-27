@@ -46,6 +46,7 @@ class AccessGrantService
     public function activeCouponFor(Student $student): ?Coupon
     {
         return Coupon::query()
+            ->where(fn ($q) => $q->where('coupon_kind', 'access_grant')->orWhereNull('coupon_kind'))
             ->where('is_active', true)
             ->where(fn ($q) => $q->whereNull('student_id')->orWhere('student_id', $student->id))
             ->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
@@ -64,6 +65,7 @@ class AccessGrantService
     public function redeem(Student $student, string $code): CouponRedemption
     {
         $coupon = Coupon::query()
+            ->where(fn ($q) => $q->where('coupon_kind', 'access_grant')->orWhereNull('coupon_kind'))
             ->where('code', $code)
             ->where('is_active', true)
             ->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', now()))

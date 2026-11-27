@@ -109,9 +109,14 @@ class CourseController extends Controller
         }
 
         try {
-            $gateway = $resolver->resolve($request->payment_method);
+            $gateway = $request->payment_method === 'coupon' ? null : $resolver->resolve($request->payment_method);
             $result = $purchases->purchaseCourse(
-                $student, $course, $request->payment_method, $gateway
+                $student,
+                $course,
+                $request->payment_method,
+                $gateway,
+                [],
+                $request->input('coupon_code')
             );
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());

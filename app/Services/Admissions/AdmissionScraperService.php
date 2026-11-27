@@ -5,6 +5,8 @@ namespace App\Services\Admissions;
 use App\Mail\AdmissionNoticeAlertMail;
 use App\Models\AdmissionNotice;
 use App\Services\SiteSettingService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -49,7 +51,8 @@ class AdmissionScraperService
 
         // Rajshahi University (RU)
         try {
-            if ($this->scrapeRajshahiUniversity()) {
+            $ru = $this->scrapeRajshahiUniversity();
+            if ($ru && $ru->wasRecentlyCreated) {
                 $count++;
             }
         } catch (\Throwable $e) {
@@ -78,7 +81,8 @@ class AdmissionScraperService
 
             $slug = 'rajshahi-university-undergraduate-admission-circular-2026-2027';
 
-            $existing = AdmissionNotice::where('slug', $slug)->first();
+            $existing = $this->findExistingForInstitution('রাজশাহী বিশ্ববিদ্যালয় (RU)', '2026-2027')
+                ?? $this->findBySlugOrMerged($slug);
             if ($existing) {
                 return $existing;
             }
@@ -186,13 +190,31 @@ HTML
                     }
 
                     $slug = Str::slug(Str::limit($title, 80)) . '-' . substr(md5($link), 0, 6);
-                    if (AdmissionNotice::where('slug', $slug)->orWhere('source_url', $link)->exists()) {
+                    $institution = $this->normalizeInstitutionName($this->detectInstitution($title, $desc));
+                    $type = $this->detectUniversityType($title, $desc, $institution);
+                    $urls = $this->resolveOfficialUrls($institution, $link);
+
+                    if ($this->isAlreadyRecorded($slug, $link, $title, $institution, '2026-2027')) {
                         continue;
                     }
 
-                    $institution = $this->detectInstitution($title, $desc);
-                    $type = $this->detectUniversityType($title, $desc, $institution);
-                    $urls = $this->resolveOfficialUrls($institution, $link);
+                    $existing = $this->findExistingForInstitution($institution, '2026-2027');
+                    if ($existing) {
+                        $merged = $this->mergeUpdateIntoNotice($existing, [
+                            'title' => $title,
+                            'slug' => $slug,
+                            'summary' => html_entity_decode(strip_tags($desc)),
+                            'source_name' => 'Students.bd Circular Portal',
+                            'source_url' => $link,
+                            'apply_url' => $urls['apply_url'],
+                            'official_website_url' => $urls['official_website_url'],
+                            'updated_at' => now(),
+                        ]);
+                        if ($merged) {
+                            $imported++;
+                        }
+                        continue;
+                    }
 
                     $notice = AdmissionNotice::create([
                         'title' => $title,
@@ -1104,10 +1126,16 @@ HTML
 
         $imported = 0;
         foreach ($circulars as $item) {
-            $notice = AdmissionNotice::firstOrCreate(
-                ['slug' => $item['slug']],
-                $item
-            );
+            $item['institution_name'] = $this->normalizeInstitutionName($item['institution_name'] ?? '');
+
+            $existing = $this->findBySlugOrMerged($item['slug'])
+                ?? $this->findExistingForInstitution($item['institution_name'], $item['academic_year'] ?? '2026-2027');
+
+            if ($existing) {
+                continue;
+            }
+
+            $notice = AdmissionNotice::create($item);
             if ($notice->wasRecentlyCreated) {
                 $imported++;
             }
@@ -1196,5 +1224,350 @@ HTML
         }
 
         return $updated;
+    }
+
+    public function normalizeInstitutionName(?string $name): string
+    {
+        $clean = trim((string) preg_replace('/\s+/u', ' ', (string) $name));
+        if ($clean === '') {
+            return 'বাংলাদেশ পাবলিক/প্রাইভেট বিশ্ববিদ্যালয়';
+        }
+
+        $lower = mb_strtolower($clean);
+        if (str_contains($lower, 'জিএসটি') || preg_match('/\bgst\b/i', $lower)) {
+            return 'জিএসটি গুচ্ছ বিশ্ববিদ্যালয় (GST Cluster)';
+        }
+        if (str_contains($lower, 'কৃষি গুচ্ছ') || str_contains($lower, 'agri cluster')) {
+            return 'সমন্বিত কৃষি গুচ্ছ বিশ্ববিদ্যালয় (Agri Cluster)';
+        }
+
+        $detected = $this->detectInstitution($clean, '');
+        if ($detected !== 'বাংলাদেশ পাবলিক/প্রাইভেট বিশ্ববিদ্যালয়') {
+            return $detected;
+        }
+
+        return $clean;
+    }
+
+    public function findBySlugOrMerged(string $slug): ?AdmissionNotice
+    {
+        if ($slug === '') {
+            return null;
+        }
+
+        return AdmissionNotice::where('slug', $slug)
+            ->orWhereJsonContains('merged_slugs', $slug)
+            ->first();
+    }
+
+    public function findExistingForInstitution(string $institution, ?string $academicYear = null): ?AdmissionNotice
+    {
+        $normalized = $this->normalizeInstitutionName($institution);
+        if ($normalized === '' || $normalized === 'বাংলাদেশ পাবলিক/প্রাইভেট বিশ্ববিদ্যালয়') {
+            return null;
+        }
+
+        $year = $academicYear ?: '2026-2027';
+
+        $candidates = AdmissionNotice::query()
+            ->where(function ($q) use ($year) {
+                $q->where('academic_year', $year)
+                    ->orWhereNull('academic_year')
+                    ->orWhere('academic_year', '');
+            })
+            ->get()
+            ->filter(fn (AdmissionNotice $n) => $this->normalizeInstitutionName($n->institution_name) === $normalized);
+
+        if ($candidates->isEmpty()) {
+            return null;
+        }
+
+        return $this->pickPrimaryNotice($candidates->all());
+    }
+
+    public function isAlreadyRecorded(
+        ?string $slug,
+        ?string $sourceUrl,
+        ?string $title = null,
+        ?string $institution = null,
+        ?string $academicYear = null
+    ): bool {
+        if ($slug && $this->findBySlugOrMerged($slug)) {
+            return true;
+        }
+
+        $cleanUrl = trim((string) $sourceUrl);
+        if ($cleanUrl !== '' && $cleanUrl !== '#') {
+            if (AdmissionNotice::where('source_url', $cleanUrl)->exists()) {
+                return true;
+            }
+        }
+
+        $cleanTitle = mb_strtolower(trim((string) $title));
+        $existing = $institution ? $this->findExistingForInstitution($institution, $academicYear) : null;
+
+        if ($existing) {
+            if ($cleanTitle !== '' && mb_strtolower(trim($existing->title)) === $cleanTitle) {
+                return true;
+            }
+
+            foreach ((array) $existing->update_history as $entry) {
+                if ($slug && ($entry['slug'] ?? null) === $slug) {
+                    return true;
+                }
+                if ($cleanUrl !== '' && ($entry['source_url'] ?? null) === $cleanUrl) {
+                    return true;
+                }
+                if ($cleanTitle !== '' && mb_strtolower(trim((string) ($entry['title'] ?? ''))) === $cleanTitle) {
+                    return true;
+                }
+            }
+        }
+
+        if ($cleanTitle !== '' && $institution === 'বাংলাদেশ পাবলিক/প্রাইভেট বিশ্ববিদ্যালয়') {
+            return AdmissionNotice::all()->contains(
+                fn (AdmissionNotice $n) => mb_strtolower(trim($n->title)) === $cleanTitle
+            );
+        }
+
+        return false;
+    }
+
+    public function mergeUpdateIntoNotice(AdmissionNotice $primary, array $payload): bool
+    {
+        $history = is_array($primary->update_history) ? $primary->update_history : [];
+        $mergedSlugs = is_array($primary->merged_slugs) ? $primary->merged_slugs : [];
+
+        $newSlug = trim((string) ($payload['slug'] ?? ''));
+        $newUrl = trim((string) ($payload['source_url'] ?? ''));
+        $newTitle = trim((string) ($payload['title'] ?? ''));
+
+        if ($newSlug !== '' && $newSlug !== $primary->slug && ! in_array($newSlug, $mergedSlugs, true)) {
+            $mergedSlugs[] = $newSlug;
+        }
+
+        $alreadyInHistory = false;
+        if ($newTitle !== '' && mb_strtolower($newTitle) === mb_strtolower(trim($primary->title)) && $newUrl === trim((string) $primary->source_url)) {
+            $alreadyInHistory = true;
+        }
+        foreach ($history as $entry) {
+            if (
+                ($newSlug !== '' && ($entry['slug'] ?? null) === $newSlug)
+                || ($newUrl !== '' && ($entry['source_url'] ?? null) === $newUrl)
+                || ($newTitle !== '' && mb_strtolower(trim((string) ($entry['title'] ?? ''))) === mb_strtolower($newTitle))
+            ) {
+                $alreadyInHistory = true;
+                break;
+            }
+        }
+
+        $changed = false;
+        if (! $alreadyInHistory && $newTitle !== '') {
+            $ts = $payload['updated_at'] ?? now();
+            $history[] = [
+                'title' => $newTitle,
+                'summary' => Str::limit(trim((string) ($payload['summary'] ?? '')), 260),
+                'source_name' => $payload['source_name'] ?? null,
+                'source_url' => $newUrl !== '' ? $newUrl : null,
+                'slug' => $newSlug !== '' ? $newSlug : null,
+                'updated_at' => $ts instanceof \DateTimeInterface ? $ts->format(DATE_ATOM) : (string) $ts,
+            ];
+            $changed = true;
+        }
+
+        usort($history, fn ($a, $b) => strcmp((string) ($b['updated_at'] ?? ''), (string) ($a['updated_at'] ?? '')));
+
+        $primary->update_history = array_values($history);
+        $primary->merged_slugs = array_values(array_unique(array_filter($mergedSlugs)));
+
+        foreach (['apply_url', 'official_website_url'] as $urlField) {
+            if (empty($primary->{$urlField}) && ! empty($payload[$urlField])) {
+                $primary->{$urlField} = $payload[$urlField];
+                $changed = true;
+            }
+        }
+
+        $primary->updated_at = $payload['updated_at'] ?? now();
+        $primary->save();
+        Cache::forget('admission_notice_stats_v1');
+
+        return $changed;
+    }
+
+    /**
+     * Merge duplicate admission notices sharing the same university & academic year.
+     *
+     * @return array{groups_merged:int,deleted_count:int,remaining_count:int}
+     */
+    public function mergeDuplicates(): array
+    {
+        $notices = AdmissionNotice::orderBy('id')->get();
+        $groups = [];
+
+        foreach ($notices as $notice) {
+            $normalized = $this->normalizeInstitutionName($notice->institution_name);
+            if ($normalized === 'বাংলাদেশ পাবলিক/প্রাইভেট বিশ্ববিদ্যালয়') {
+                $detected = $this->normalizeInstitutionName($this->detectInstitution($notice->title, (string) $notice->description));
+                if ($detected !== 'বাংলাদেশ পাবলিক/প্রাইভেট বিশ্ববিদ্যালয়') {
+                    $normalized = $detected;
+                    $notice->institution_name = $detected;
+                    $notice->university_type = $this->categorizeUniversity($detected);
+                }
+            } else {
+                $notice->institution_name = $normalized;
+            }
+
+            $key = $normalized === 'বাংলাদেশ পাবলিক/প্রাইভেট বিশ্ববিদ্যালয়'
+                ? 'generic|' . mb_strtolower(trim($notice->title))
+                : $normalized . '|' . ($notice->academic_year ?: '2026-2027');
+
+            $groups[$key][] = $notice;
+        }
+
+        $groupsMerged = 0;
+        $deletedCount = 0;
+
+        DB::transaction(function () use ($groups, &$groupsMerged, &$deletedCount) {
+            foreach ($groups as $items) {
+                if (count($items) <= 1) {
+                    $only = $items[0];
+                    if ($only->isDirty(['institution_name', 'university_type'])) {
+                        $only->save();
+                    }
+                    continue;
+                }
+
+                $groupsMerged++;
+                $primary = $this->pickPrimaryNotice($items);
+                $mergedSlugs = is_array($primary->merged_slugs) ? $primary->merged_slugs : [];
+                $history = is_array($primary->update_history) ? $primary->update_history : [];
+                $latestUpdatedAt = $primary->updated_at;
+
+                $fillableFallbacks = [
+                    'units', 'exam_dates', 'application_start', 'application_deadline',
+                    'application_start_text', 'application_deadline_text', 'admit_card_date_text',
+                    'minimum_gpa_ssc', 'minimum_gpa_hsc', 'total_gpa_required', 'application_fee',
+                    'apply_url', 'official_website_url', 'notice_image_url', 'featured_image_url',
+                    'eligibility_criteria', 'marks_distribution', 'meta_title', 'meta_description',
+                    'published_at',
+                ];
+
+                foreach ($items as $item) {
+                    if ($item->id === $primary->id) {
+                        continue;
+                    }
+
+                    if ($item->slug && $item->slug !== $primary->slug) {
+                        $mergedSlugs[] = $item->slug;
+                    }
+                    foreach ((array) $item->merged_slugs as $oldSlug) {
+                        if ($oldSlug && $oldSlug !== $primary->slug) {
+                            $mergedSlugs[] = $oldSlug;
+                        }
+                    }
+
+                    $dupSummary = Str::limit(trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags((string) $item->description)))), 260);
+                    $history[] = [
+                        'title' => $item->title,
+                        'summary' => $dupSummary,
+                        'source_name' => $item->source_name,
+                        'source_url' => $item->source_url,
+                        'slug' => $item->slug,
+                        'updated_at' => ($item->updated_at ?? $item->created_at ?? now())->toIso8601String(),
+                    ];
+
+                    foreach ((array) $item->update_history as $subEntry) {
+                        if (! empty($subEntry['title'])) {
+                            $history[] = $subEntry;
+                        }
+                    }
+
+                    foreach ($fillableFallbacks as $field) {
+                        if (empty($primary->{$field}) && ! empty($item->{$field})) {
+                            $primary->{$field} = $item->{$field};
+                        }
+                    }
+
+                    $primary->views_count = (int) $primary->views_count + (int) $item->views_count;
+                    $primary->fb_shared_count = (int) $primary->fb_shared_count + (int) $item->fb_shared_count;
+                    $primary->is_featured = (bool) $primary->is_featured || (bool) $item->is_featured;
+
+                    if ($item->updated_at && (! $latestUpdatedAt || $item->updated_at->gt($latestUpdatedAt))) {
+                        $latestUpdatedAt = $item->updated_at;
+                    }
+
+                    $item->delete();
+                    $deletedCount++;
+                }
+
+                // Deduplicate history entries by title+source_url+slug
+                $dedupHistory = [];
+                $seen = [];
+                usort($history, fn ($a, $b) => strcmp((string) ($b['updated_at'] ?? ''), (string) ($a['updated_at'] ?? '')));
+                foreach ($history as $entry) {
+                    $sig = mb_strtolower(trim((string) ($entry['title'] ?? ''))) . '|' . trim((string) ($entry['source_url'] ?? ''));
+                    if (isset($seen[$sig])) {
+                        continue;
+                    }
+                    $seen[$sig] = true;
+                    $dedupHistory[] = $entry;
+                }
+
+                $primary->merged_slugs = array_values(array_unique(array_filter($mergedSlugs)));
+                $primary->update_history = $dedupHistory;
+                if ($latestUpdatedAt) {
+                    $primary->updated_at = $latestUpdatedAt;
+                }
+                $primary->save();
+            }
+        });
+
+        Cache::forget('admission_notice_stats_v1');
+
+        return [
+            'groups_merged' => $groupsMerged,
+            'deleted_count' => $deletedCount,
+            'remaining_count' => AdmissionNotice::count(),
+        ];
+    }
+
+    /**
+     * @param  array<int, AdmissionNotice>  $candidates
+     */
+    protected function pickPrimaryNotice(array $candidates): AdmissionNotice
+    {
+        usort($candidates, function (AdmissionNotice $a, AdmissionNotice $b) {
+            $score = function (AdmissionNotice $n): int {
+                $s = 0;
+                if ($n->status === 'published') {
+                    $s += 10000;
+                }
+                if ($n->is_featured) {
+                    $s += 1000;
+                }
+                if (! self::isThirdPartyAggregator($n->source_url)) {
+                    $s += 500;
+                }
+                if (! empty($n->units)) {
+                    $s += 300;
+                }
+                $s += min(250, (int) floor(mb_strlen(strip_tags((string) $n->description)) / 20));
+                $s += min(100, (int) $n->views_count);
+
+                return $s;
+            };
+
+            $cmp = $score($b) <=> $score($a);
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+
+            $timeA = $a->updated_at?->timestamp ?? 0;
+            $timeB = $b->updated_at?->timestamp ?? 0;
+
+            return $timeB <=> $timeA ?: ($b->id <=> $a->id);
+        });
+
+        return $candidates[0];
     }
 }

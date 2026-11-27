@@ -1,12 +1,18 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import { useI18n } from '@/i18n';
-import { ArrowLeftIcon, PencilSquareIcon, PrinterIcon } from '@heroicons/vue/24/outline';
+import { ArrowLeftIcon, PencilSquareIcon, PrinterIcon, PaperAirplaneIcon, DocumentDuplicateIcon, TrashIcon } from '@heroicons/vue/24/outline';
 
-defineProps({ invoice: Object });
+const props = defineProps({ invoice: Object });
 
 const { t, money } = useI18n();
+
+function destroyInvoice() {
+    if (confirm(`"${props.invoice.invoice_number}" ইনভয়েসটি কি মুছে ফেলতে চান?`)) {
+        router.delete(`/admin/invoices/${props.invoice.id}`);
+    }
+}
 
 const statusClass = (status) => ({
     paid: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
@@ -27,7 +33,15 @@ const fmtDate = (value) => (value ? new Date(value).toLocaleDateString('en-GB') 
                 <ArrowLeftIcon class="h-4 w-4" />
                 {{ t('invoices.back') }}
             </Link>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" @click="router.post(`/admin/invoices/${invoice.id}/notify`)" class="btn inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] text-xs cursor-pointer">
+                    <PaperAirplaneIcon class="h-4 w-4" />
+                    নোটিফাই করুন
+                </button>
+                <button type="button" @click="router.post(`/admin/invoices/${invoice.id}/duplicate`)" class="btn inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] text-xs cursor-pointer">
+                    <DocumentDuplicateIcon class="h-4 w-4" />
+                    ডুপ্লিকেট
+                </button>
                 <a :href="`/admin/invoices/${invoice.id}/print`" target="_blank" rel="noopener" class="btn inline-flex items-center gap-2 rounded-xl border border-[var(--border)]">
                     <PrinterIcon class="h-4 w-4" />
                     {{ t('invoices.print') }}
@@ -36,6 +50,10 @@ const fmtDate = (value) => (value ? new Date(value).toLocaleDateString('en-GB') 
                     <PencilSquareIcon class="h-4 w-4" />
                     {{ t('invoices.edit') }}
                 </Link>
+                <button v-if="invoice.status !== 'paid'" type="button" @click="destroyInvoice" class="btn inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 text-rose-500 text-xs cursor-pointer">
+                    <TrashIcon class="h-4 w-4" />
+                    মুছুন
+                </button>
             </div>
         </div>
 
@@ -65,9 +83,13 @@ const fmtDate = (value) => (value ? new Date(value).toLocaleDateString('en-GB') 
                     <div class="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">{{ t('invoices.invoice_details') }}</div>
                     <div class="mt-1 text-sm text-[var(--text-muted)]">
                         {{ t('invoices.issued') }}: <strong class="text-[var(--text)]">{{ fmtDate(invoice.issued_at) }}</strong><br>
-                        {{ t('invoices.due') }}: <strong class="text-[var(--text)]">{{ fmtDate(invoice.due_at) }}</strong>
+                        {{ t('invoices.due') }}: <strong class="text-[var(--text)]">{{ fmtDate(invoice.due_at) }}</strong><br>
+                        ধরন: <strong class="text-[var(--text)]">{{ invoice.type === 'recurring' ? t('invoices.recurring') : t('invoices.one_time') }}</strong>
                         <template v-if="invoice.period_start">
                             <br>{{ t('invoices.period') }}: {{ fmtDate(invoice.period_start) }} – {{ fmtDate(invoice.period_end) }}
+                        </template>
+                        <template v-if="invoice.meta?.recurrence_interval">
+                            <br>পুনরাবৃত্তি: {{ invoice.meta.recurrence_interval }} <span v-if="invoice.meta.auto_generate_next">(Auto)</span>
                         </template>
                         <template v-if="invoice.order">
                             <br>{{ t('invoices.order') }}: <span class="font-mono text-xs">{{ invoice.order.order_number }}</span>

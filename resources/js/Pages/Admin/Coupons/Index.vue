@@ -58,10 +58,10 @@ function getCouponActions(c) {
                 <table class="w-full text-left text-sm">
                     <thead>
                         <tr class="border-b border-[var(--border)] bg-[var(--surface2)]/50 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                            <th class="px-5 py-3.5">Name</th>
-                            <th class="px-5 py-3.5">Code</th>
-                            <th class="px-5 py-3.5">Assigned To</th>
-                            <th class="px-5 py-3.5">Access Window</th>
+                            <th class="px-5 py-3.5">Name / Kind</th>
+                            <th class="px-5 py-3.5">Code & Discount</th>
+                            <th class="px-5 py-3.5">Scope</th>
+                            <th class="px-5 py-3.5">Window</th>
                             <th class="px-5 py-3.5">Uses</th>
                             <th class="px-5 py-3.5">{{ t('common.status') }}</th>
                             <th class="px-5 py-3.5 text-right">{{ t('common.actions') }}</th>
@@ -74,17 +74,30 @@ function getCouponActions(c) {
                             class="group transition-colors hover:bg-[var(--surface2)]/40"
                         >
                             <td class="px-5 py-4 font-semibold text-[var(--text)]">
-                                {{ c.name }}
+                                <div>{{ c.name }}</div>
+                                <span class="text-[11px] font-medium text-[var(--text-muted)]">
+                                    {{ c.coupon_kind === 'access_grant' ? 'অ্যাক্সেস গ্রান্ট' : 'ডিসকাউন্ট কুপন' }}
+                                </span>
                             </td>
 
                             <td class="px-5 py-4">
                                 <span class="rounded-md bg-[var(--surface2)] px-2.5 py-1 font-mono text-xs font-bold text-[var(--primary)] border border-[var(--border)]">
                                     {{ c.code ?? '—' }}
                                 </span>
+                                <div v-if="c.coupon_kind !== 'access_grant'" class="mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                    {{ c.discount_type === 'fixed' ? `৳${c.discount_value} ছাড়` : `${c.discount_value}% ছাড়` }}
+                                </div>
                             </td>
 
-                            <td class="px-5 py-4 text-[var(--text-muted)]">
-                                {{ c.student ? `${c.student.name} (${c.student.email})` : (locale === 'en' ? 'Anyone' : 'যে কেউ') }}
+                            <td class="px-5 py-4 text-xs text-[var(--text-muted)]">
+                                <div>
+                                    {{ (c.allowed_student_ids?.length)
+                                        ? `${c.allowed_student_ids.length} জন নির্ধারিত`
+                                        : (c.student ? `${c.student.name}` : (locale === 'en' ? 'All Students' : 'সকল শিক্ষার্থী')) }}
+                                </div>
+                                <div v-if="c.coupon_kind !== 'access_grant'" class="mt-0.5 text-[11px]">
+                                    ধরন: {{ (c.applicable_types && c.applicable_types.length) ? c.applicable_types.join(', ') : 'all' }}
+                                </div>
                             </td>
 
                             <td class="px-5 py-4 text-xs text-[var(--text-muted)]">
@@ -92,7 +105,8 @@ function getCouponActions(c) {
                             </td>
 
                             <td class="px-5 py-4 font-mono text-xs text-[var(--text-muted)]">
-                                {{ c.max_uses ? `${c.uses_count} / ${c.max_uses}` : c.uses_count }}
+                                <div>{{ c.max_uses ? `${c.uses_count} / ${c.max_uses}` : c.uses_count }}</div>
+                                <div v-if="c.max_uses_per_user" class="text-[10px]">জনে {{ c.max_uses_per_user }} বার</div>
                             </td>
 
                             <td class="px-5 py-4">

@@ -37,15 +37,47 @@ class InvoiceService
      *
      * @param  array<int, array{description: string, qty: numeric, unit_price: numeric}>  $items
      */
-    public function createManual(int $studentId, array $items, string $status = 'sent', ?string $dueAt = null, ?string $notes = null, float $discount = 0, ?float $vatPercent = null): Invoice
-    {
-        return DB::transaction(function () use ($studentId, $items, $status, $dueAt, $notes, $discount, $vatPercent) {
+    public function createManual(
+        int $studentId,
+        array $items,
+        string $status = 'sent',
+        ?string $dueAt = null,
+        ?string $notes = null,
+        float $discount = 0,
+        ?float $vatPercent = null,
+        array $options = []
+    ): Invoice {
+        $invoice = DB::transaction(function () use ($studentId, $items, $status, $dueAt, $notes, $discount, $vatPercent, $options) {
+            $type = ($options['type'] ?? 'one_time') === 'recurring' ? 'recurring' : 'one_time';
+            $issuedAt = ! empty($options['issued_at']) ? Carbon::parse($options['issued_at']) : now();
+
+            $meta = [
+                'manual' => true,
+                'reminders' => [],
+            ];
+
+            if ($type === 'recurring') {
+                $meta['recurrence_interval'] = $options['recurrence_interval'] ?? 'monthly';
+                $meta['recurrence_days'] = isset($options['recurrence_days']) && $options['recurrence_days'] !== ''
+                    ? (int) $options['recurrence_days']
+                    : null;
+                $meta['auto_generate_next'] = (bool) ($options['auto_generate_next'] ?? true);
+            }
+
+            foreach (['plan_id', 'course_id', 'book_id'] as $refKey) {
+                if (! empty($options[$refKey])) {
+                    $meta[$refKey] = (int) $options[$refKey];
+                }
+            }
+
             $invoice = Invoice::create([
                 'student_id' => $studentId,
                 'order_id' => null,
                 'invoice_number' => 'INV-'.now()->format('ym').'-M'.strtoupper(Str::random(6)),
-                'type' => 'one_time',
-                'issued_at' => now(),
+                'type' => $type,
+                'period_start' => $options['period_start'] ?? null,
+                'period_end' => $options['period_end'] ?? null,
+                'issued_at' => $issuedAt,
                 'due_at' => $dueAt,
                 'subtotal' => 0,
                 'discount' => 0,
@@ -54,11 +86,57 @@ class InvoiceService
                 'currency' => 'BDT',
                 'status' => $status,
                 'notes' => $notes,
-                'meta' => ['manual' => true, 'reminders' => []],
+                'meta' => $meta,
             ]);
 
             return $this->recalculate($invoice, $items, $discount, $vatPercent);
         });
+
+        if (! empty($options['notify_student']) && $invoice->status !== 'draft') {
+            $this->sendInvoiceNotification($invoice);
+        }
+
+        return $invoice;
+    }
+
+    public function sendInvoiceNotification(Invoice $invoice): void
+    {
+        $invoice->loadMissing('student');
+        if (! $invoice->student) {
+            return;
+        }
+
+        $daysLeft = $invoice->due_at
+            ? (int) max(0, today()->diffInDays($invoice->due_at->copy()->startOfDay(), false))
+            : 0;
+        $bn = app()->getLocale() === 'bn';
+
+        try {
+            if (! empty($invoice->student->email)) {
+                Mail::to($invoice->student->email)->send(new InvoiceReminderMail($invoice, max(0, $daysLeft)));
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Manual invoice notification mail failed', ['invoice' => $invoice->id, 'error' => $e->getMessage()]);
+        }
+
+        try {
+            app(NotificationService::class)->send(
+                student: $invoice->student,
+                type: 'subscription_expiry',
+                title: $bn ? "নতুন ইনভয়েস প্রস্তুত ({$invoice->invoice_number})" : "Invoice Ready ({$invoice->invoice_number})",
+                body: $bn
+                    ? "আপনার জন্য ৳{$invoice->total} টাকার ইনভয়েস {$invoice->invoice_number} তৈরি করা হয়েছে। বিস্তারিত দেখে পরিশোধ করুন।"
+                    : "Invoice {$invoice->invoice_number} for ৳{$invoice->total} is ready. Click to view & pay.",
+                data: [
+                    'invoice_id' => $invoice->id,
+                    'invoice_number' => $invoice->invoice_number,
+                    'url' => '/invoices/'.$invoice->id,
+                ],
+                mandatory: true
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Manual invoice push notification failed', ['invoice' => $invoice->id, 'error' => $e->getMessage()]);
+        }
     }
 
     public function createForOrder(Order $order): ?Invoice
@@ -79,11 +157,26 @@ class InvoiceService
         }
 
         [$description, $type, $periodStart, $periodEnd] = $this->describe($order);
-        $subtotal = round((float) $order->amount, 2);
-        $vat = $this->vatFor($subtotal);
+        $discount = round((float) ($order->meta['coupon_discount'] ?? 0), 2);
+        $subtotal = $discount > 0
+            ? round((float) ($order->meta['original_amount'] ?? ($order->amount + $discount)), 2)
+            : round((float) $order->amount, 2);
+        $taxable = max(0.0, round($subtotal - $discount, 2));
+        $vat = $this->vatFor($taxable);
         $issuedAt = $order->updated_at ?? now();
 
-        return DB::transaction(function () use ($order, $description, $type, $periodStart, $periodEnd, $subtotal, $vat, $issuedAt) {
+        $meta = [
+            'order_number' => $order->order_number,
+            'payment_method' => $order->payment_method,
+            'reminders' => [],
+        ];
+        if (! empty($order->meta['coupon_code'])) {
+            $meta['coupon_id'] = $order->meta['coupon_id'] ?? null;
+            $meta['coupon_code'] = $order->meta['coupon_code'];
+            $meta['coupon_discount'] = $discount;
+        }
+
+        return DB::transaction(function () use ($order, $description, $type, $periodStart, $periodEnd, $subtotal, $discount, $taxable, $vat, $issuedAt, $meta) {
             $invoice = Invoice::create([
                 'student_id' => $order->student_id,
                 'order_id' => $order->id,
@@ -94,16 +187,12 @@ class InvoiceService
                 'issued_at' => $issuedAt,
                 'due_at' => $issuedAt,
                 'subtotal' => $subtotal,
-                'discount' => 0,
+                'discount' => $discount,
                 'vat' => $vat,
-                'total' => round($subtotal + $vat, 2),
+                'total' => round($taxable + $vat, 2),
                 'currency' => 'BDT',
                 'status' => 'paid',
-                'meta' => [
-                    'order_number' => $order->order_number,
-                    'payment_method' => $order->payment_method,
-                    'reminders' => [],
-                ],
+                'meta' => $meta,
             ]);
 
             $invoice->items()->create([
@@ -217,6 +306,96 @@ class InvoiceService
 
                     $created++;
                 }
+            });
+
+        // Also generate next-cycle invoices for manual recurring invoices when period_end approaches.
+        Invoice::with(['student', 'items'])
+            ->where('type', 'recurring')
+            ->where('status', '!=', 'void')
+            ->whereNull('order_id')
+            ->get()
+            ->filter(function (Invoice $inv) use ($days) {
+                $meta = is_array($inv->meta) ? $inv->meta : [];
+                if (empty($meta['manual']) || empty($meta['auto_generate_next']) || ! empty($meta['next_generated_invoice_id'])) {
+                    return false;
+                }
+                if (! empty($meta['subscription_id'])) {
+                    return false;
+                }
+                $anchor = $inv->period_end ?? $inv->due_at;
+                if (! $anchor) {
+                    return false;
+                }
+
+                return $anchor->between(now()->subDays(30)->startOfDay(), now()->addDays($days)->endOfDay());
+            })
+            ->each(function (Invoice $inv) use (&$created) {
+                if (! $inv->student || $inv->items->isEmpty()) {
+                    return;
+                }
+
+                $meta = is_array($inv->meta) ? $inv->meta : [];
+                $anchor = ($inv->period_end ?? $inv->due_at)->copy()->startOfDay();
+                $nextStart = $anchor->copy()->addDay();
+                $interval = $meta['recurrence_interval'] ?? 'monthly';
+                $customDays = max(1, (int) ($meta['recurrence_days'] ?? 30));
+
+                $nextEnd = match ($interval) {
+                    'weekly' => $nextStart->copy()->addDays(6),
+                    'quarterly' => $nextStart->copy()->addMonths(3)->subDay(),
+                    'yearly' => $nextStart->copy()->addYear()->subDay(),
+                    'custom' => $nextStart->copy()->addDays($customDays - 1),
+                    default => $nextStart->copy()->addMonth()->subDay(),
+                };
+
+                $exists = Invoice::query()
+                    ->where('student_id', $inv->student_id)
+                    ->where('type', 'recurring')
+                    ->whereDate('period_start', $nextStart)
+                    ->where('status', '!=', 'void')
+                    ->exists();
+
+                if ($exists) {
+                    return;
+                }
+
+                $items = $inv->items->map(fn ($item) => [
+                    'description' => $item->description,
+                    'qty' => (float) $item->qty,
+                    'unit_price' => (float) $item->unit_price,
+                ])->all();
+
+                $vatPercent = (float) $this->settings->get('vat_percent', 0);
+                if ($inv->subtotal > 0 && $inv->vat > 0) {
+                    $taxable = max(0.01, (float) $inv->subtotal - (float) $inv->discount);
+                    $vatPercent = round(((float) $inv->vat / $taxable) * 100, 2);
+                }
+
+                $nextInvoice = $this->createManual(
+                    $inv->student_id,
+                    $items,
+                    'sent',
+                    $nextStart->toDateString(),
+                    $inv->notes,
+                    (float) $inv->discount,
+                    $vatPercent,
+                    [
+                        'type' => 'recurring',
+                        'period_start' => $nextStart->toDateString(),
+                        'period_end' => $nextEnd->toDateString(),
+                        'recurrence_interval' => $interval,
+                        'recurrence_days' => $meta['recurrence_days'] ?? null,
+                        'auto_generate_next' => true,
+                        'plan_id' => $meta['plan_id'] ?? null,
+                        'course_id' => $meta['course_id'] ?? null,
+                        'book_id' => $meta['book_id'] ?? null,
+                        'notify_student' => true,
+                    ]
+                );
+
+                $meta['next_generated_invoice_id'] = $nextInvoice->id;
+                $inv->update(['meta' => $meta]);
+                $created++;
             });
 
         return $created;

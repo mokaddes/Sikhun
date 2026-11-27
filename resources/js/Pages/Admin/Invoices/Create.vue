@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Components/Layout/AdminLayout.vue';
 import { useI18n } from '@/i18n';
@@ -8,19 +8,81 @@ import { ArrowLeftIcon, PlusIcon, TrashIcon } from '@heroicons/vue/24/outline';
 const props = defineProps({
     students: { type: Array, default: () => [] },
     vatPercent: { type: Number, default: 0 },
+    plans: { type: Array, default: () => [] },
+    courses: { type: Array, default: () => [] },
+    books: { type: Array, default: () => [] },
 });
 
 const { t, locale, money } = useI18n();
+const todayIso = new Date().toISOString().slice(0, 10);
+
 const form = useForm({
     student_id: '',
+    type: 'one_time',
     status: 'sent',
+    issued_at: todayIso,
     due_at: '',
+    period_start: '',
+    period_end: '',
+    recurrence_interval: 'monthly',
+    recurrence_days: 30,
+    auto_generate_next: true,
+    plan_id: '',
+    course_id: '',
+    book_id: '',
+    notify_student: true,
     notes: '',
     discount: 0,
     vat_percent: Number(props.vatPercent ?? 0),
     items: [{ description: '', qty: 1, unit_price: 0 }],
 });
+
 const statuses = ['draft', 'sent', 'paid'];
+const intervals = [
+    { value: 'weekly', label: 'সাপ্তাহিক (৭ দিন)' },
+    { value: 'monthly', label: 'মাসিক (১ মাস)' },
+    { value: 'quarterly', label: 'ত্রৈমাসিক (৩ মাস)' },
+    { value: 'yearly', label: 'বার্ষিক (১ বছর)' },
+    { value: 'custom', label: 'কাস্টম দিন' },
+];
+
+watch(() => form.type, (val) => {
+    if (val === 'recurring' && !form.period_start) {
+        form.period_start = todayIso;
+        const d = new Date();
+        d.setMonth(d.getMonth() + 1);
+        d.setDate(d.getDate() - 1);
+        form.period_end = d.toISOString().slice(0, 10);
+    }
+});
+
+watch(() => form.plan_id, (id) => {
+    if (!id) return;
+    const plan = props.plans.find((p) => Number(p.id) === Number(id));
+    if (plan && form.items.length === 1 && !form.items[0].description) {
+        form.items[0].description = `Subscription: ${plan.name}`;
+        form.items[0].unit_price = Number(plan.price_total || plan.price_monthly || 0);
+    }
+});
+
+watch(() => form.course_id, (id) => {
+    if (!id) return;
+    const course = props.courses.find((c) => Number(c.id) === Number(id));
+    if (course && form.items.length === 1 && !form.items[0].description) {
+        form.items[0].description = `Course Enrollment: ${course.title}`;
+        form.items[0].unit_price = Number(course.price || 0);
+    }
+});
+
+watch(() => form.book_id, (id) => {
+    if (!id) return;
+    const book = props.books.find((b) => Number(b.id) === Number(id));
+    if (book && form.items.length === 1 && !form.items[0].description) {
+        form.items[0].description = `Book Purchase: ${book.title}`;
+        form.items[0].unit_price = Number(book.price || 0);
+    }
+});
+
 const subtotal = computed(() => form.items.reduce(
     (sum, item) => sum + Math.round(Number(item.qty || 0) * Number(item.unit_price || 0) * 100) / 100,
     0,
@@ -55,8 +117,8 @@ function submit() {
 
         <form class="grid gap-5 lg:grid-cols-3" @submit.prevent="submit">
             <div class="space-y-5 lg:col-span-2">
-                <div class="card rounded-2xl p-5">
-                    <h2 class="mb-4 font-heading text-sm font-bold uppercase tracking-wider text-[var(--text-muted)]">{{ t('invoices.student') }}</h2>
+                <div class="card rounded-2xl p-5 space-y-4">
+                    <h2 class="font-heading text-sm font-bold uppercase tracking-wider text-[var(--text-muted)]">{{ t('invoices.student') }}</h2>
                     <select v-model="form.student_id" required class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm">
                         <option value="" disabled>{{ locale === 'en' ? 'Select a student' : 'শিক্ষার্থী নির্বাচন করুন' }}</option>
                         <option v-for="student in students" :key="student.id" :value="student.id">
@@ -64,6 +126,30 @@ function submit() {
                         </option>
                     </select>
                     <p v-if="form.errors.student_id" class="mt-1 text-xs text-red-500">{{ form.errors.student_id }}</p>
+
+                    <div class="grid sm:grid-cols-3 gap-3 pt-2 border-t border-[var(--border)]">
+                        <div>
+                            <label class="mb-1 block text-xs font-semibold text-[var(--text-muted)]">লিংক প্ল্যান (ঐচ্ছিক)</label>
+                            <select v-model="form.plan_id" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs">
+                                <option value="">— কোনো প্ল্যান নয় —</option>
+                                <option v-for="p in plans" :key="p.id" :value="p.id">{{ p.name }} (৳{{ p.price_total || p.price_monthly }})</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-semibold text-[var(--text-muted)]">লিংক কোর্স (ঐচ্ছিক)</label>
+                            <select v-model="form.course_id" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs">
+                                <option value="">— কোনো কোর্স নয় —</option>
+                                <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.title }} (৳{{ c.price }})</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-semibold text-[var(--text-muted)]">লিংক বই (ঐচ্ছিক)</label>
+                            <select v-model="form.book_id" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs">
+                                <option value="">— কোনো বই নয় —</option>
+                                <option v-for="b in books" :key="b.id" :value="b.id">{{ b.title }} (৳{{ b.price }})</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card rounded-2xl p-5">
@@ -108,15 +194,78 @@ function submit() {
                     <h2 class="mb-4 font-heading text-sm font-bold uppercase tracking-wider text-[var(--text-muted)]">{{ t('invoices.invoice_details') }}</h2>
                     <div class="space-y-4">
                         <div>
+                            <label class="mb-1.5 block text-sm font-medium">ইনভয়েসের ধরন</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    @click="form.type = 'one_time'"
+                                    class="rounded-xl border px-3 py-2 text-xs font-bold transition cursor-pointer"
+                                    :class="form.type === 'one_time' ? 'border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]' : 'border-[var(--border)] text-[var(--text-muted)]'"
+                                >
+                                    {{ t('invoices.one_time') }}
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="form.type = 'recurring'"
+                                    class="rounded-xl border px-3 py-2 text-xs font-bold transition cursor-pointer"
+                                    :class="form.type === 'recurring' ? 'border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]' : 'border-[var(--border)] text-[var(--text-muted)]'"
+                                >
+                                    {{ t('invoices.recurring') }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
                             <label class="mb-1.5 block text-sm font-medium">{{ t('invoices.status') }}</label>
                             <select v-model="form.status" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm">
                                 <option v-for="status in statuses" :key="status" :value="status">{{ t(`invoices.${status}`) }}</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="mb-1.5 block text-sm font-medium">{{ t('invoices.due') }}</label>
-                            <input v-model="form.due_at" type="date" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm" />
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="mb-1.5 block text-xs font-medium">{{ t('invoices.issued') }}</label>
+                                <input v-model="form.issued_at" type="date" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs" />
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-xs font-medium">{{ t('invoices.due') }}</label>
+                                <input v-model="form.due_at" type="date" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs" />
+                            </div>
                         </div>
+
+                        <template v-if="form.type === 'recurring'">
+                            <div class="border-t border-[var(--border)] pt-3 space-y-3">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="mb-1 block text-xs font-medium">পিরিয়ড শুরু</label>
+                                        <input v-model="form.period_start" type="date" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs" />
+                                    </div>
+                                    <div>
+                                        <label class="mb-1 block text-xs font-medium">পিরিয়ড শেষ</label>
+                                        <input v-model="form.period_end" type="date" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-xs font-medium">পুনরাবৃত্তির সময়কাল</label>
+                                    <select v-model="form.recurrence_interval" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs">
+                                        <option v-for="iv in intervals" :key="iv.value" :value="iv.value">{{ iv.label }}</option>
+                                    </select>
+                                </div>
+                                <div v-if="form.recurrence_interval === 'custom'">
+                                    <label class="mb-1 block text-xs font-medium">কত দিন পর পর?</label>
+                                    <input v-model="form.recurrence_days" type="number" min="1" max="3650" class="w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-2.5 py-2 text-xs" />
+                                </div>
+                                <label class="flex items-center gap-2 text-xs">
+                                    <input v-model="form.auto_generate_next" type="checkbox" class="rounded" />
+                                    <span>মেয়াদ শেষে স্বয়ংক্রিয়ভাবে পরবর্তী ইনভয়েস তৈরি হবে</span>
+                                </label>
+                            </div>
+                        </template>
+
+                        <label class="flex items-center gap-2 text-xs pt-2 border-t border-[var(--border)]">
+                            <input v-model="form.notify_student" type="checkbox" class="rounded" />
+                            <span>তৈরি হওয়ার পর শিক্ষার্থীকে ইমেইল ও পুশ নোটিফিকেশন পাঠান</span>
+                        </label>
                     </div>
                 </div>
 
@@ -135,7 +284,6 @@ function submit() {
                             <span class="font-heading font-extrabold">{{ t('invoices.total') }}</span>
                             <span class="font-heading font-extrabold">৳{{ money(total) }}</span>
                         </div>
-                        <p class="text-[11px] text-[var(--text-muted)]">{{ locale === 'en' ? 'The server recalculates totals before saving.' : 'সেভের আগে সার্ভার টোটাল আবার হিসাব করবে।' }}</p>
                     </div>
                 </div>
                 <div class="flex flex-col gap-2">

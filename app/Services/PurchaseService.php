@@ -23,15 +23,28 @@ class PurchaseService
         protected SubscriptionService $subscriptions,
         protected ReferralService $referrals,
         protected InvoiceService $invoices,
-        protected CourseDeliveryService $courseDelivery
+        protected CourseDeliveryService $courseDelivery,
+        protected CouponService $coupons
     ) {}
 
-    public function purchaseBook(Student $student, Book $book, string $method, ?PaymentGatewayContract $gateway = null): array
+    public function purchaseBook(Student $student, Book $book, string $method, ?PaymentGatewayContract $gateway = null, ?string $couponCode = null): array
     {
-        $order = $this->createOrder($student, 'book', $book->id, $book->price, $method);
+        [$amount, $couponMeta] = $this->applyDiscountCoupon($student, $couponCode, 'book', $book->id, (float) $book->price);
+        if ($method === 'coupon' && $amount > 0) {
+            throw new \RuntimeException('এই কুপনটি পুরো মূল্য মওকুফ করেনি। পেমেন্টের মাধ্যম নির্বাচন করুন।');
+        }
+        $effectiveMethod = $amount <= 0 ? 'free' : $method;
+        $order = $this->createOrder($student, 'book', $book->id, $amount, $effectiveMethod, $couponMeta);
 
-        if ($method === 'wallet') {
-            $this->wallet->debit($student, (float) $book->price, 'book_purchase', $order->order_number, "Purchased book: {$book->title}");
+        if ($effectiveMethod === 'free' || $amount <= 0) {
+            $order->update(['status' => 'completed']);
+            $this->fulfill($order);
+
+            return ['redirect_url' => null, 'order' => $order];
+        }
+
+        if ($effectiveMethod === 'wallet') {
+            $this->wallet->debit($student, $amount, 'book_purchase', $order->order_number, "Purchased book: {$book->title}");
             $order->update(['status' => 'completed']);
             $this->fulfill($order);
 
@@ -43,12 +56,25 @@ class PurchaseService
         return ['redirect_url' => $redirectUrl, 'order' => $order];
     }
 
-    public function purchaseChapter(Student $student, BookChapter $chapter, string $method, ?PaymentGatewayContract $gateway = null): array
+    public function purchaseChapter(Student $student, BookChapter $chapter, string $method, ?PaymentGatewayContract $gateway = null, ?string $couponCode = null): array
     {
-        $order = $this->createOrder($student, 'book_chapter', $chapter->id, $chapter->price, $method, ['book_id' => $chapter->book_id]);
+        [$amount, $couponMeta] = $this->applyDiscountCoupon($student, $couponCode, 'book', (int) $chapter->book_id, (float) $chapter->price);
+        if ($method === 'coupon' && $amount > 0) {
+            throw new \RuntimeException('এই কুপনটি পুরো মূল্য মওকুফ করেনি। পেমেন্টের মাধ্যম নির্বাচন করুন।');
+        }
+        $effectiveMethod = $amount <= 0 ? 'free' : $method;
+        $meta = array_merge(['book_id' => $chapter->book_id], $couponMeta);
+        $order = $this->createOrder($student, 'book_chapter', $chapter->id, $amount, $effectiveMethod, $meta);
 
-        if ($method === 'wallet') {
-            $this->wallet->debit($student, (float) $chapter->price, 'chapter_purchase', $order->order_number, "Purchased chapter: {$chapter->title}");
+        if ($effectiveMethod === 'free' || $amount <= 0) {
+            $order->update(['status' => 'completed']);
+            $this->fulfill($order);
+
+            return ['redirect_url' => null, 'order' => $order];
+        }
+
+        if ($effectiveMethod === 'wallet') {
+            $this->wallet->debit($student, $amount, 'chapter_purchase', $order->order_number, "Purchased chapter: {$chapter->title}");
             $order->update(['status' => 'completed']);
             $this->fulfill($order);
 
@@ -63,7 +89,7 @@ class PurchaseService
     /**
      * Purchase multiple chapters of a book in a single transaction.
      */
-    public function purchaseChapters(Student $student, Book $book, array $chapters, string $method, ?PaymentGatewayContract $gateway = null): array
+    public function purchaseChapters(Student $student, Book $book, array $chapters, string $method, ?PaymentGatewayContract $gateway = null, ?string $couponCode = null): array
     {
         $ownedChapterIds = $student->ownedChapters()->where('book_id', $book->id)->pluck('chapter_id')->all();
         $unowned = array_filter($chapters, fn ($c) => ! in_array($c->id, $ownedChapterIds, true));
@@ -80,14 +106,27 @@ class PurchaseService
         }
 
         $count = count($chapterIds);
-        $order = $this->createOrder($student, 'book_chapters', $book->id, $totalPrice, $method, [
+        [$amount, $couponMeta] = $this->applyDiscountCoupon($student, $couponCode, 'book', $book->id, $totalPrice);
+        if ($method === 'coupon' && $amount > 0) {
+            throw new \RuntimeException('এই কুপনটি পুরো মূল্য মওকুফ করেনি। পেমেন্টের মাধ্যম নির্বাচন করুন।');
+        }
+        $effectiveMethod = $amount <= 0 ? 'free' : $method;
+        $meta = array_merge([
             'book_id' => $book->id,
             'chapter_ids' => $chapterIds,
             'count' => $count,
-        ]);
+        ], $couponMeta);
+        $order = $this->createOrder($student, 'book_chapters', $book->id, $amount, $effectiveMethod, $meta);
 
-        if ($method === 'wallet') {
-            $this->wallet->debit($student, $totalPrice, 'chapter_purchase', $order->order_number, "Purchased {$count} chapters of {$book->title}");
+        if ($effectiveMethod === 'free' || $amount <= 0) {
+            $order->update(['status' => 'completed']);
+            $this->fulfill($order);
+
+            return ['redirect_url' => null, 'order' => $order];
+        }
+
+        if ($effectiveMethod === 'wallet') {
+            $this->wallet->debit($student, $amount, 'chapter_purchase', $order->order_number, "Purchased {$count} chapters of {$book->title}");
             $order->update(['status' => 'completed']);
             $this->fulfill($order);
 
@@ -99,12 +138,24 @@ class PurchaseService
         return ['redirect_url' => $redirectUrl, 'order' => $order];
     }
 
-    public function purchaseCourse(Student $student, Course $course, string $method, ?PaymentGatewayContract $gateway = null, array $meta = []): array
+    public function purchaseCourse(Student $student, Course $course, string $method, ?PaymentGatewayContract $gateway = null, array $meta = [], ?string $couponCode = null): array
     {
-        $order = $this->createOrder($student, 'course', $course->id, $course->price, $method, $meta);
+        [$amount, $couponMeta] = $this->applyDiscountCoupon($student, $couponCode, 'course', $course->id, (float) $course->price);
+        if ($method === 'coupon' && $amount > 0) {
+            throw new \RuntimeException('এই কুপনটি পুরো মূল্য মওকুফ করেনি। পেমেন্টের মাধ্যম নির্বাচন করুন।');
+        }
+        $effectiveMethod = $amount <= 0 ? 'free' : $method;
+        $order = $this->createOrder($student, 'course', $course->id, $amount, $effectiveMethod, array_merge($meta, $couponMeta));
 
-        if ($method === 'wallet') {
-            $this->wallet->debit($student, (float) $course->price, 'course_purchase', $order->order_number, "Enrolled: {$course->title}");
+        if ($effectiveMethod === 'free' || $amount <= 0) {
+            $order->update(['status' => 'completed']);
+            $this->fulfill($order);
+
+            return ['redirect_url' => null, 'order' => $order];
+        }
+
+        if ($effectiveMethod === 'wallet') {
+            $this->wallet->debit($student, $amount, 'course_purchase', $order->order_number, "Enrolled: {$course->title}");
             $order->update(['status' => 'completed']);
             $this->fulfill($order);
 
@@ -116,7 +167,7 @@ class PurchaseService
         return ['redirect_url' => $redirectUrl, 'order' => $order];
     }
 
-    public function purchaseSubscription(Student $student, Plan $plan, int $months, string $method, ?PaymentGatewayContract $gateway = null): array
+    public function purchaseSubscription(Student $student, Plan $plan, int $months, string $method, ?PaymentGatewayContract $gateway = null, ?string $couponCode = null): array
     {
         if ($plan->price_total > 0 && ($months === (int) $plan->duration_months || $months <= 1)) {
             $amount = (float) $plan->price_total;
@@ -141,14 +192,27 @@ class PurchaseService
 
             return ['redirect_url' => null, 'order' => $order];
         }
-        $order = $this->createOrder($student, 'subscription', $plan->id, $amount, $method, [
+
+        [$finalAmount, $couponMeta] = $this->applyDiscountCoupon($student, $couponCode, 'plan', $plan->id, $amount);
+        if ($method === 'coupon' && $finalAmount > 0) {
+            throw new \RuntimeException('এই কুপনটি পুরো মূল্য মওকুফ করেনি। পেমেন্টের মাধ্যম নির্বাচন করুন।');
+        }
+        $effectiveMethod = $finalAmount <= 0 ? 'free' : $method;
+        $order = $this->createOrder($student, 'subscription', $plan->id, $finalAmount, $effectiveMethod, array_merge([
             'months' => $months,
             'base_amount' => $baseAmount,
-            'discount' => round($baseAmount - $amount, 2),
-        ]);
+            'discount' => round($baseAmount - $finalAmount, 2),
+        ], $couponMeta));
 
-        if ($method === 'wallet') {
-            $this->wallet->debit($student, $amount, 'subscription_purchase', $order->order_number, "Subscribed: {$plan->name} ({$months}mo)");
+        if ($effectiveMethod === 'free' || $finalAmount <= 0) {
+            $order->update(['status' => 'completed']);
+            $this->fulfill($order);
+
+            return ['redirect_url' => null, 'order' => $order];
+        }
+
+        if ($effectiveMethod === 'wallet') {
+            $this->wallet->debit($student, $finalAmount, 'subscription_purchase', $order->order_number, "Subscribed: {$plan->name} ({$months}mo)");
             $order->update(['status' => 'completed']);
             $this->fulfill($order);
 
@@ -160,16 +224,28 @@ class PurchaseService
         return ['redirect_url' => $redirectUrl, 'order' => $order];
     }
 
-    public function purchaseCustomSubscription(Student $student, array $config, int $months, string $method, ?PaymentGatewayContract $gateway = null): array
+    public function purchaseCustomSubscription(Student $student, array $config, int $months, string $method, ?PaymentGatewayContract $gateway = null, ?string $couponCode = null): array
     {
-        $amount = (float) ($config['total_price'] ?? 199) * $months;
-        $order = $this->createOrder($student, 'custom_subscription', 0, $amount, $method, [
+        $rawAmount = (float) ($config['total_price'] ?? 199) * $months;
+        [$finalAmount, $couponMeta] = $this->applyDiscountCoupon($student, $couponCode, 'plan', null, $rawAmount);
+        if ($method === 'coupon' && $finalAmount > 0) {
+            throw new \RuntimeException('এই কুপনটি পুরো মূল্য মওকুফ করেনি। পেমেন্টের মাধ্যম নির্বাচন করুন।');
+        }
+        $effectiveMethod = $finalAmount <= 0 ? 'free' : $method;
+        $order = $this->createOrder($student, 'custom_subscription', 0, $finalAmount, $effectiveMethod, array_merge([
             'months' => $months,
             'custom_config' => $config,
-        ]);
+        ], $couponMeta));
 
-        if ($method === 'wallet') {
-            $this->wallet->debit($student, $amount, 'custom_subscription_purchase', $order->order_number, "Custom Plan Subscribed ({$months}mo)");
+        if ($effectiveMethod === 'free' || $finalAmount <= 0) {
+            $order->update(['status' => 'completed']);
+            $this->fulfill($order);
+
+            return ['redirect_url' => null, 'order' => $order];
+        }
+
+        if ($effectiveMethod === 'wallet') {
+            $this->wallet->debit($student, $finalAmount, 'custom_subscription_purchase', $order->order_number, "Custom Plan Subscribed ({$months}mo)");
             $order->update(['status' => 'completed']);
             $this->fulfill($order);
 
@@ -264,7 +340,20 @@ class PurchaseService
             'invoice' => (function () use ($order) {
                 $invoice = \App\Models\Invoice::find($order->orderable_id);
                 if ($invoice) {
-                    $invoice->update(['status' => 'paid']);
+                    $invUpdates = ['status' => 'paid'];
+                    if (! empty($order->meta['coupon_id']) && ! empty($order->meta['coupon_discount'])) {
+                        $couponDiscount = (float) $order->meta['coupon_discount'];
+                        $newDiscount = round((float) $invoice->discount + $couponDiscount, 2);
+                        $newTotal = max(0.0, round((float) $invoice->total - $couponDiscount, 2));
+                        $meta = is_array($invoice->meta) ? $invoice->meta : [];
+                        $meta['coupon_id'] = (int) $order->meta['coupon_id'];
+                        $meta['coupon_code'] = $order->meta['coupon_code'] ?? null;
+                        $meta['coupon_discount'] = $couponDiscount;
+                        $invUpdates['discount'] = $newDiscount;
+                        $invUpdates['total'] = $newTotal;
+                        $invUpdates['meta'] = $meta;
+                    }
+                    $invoice->update($invUpdates);
                     if (! empty($invoice->meta['subscription_id'])) {
                         $sub = \App\Models\StudentSubscription::find($invoice->meta['subscription_id']);
                         if ($sub && $sub->status === 'active') {
@@ -278,10 +367,38 @@ class PurchaseService
                             $this->subscriptions->assign($order->student, $plan, 1);
                         }
                     }
+                    if (! empty($invoice->meta['course_id'])) {
+                        $course = Course::find($invoice->meta['course_id']);
+                        if ($course) {
+                            $order->student->courseEnrollments()->firstOrCreate(
+                                ['course_id' => $course->id],
+                                ['progress_percentage' => 0]
+                            );
+                            $this->courseDelivery->deliver($order->student, $course, $order);
+                        }
+                    }
+                    if (! empty($invoice->meta['book_id'])) {
+                        $order->student->bookShelf()->firstOrCreate(
+                            ['book_id' => (int) $invoice->meta['book_id']],
+                            ['source' => 'purchased', 'added_at' => now()]
+                        );
+                    }
                 }
             })(),
             default => null,
         };
+
+        if (! empty($order->meta['coupon_id']) && $order->orderable_type !== 'wallet_recharge') {
+            $this->coupons->consume(
+                (int) $order->meta['coupon_id'],
+                $order->student,
+                (string) ($order->meta['coupon_target_type'] ?? $order->orderable_type),
+                isset($order->meta['coupon_target_id']) ? (int) $order->meta['coupon_target_id'] : $order->orderable_id,
+                (float) ($order->meta['coupon_discount'] ?? 0),
+                $order,
+                $order->orderable_type === 'invoice' ? \App\Models\Invoice::find($order->orderable_id) : null
+            );
+        }
 
         // Link-based courses hand the student the product (the link) by email —
         // video courses need nothing here, their content lives in the lessons.
@@ -316,6 +433,31 @@ class PurchaseService
                 ]);
             }
         }
+    }
+
+    /**
+     * @return array{0: float, 1: array}
+     */
+    private function applyDiscountCoupon(Student $student, ?string $couponCode, string $targetType, ?int $productId, float $subtotal): array
+    {
+        $code = trim((string) $couponCode);
+        if ($code === '') {
+            return [$subtotal, []];
+        }
+
+        $res = $this->coupons->validateAndCalculate($student, $code, $targetType, $productId, $subtotal);
+
+        return [
+            $res['final_amount'],
+            [
+                'coupon_id' => $res['coupon_id'],
+                'coupon_code' => $res['code'],
+                'coupon_discount' => $res['discount_amount'],
+                'original_amount' => $res['subtotal'],
+                'coupon_target_type' => $this->coupons->normalizeTargetType($targetType),
+                'coupon_target_id' => $productId,
+            ],
+        ];
     }
 
     private function createOrder(Student $student, string $type, ?int $orderableId, float $amount, string $method, array $extra = []): Order

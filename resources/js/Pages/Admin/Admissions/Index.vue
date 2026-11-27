@@ -27,6 +27,7 @@ const search = ref(props.filters?.search ?? '');
 const type = ref(props.filters?.type ?? '');
 const status = ref(props.filters?.status ?? '');
 const isScraping = ref(false);
+const isMerging = ref(false);
 const previewNotice = ref(null);
 
 function applyFilters() {
@@ -51,6 +52,17 @@ function triggerScrape() {
         preserveScroll: true,
         onFinish: () => {
             isScraping.value = false;
+        },
+    });
+}
+
+function triggerMergeDuplicates() {
+    if (isMerging.value) return;
+    isMerging.value = true;
+    router.post('/admin/admissions/merge-duplicates', {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            isMerging.value = false;
         },
     });
 }
@@ -129,7 +141,15 @@ function formatDateBn(val) {
                         পাবলিক, গুচ্ছ ও বেসরকারি বিশ্ববিদ্যালয়ের অফিসিয়াল সার্কুলার সংগ্রহ, ড্রাফট রিভিউ ও প্রকাশ।
                     </p>
                 </div>
-                <div class="flex items-center gap-3">
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <button
+                        @click="triggerMergeDuplicates"
+                        :disabled="isMerging"
+                        class="btn btn-outline inline-flex items-center gap-2 text-xs"
+                    >
+                        <BuildingLibraryIcon class="w-4 h-4" />
+                        <span>{{ isMerging ? 'একত্রিত হচ্ছে...' : 'ডুপ্লিকেট একত্রিত করুন' }}</span>
+                    </button>
                     <button
                         @click="triggerScrape"
                         :disabled="isScraping"

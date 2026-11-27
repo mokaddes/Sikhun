@@ -56,6 +56,15 @@ class QuestionJsonImportService
         'নৈতিকতা, মূল্যবোধ ও সু-শাসন' => ['bn' => 'নৈতিকতা, মূল্যবোধ ও সুশাসন', 'en' => 'Ethics, Values & Governance', 'slug' => 'ethics-values-governance'],
         'ভূগোল ও দুর্যোগ ব্যবস্থাপনা' => ['bn' => 'ভূগোল ও দুর্যোগ ব্যবস্থাপনা', 'en' => 'Geography & Disaster Management', 'slug' => 'geography-disaster'],
         'ভূগোল (বাংলাদেশ ও বিশ্ব), পরিবেশ ও দুর্যোগ ব্যবস্থাপনা' => ['bn' => 'ভূগোল ও দুর্যোগ ব্যবস্থাপনা', 'en' => 'Geography & Disaster Management', 'slug' => 'geography-disaster'],
+
+        'বাংলা ১ম পত্র' => ['bn' => 'বাংলা ১ম পত্র', 'en' => 'Bangla 1st Paper', 'slug' => 'bangla-1st-paper'],
+        'বাংলা ২য় পত্র' => ['bn' => 'বাংলা ২য় পত্র', 'en' => 'Bangla 2nd Paper', 'slug' => 'bangla-2nd-paper'],
+        'পদার্থবিজ্ঞান' => ['bn' => 'পদার্থবিজ্ঞান', 'en' => 'Physics', 'slug' => 'physics'],
+        'রসায়ন' => ['bn' => 'রসায়ন', 'en' => 'Chemistry', 'slug' => 'chemistry'],
+        'রসায়ন' => ['bn' => 'রসায়ন', 'en' => 'Chemistry', 'slug' => 'chemistry'],
+        'হিসাববিজ্ঞান' => ['bn' => 'হিসাববিজ্ঞান', 'en' => 'Accounting', 'slug' => 'accounting'],
+        'ফিন্যান্স, ব্যাংকিং ও বিমা' => ['bn' => 'ফিন্যান্স, ব্যাংকিং ও বিমা', 'en' => 'Finance, Banking & Insurance', 'slug' => 'finance-banking'],
+        'ব্যবসায় সংগঠন ও ব্যবস্থাপনা' => ['bn' => 'ব্যবসায় সংগঠন ও ব্যবস্থাপনা', 'en' => 'Business Organization & Management', 'slug' => 'business-management'],
     ];
 
     public function __construct()

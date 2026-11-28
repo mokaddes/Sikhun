@@ -380,6 +380,55 @@ const lockedExamPoints = computed(() =>
 const visibleExamPoints = computed(() =>
     props.isPaid ? activeDetail.value.examPoints : freeExamPoints.value
 );
+const jobPrepGuide = computed(() => {
+    const type = activeDetail.value.type;
+    if (type === 'division') {
+        return {
+            quizLayer: 'divisions',
+            focus: props.en
+                ? 'Connect the division with its headquarters, districts, area, population and notable heritage.'
+                : 'বিভাগের সঙ্গে সদর দপ্তর, অন্তর্ভুক্ত জেলা, আয়তন, জনসংখ্যা ও ঐতিহ্য মিলিয়ে পড়ুন।',
+            prompts: props.en
+                ? ['Where is the divisional headquarters?', 'Which districts and heritage sites belong to this division?']
+                : ['এই বিভাগের সদর দপ্তর কোথায়?', 'কোন জেলা ও ঐতিহ্যবাহী স্থান এই বিভাগের অন্তর্ভুক্ত?'],
+            practice: props.en ? 'Practice the 8 divisions on the map' : 'মানচিত্রে ৮ বিভাগ অনুশীলন করুন',
+        };
+    }
+    if (type === 'district') {
+        return {
+            quizLayer: 'districts',
+            focus: props.en
+                ? 'Pair the district with its division, upazila count, parliamentary seats, rivers, heritage and local economy.'
+                : 'জেলাটিকে বিভাগ, উপজেলা সংখ্যা, সংসদীয় আসন, নদী, ঐতিহ্য ও স্থানীয় অর্থনীতির সঙ্গে মিলিয়ে পড়ুন।',
+            prompts: props.en
+                ? ['Which division is this district in?', 'Which river, historic place or local product is associated with it?']
+                : ['জেলাটি কোন বিভাগের অন্তর্ভুক্ত?', 'কোন নদী, ঐতিহাসিক স্থান বা স্থানীয় পণ্যের জন্য এটি পরিচিত?'],
+            practice: props.en ? 'Practice the 64 districts on the map' : 'মানচিত্রে ৬৪ জেলা অনুশীলন করুন',
+        };
+    }
+    if (type === 'river') {
+        return {
+            quizLayer: 'districts',
+            focus: props.en
+                ? 'Learn the river as a route: origin, course, tributaries, connected districts and outfall.'
+                : 'নদীটিকে একটি প্রবাহপথ হিসেবে পড়ুন: উৎপত্তি, গতিপথ, উপনদী, সংশ্লিষ্ট জেলা ও পতনস্থল।',
+            prompts: props.en
+                ? ['Where does the river originate and flow out?', 'Which districts and tributaries are linked to it?']
+                : ['নদীটির উৎপত্তি ও পতনস্থল কোথায়?', 'কোন জেলা ও উপনদীর সঙ্গে এর সম্পর্ক রয়েছে?'],
+            practice: props.en ? 'Practice nearby districts on the map' : 'মানচিত্রে সংশ্লিষ্ট জেলা অনুশীলন করুন',
+        };
+    }
+    return {
+        quizLayer: 'districts',
+        focus: props.en
+            ? 'Remember the landmark through its location, category, period and historical or cultural significance.'
+            : 'ঐতিহ্যবাহী স্থানটিকে অবস্থান, ধরন, সময়কাল এবং ইতিহাস বা সাংস্কৃতিক গুরুত্ব দিয়ে মনে রাখুন।',
+        prompts: props.en
+            ? ['Which district is the landmark in?', 'What historical or cultural fact makes it notable?']
+            : ['ঐতিহ্যবাহী স্থানটি কোন জেলায়?', 'কোন ইতিহাস বা সাংস্কৃতিক বৈশিষ্ট্য একে গুরুত্বপূর্ণ করেছে?'],
+        practice: props.en ? 'Practice its district on the map' : 'মানচিত্রে এর জেলা খুঁজে অনুশীলন করুন',
+    };
+});
 
 // ================= GLOBAL SEARCH =================
 const searchResults = computed(() => {
@@ -1512,10 +1561,11 @@ onMounted(() => {
                     </div>
 
                     <!-- Detail Sub-Tabs -->
-                    <div class="flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--surface2)] border border-[var(--border)]">
+                    <div class="grid grid-cols-3 items-center gap-1 p-1 rounded-2xl bg-[var(--surface2)] border border-[var(--border)]">
                         <button
                             type="button"
                             class="flex-1 py-2 px-3 rounded-xl text-xs font-extrabold transition"
+                            :aria-pressed="detailSubTab === 'overview'"
                             :class="
                                 detailSubTab === 'overview'
                                     ? 'bg-[var(--surface)] text-[var(--text)] shadow-sm'
@@ -1523,11 +1573,21 @@ onMounted(() => {
                             "
                             @click="detailSubTab = 'overview'"
                         >
-                            {{ en ? 'Overview & History' : 'প্রেক্ষাপট ও পরিচিতি' }}
+                            {{ en ? 'History & Heritage' : 'ইতিহাস ও ঐতিহ্য' }}
+                        </button>
+                        <button
+                            type="button"
+                            class="min-w-0 py-2 px-1.5 sm:px-3 rounded-xl text-[11px] sm:text-xs font-extrabold transition"
+                            :aria-pressed="detailSubTab === 'job'"
+                            :class="detailSubTab === 'job' ? 'bg-[var(--surface)] text-[var(--text)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text)]'"
+                            @click="detailSubTab = 'job'"
+                        >
+                            {{ en ? 'Job Prep' : 'চাকরি প্রস্তুতি' }}
                         </button>
                         <button
                             type="button"
                             class="flex-1 py-2 px-3 rounded-xl text-xs font-extrabold transition inline-flex items-center justify-center gap-1.5"
+                            :aria-pressed="detailSubTab === 'exam'"
                             :class="
                                 detailSubTab === 'exam'
                                     ? 'bg-[var(--surface)] text-[var(--text)] shadow-sm'
@@ -1536,7 +1596,7 @@ onMounted(() => {
                             @click="detailSubTab = 'exam'"
                         >
                             <AcademicCapIcon class="w-4 h-4 text-amber-500" />
-                            <span>{{ en ? 'BCS & Exam Notes' : 'পরীক্ষায় যা আসে' }}</span>
+                            <span>{{ en ? 'Exam Notes' : 'পরীক্ষার নোট' }}</span>
                         </button>
                     </div>
 
@@ -1621,7 +1681,48 @@ onMounted(() => {
                         </div>
                     </div>
 
-                    <!-- SUB-TAB 2: EXAM NOTES (FREE + INTELLIGENT PRO GATING) -->
+                    <!-- SUB-TAB 2: JOB PREPARATION -->
+                    <div v-else-if="detailSubTab === 'job'" class="space-y-3">
+                        <section class="rounded-2xl border border-[var(--border)] bg-[var(--surface2)]/70 p-3.5 sm:p-4 space-y-2">
+                            <h4 class="text-sm font-extrabold text-[var(--text)]">
+                                {{ en ? 'How to study this topic for job exams' : 'চাকরির পরীক্ষার জন্য এই টপিক পড়ার কৌশল' }}
+                            </h4>
+                            <p class="text-xs sm:text-sm text-[var(--text)] leading-relaxed">{{ jobPrepGuide.focus }}</p>
+                        </section>
+
+                        <section class="rounded-2xl border border-[var(--border)] p-3.5 sm:p-4 space-y-2">
+                            <h4 class="text-xs font-extrabold uppercase tracking-wide text-[var(--primary)]">
+                                {{ en ? 'Practice recalling' : 'নিজেকে প্রশ্ন করুন' }}
+                            </h4>
+                            <ol class="space-y-2 text-xs sm:text-sm text-[var(--text)]">
+                                <li v-for="(prompt, index) in jobPrepGuide.prompts" :key="index" class="flex gap-2 leading-relaxed">
+                                    <span class="shrink-0 font-bold text-[var(--primary)]">{{ en ? `${index + 1}.` : `${toBnNumber(index + 1)}.` }}</span>
+                                    <span>{{ prompt }}</span>
+                                </li>
+                            </ol>
+                        </section>
+
+                        <section v-if="freeExamPoints.length" class="rounded-2xl border border-[var(--border)] bg-[var(--surface2)]/60 p-3.5 sm:p-4 space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <h4 class="text-xs font-extrabold text-[var(--text)]">{{ en ? 'Key facts to revise' : 'ঝালাই করে নিন' }}</h4>
+                                <button type="button" class="text-[11px] font-bold text-[var(--primary)] hover:underline" @click="detailSubTab = 'exam'">
+                                    {{ en ? 'Exam notes →' : 'পরীক্ষার নোট →' }}
+                                </button>
+                            </div>
+                            <p v-for="(point, index) in freeExamPoints" :key="index" class="text-xs text-[var(--text)] leading-relaxed">• {{ point }}</p>
+                        </section>
+
+                        <button
+                            type="button"
+                            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-3 text-xs sm:text-sm font-extrabold text-white hover:opacity-95 transition"
+                            @click="startQuiz(jobPrepGuide.quizLayer)"
+                        >
+                            <AcademicCapIcon class="h-4 w-4" />
+                            {{ jobPrepGuide.practice }}
+                        </button>
+                    </div>
+
+                    <!-- SUB-TAB 3: EXAM NOTES (FREE + INTELLIGENT PRO GATING) -->
                     <div v-else class="space-y-3">
                         <ul class="space-y-2">
                             <li

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick, defineAsyncComponent } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Components/Layout/PublicLayout.vue';
 import SeoHead from '@/Components/Seo/SeoHead.vue';
@@ -20,9 +20,11 @@ import {
     DocumentDuplicateIcon,
     ArrowDownTrayIcon,
     Squares2X2Icon,
+    MapIcon,
 } from '@heroicons/vue/24/outline';
 
-// 8 Smart Primary Student Tools
+// Smart Primary Student Tools
+const BangladeshMapExplorer = defineAsyncComponent(() => import('./Components/BangladeshMapExplorer.vue'));
 import FormulaConverter from './Components/FormulaConverter.vue';
 import SmartGpaCalculator from './Components/SmartGpaCalculator.vue';
 import StudyPlanner from './Components/StudyPlanner.vue';
@@ -42,6 +44,8 @@ import RegexTester from './Components/RegexTester.vue';
 
 const props = defineProps({
     initialTool: { type: String, default: 'catalog' },
+    isPaid: { type: Boolean, default: false },
+    isAuthenticated: { type: Boolean, default: false },
     recentJobs: Array,
     seo: Object,
 });
@@ -50,11 +54,12 @@ const { locale } = useI18n();
 const en = computed(() => locale.value === 'en');
 
 const activeTab = ref(props.initialTool || 'catalog');
-// Default to 'student' so visitors see the 8 smart student tools first!
+// Default to 'student' so visitors see the smart student tools first!
 const categoryFilter = ref('student');
 const searchQuery = ref('');
 
 const slugByToolId = {
+    bd_map: 'bangladesh-map',
     formulas: 'formula-sheet',
     gpa: 'gpa-calculator',
     routine: 'study-routine',
@@ -71,7 +76,20 @@ const categoryLabels = computed(() => ({
 }));
 
 const toolsList = [
-    // ================= 8 PRIMARY STUDENT-FRIENDLY TOOLS =================
+    // ================= PRIMARY STUDENT-FRIENDLY TOOLS =================
+    {
+        id: 'bd_map',
+        category: 'student',
+        hasPdf: true,
+        titleBn: 'বাংলাদেশের ইন্টারেক্টিভ মানচিত্র (BCS ও ভর্তি অ্যাটলাস)',
+        titleEn: 'Bangladesh Interactive Map Explorer (BCS & Admission)',
+        descBn: '৮টি বিভাগ, ৬৪টি জেলা, ১৪টি প্রধান নদ-নদী ও ২২টি বিখ্যাত স্থানের মানচিত্র, বিবিএস ২০২২ জনসংখ্যা, বিসিএস টপিক, ম্যাপ কুইজ ও PDF।',
+        descEn: 'Explore 8 divisions, 64 districts, 14 major rivers & 22 landmarks with BBS 2022 data, BCS exam notes, Map Quiz & PDF.',
+        icon: MapIcon,
+        badgeBn: 'BCS ও ভর্তি ম্যাপ',
+        badgeEn: 'BCS & GK Map',
+        color: 'text-emerald-500',
+    },
     {
         id: 'formulas',
         category: 'student',
@@ -488,7 +506,7 @@ function convertText(mode) {
                 <div class="flex items-center justify-between text-xs text-gray-500">
                     <span class="font-semibold">
                         {{ categoryFilter === 'student' && !searchQuery
-                            ? (en ? '8 Essential Student & Exam Tools' : 'শিক্ষার্থীদের সবচেয়ে প্রয়োজনীয় ৮টি স্মার্ট টুলস')
+                            ? (en ? `${filteredTools.length} Essential Student & Exam Tools` : `শিক্ষার্থীদের সবচেয়ে প্রয়োজনীয় ${filteredTools.length}টি স্মার্ট টুলস`)
                             : (en ? `Showing ${filteredTools.length} tools` : `মোট ${filteredTools.length}টি ফ্রি টুলস দেখানো হচ্ছে`)
                         }}
                     </span>
@@ -560,6 +578,9 @@ function convertText(mode) {
             </section>
 
             <!-- ACTIVE TOOL VIEWS -->
+            <section v-else-if="activeTab === 'bd_map'">
+                <BangladeshMapExplorer :en="en" :is-paid="isPaid" :is-authenticated="isAuthenticated" />
+            </section>
             <section v-else-if="activeTab === 'formulas'"><FormulaConverter :en="en" /></section>
             <section v-else-if="activeTab === 'gpa'"><SmartGpaCalculator :en="en" /></section>
             <section v-else-if="activeTab === 'routine'"><StudyPlanner :en="en" /></section>

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\JobCircular;
+use App\Models\Student;
+use App\Services\AccessGrantService;
 use App\Services\SeoService;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -11,6 +13,7 @@ use Inertia\Response;
 class ToolController extends Controller
 {
     public const SLUG_MAP = [
+        'bangladesh-map' => 'bd_map',
         'formula-sheet' => 'formulas',
         'gpa-calculator' => 'gpa',
         'study-routine' => 'routine',
@@ -22,7 +25,8 @@ class ToolController extends Controller
     ];
 
     public function __construct(
-        private readonly SeoService $seo
+        private readonly SeoService $seo,
+        private readonly AccessGrantService $accessGrant
     ) {}
 
     public function tools(?string $toolSlug = null): Response
@@ -33,8 +37,17 @@ class ToolController extends Controller
             $initialTool = self::SLUG_MAP[$toolSlug];
         }
 
+        $student = auth('web')->user();
+        $isAuthenticated = $student instanceof Student;
+        $isPaid = $isAuthenticated && (
+            $student->activeSubscription !== null
+            || $this->accessGrant->hasActiveAccess($student)
+        );
+
         return Inertia::render('Public/Tools/Index', [
             'initialTool' => $initialTool,
+            'isPaid' => $isPaid,
+            'isAuthenticated' => $isAuthenticated,
             'recentJobs' => JobCircular::where('deadline', '>=', now())
                 ->latest('published_date')
                 ->take(3)

@@ -8,6 +8,7 @@ use App\Models\QuestionBank;
 use App\Models\QuestionSubject;
 use App\Models\Student;
 use App\Services\BookAccessService;
+use Illuminate\Validation\ValidationException;
 
 class FlashcardSourceService
 {
@@ -172,37 +173,128 @@ class FlashcardSourceService
 
         $questions = $query->inRandomOrder()->limit($sampleLimit)->get();
 
-        abort_if($questions->isEmpty(), 422, 'নির্বাচিত বিষয় বা পরীক্ষায় কোনো প্রশ্ন পাওয়া যায়নি।');
+        if ($questions->isEmpty()) {
+            throw ValidationException::withMessages([
+                'origin_tag' => 'নির্বাচিত বিষয় বা পরীক্ষায় কোনো প্রশ্ন পাওয়া যায়নি। অনুগ্রহ করে এই বিষয়ের সংশ্লিষ্ট পরীক্ষা নির্বাচন করুন।',
+            ]);
+        }
 
         $sourceLines = [];
-        $sourceLines[] = "বিষয়: " . ($subject->name_bn ?? $subject->name_en);
+        $sourceLines[] = 'বিষয়: ' . ($subject->name_bn ?? $subject->name_en);
         if ($originTag) {
             $sourceLines[] = "পরীক্ষা/ট্যাগ: {$originTag}";
         }
+        $sourceLines[] = 'গুরুত্বপূর্ণ নির্দেশনা: প্রতিটি ফ্ল্যাশকার্ডের উত্তর (back) অবশ্যই নিচে দেওয়া পূর্ণাঙ্গ সঠিক উত্তর টেক্সট হতে হবে—কখনোই A, B, C, D বা ক, খ, গ, ঘ অক্ষর ব্যবহার করবেন না।';
         $sourceLines[] = "\nপ্রশ্ন ও সমাধান ব্যাংক:";
 
-        foreach ($questions as $idx => $q) {
-            $num = $idx + 1;
-            $qText = trim(strip_tags($q->question_text));
-            $ans = trim((string) ($q->correct_answer ?: $q->correct_option));
-            $exp = trim(strip_tags((string) $q->explanation));
+        $usableCount = 0;
+        foreach ($questions as $q) {
+            $qText = trim(strip_tags((string) $q->question_text));
+            $ans = $this->resolveCorrectAnswerText($q);
+            $exp = trim(strip_tags((string) ($q->explanation ?: ($q->meta['ai_explanation'] ?? ''))));
 
-            $sourceLines[] = "{$num}. প্রশ্ন: {$qText}";
-            if ($ans !== '') {
-                $sourceLines[] = "   সঠিক উত্তর: {$ans}";
+            if ($qText === '' || $ans === '') {
+                continue;
             }
+
+            $usableCount++;
+            $sourceLines[] = "{$usableCount}. প্রশ্ন: {$qText}";
+            $sourceLines[] = "   সঠিক উত্তর (পূর্ণাঙ্গ টেক্সট): {$ans}";
             if ($exp !== '') {
                 $sourceLines[] = "   ব্যাখ্যা: {$exp}";
             }
-            $sourceLines[] = "";
+            $sourceLines[] = '';
         }
 
-        $label = ($subject->name_bn ?? $subject->name_en) . ($originTag ? " ({$originTag})" : " প্রশ্নব্যাংক");
+        if ($usableCount === 0) {
+            throw ValidationException::withMessages([
+                'subject_id' => 'নির্বাচিত প্রশ্নগুলোতে পূর্ণাঙ্গ উত্তর টেক্সট পাওয়া যায়নি। অনুগ্রহ করে অন্য বিষয় বা পরীক্ষা নির্বাচন করুন।',
+            ]);
+        }
+
+        $label = ($subject->name_bn ?? $subject->name_en) . ($originTag ? " ({$originTag})" : ' প্রশ্নব্যাংক');
 
         return [
             'content' => implode("\n", $sourceLines),
             'source_label' => $label,
             'references' => [],
         ];
+    }
+
+    /**
+     * Resolve the human-readable full answer text from a QuestionBank MCQ,
+     * rejecting bare option letters like A, B, C, D or ক, খ, গ, ঘ.
+     */
+    private function resolveCorrectAnswerText(QuestionBank $q): string
+    {
+        $stripPrefix = static fn (string $text): string => trim(
+            (string) preg_replace('/^(?:[A-Da-d]|[ক-ঘ])[\)\.\:\-]\s*/u', '', trim(strip_tags($text)))
+        );
+
+        $isBareLetter = static fn (string $text): bool => preg_match('/^(?:option\s*)?(?:[A-Da-d]|[ক-ঘ])[\)\.\s]*$/iu', trim($text)) === 1;
+
+        $candidate = trim((string) ($q->correct_option_text ?? ''));
+        if ($candidate !== '') {
+            $cleaned = $stripPrefix($candidate);
+            if ($cleaned !== '' && ! $isBareLetter($cleaned)) {
+                return $cleaned;
+            }
+        }
+
+        $targetRaw = trim((string) ($q->correct_option ?? ''));
+        $targetUpper = strtoupper($targetRaw);
+        $letterIndexMap = [
+            'A' => 0, 'B' => 1, 'C' => 2, 'D' => 3,
+            'ক' => 0, 'খ' => 1, 'গ' => 2, 'ঘ' => 3,
+        ];
+        $indexToAliases = [
+            0 => ['A', 'ক'],
+            1 => ['B', 'খ'],
+            2 => ['C', 'গ'],
+            3 => ['D', 'ঘ'],
+        ];
+        $targetIndex = $letterIndexMap[$targetUpper] ?? $letterIndexMap[$targetRaw] ?? null;
+        $acceptedKeys = $targetIndex !== null ? $indexToAliases[$targetIndex] : array_values(array_unique(array_filter([$targetRaw, $targetUpper])));
+
+        $options = is_array($q->options) ? $q->options : json_decode((string) ($q->options ?? '[]'), true);
+        if (is_array($options)) {
+            foreach ($options as $idx => $opt) {
+                $matchedText = null;
+                if (is_array($opt)) {
+                    $key = trim((string) ($opt['key'] ?? ''));
+                    if ($key !== '' && in_array(strtoupper($key), array_map('strtoupper', $acceptedKeys), true)) {
+                        $matchedText = (string) ($opt['text'] ?? '');
+                    } elseif ($key === '' && $targetIndex !== null && (int) $idx === $targetIndex) {
+                        $matchedText = (string) ($opt['text'] ?? '');
+                    }
+                } elseif (is_string($idx) && in_array(strtoupper(trim($idx)), array_map('strtoupper', $acceptedKeys), true)) {
+                    $matchedText = (string) $opt;
+                } elseif (is_string($opt)) {
+                    if ($targetIndex !== null && (int) $idx === $targetIndex) {
+                        $matchedText = $opt;
+                    } elseif (preg_match('/^([A-Da-d]|[ক-ঘ])[\)\.\:\-]\s*(.+)$/us', trim($opt), $m)) {
+                        if (in_array(strtoupper($m[1]), array_map('strtoupper', $acceptedKeys), true)) {
+                            $matchedText = $m[2];
+                        }
+                    }
+                }
+
+                if ($matchedText !== null) {
+                    $cleaned = $stripPrefix($matchedText);
+                    if ($cleaned !== '' && ! $isBareLetter($cleaned)) {
+                        return $cleaned;
+                    }
+                }
+            }
+        }
+
+        if ($targetRaw !== '' && ! $isBareLetter($targetRaw)) {
+            $cleaned = $stripPrefix($targetRaw);
+            if ($cleaned !== '' && ! $isBareLetter($cleaned)) {
+                return $cleaned;
+            }
+        }
+
+        return '';
     }
 }

@@ -32,14 +32,36 @@ class FlashcardController extends Controller
     {
         $student = auth('web')->user();
         $canUseQuestionBank = true;
-        $validSectors = ['admission', 'job', 'hsc', 'ssc'];
+        $validSectors = ['hsc', 'admission', 'job', 'ssc'];
+
+        $sectorMeta = [
+            'hsc' => ['key' => 'hsc', 'label_bn' => 'এইচএসসি (HSC)', 'label_en' => 'HSC'],
+            'admission' => ['key' => 'admission', 'label_bn' => 'বিশ্ববিদ্যালয় ভর্তি', 'label_en' => 'Admission'],
+            'job' => ['key' => 'job', 'label_bn' => 'বিসিএস ও চাকরি', 'label_en' => 'BCS & Jobs'],
+            'ssc' => ['key' => 'ssc', 'label_bn' => 'এসএসসি (SSC)', 'label_en' => 'SSC'],
+        ];
+
+        $sectorCounts = \App\Models\QuestionBank::published()
+            ->whereIn('segment', $validSectors)
+            ->selectRaw('segment, COUNT(*) as count')
+            ->groupBy('segment')
+            ->pluck('count', 'segment');
+
+        $qbSectors = [];
+        foreach ($validSectors as $secKey) {
+            $cnt = (int) ($sectorCounts[$secKey] ?? 0);
+            if ($cnt > 0) {
+                $qbSectors[] = array_merge($sectorMeta[$secKey], ['count' => $cnt]);
+            }
+        }
+
         $requestedSector = $request->query('sector');
-        if ($requestedSector && in_array($requestedSector, $validSectors, true)) {
+        if ($requestedSector && in_array($requestedSector, $validSectors, true) && (int) ($sectorCounts[$requestedSector] ?? 0) > 0) {
             $studentSector = $requestedSector;
-        } elseif (in_array($student->type, $validSectors, true) && \App\Models\QuestionBank::published()->where('segment', $student->type)->exists()) {
+        } elseif (in_array($student->type, $validSectors, true) && (int) ($sectorCounts[$student->type] ?? 0) > 0) {
             $studentSector = $student->type;
         } else {
-            $studentSector = 'admission';
+            $studentSector = $qbSectors[0]['key'] ?? 'admission';
         }
 
         $books = Book::query()
@@ -61,23 +83,39 @@ class FlashcardController extends Controller
             ->where('processing_status', 'completed')
             ->get(['id', 'title', 'total_pages']);
 
-        $subjects = \App\Models\QuestionSubject::active()
-            ->whereHas('questions', fn ($q) => $q->published()->where('segment', $studentSector))
-            ->orderBy('name_bn')
-            ->get(['id', 'name_bn', 'name_en', 'segment']);
+        $subjectsBySector = [];
+        foreach (array_column($qbSectors, 'key') as $secKey) {
+            $subjectsBySector[$secKey] = \App\Models\QuestionSubject::active()
+                ->whereHas('questions', fn ($q) => $q->published()->where('segment', $secKey))
+                ->withCount(['questions' => fn ($q) => $q->published()->where('segment', $secKey)])
+                ->orderBy('name_bn')
+                ->get(['id', 'name_bn', 'name_en', 'segment'])
+                ->values();
+        }
 
+        $subjects = $subjectsBySector[$studentSector] ?? collect();
         if ($subjects->isEmpty()) {
             $subjects = \App\Models\QuestionSubject::active()
                 ->whereHas('questions', fn ($q) => $q->published())
+                ->withCount(['questions' => fn ($q) => $q->published()])
                 ->orderBy('name_bn')
                 ->get(['id', 'name_bn', 'name_en', 'segment']);
         }
 
+        $subjectExams = \App\Models\QuestionBank::published()
+            ->whereNotNull('origin_tag')
+            ->whereNotNull('subject_id')
+            ->selectRaw('segment, subject_id, origin_tag, MAX(exam_name) as exam_name, COUNT(*) as count')
+            ->groupBy('segment', 'subject_id', 'origin_tag')
+            ->having('count', '>', 0)
+            ->orderByDesc('count')
+            ->get();
+
         $exams = \App\Models\QuestionBank::published()
             ->where('segment', $studentSector)
             ->whereNotNull('origin_tag')
-            ->selectRaw('origin_tag, exam_name, count(*) as count')
-            ->groupBy('origin_tag', 'exam_name')
+            ->selectRaw('origin_tag, MAX(exam_name) as exam_name, COUNT(*) as count')
+            ->groupBy('origin_tag')
             ->having('count', '>', 0)
             ->orderByDesc('count')
             ->limit(30)
@@ -90,12 +128,15 @@ class FlashcardController extends Controller
             'myBooks' => $myBooks,
             'subjects' => $subjects,
             'exams' => $exams,
+            'qbSectors' => $qbSectors,
+            'subjectsBySector' => $subjectsBySector,
+            'subjectExams' => $subjectExams,
             'canUseQuestionBank' => $canUseQuestionBank,
             'prefill' => [
                 'source_type' => $prefillSourceType,
                 'subject_id' => $request->query('subject_id') ? (int) $request->query('subject_id') : null,
                 'origin_tag' => $request->query('origin_tag'),
-                'sector' => $request->query('sector', $studentSector),
+                'sector' => $studentSector,
                 'title' => $request->query('title', ''),
             ],
         ]);
@@ -127,11 +168,13 @@ class FlashcardController extends Controller
         } elseif ($sourceType === 'question_bank') {
             $validSectors = ['admission', 'job', 'hsc', 'ssc'];
             $sector = $request->input('sector') ?: (in_array($student->type, $validSectors, true) ? $student->type : null);
+            $sampleLimit = max(25, min(50, (int) $request->count * 2));
 
             $source = $sources->fromQuestionBank(
                 (int) $request->subject_id,
                 $request->origin_tag,
-                $sector
+                $sector,
+                $sampleLimit
             );
             $sourceText = $source['content'];
             $sourceLabel = $source['source_label'];
@@ -155,6 +198,9 @@ class FlashcardController extends Controller
                 'source_type' => $sourceType,
                 'source_book_id' => $request->source_book_id,
                 'chapter_ids' => $request->input('chapter_ids', []),
+                'subject_id' => $request->subject_id ? (int) $request->subject_id : null,
+                'origin_tag' => $request->origin_tag,
+                'sector' => $request->input('sector'),
                 'source_text' => $sourceType === 'paragraph' ? $sourceText : null,
                 'count' => (int) $request->count,
             ],
@@ -188,6 +234,14 @@ class FlashcardController extends Controller
             );
             $sourceText = $source['content'];
             $sourceReferences = $source['references'];
+        } elseif (($data['source_type'] ?? null) === 'question_bank' && ! empty($data['subject_id'])) {
+            $source = $sources->fromQuestionBank(
+                (int) $data['subject_id'],
+                $data['origin_tag'] ?? null,
+                $data['sector'] ?? null,
+                max(25, min(50, $count * 2)),
+            );
+            $sourceText = $source['content'];
         }
 
         $claimed = FlashcardSet::query()

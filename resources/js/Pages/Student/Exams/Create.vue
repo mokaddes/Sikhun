@@ -24,17 +24,25 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    initialTitle: {
+        type: String,
+        default: '',
+    },
+    initialTopic: {
+        type: String,
+        default: '',
+    },
 });
 
 const { t, locale } = useI18n();
 
 const form = useForm({
-    title: '',
+    title: props.initialTitle || '',
     source_type: 'topic',
     source_book_id: props.books.length > 0 ? props.books[0].id : null,
     source_my_book_id: props.books.length === 0 && props.myBooks.length > 0 ? props.myBooks[0].id : null,
     chapter_ids: [],
-    source_text: '',
+    source_text: props.initialTopic || '',
     type: 'mcq',
     count: 10,
     duration: 20,

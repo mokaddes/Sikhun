@@ -3,12 +3,14 @@
  * Sources:
  * - Official Government Portals: https://bangladesh.gov.bd/ & https://bangladesh.gov.bd/views/district-list
  * - Population & Area: Bangladesh Bureau of Statistics (BBS) Population & Housing Census 2022 (via Wikipedia)
+ * - Public Universities: Wikipedia (List of universities in Bangladesh) & UGC Bangladesh
+ * - Major Rivers: Wikipedia (List of rivers of Bangladesh) & BWDB
  * - Map Boundaries: geoBoundaries BGD ADM1 (CC0 1.0) & ADM2 (CC BY 3.0 IGO)
  */
 
 export const BD_MAP_SOURCES = {
-    bn: 'তথ্যসূত্র: বাংলাদেশ জাতীয় তথ্য বাতায়ন (bangladesh.gov.bd), বিবিএস জনশুমারি ২০২২ ও উইকিপিডিয়া। মানচিত্র: geoBoundaries (CC BY 3.0)।',
-    en: 'Sources: Bangladesh National Portal (bangladesh.gov.bd), BBS Census 2022 & Wikipedia. Boundaries: geoBoundaries (CC BY 3.0).',
+  "bn": "তথ্যসূত্র: বাংলাদেশ জাতীয় তথ্য বাতায়ন (bangladesh.gov.bd), বিবিএস জনশুমারি ২০২২ ও উইকিপিডিয়া। মানচিত্র: geoBoundaries (CC BY 3.0)।",
+  "en": "Sources: Bangladesh National Portal (bangladesh.gov.bd), BBS Census 2022 & Wikipedia. Boundaries: geoBoundaries (CC BY 3.0)."
 };
 
 export const BD_DIVISIONS = {
@@ -2887,6 +2889,714 @@ export const BD_RIVERS = [
         21.85
       ]
     ]
+  },
+  {
+    "id": "karatoya-atrai",
+    "nameBn": "করতোয়া-আত্রাই নদী",
+    "nameEn": "Karatoya–Atrai River",
+    "lengthKm": "৫২৫ কি.মি. (সম্মিলিত)",
+    "lengthKmEn": "525 km (combined)",
+    "originBn": "ভারতের জলপাইগুড়ি ও দার্জিলিং অঞ্চল",
+    "originEn": "Jalpaiguri & Darjeeling foothills, India",
+    "mouthBn": "চলনবিল ও হুড়াসাগর হয়ে যমুনায়",
+    "mouthEn": "Jamuna River via Chalan Beel & Hurasagar",
+    "districtsBn": "পঞ্চগড়, দিনাজপুর, রংপুর, বগুড়া, নওগাঁ, নাটোর, পাবনা",
+    "districtsEn": "Panchagarh, Dinajpur, Rangpur, Bogura, Naogaon, Natore, Pabna",
+    "tributariesBn": "মহাস্থানগড় করতোয়া নদীর তীরে অবস্থিত",
+    "tributariesEn": "Ancient Mahasthangarh sits on the banks of Karatoya",
+    "summaryBn": "উত্তরবঙ্গের দীর্ঘতম ঐতিহাসিক নদী প্রণালি। প্রাচীন পুণ্ড্রনগর (মহাস্থানগড়) করতোয়া নদীর তীরে গড়ে উঠেছিল।",
+    "summaryEn": "Longest historic river system of northern Bangladesh; ancient Mahasthangarh flourished on the Karatoya.",
+    "examPointsBn": [
+      "মহাস্থানগড় (পুণ্ড্রনগর) করতোয়া নদীর তীরে অবস্থিত",
+      "আত্রাই নদী চলনবিলের প্রধান প্রবাহ পথ",
+      "উত্তরবঙ্গের কৃষি ও বরেন্দ্র অঞ্চলের প্রাণরেখা"
+    ],
+    "examPointsEn": [
+      "Mahasthangarh (Pundranagara) stands on the Karatoya River",
+      "Atrai River is the main channel feeding Chalan Beel",
+      "Lifeline of the northern Barind agricultural region"
+    ],
+    "coords": [
+      [
+        88.55,
+        26.35
+      ],
+      [
+        88.78,
+        25.65
+      ],
+      [
+        89.18,
+        25.25
+      ],
+      [
+        89.36,
+        24.85
+      ],
+      [
+        89.42,
+        24.45
+      ],
+      [
+        89.62,
+        24.08
+      ]
+    ]
+  },
+  {
+    "id": "kopotakkho",
+    "nameBn": "কপোতাক্ষ নদ",
+    "nameEn": "Kopotakkho River",
+    "lengthKm": "১৮২ কি.মি.",
+    "lengthKmEn": "182 km",
+    "originBn": "চুয়াডাঙ্গা-যশোর অঞ্চলের ভৈরব নদ থেকে",
+    "originEn": "Offtake from Bhairab River in Chuadanga–Jashore",
+    "mouthBn": "খুলনার কয়রায় খোলপেটুয়া-শিবসা হয়ে বঙ্গোপসাগরে",
+    "mouthEn": "Kholpetua–Shibsa estuary in Khulna",
+    "districtsBn": "চুয়াডাঙ্গা, ঝিনাইদহ, যশোর, সাতক্ষীরা, খুলনা",
+    "districtsEn": "Chuadanga, Jhenaidah, Jashore, Satkhira, Khulna",
+    "tributariesBn": "বাংলা সাহিত্যের বিখ্যাত \"কপোতাক্ষ নদ\" সনেটের নদী",
+    "tributariesEn": "Immortalized by Michael Madhusudan Dutt’s sonnet",
+    "summaryBn": "মহাকবি মাইকেল মধুসূদন দত্তের জন্মস্থান সাগরদাঁড়ি (কেশবপুর, যশোর) এই নদের তীরে অবস্থিত।",
+    "summaryEn": "Flows past Sagardari (Jashore), birthplace of poet Michael Madhusudan Dutt.",
+    "examPointsBn": [
+      "মাইকেল মধুসূদন দত্তের \"কপোতাক্ষ নদ\" চতুর্দশপদী কবিতা (সনেট) এই নদ নিয়ে রচিত",
+      "যশোরের কেশবপুর উপজেলার সাগরদাঁড়ি কপোতাক্ষের তীরে অবস্থিত",
+      "কপোতাক্ষ একটি নদ (বাংলাদেশ-ভারত সীমান্ত অঞ্চলের প্রবাহ)"
+    ],
+    "examPointsEn": [
+      "Subject of Michael Madhusudan Dutt’s famous Bengali sonnet",
+      "Sagardari (Keshabpur, Jashore) stands on its bank",
+      "Flows across Jashore, Satkhira & Khulna into the Sundarbans"
+    ],
+    "coords": [
+      [
+        88.95,
+        23.52
+      ],
+      [
+        89.08,
+        23.18
+      ],
+      [
+        89.18,
+        22.88
+      ],
+      [
+        89.24,
+        22.55
+      ],
+      [
+        89.3,
+        22.25
+      ]
+    ]
+  },
+  {
+    "id": "bangshi",
+    "nameBn": "বংশী নদী",
+    "nameEn": "Bangshi River",
+    "lengthKm": "১৮৫ কি.মি.",
+    "lengthKmEn": "185 km",
+    "originBn": "জামালপুরের পুরাতন ব্রহ্মপুত্র থেকে উৎপন্ন",
+    "originEn": "Distributary of Old Brahmaputra in Jamalpur",
+    "mouthBn": "সাভারে ধলেশ্বরী নদীতে মিলিত",
+    "mouthEn": "Joins Dhaleshwari River at Savar, Dhaka",
+    "districtsBn": "জামালপুর, টাঙ্গাইল, গাজীপুর, ঢাকা (সাভার)",
+    "districtsEn": "Jamalpur, Tangail, Gazipur, Dhaka (Savar)",
+    "tributariesBn": "মধুপুর গড় ও সাভার অঞ্চলের প্রধান নদী",
+    "tributariesEn": "Flows along Madhupur Tract and Savar",
+    "summaryBn": "জামালপুর থেকে মধুপুর ও টাঙ্গাইল হয়ে ঢাকার সাভারে ধলেশ্বরীতে মিশেছে। জাতীয় স্মৃতিসৌধের অদূরে প্রবাহিত।",
+    "summaryEn": "Flows south from Jamalpur through Madhupur & Tangail to join Dhaleshwari at Savar.",
+    "examPointsBn": [
+      "সাভার ও ধামরাই বংশী নদীর তীরে অবস্থিত",
+      "পুরাতন ব্রহ্মপুত্রের শাখানদী এবং ধলেশ্বরীর উপনদী"
+    ],
+    "examPointsEn": [
+      "Savar & Dhamrai lie along the Bangshi River",
+      "Distributary of Old Brahmaputra and tributary of Dhaleshwari"
+    ],
+    "coords": [
+      [
+        89.95,
+        24.85
+      ],
+      [
+        90.02,
+        24.55
+      ],
+      [
+        90.12,
+        24.22
+      ],
+      [
+        90.24,
+        23.85
+      ]
+    ]
+  },
+  {
+    "id": "ghaghat",
+    "nameBn": "ঘাঘট নদী",
+    "nameEn": "Ghaghat River",
+    "lengthKm": "২৩৮ কি.মি.",
+    "lengthKmEn": "238 km",
+    "originBn": "নীলফামারীর কিশোরগঞ্জ অঞ্চল (তিস্তার শাখা)",
+    "originEn": "Nilphamari (distributary of Teesta)",
+    "mouthBn": "গাইবান্ধায় করতোয়া-যমুনায় মিলিত",
+    "mouthEn": "Joins Karatoya/Jamuna in Gaibandha",
+    "districtsBn": "নীলফামারী, রংপুর, গাইবান্ধা",
+    "districtsEn": "Nilphamari, Rangpur, Gaibandha",
+    "tributariesBn": "রংপুর ও গাইবান্ধা শহর ঘাঘট নদীর তীরে",
+    "tributariesEn": "Flows through Rangpur & Gaibandha towns",
+    "summaryBn": "রংপুর ও গাইবান্ধা জেলার প্রধান অভ্যন্তরীণ নদী, যা তিস্তা-ব্রহ্মপুত্র অববাহিকার অংশ।",
+    "summaryEn": "Important internal river of Rangpur and Gaibandha within the Teesta–Jamuna basin.",
+    "examPointsBn": [
+      "রংপুর ও গাইবান্ধা শহর ঘাঘট নদীর তীরে অবস্থিত",
+      "উত্তরবঙ্গের ২৩৮ কি.মি. দীর্ঘ নদী (উইকিপিডিয়া)"
+    ],
+    "examPointsEn": [
+      "Rangpur and Gaibandha towns stand on the Ghaghat River",
+      "238 km long river in northern Bangladesh"
+    ],
+    "coords": [
+      [
+        89.05,
+        25.88
+      ],
+      [
+        89.24,
+        25.72
+      ],
+      [
+        89.42,
+        25.45
+      ],
+      [
+        89.55,
+        25.25
+      ]
+    ]
+  },
+  {
+    "id": "nabaganga",
+    "nameBn": "নবগঙ্গা নদী",
+    "nameEn": "Nabaganga River",
+    "lengthKm": "২৩২ কি.মি.",
+    "lengthKmEn": "232 km",
+    "originBn": "চুয়াডাঙ্গায় মাথাভাঙ্গা নদী থেকে উৎপন্ন",
+    "originEn": "Offtake from Mathabhanga River in Chuadanga",
+    "mouthBn": "নড়াইলের বড়দিয়ায় মধুমতি নদীতে মিলিত",
+    "mouthEn": "Joins Madhumati River at Narail",
+    "districtsBn": "চুয়াডাঙ্গা, ঝিনাইদহ, মাগুরা, নড়াইল",
+    "districtsEn": "Chuadanga, Jhenaidah, Magura, Narail",
+    "tributariesBn": "মাগুরা ও ঝিনাইদহ শহর নবগঙ্গা নদীর তীরে",
+    "tributariesEn": "Jhenaidah and Magura towns lie on its bank",
+    "summaryBn": "দক্ষিণ-পশ্চিমাঞ্চলের অন্যতম প্রধান নদী, যা ঝিনাইদহ ও মাগুরা শহরের বুক চিরে মধুমতিতে মিশেছে।",
+    "summaryEn": "Key southwestern river flowing through Jhenaidah and Magura into the Madhumati.",
+    "examPointsBn": [
+      "ঝিনাইদহ ও মাগুরা শহর নবগঙ্গা নদীর তীরে অবস্থিত",
+      "মাথাভাঙ্গা নদী থেকে উৎপন্ন হয়ে মধুমতিতে পড়েছে"
+    ],
+    "examPointsEn": [
+      "Jhenaidah and Magura towns sit on the Nabaganga",
+      "Originates from Mathabhanga and joins Madhumati"
+    ],
+    "coords": [
+      [
+        88.85,
+        23.62
+      ],
+      [
+        89.18,
+        23.54
+      ],
+      [
+        89.42,
+        23.48
+      ],
+      [
+        89.62,
+        23.15
+      ]
+    ]
+  },
+  {
+    "id": "kangsa",
+    "nameBn": "কংস (ভোগাই-কংস) নদী",
+    "nameEn": "Kangsa (Bhogai–Kangsa) River",
+    "lengthKm": "২২৭ কি.মি.",
+    "lengthKmEn": "227 km",
+    "originBn": "ভারতের মেঘালয়ের গারো পাহাড়",
+    "originEn": "Garo Hills of Meghalaya, India",
+    "mouthBn": "সুনামগঞ্জ-কিশোরগঞ্জের ধনু/বৌলাই নদীতে",
+    "mouthEn": "Dhanu–Baulai river system in Haor basin",
+    "districtsBn": "শেরপুর, ময়মনসিংহ, নেত্রকোনা, সুনামগঞ্জ",
+    "districtsEn": "Sherpur, Mymensingh, Netrokona, Sunamganj",
+    "tributariesBn": "উপনদী: সোমেশ্বরী, নিতাই",
+    "tributariesEn": "Tributaries: Someshwari, Nitai",
+    "summaryBn": "গারো পাহাড় থেকে নেমে আসা সীমান্তবর্তী পাহাড়ি নদী যা নেত্রকোনা ও হাওর অঞ্চলের প্রধান প্রবাহ।",
+    "summaryEn": "Transboundary river descending from the Garo Hills through Sherpur & Netrokona into the Haor basin.",
+    "examPointsBn": [
+      "নেত্রকোনা শহর কংস (মগড়া) অববাহিকায় অবস্থিত",
+      "উৎপত্তি: ভারতের মেঘালয়ের গারো পাহাড়"
+    ],
+    "examPointsEn": [
+      "Major river of Netrokona and the northern Haor basin",
+      "Originates in the Garo Hills of Meghalaya, India"
+    ],
+    "coords": [
+      [
+        90.15,
+        25.18
+      ],
+      [
+        90.45,
+        25.05
+      ],
+      [
+        90.75,
+        24.92
+      ],
+      [
+        91.05,
+        24.82
+      ]
+    ]
+  },
+  {
+    "id": "dakatia",
+    "nameBn": "ডাকাতিয়া নদী",
+    "nameEn": "Dakatia River",
+    "lengthKm": "২০৭ কি.মি.",
+    "lengthKmEn": "207 km",
+    "originBn": "ভারতের ত্রিপুরা রাজ্যের পাহাড়",
+    "originEn": "Tripura Hills, India",
+    "mouthBn": "চাঁদপুরে মেঘনা নদীতে মিলিত",
+    "mouthEn": "Meghna River at Chandpur",
+    "districtsBn": "কুমিল্লা, চাঁদপুর, লক্ষ্মীপুর",
+    "districtsEn": "Cumilla, Chandpur, Lakshmipur",
+    "tributariesBn": "চাঁদপুর শহর পদ্মা-মেঘনা-ডাকাতিয়ার মোহনায়",
+    "tributariesEn": "Meets Padma & Meghna at Chandpur",
+    "summaryBn": "ত্রিপুরা থেকে কুমিল্লা হয়ে চাঁদপুরে মেঘনায় পতিত দক্ষিণ-পূর্বাঞ্চলের গুরুত্বপূর্ণ নদী।",
+    "summaryEn": "Transboundary river flowing from Tripura through Cumilla to join Meghna at Chandpur.",
+    "examPointsBn": [
+      "চাঁদপুর শহর পদ্মা, মেঘনা ও ডাকাতিয়া নদীর সঙ্গমস্থলে অবস্থিত",
+      "ভারতের ত্রিপুরা পাহাড় থেকে উৎপন্ন"
+    ],
+    "examPointsEn": [
+      "Chandpur town stands at the confluence of Padma, Meghna & Dakatia",
+      "Originates in the Tripura hills of India"
+    ],
+    "coords": [
+      [
+        91.32,
+        23.28
+      ],
+      [
+        91.1,
+        23.22
+      ],
+      [
+        90.85,
+        23.22
+      ],
+      [
+        90.65,
+        23.23
+      ]
+    ]
+  },
+  {
+    "id": "feni",
+    "nameBn": "ফেনী নদী",
+    "nameEn": "Feni River",
+    "lengthKm": "১১৬ কি.মি.",
+    "lengthKmEn": "116 km",
+    "originBn": "ভারতের ত্রিপুরা রাজ্য (সাব্রুম সংলগ্ন)",
+    "originEn": "Tripura, India",
+    "mouthBn": "সন্দ্বীপ চ্যানেলে বঙ্গোপসাগরে",
+    "mouthEn": "Bay of Bengal (Sandwip Channel)",
+    "districtsBn": "খাগড়াছড়ি, ফেনী, চট্টগ্রাম (মীরসরাই)",
+    "districtsEn": "Khagrachhari, Feni, Chattogram (Mirsarai)",
+    "tributariesBn": "মুহুরী ও ছোট ফেনী নদী সংলগ্ন অববাহিকা",
+    "tributariesEn": "Muhuri & Little Feni basin",
+    "summaryBn": "বাংলাদেশ-ভারত সীমান্ত নদী। রামগড়-সাব্রুম মৈত্রী সেতু-১ ফেনী নদীর ওপর নির্মিত।",
+    "summaryEn": "Transboundary river forming part of the Bangladesh–India border; site of Maitri Setu-1.",
+    "examPointsBn": [
+      "বাংলাদেশ-ভারত মৈত্রী সেতু-১ (রামগড়–সাব্রুম) ফেনী নদীর ওপর নির্মিত",
+      "ফেনী নদীর ১.৮২ কিউসেক পানি ত্রিপুরার সাব্রুম শহরে সরবরাহের চুক্তি (২০১৯)",
+      "মুহুরী সেচ প্রকল্প ও দেশের প্রথম বায়ুবিদ্যুৎ কেন্দ্র এই অববাহিকায়"
+    ],
+    "examPointsEn": [
+      "Bangladesh–India Maitri Setu-1 (Ramgarh–Sabroom) crosses the Feni River",
+      "2019 MoU allows India to withdraw 1.82 cusecs for Sabroom",
+      "Site of Muhuri Irrigation Project & first wind power plant"
+    ],
+    "coords": [
+      [
+        91.75,
+        23.02
+      ],
+      [
+        91.55,
+        22.92
+      ],
+      [
+        91.42,
+        22.82
+      ],
+      [
+        91.4,
+        22.72
+      ]
+    ]
+  },
+  {
+    "id": "matamuhuri",
+    "nameBn": "মাতামুহুরী নদী",
+    "nameEn": "Matamuhuri River",
+    "lengthKm": "২৮৭ কি.মি.",
+    "lengthKmEn": "287 km",
+    "originBn": "বান্দরবানের আলীকদমের লামা পাহাড়",
+    "originEn": "Lama / Alikadam Hills in Bandarban",
+    "mouthBn": "চকরিয়া হয়ে মহেশখালী চ্যানেলে বঙ্গোপসাগরে",
+    "mouthEn": "Bay of Bengal via Chakaria & Moheshkhali Channel",
+    "districtsBn": "বান্দরবান, কক্সবাজার",
+    "districtsEn": "Bandarban, Cox’s Bazar",
+    "tributariesBn": "উৎপত্তি ও সমাপ্তি সম্পূর্ণ বাংলাদেশের অভ্যন্তরে",
+    "tributariesEn": "Originates and terminates entirely within Bangladesh",
+    "summaryBn": "বান্দরবানের আলীকদম থেকে উৎপন্ন হয়ে কক্সবাজারের চকরিয়া দিয়ে বঙ্গোপসাগরে পতিত সম্পূর্ণ দেশীয় নদী।",
+    "summaryEn": "River originating and ending entirely inside Bangladesh, flowing through Alikadam, Lama & Chakaria.",
+    "examPointsBn": [
+      "মাতামুহুরী ও হালদা—উৎপত্তি ও পতন উভয়ই বাংলাদেশের অভ্যন্তরে",
+      "উৎপত্তিস্থল: বান্দরবানের আলীকদম পাহাড়; মোহনা: বঙ্গোপসাগর (চকরিয়া)"
+    ],
+    "examPointsEn": [
+      "Both originates and terminates entirely within Bangladesh",
+      "Flows through Alikadam, Lama (Bandarban) and Chakaria (Cox’s Bazar)"
+    ],
+    "coords": [
+      [
+        92.35,
+        21.62
+      ],
+      [
+        92.18,
+        21.75
+      ],
+      [
+        92.08,
+        21.77
+      ],
+      [
+        91.92,
+        21.72
+      ]
+    ]
+  },
+  {
+    "id": "chitra",
+    "nameBn": "চিত্রা নদী",
+    "nameEn": "Chitra River",
+    "lengthKm": "১৭০ কি.মি.",
+    "lengthKmEn": "170 km",
+    "originBn": "চুয়াডাঙ্গা-ঝিনাইদহ বিল অঞ্চল",
+    "originEn": "Beels of Chuadanga & Jhenaidah",
+    "mouthBn": "নড়াইলের গাজীপুরে নবগঙ্গা নদীতে মিলিত",
+    "mouthEn": "Nabaganga River in Narail",
+    "districtsBn": "চুয়াডাঙ্গা, ঝিনাইদহ, মাগুরা, নড়াইল",
+    "districtsEn": "Chuadanga, Jhenaidah, Magura, Narail",
+    "tributariesBn": "নড়াইল শহর ও শিল্পী এস এম সুলতানের স্মৃতিবিজড়িত নদী",
+    "tributariesEn": "Narail town & artist SM Sultan’s riverside heritage",
+    "summaryBn": "নড়াইল শহরের প্রাণকেন্দ্র দিয়ে প্রবাহিত শান্ত নদী, বিশ্ববরেণ্য চিত্রশিল্পী এস এম সুলতানের স্মৃতিবিজড়িত।",
+    "summaryEn": "Tranquil river flowing through Narail town, closely associated with legendary painter SM Sultan.",
+    "examPointsBn": [
+      "নড়াইল জেলা শহর চিত্রা নদীর তীরে অবস্থিত",
+      "চিত্রশিল্পী এস এম সুলতানের বাড়ি ও নৌকা জাদুঘর চিত্রা নদীর তীরে"
+    ],
+    "examPointsEn": [
+      "Narail district town stands on the Chitra River",
+      "Home to painter SM Sultan’s memorial complex & boat"
+    ],
+    "coords": [
+      [
+        89.02,
+        23.58
+      ],
+      [
+        89.25,
+        23.38
+      ],
+      [
+        89.48,
+        23.18
+      ],
+      [
+        89.56,
+        23.08
+      ]
+    ]
+  },
+  {
+    "id": "punarbhaba",
+    "nameBn": "পুনর্ভবা নদী",
+    "nameEn": "Punarbhaba River",
+    "lengthKm": "১৬০ কি.মি.",
+    "lengthKmEn": "160 km",
+    "originBn": "ঠাকুরগাঁও-দিনাজপুরের নিম্নভূমি",
+    "originEn": "Lowlands of Thakurgaon & Dinajpur",
+    "mouthBn": "চাঁপাইনবাবগঞ্জের রোহনপুরে মহানন্দা নদীতে",
+    "mouthEn": "Mahananda River at Rohanpur, Chapainawabganj",
+    "districtsBn": "ঠাকুরগাঁও, দিনাজপুর, নওগাঁ, চাঁপাইনবাবগঞ্জ",
+    "districtsEn": "Thakurgaon, Dinajpur, Naogaon, Chapainawabganj",
+    "tributariesBn": "দিনাজপুর শহর পুনর্ভবা নদীর তীরে অবস্থিত",
+    "tributariesEn": "Dinajpur town sits on the Punarbhaba River",
+    "summaryBn": "উত্তর-পশ্চিমাঞ্চলের অন্যতম প্রধান নদী, যা দিনাজপুর শহরের পাশ দিয়ে প্রবাহিত হয়ে মহানন্দায় মিশেছে।",
+    "summaryEn": "Major northwestern river passing Dinajpur town before joining the Mahananda River.",
+    "examPointsBn": [
+      "দিনাজপুর জেলা শহর পুনর্ভবা নদীর তীরে অবস্থিত",
+      "চাঁপাইনবাবগঞ্জের রোহনপুরে মহানন্দা নদীর সাথে মিলিত হয়েছে"
+    ],
+    "examPointsEn": [
+      "Dinajpur town lies on the banks of the Punarbhaba",
+      "Joins the Mahananda River at Rohanpur, Chapainawabganj"
+    ],
+    "coords": [
+      [
+        88.58,
+        25.88
+      ],
+      [
+        88.62,
+        25.62
+      ],
+      [
+        88.54,
+        25.15
+      ],
+      [
+        88.32,
+        24.82
+      ]
+    ]
+  },
+  {
+    "id": "arial-khan",
+    "nameBn": "আড়িয়াল খাঁ নদী",
+    "nameEn": "Arial Khan River",
+    "lengthKm": "১৬৪ কি.মি.",
+    "lengthKmEn": "164 km",
+    "originBn": "ফরিদপুর-মাদারীপুরে পদ্মা নদী থেকে উৎপন্ন",
+    "originEn": "Distributary of Padma in Faridpur–Madaripur",
+    "mouthBn": "বরিশালে মেঘনা/তেঁতুলিয়া মোহনায়",
+    "mouthEn": "Meghna / Barishal estuary",
+    "districtsBn": "ফরিদপুর, মাদারীপুর, শরীয়তপুর, বরিশাল",
+    "districtsEn": "Faridpur, Madaripur, Shariatpur, Barishal",
+    "tributariesBn": "মাদারীপুর শহর আড়িয়াল খাঁ নদীর তীরে অবস্থিত",
+    "tributariesEn": "Madaripur town sits on the Arial Khan River",
+    "summaryBn": "পদ্মার প্রধান দক্ষিণাঞ্চলীয় শাখানদী, যা মাদারীপুর ও বরিশাল অঞ্চলের প্রধান জলপথ।",
+    "summaryEn": "Major southern distributary of the Padma flowing through Madaripur into Barishal.",
+    "examPointsBn": [
+      "মাদারীপুর শহর আড়িয়াল খাঁ নদীর তীরে অবস্থিত",
+      "পদ্মা নদীর অন্যতম প্রধান শাখানদী"
+    ],
+    "examPointsEn": [
+      "Madaripur town stands on the Arial Khan River",
+      "Principal southern distributary of the Padma"
+    ],
+    "coords": [
+      [
+        90.08,
+        23.45
+      ],
+      [
+        90.18,
+        23.18
+      ],
+      [
+        90.28,
+        22.92
+      ],
+      [
+        90.42,
+        22.72
+      ]
+    ]
+  },
+  {
+    "id": "dhaleshwari",
+    "nameBn": "ধলেশ্বরী নদী",
+    "nameEn": "Dhaleshwari River",
+    "lengthKm": "১৬৯ কি.মি.",
+    "lengthKmEn": "169 km",
+    "originBn": "টাঙ্গাইলে যমুনা নদী থেকে উৎপন্ন",
+    "originEn": "Distributary of Jamuna River in Tangail",
+    "mouthBn": "মুন্সীগঞ্জে মেঘনা নদীতে মিলিত",
+    "mouthEn": "Joins Meghna River at Munshiganj",
+    "districtsBn": "টাঙ্গাইল, মানিকগঞ্জ, ঢাকা, নারায়ণগঞ্জ, মুন্সীগঞ্জ",
+    "districtsEn": "Tangail, Manikganj, Dhaka, Narayanganj, Munshiganj",
+    "tributariesBn": "শাখানদী: বুড়িগঙ্গা; উপনদী: বংশী, তুরাগ",
+    "tributariesEn": "Distributary: Buriganga; Tributaries: Bangshi, Turag",
+    "summaryBn": "যমুনার প্রধান শাখানদী। বুড়িগঙ্গা ধলেশ্বরীরই শাখা। মানিকগঞ্জ ও মুন্সীগঞ্জের প্রধান নদী।",
+    "summaryEn": "Major distributary of the Jamuna; parent river of the Buriganga, flowing through Manikganj & Munshiganj.",
+    "examPointsBn": [
+      "বুড়িগঙ্গা নদী ধলেশ্বরী নদীর শাখানদী",
+      "মুন্সীগঞ্জ জেলা শহর ধলেশ্বরী-মেঘনার সঙ্গমস্থলে অবস্থিত",
+      "যমুনা থেকে উৎপন্ন হয়ে মেঘনায় মিলিত হয়েছে"
+    ],
+    "examPointsEn": [
+      "Buriganga River is a distributary of the Dhaleshwari",
+      "Munshiganj lies at the Dhaleshwari–Meghna confluence",
+      "Connects the Jamuna system to the Meghna system"
+    ],
+    "coords": [
+      [
+        89.82,
+        24.18
+      ],
+      [
+        89.98,
+        23.85
+      ],
+      [
+        90.28,
+        23.62
+      ],
+      [
+        90.55,
+        23.54
+      ]
+    ]
+  },
+  {
+    "id": "bhairab",
+    "nameBn": "ভৈরব নদ",
+    "nameEn": "Bhairab River",
+    "lengthKm": "২১৯ কি.মি.",
+    "lengthKmEn": "219 km",
+    "originBn": "ভারতের পশ্চিমবঙ্গের জলঙ্গী থেকে উৎপন্ন",
+    "originEn": "Jalangi River in West Bengal, India",
+    "mouthBn": "খুলনায় রূপসা নদীতে মিলিত",
+    "mouthEn": "Joins Rupsa River at Khulna",
+    "districtsBn": "মেহেরপুর, চুয়াডাঙ্গা, যশোর, খুলনা",
+    "districtsEn": "Meherpur, Chuadanga, Jashore, Khulna",
+    "tributariesBn": "যশোর ও খুলনা শহর ভৈরব নদের তীরে",
+    "tributariesEn": "Jashore and Khulna sit along the Bhairab",
+    "summaryBn": "দক্ষিণ-পশ্চিমাঞ্চলের প্রাচীনতম নদগুলোর একটি। যশোর শহর ও খুলনার খালিশপুর শিল্পাঞ্চল এর তীরে অবস্থিত।",
+    "summaryEn": "One of the oldest rivers of southwestern Bangladesh; flows past Jashore town into Khulna.",
+    "examPointsBn": [
+      "যশোর শহর ভৈরব নদের তীরে অবস্থিত",
+      "মেহেরপুর, চুয়াডাঙ্গা ও যশোর হয়ে খুলনায় রূপসা নদীতে মিশেছে"
+    ],
+    "examPointsEn": [
+      "Jashore town stands on the banks of the Bhairab River",
+      "Flows through Meherpur, Chuadanga & Jashore to join Rupsa at Khulna"
+    ],
+    "coords": [
+      [
+        88.62,
+        23.78
+      ],
+      [
+        88.92,
+        23.45
+      ],
+      [
+        89.22,
+        23.17
+      ],
+      [
+        89.55,
+        22.85
+      ]
+    ]
+  },
+  {
+    "id": "mathabhanga",
+    "nameBn": "মাথাভাঙ্গা নদী",
+    "nameEn": "Mathabhanga River",
+    "lengthKm": "১৩০ কি.মি.",
+    "lengthKmEn": "130 km",
+    "originBn": "ভারতের মুর্শিদাবাদে পদ্মা (গঙ্গা) থেকে উৎপন্ন",
+    "originEn": "Offtake from Padma (Ganges) in Murshidabad, India",
+    "mouthBn": "কুষ্টিয়া-চুয়াডাঙ্গা হয়ে ইছামতী ও চূর্ণীতে বিভক্ত",
+    "mouthEn": "Bifurcates into Ichamati & Churni via Chuadanga",
+    "districtsBn": "কুষ্টিয়া, চুয়াডাঙ্গা",
+    "districtsEn": "Kushtia, Chuadanga",
+    "tributariesBn": "চুয়াডাঙ্গা শহর মাথাভাঙ্গা নদীর তীরে অবস্থিত",
+    "tributariesEn": "Chuadanga town lies on the Mathabhanga River",
+    "summaryBn": "কুষ্টিয়া ও চুয়াডাঙ্গা জেলার প্রধান সীমান্তবর্তী নদী, যা নবগঙ্গা ও কুমার নদীর উৎস।",
+    "summaryEn": "Transboundary distributary of the Padma flowing through Kushtia and Chuadanga.",
+    "examPointsBn": [
+      "চুয়াডাঙ্গা জেলা শহর মাথাভাঙ্গা নদীর তীরে অবস্থিত",
+      "বাংলাদেশ-ভারত অভিন্ন (৫৪টি) নদীর একটি"
+    ],
+    "examPointsEn": [
+      "Chuadanga town sits on the Mathabhanga River",
+      "One of the 54 Bangladesh–India transboundary rivers"
+    ],
+    "coords": [
+      [
+        88.72,
+        24.08
+      ],
+      [
+        88.78,
+        23.82
+      ],
+      [
+        88.85,
+        23.64
+      ],
+      [
+        88.72,
+        23.48
+      ]
+    ]
+  },
+  {
+    "id": "kumar",
+    "nameBn": "কুমার নদ",
+    "nameEn": "Kumar River",
+    "lengthKm": "১৩০ কি.মি.",
+    "lengthKmEn": "130 km",
+    "originBn": "চুয়াডাঙ্গা-কুষ্টিয়ায় মাথাভাঙ্গা থেকে উৎপন্ন",
+    "originEn": "Offtake from Mathabhanga in Chuadanga–Kushtia",
+    "mouthBn": "ফরিদপুর-মাদারীপুরে আড়িয়াল খাঁ নদীতে",
+    "mouthEn": "Joins Arial Khan River in Faridpur–Madaripur",
+    "districtsBn": "কুষ্টিয়া, ঝিনাইদহ, মাগুরা, ফরিদপুর, মাদারীপুর",
+    "districtsEn": "Kushtia, Jhenaidah, Magura, Faridpur, Madaripur",
+    "tributariesBn": "ফরিদপুর শহর কুমার নদের তীরে অবস্থিত",
+    "tributariesEn": "Faridpur town sits on the Kumar River",
+    "summaryBn": "ফরিদপুর ও মাগুরা অঞ্চলের ঐতিহাসিক নদ। পল্লীকবি জসীমউদ্দীনের জন্মভূমি তাম্বুলখানা কুমার নদের তীরে।",
+    "summaryEn": "Historic river of Faridpur; flows near Poet Jasimuddin’s ancestral village.",
+    "examPointsBn": [
+      "ফরিদপুর জেলা শহর কুমার নদের তীরে অবস্থিত",
+      "পল্লীকবি জসীমউদ্দীনের স্মৃতিবিজড়িত নদ"
+    ],
+    "examPointsEn": [
+      "Faridpur town lies on the Kumar River",
+      "Associated with Pastoral Poet Jasimuddin"
+    ],
+    "coords": [
+      [
+        89.15,
+        23.68
+      ],
+      [
+        89.45,
+        23.64
+      ],
+      [
+        89.84,
+        23.6
+      ],
+      [
+        90.15,
+        23.22
+      ]
+    ]
   }
 ];
 
@@ -3379,6 +4089,1398 @@ export const BD_LANDMARKS = [
     "examPointsEn": [
       "Capital Pundranagara of ancient Pundravardhana",
       "Site of Bangladesh’s oldest Brahmi inscription"
+    ]
+  },
+  {
+    "id": "uni-iu",
+    "category": "university",
+    "districtKey": "kushtia",
+    "coords": [
+      89.0281,
+      23.943
+    ],
+    "established": "1979",
+    "nameBn": "ইসলামী বিশ্ববিদ্যালয়, বাংলাদেশ (IU)",
+    "nameEn": "Islamic University, Bangladesh (IU)",
+    "summaryBn": "1979 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: কুষ্টিয়া (Kushtia Sadar, Kushtia)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 1979, located in Kushtia Sadar, Kushtia (Kushtia).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 1979 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Kushtia Sadar, Kushtia (কুষ্টিয়া জেলা); সংক্ষিপ্ত নাম: IU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 1979; Type: Public General Public University",
+      "Location: Kushtia Sadar, Kushtia (Kushtia District); Acronym: IU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-ku",
+    "category": "university",
+    "districtKey": "khulna",
+    "coords": [
+      89.5075,
+      22.3852
+    ],
+    "established": "1991",
+    "nameBn": "খুলনা বিশ্ববিদ্যালয় (KU)",
+    "nameEn": "Khulna University (KU)",
+    "summaryBn": "1991 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: খুলনা (Gallamari, Khulna)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 1991, located in Gallamari, Khulna (Khulna).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 1991 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Gallamari, Khulna (খুলনা জেলা); সংক্ষিপ্ত নাম: KU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 1991; Type: Public General Public University",
+      "Location: Gallamari, Khulna (Khulna District); Acronym: KU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-jnu",
+    "category": "university",
+    "districtKey": "dhaka",
+    "coords": [
+      90.3262,
+      23.7434
+    ],
+    "established": "2005",
+    "nameBn": "জগন্নাথ বিশ্ববিদ্যালয় (JnU)",
+    "nameEn": "Jagannath University (JnU)",
+    "summaryBn": "2005 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: ঢাকা (Sadar Ghat, Dhaka)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 2005, located in Sadar Ghat, Dhaka (Dhaka).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2005 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Sadar Ghat, Dhaka (ঢাকা জেলা); সংক্ষিপ্ত নাম: JnU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2005; Type: Public General Public University",
+      "Location: Sadar Ghat, Dhaka (Dhaka District); Acronym: JnU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-cou",
+    "category": "university",
+    "districtKey": "cumilla",
+    "coords": [
+      90.9993,
+      23.4218
+    ],
+    "established": "2006",
+    "nameBn": "কুমিল্লা বিশ্ববিদ্যালয় (CoU)",
+    "nameEn": "Comilla University (CoU)",
+    "summaryBn": "2006 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: কুমিল্লা (Sadar Dakkhin, Comilla)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 2006, located in Sadar Dakkhin, Comilla (Cumilla).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2006 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Sadar Dakkhin, Comilla (কুমিল্লা জেলা); সংক্ষিপ্ত নাম: CoU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2006; Type: Public General Public University",
+      "Location: Sadar Dakkhin, Comilla (Cumilla District); Acronym: CoU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-jkkniu",
+    "category": "university",
+    "districtKey": "mymensingh",
+    "coords": [
+      90.4632,
+      24.7544
+    ],
+    "established": "2006",
+    "nameBn": "জাতীয় কবি কাজী নজরুল ইসলাম বিশ্ববিদ্যালয় (JKKNIU)",
+    "nameEn": "Jatiya Kabi Kazi Nazrul Islam University (JKKNIU)",
+    "summaryBn": "2006 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: ময়মনসিংহ (Trishal, Mymensingh)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 2006, located in Trishal, Mymensingh (Mymensingh).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2006 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Trishal, Mymensingh (ময়মনসিংহ জেলা); সংক্ষিপ্ত নাম: JKKNIU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2006; Type: Public General Public University",
+      "Location: Trishal, Mymensingh (Mymensingh District); Acronym: JKKNIU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-bup",
+    "category": "university",
+    "districtKey": "dhaka",
+    "coords": [
+      90.3288,
+      23.8328
+    ],
+    "established": "2008",
+    "nameBn": "বাংলাদেশ ইউনিভার্সিটি অব প্রফেশনালস (BUP)",
+    "nameEn": "Bangladesh University of Professionals (BUP)",
+    "summaryBn": "2008 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: ঢাকা (Mirpur, Dhaka)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 2008, located in Mirpur, Dhaka (Dhaka).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2008 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Mirpur, Dhaka (ঢাকা জেলা); সংক্ষিপ্ত নাম: BUP",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2008; Type: Public General Public University",
+      "Location: Mirpur, Dhaka (Dhaka District); Acronym: BUP",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-brur",
+    "category": "university",
+    "districtKey": "rangpur",
+    "coords": [
+      89.2338,
+      25.6328
+    ],
+    "established": "2008",
+    "nameBn": "বেগম রোকেয়া বিশ্ববিদ্যালয়, রংপুর (BRUR)",
+    "nameEn": "Begum Rokeya University (BRUR)",
+    "summaryBn": "2008 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: রংপুর (Kotwali)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 2008, located in Kotwali (Rangpur).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2008 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Kotwali (রংপুর জেলা); সংক্ষিপ্ত নাম: BRUR",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2008; Type: Public General Public University",
+      "Location: Kotwali (Rangpur District); Acronym: BRUR",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-bu",
+    "category": "university",
+    "districtKey": "barishal",
+    "coords": [
+      90.3535,
+      22.7627
+    ],
+    "established": "2011",
+    "nameBn": "বরিশাল বিশ্ববিদ্যালয় (BU)",
+    "nameEn": "University of Barisal (BU)",
+    "summaryBn": "2011 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: বরিশাল (Bandar, Barisal)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 2011, located in Bandar, Barisal (Barishal).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2011 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Bandar, Barisal (বরিশাল জেলা); সংক্ষিপ্ত নাম: BU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2011; Type: Public General Public University",
+      "Location: Bandar, Barisal (Barishal District); Acronym: BU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-rub",
+    "category": "university",
+    "districtKey": "sirajganj",
+    "coords": [
+      89.5503,
+      24.4306
+    ],
+    "established": "2017",
+    "nameBn": "রবীন্দ্র বিশ্ববিদ্যালয়, বাংলাদেশ (RUB)",
+    "nameEn": "Rabindra University, Bangladesh (RUB)",
+    "summaryBn": "2017 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: সিরাজগঞ্জ (Shahjadpur, Sirajganj)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 2017, located in Shahjadpur, Sirajganj (Sirajganj).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2017 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Shahjadpur, Sirajganj (সিরাজগঞ্জ জেলা); সংক্ষিপ্ত নাম: RUB",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2017; Type: Public General Public University",
+      "Location: Shahjadpur, Sirajganj (Sirajganj District); Acronym: RUB",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-nku",
+    "category": "university",
+    "districtKey": "netrokona",
+    "coords": [
+      90.8674,
+      24.886
+    ],
+    "established": "2018",
+    "nameBn": "নেত্রকোনা বিশ্ববিদ্যালয় (NkU)",
+    "nameEn": "Netrokona University (NkU)",
+    "summaryBn": "2018 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: নেত্রকোণা (Netrokona Sadar, Netrokona)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 2018, located in Netrokona Sadar, Netrokona (Netrokona).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2018 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Netrokona Sadar, Netrokona (নেত্রকোণা জেলা); সংক্ষিপ্ত নাম: NkU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2018; Type: Public General Public University",
+      "Location: Netrokona Sadar, Netrokona (Netrokona District); Acronym: NkU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-kgu",
+    "category": "university",
+    "districtKey": "kishoreganj",
+    "coords": [
+      90.9148,
+      24.3368
+    ],
+    "established": "2020",
+    "nameBn": "কিশোরগঞ্জ বিশ্ববিদ্যালয় (KgU)",
+    "nameEn": "Kishoreganj University (KgU)",
+    "summaryBn": "2020 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: কিশোরগঞ্জ (Kishoreganj Sadar, Kishoreganj)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 2020, located in Kishoreganj Sadar, Kishoreganj (Kishoreganj).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2020 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Kishoreganj Sadar, Kishoreganj (কিশোরগঞ্জ জেলা); সংক্ষিপ্ত নাম: KgU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2020; Type: Public General Public University",
+      "Location: Kishoreganj Sadar, Kishoreganj (Kishoreganj District); Acronym: KgU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-mu",
+    "category": "university",
+    "districtKey": "meherpur",
+    "coords": [
+      88.7344,
+      23.8202
+    ],
+    "established": "2022",
+    "nameBn": "মেহেরপুর বিশ্ববিদ্যালয় (MU)",
+    "nameEn": "Meherpur University (MU)",
+    "summaryBn": "2022 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: মেহেরপুর (Mujibnagar, Meherpur)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 2022, located in Mujibnagar, Meherpur (Meherpur).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2022 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Mujibnagar, Meherpur (মেহেরপুর জেলা); সংক্ষিপ্ত নাম: MU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2022; Type: Public General Public University",
+      "Location: Mujibnagar, Meherpur (Meherpur District); Acronym: MU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-ub",
+    "category": "university",
+    "districtKey": "bogura",
+    "coords": [
+      89.3606,
+      24.8624
+    ],
+    "established": "2001",
+    "nameBn": "বগুড়া বিশ্ববিদ্যালয় (UB)",
+    "nameEn": "University of Bogura (UB)",
+    "summaryBn": "2001 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: বগুড়া (Bogura Sadar, Bogura)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 2001, located in Bogura Sadar, Bogura (Bogura).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2001 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Bogura Sadar, Bogura (বগুড়া জেলা); সংক্ষিপ্ত নাম: UB",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2001; Type: Public General Public University",
+      "Location: Bogura Sadar, Bogura (Bogura District); Acronym: UB",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-tu",
+    "category": "university",
+    "districtKey": "thakurgaon",
+    "coords": [
+      88.3662,
+      25.9364
+    ],
+    "established": "2022",
+    "nameBn": "ঠাকুরগাঁও বিশ্ববিদ্যালয় (TU)",
+    "nameEn": "Thakurgaon University (TU)",
+    "summaryBn": "2022 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: ঠাকুরগাঁও (Thakurgaon Sadar, Thakurgaon)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 2022, located in Thakurgaon Sadar, Thakurgaon (Thakurgaon).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2022 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Thakurgaon Sadar, Thakurgaon (ঠাকুরগাঁও জেলা); সংক্ষিপ্ত নাম: TU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2022; Type: Public General Public University",
+      "Location: Thakurgaon Sadar, Thakurgaon (Thakurgaon District); Acronym: TU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-nau",
+    "category": "university",
+    "districtKey": "naogaon",
+    "coords": [
+      88.7812,
+      24.9055
+    ],
+    "established": "2023",
+    "nameBn": "নওগাঁ বিশ্ববিদ্যালয় (NaU)",
+    "nameEn": "Naogaon University (NaU)",
+    "summaryBn": "2023 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়, অবস্থান: নওগাঁ (Naogaon Sadar, Naogaon)।",
+    "summaryEn": "Public General Public University of Bangladesh established in 2023, located in Naogaon Sadar, Naogaon (Naogaon).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2023 সাল; ধরন: সরকারি সাধারণ পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Naogaon Sadar, Naogaon (নওগাঁ জেলা); সংক্ষিপ্ত নাম: NaU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2023; Type: Public General Public University",
+      "Location: Naogaon Sadar, Naogaon (Naogaon District); Acronym: NaU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-sust",
+    "category": "university",
+    "districtKey": "sylhet",
+    "coords": [
+      92.0642,
+      24.8903
+    ],
+    "established": "1986",
+    "nameBn": "শাহজালাল বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (SUST)",
+    "nameEn": "Shahjalal University of Science and Technology (SUST)",
+    "summaryBn": "1986 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: সিলেট (Kumargaon, Sylhet)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 1986, located in Kumargaon, Sylhet (Sylhet).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 1986 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Kumargaon, Sylhet (সিলেট জেলা); সংক্ষিপ্ত নাম: SUST",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 1986; Type: Public Science & Technology University",
+      "Location: Kumargaon, Sylhet (Sylhet District); Acronym: SUST",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-hstu",
+    "category": "university",
+    "districtKey": "dinajpur",
+    "coords": [
+      88.8436,
+      25.6426
+    ],
+    "established": "1999",
+    "nameBn": "হাজী মোহাম্মদ দানেশ বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (HSTU)",
+    "nameEn": "Hajee Mohammad Danesh Science & Technology University (HSTU)",
+    "summaryBn": "1999 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: দিনাজপুর (Kotwali, Dinajpur)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 1999, located in Kotwali, Dinajpur (Dinajpur).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 1999 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Kotwali, Dinajpur (দিনাজপুর জেলা); সংক্ষিপ্ত নাম: HSTU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 1999; Type: Public Science & Technology University",
+      "Location: Kotwali, Dinajpur (Dinajpur District); Acronym: HSTU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-mbstu",
+    "category": "university",
+    "districtKey": "tangail",
+    "coords": [
+      90.0174,
+      24.3768
+    ],
+    "established": "1999",
+    "nameBn": "মাওলানা ভাসানী বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (MBSTU)",
+    "nameEn": "Mawlana Bhashani Science and Technology University (MBSTU)",
+    "summaryBn": "1999 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: টাঙ্গাইল (Tangail Sadar, Tangail)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 1999, located in Tangail Sadar, Tangail (Tangail).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 1999 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Tangail Sadar, Tangail (টাঙ্গাইল জেলা); সংক্ষিপ্ত নাম: MBSTU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 1999; Type: Public Science & Technology University",
+      "Location: Tangail Sadar, Tangail (Tangail District); Acronym: MBSTU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-pstu",
+    "category": "university",
+    "districtKey": "patuakhali",
+    "coords": [
+      90.3869,
+      22.2128
+    ],
+    "established": "2000",
+    "nameBn": "পটুয়াখালী বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (PSTU)",
+    "nameEn": "Patuakhali Science and Technology University (PSTU)",
+    "summaryBn": "2000 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: পটুয়াখালী (Dumki, Patuakhali)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 2000, located in Dumki, Patuakhali (Patuakhali).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2000 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Dumki, Patuakhali (পটুয়াখালী জেলা); সংক্ষিপ্ত নাম: PSTU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2000; Type: Public Science & Technology University",
+      "Location: Dumki, Patuakhali (Patuakhali District); Acronym: PSTU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-nstu",
+    "category": "university",
+    "districtKey": "noakhali",
+    "coords": [
+      91.1553,
+      22.5782
+    ],
+    "established": "2006",
+    "nameBn": "নোয়াখালী বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (NSTU)",
+    "nameEn": "Noakhali Science and Technology University (NSTU)",
+    "summaryBn": "2006 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: নোয়াখালী (Sudharam, Noakhali)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 2006, located in Sudharam, Noakhali (Noakhali).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2006 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Sudharam, Noakhali (নোয়াখালী জেলা); সংক্ষিপ্ত নাম: NSTU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2006; Type: Public Science & Technology University",
+      "Location: Sudharam, Noakhali (Noakhali District); Acronym: NSTU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-just",
+    "category": "university",
+    "districtKey": "jashore",
+    "coords": [
+      89.2049,
+      23.0849
+    ],
+    "established": "2007",
+    "nameBn": "যশোর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (JUST)",
+    "nameEn": "Jashore University of Science and Technology (JUST)",
+    "summaryBn": "2007 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: যশোর (Kotwali, Jessore)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 2007, located in Kotwali, Jessore (Jashore).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2007 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Kotwali, Jessore (যশোর জেলা); সংক্ষিপ্ত নাম: JUST",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2007; Type: Public Science & Technology University",
+      "Location: Kotwali, Jessore (Jashore District); Acronym: JUST",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-pust",
+    "category": "university",
+    "districtKey": "pabna",
+    "coords": [
+      89.3792,
+      24.1129
+    ],
+    "established": "2008",
+    "nameBn": "পাবনা বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (PUST)",
+    "nameEn": "Pabna University of Science and Technology (PUST)",
+    "summaryBn": "2008 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: পাবনা (Kotwali, Pabna)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 2008, located in Kotwali, Pabna (Pabna).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2008 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Kotwali, Pabna (পাবনা জেলা); সংক্ষিপ্ত নাম: PUST",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2008; Type: Public Science & Technology University",
+      "Location: Kotwali, Pabna (Pabna District); Acronym: PUST",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-gstu",
+    "category": "university",
+    "districtKey": "gopalganj",
+    "coords": [
+      89.9076,
+      23.1067
+    ],
+    "established": "2011",
+    "nameBn": "গোপালগঞ্জ বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (GSTU)",
+    "nameEn": "Gopalganj Science and Technology University (GSTU)",
+    "summaryBn": "2011 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: গোপালগঞ্জ (Gopalganj Sadar, Gopalganj)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 2011, located in Gopalganj Sadar, Gopalganj (Gopalganj).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2011 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Gopalganj Sadar, Gopalganj (গোপালগঞ্জ জেলা); সংক্ষিপ্ত নাম: GSTU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2011; Type: Public Science & Technology University",
+      "Location: Gopalganj Sadar, Gopalganj (Gopalganj District); Acronym: GSTU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-rmstu",
+    "category": "university",
+    "districtKey": "rangamati",
+    "coords": [
+      92.2809,
+      22.7961
+    ],
+    "established": "2014",
+    "nameBn": "রাঙামাটি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (RmSTU)",
+    "nameEn": "Rangamati Science and Technology University (RmSTU)",
+    "summaryBn": "2014 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: রাঙামাটি (Kotwali, Rangamati)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 2014, located in Kotwali, Rangamati (Rangamati).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2014 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Kotwali, Rangamati (রাঙামাটি জেলা); সংক্ষিপ্ত নাম: RmSTU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2014; Type: Public Science & Technology University",
+      "Location: Kotwali, Rangamati (Rangamati District); Acronym: RmSTU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-jstu",
+    "category": "university",
+    "districtKey": "jamalpur",
+    "coords": [
+      89.9202,
+      25.0002
+    ],
+    "established": "2017",
+    "nameBn": "জামালপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (JSTU)",
+    "nameEn": "Jamalpur Science and Technology University (JSTU)",
+    "summaryBn": "2017 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: জামালপুর (Melandaha, Jamalpur)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 2017, located in Melandaha, Jamalpur (Jamalpur).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2017 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Melandaha, Jamalpur (জামালপুর জেলা); সংক্ষিপ্ত নাম: JSTU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2017; Type: Public Science & Technology University",
+      "Location: Melandaha, Jamalpur (Jamalpur District); Acronym: JSTU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-cstu",
+    "category": "university",
+    "districtKey": "chandpur",
+    "coords": [
+      90.7844,
+      23.2441
+    ],
+    "established": "2020",
+    "nameBn": "চাঁদপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (CSTU)",
+    "nameEn": "Chandpur Science and Technology University (CSTU)",
+    "summaryBn": "2020 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: চাঁদপুর (Chandpur Sadar, Chandpur)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 2020, located in Chandpur Sadar, Chandpur (Chandpur).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2020 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Chandpur Sadar, Chandpur (চাঁদপুর জেলা); সংক্ষিপ্ত নাম: CSTU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2020; Type: Public Science & Technology University",
+      "Location: Chandpur Sadar, Chandpur (Chandpur District); Acronym: CSTU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-sstu",
+    "category": "university",
+    "districtKey": "sunamganj",
+    "coords": [
+      91.3307,
+      24.8882
+    ],
+    "established": "2020",
+    "nameBn": "সুনামগঞ্জ বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (SSTU)",
+    "nameEn": "Sunamganj Science and Technology University (SSTU)",
+    "summaryBn": "2020 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: সুনামগঞ্জ (Shantiganj, Sunamganj)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 2020, located in Shantiganj, Sunamganj (Sunamganj).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2020 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Shantiganj, Sunamganj (সুনামগঞ্জ জেলা); সংক্ষিপ্ত নাম: SSTU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2020; Type: Public Science & Technology University",
+      "Location: Shantiganj, Sunamganj (Sunamganj District); Acronym: SSTU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-lstu",
+    "category": "university",
+    "districtKey": "lakshmipur",
+    "coords": [
+      90.8306,
+      22.8355
+    ],
+    "established": "2020",
+    "nameBn": "লক্ষ্মীপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (LSTU)",
+    "nameEn": "Lakshmipur Science and Technology University (LSTU)",
+    "summaryBn": "2020 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: লক্ষ্মীপুর (Lakshmipur Sadar, Lakshmipur)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 2020, located in Lakshmipur Sadar, Lakshmipur (Lakshmipur).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2020 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Lakshmipur Sadar, Lakshmipur (লক্ষ্মীপুর জেলা); সংক্ষিপ্ত নাম: LSTU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2020; Type: Public Science & Technology University",
+      "Location: Lakshmipur Sadar, Lakshmipur (Lakshmipur District); Acronym: LSTU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-prstu",
+    "category": "university",
+    "districtKey": "pirojpur",
+    "coords": [
+      90.0228,
+      22.5131
+    ],
+    "established": "2022",
+    "nameBn": "পিরোজপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (PrSTU)",
+    "nameEn": "Pirojpur Science and Technology University (PrSTU)",
+    "summaryBn": "2022 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: পিরোজপুর (Pirojpur Sadar, Pirojpur)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 2022, located in Pirojpur Sadar, Pirojpur (Pirojpur).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2022 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Pirojpur Sadar, Pirojpur (পিরোজপুর জেলা); সংক্ষিপ্ত নাম: PrSTU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2022; Type: Public Science & Technology University",
+      "Location: Pirojpur Sadar, Pirojpur (Pirojpur District); Acronym: PrSTU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-saust",
+    "category": "university",
+    "districtKey": "satkhira",
+    "coords": [
+      89.1279,
+      22.2995
+    ],
+    "established": "2023",
+    "nameBn": "সাতক্ষীরা বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (SaUST)",
+    "nameEn": "Satkhira University of Science and Technology (SaUST)",
+    "summaryBn": "2023 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: সাতক্ষীরা (Satkhira Sadar, Satkhira)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 2023, located in Satkhira Sadar, Satkhira (Satkhira).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2023 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Satkhira Sadar, Satkhira (সাতক্ষীরা জেলা); সংক্ষিপ্ত নাম: SaUST",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2023; Type: Public Science & Technology University",
+      "Location: Satkhira Sadar, Satkhira (Satkhira District); Acronym: SaUST",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-ngstu",
+    "category": "university",
+    "districtKey": "narayanganj",
+    "coords": [
+      90.5851,
+      23.7144
+    ],
+    "established": "2023",
+    "nameBn": "নারায়ণগঞ্জ বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয় (NGSTU)",
+    "nameEn": "Narayanganj Science and Technology University (NGSTU)",
+    "summaryBn": "2023 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: নারায়ণগঞ্জ (Narayanganj Sadar, Narayanganj)।",
+    "summaryEn": "Public Science & Technology University of Bangladesh established in 2023, located in Narayanganj Sadar, Narayanganj (Narayanganj).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2023 সাল; ধরন: সরকারি বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Narayanganj Sadar, Narayanganj (নারায়ণগঞ্জ জেলা); সংক্ষিপ্ত নাম: NGSTU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2023; Type: Public Science & Technology University",
+      "Location: Narayanganj Sadar, Narayanganj (Narayanganj District); Acronym: NGSTU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-mist",
+    "category": "university",
+    "districtKey": "dhaka",
+    "coords": [
+      90.2408,
+      23.874
+    ],
+    "established": "1998",
+    "nameBn": "মিলিটারি ইনস্টিটিউট অব সায়েন্স অ্যান্ড টেকনোলজি (MIST)",
+    "nameEn": "Military Institute of Science and Technology (MIST)",
+    "summaryBn": "1998 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: ঢাকা (Mirpur Cantonment, Dhaka)।",
+    "summaryEn": "Public Engineering & Technology University of Bangladesh established in 1998, located in Mirpur Cantonment, Dhaka (Dhaka).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 1998 সাল; ধরন: সরকারি প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Mirpur Cantonment, Dhaka (ঢাকা জেলা); সংক্ষিপ্ত নাম: MIST",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 1998; Type: Public Engineering & Technology University",
+      "Location: Mirpur Cantonment, Dhaka (Dhaka District); Acronym: MIST",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-ruet",
+    "category": "university",
+    "districtKey": "rajshahi",
+    "coords": [
+      88.642,
+      24.4471
+    ],
+    "established": "2003",
+    "nameBn": "রাজশাহী প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (RUET)",
+    "nameEn": "Rajshahi University of Engineering & Technology (RUET)",
+    "summaryBn": "2003 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: রাজশাহী (Motihar, Rajshahi)।",
+    "summaryEn": "Public Engineering & Technology University of Bangladesh established in 2003, located in Motihar, Rajshahi (Rajshahi).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2003 সাল; ধরন: সরকারি প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Motihar, Rajshahi (রাজশাহী জেলা); সংক্ষিপ্ত নাম: RUET",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2003; Type: Public Engineering & Technology University",
+      "Location: Motihar, Rajshahi (Rajshahi District); Acronym: RUET",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-kuet",
+    "category": "university",
+    "districtKey": "khulna",
+    "coords": [
+      89.4603,
+      22.3902
+    ],
+    "established": "2003",
+    "nameBn": "খুলনা প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (KUET)",
+    "nameEn": "Khulna University of Engineering & Technology (KUET)",
+    "summaryBn": "2003 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: খুলনা (Fulbari Gate, Khulna)।",
+    "summaryEn": "Public Engineering & Technology University of Bangladesh established in 2003, located in Fulbari Gate, Khulna (Khulna).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2003 সাল; ধরন: সরকারি প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Fulbari Gate, Khulna (খুলনা জেলা); সংক্ষিপ্ত নাম: KUET",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2003; Type: Public Engineering & Technology University",
+      "Location: Fulbari Gate, Khulna (Khulna District); Acronym: KUET",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-cuet",
+    "category": "university",
+    "districtKey": "chattogram",
+    "coords": [
+      91.7557,
+      22.3538
+    ],
+    "established": "2003",
+    "nameBn": "চট্টগ্রাম প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (CUET)",
+    "nameEn": "Chittagong University of Engineering & Technology (CUET)",
+    "summaryBn": "2003 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: চট্টগ্রাম (Raozan, Chittagong)।",
+    "summaryEn": "Public Engineering & Technology University of Bangladesh established in 2003, located in Raozan, Chittagong (Chattogram).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2003 সাল; ধরন: সরকারি প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Raozan, Chittagong (চট্টগ্রাম জেলা); সংক্ষিপ্ত নাম: CUET",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2003; Type: Public Engineering & Technology University",
+      "Location: Raozan, Chittagong (Chattogram District); Acronym: CUET",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-duet",
+    "category": "university",
+    "districtKey": "gazipur",
+    "coords": [
+      90.425,
+      24.0924
+    ],
+    "established": "2003",
+    "nameBn": "ঢাকা প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয় (DUET)",
+    "nameEn": "Dhaka University of Engineering & Technology (DUET)",
+    "summaryBn": "2003 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়, অবস্থান: গাজীপুর (Joydebpur, Gazipur)।",
+    "summaryEn": "Public Engineering & Technology University of Bangladesh established in 2003, located in Joydebpur, Gazipur (Gazipur).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2003 সাল; ধরন: সরকারি প্রকৌশল ও প্রযুক্তি বিশ্ববিদ্যালয়",
+      "অবস্থান: Joydebpur, Gazipur (গাজীপুর জেলা); সংক্ষিপ্ত নাম: DUET",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2003; Type: Public Engineering & Technology University",
+      "Location: Joydebpur, Gazipur (Gazipur District); Acronym: DUET",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-bau",
+    "category": "university",
+    "districtKey": "mymensingh",
+    "coords": [
+      90.4159,
+      24.7594
+    ],
+    "established": "1961",
+    "nameBn": "বাংলাদেশ কৃষি বিশ্ববিদ্যালয় (BAU)",
+    "nameEn": "Bangladesh Agricultural University (BAU)",
+    "summaryBn": "1961 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি কৃষি বিশ্ববিদ্যালয়, অবস্থান: ময়মনসিংহ (Kotwali, Mymensingh)।",
+    "summaryEn": "Public Agricultural University of Bangladesh established in 1961, located in Kotwali, Mymensingh (Mymensingh).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 1961 সাল; ধরন: সরকারি কৃষি বিশ্ববিদ্যালয়",
+      "অবস্থান: Kotwali, Mymensingh (ময়মনসিংহ জেলা); সংক্ষিপ্ত নাম: BAU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 1961; Type: Public Agricultural University",
+      "Location: Kotwali, Mymensingh (Mymensingh District); Acronym: BAU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-gau",
+    "category": "university",
+    "districtKey": "gazipur",
+    "coords": [
+      90.4393,
+      24.1244
+    ],
+    "established": "1998",
+    "nameBn": "গাজীপুর কৃষি বিশ্ববিদ্যালয় (GAU)",
+    "nameEn": "Gazipur Agricultural University (GAU)",
+    "summaryBn": "1998 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি কৃষি বিশ্ববিদ্যালয়, অবস্থান: গাজীপুর (Salna, Gazipur)।",
+    "summaryEn": "Public Agricultural University of Bangladesh established in 1998, located in Salna, Gazipur (Gazipur).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 1998 সাল; ধরন: সরকারি কৃষি বিশ্ববিদ্যালয়",
+      "অবস্থান: Salna, Gazipur (গাজীপুর জেলা); সংক্ষিপ্ত নাম: GAU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 1998; Type: Public Agricultural University",
+      "Location: Salna, Gazipur (Gazipur District); Acronym: GAU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-sbau",
+    "category": "university",
+    "districtKey": "dhaka",
+    "coords": [
+      90.1623,
+      23.8053
+    ],
+    "established": "2001",
+    "nameBn": "শেরেবাংলা কৃষি বিশ্ববিদ্যালয় (SAU)",
+    "nameEn": "Sher-e-Bangla Agricultural University (SBAU)",
+    "summaryBn": "2001 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি কৃষি বিশ্ববিদ্যালয়, অবস্থান: ঢাকা (Sher e Bangla Nagar, Dhaka)।",
+    "summaryEn": "Public Agricultural University of Bangladesh established in 2001, located in Sher e Bangla Nagar, Dhaka (Dhaka).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2001 সাল; ধরন: সরকারি কৃষি বিশ্ববিদ্যালয়",
+      "অবস্থান: Sher e Bangla Nagar, Dhaka (ঢাকা জেলা); সংক্ষিপ্ত নাম: SBAU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2001; Type: Public Agricultural University",
+      "Location: Sher e Bangla Nagar, Dhaka (Dhaka District); Acronym: SBAU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-sau",
+    "category": "university",
+    "districtKey": "sylhet",
+    "coords": [
+      92.0784,
+      24.9222
+    ],
+    "established": "2006",
+    "nameBn": "সিলেট কৃষি বিশ্ববিদ্যালয় (SAU)",
+    "nameEn": "Sylhet Agricultural University (SAU)",
+    "summaryBn": "2006 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি কৃষি বিশ্ববিদ্যালয়, অবস্থান: সিলেট (Uttar Baluchar, Sylhet)।",
+    "summaryEn": "Public Agricultural University of Bangladesh established in 2006, located in Uttar Baluchar, Sylhet (Sylhet).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2006 সাল; ধরন: সরকারি কৃষি বিশ্ববিদ্যালয়",
+      "অবস্থান: Uttar Baluchar, Sylhet (সিলেট জেলা); সংক্ষিপ্ত নাম: SAU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2006; Type: Public Agricultural University",
+      "Location: Uttar Baluchar, Sylhet (Sylhet District); Acronym: SAU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-kau",
+    "category": "university",
+    "districtKey": "khulna",
+    "coords": [
+      89.4355,
+      22.3348
+    ],
+    "established": "2019",
+    "nameBn": "খুলনা কৃষি বিশ্ববিদ্যালয় (KAU)",
+    "nameEn": "Khulna Agricultural University (KAU)",
+    "summaryBn": "2019 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি কৃষি বিশ্ববিদ্যালয়, অবস্থান: খুলনা (Daulatpur, Khulna)।",
+    "summaryEn": "Public Agricultural University of Bangladesh established in 2019, located in Daulatpur, Khulna (Khulna).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2019 সাল; ধরন: সরকারি কৃষি বিশ্ববিদ্যালয়",
+      "অবস্থান: Daulatpur, Khulna (খুলনা জেলা); সংক্ষিপ্ত নাম: KAU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2019; Type: Public Agricultural University",
+      "Location: Daulatpur, Khulna (Khulna District); Acronym: KAU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-hau",
+    "category": "university",
+    "districtKey": "habiganj",
+    "coords": [
+      91.4088,
+      24.3353
+    ],
+    "established": "2020",
+    "nameBn": "হবিগঞ্জ কৃষি বিশ্ববিদ্যালয় (HAU)",
+    "nameEn": "Habiganj Agricultural University (HAU)",
+    "summaryBn": "2020 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি কৃষি বিশ্ববিদ্যালয়, অবস্থান: হবিগঞ্জ (Habiganj Sadar, Habiganj)।",
+    "summaryEn": "Public Agricultural University of Bangladesh established in 2020, located in Habiganj Sadar, Habiganj (Habiganj).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2020 সাল; ধরন: সরকারি কৃষি বিশ্ববিদ্যালয়",
+      "অবস্থান: Habiganj Sadar, Habiganj (হবিগঞ্জ জেলা); সংক্ষিপ্ত নাম: HAU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2020; Type: Public Agricultural University",
+      "Location: Habiganj Sadar, Habiganj (Habiganj District); Acronym: HAU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-kuriau",
+    "category": "university",
+    "districtKey": "kurigram",
+    "coords": [
+      89.6694,
+      25.8055
+    ],
+    "established": "2022",
+    "nameBn": "কুড়িগ্রাম কৃষি বিশ্ববিদ্যালয় (KuriAU)",
+    "nameEn": "Kurigram Agricultural University (KuriAU)",
+    "summaryBn": "2022 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি কৃষি বিশ্ববিদ্যালয়, অবস্থান: কুড়িগ্রাম (Kurigram, Kurigram)।",
+    "summaryEn": "Public Agricultural University of Bangladesh established in 2022, located in Kurigram, Kurigram (Kurigram).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2022 সাল; ধরন: সরকারি কৃষি বিশ্ববিদ্যালয়",
+      "অবস্থান: Kurigram, Kurigram (কুড়িগ্রাম জেলা); সংক্ষিপ্ত নাম: KuriAU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2022; Type: Public Agricultural University",
+      "Location: Kurigram, Kurigram (Kurigram District); Acronym: KuriAU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-shau",
+    "category": "university",
+    "districtKey": "shariatpur",
+    "coords": [
+      90.4147,
+      23.2278
+    ],
+    "established": "2021",
+    "nameBn": "শরীয়তপুর কৃষি বিশ্ববিদ্যালয় (ShAU)",
+    "nameEn": "Shariatpur Agriculture University (ShAU)",
+    "summaryBn": "2021 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি কৃষি বিশ্ববিদ্যালয়, অবস্থান: শরীয়তপুর (Shariatpur, Sadar Shariatpur)।",
+    "summaryEn": "Public Agricultural University of Bangladesh established in 2021, located in Shariatpur, Sadar Shariatpur (Shariatpur).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2021 সাল; ধরন: সরকারি কৃষি বিশ্ববিদ্যালয়",
+      "অবস্থান: Shariatpur, Sadar Shariatpur (শরীয়তপুর জেলা); সংক্ষিপ্ত নাম: ShAU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2021; Type: Public Agricultural University",
+      "Location: Shariatpur, Sadar Shariatpur (Shariatpur District); Acronym: ShAU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-bmu-medical",
+    "category": "university",
+    "districtKey": "dhaka",
+    "coords": [
+      90.1957,
+      23.6993
+    ],
+    "established": "1998",
+    "nameBn": "বাংলাদেশ মেডিকেল বিশ্ববিদ্যালয় (পূর্বনাম BSMMU)",
+    "nameEn": "Bangladesh Medical University (BMU)",
+    "summaryBn": "1998 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি মেডিকেল বিশ্ববিদ্যালয়, অবস্থান: ঢাকা (Shabagh, Dhaka)।",
+    "summaryEn": "Public Medical University of Bangladesh established in 1998, located in Shabagh, Dhaka (Dhaka).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 1998 সাল; ধরন: সরকারি মেডিকেল বিশ্ববিদ্যালয়",
+      "অবস্থান: Shabagh, Dhaka (ঢাকা জেলা); সংক্ষিপ্ত নাম: BMU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 1998; Type: Public Medical University",
+      "Location: Shabagh, Dhaka (Dhaka District); Acronym: BMU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-cmu",
+    "category": "university",
+    "districtKey": "chattogram",
+    "coords": [
+      91.831,
+      22.3836
+    ],
+    "established": "2016",
+    "nameBn": "চট্টগ্রাম মেডিকেল বিশ্ববিদ্যালয় (CMU)",
+    "nameEn": "Chittagong Medical University (CMU)",
+    "summaryBn": "2016 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি মেডিকেল বিশ্ববিদ্যালয়, অবস্থান: চট্টগ্রাম (Salimpur, Chittagong)।",
+    "summaryEn": "Public Medical University of Bangladesh established in 2016, located in Salimpur, Chittagong (Chattogram).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2016 সাল; ধরন: সরকারি মেডিকেল বিশ্ববিদ্যালয়",
+      "অবস্থান: Salimpur, Chittagong (চট্টগ্রাম জেলা); সংক্ষিপ্ত নাম: CMU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2016; Type: Public Medical University",
+      "Location: Salimpur, Chittagong (Chattogram District); Acronym: CMU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-rmu",
+    "category": "university",
+    "districtKey": "rajshahi",
+    "coords": [
+      88.5947,
+      24.4521
+    ],
+    "established": "2017",
+    "nameBn": "রাজশাহী মেডিকেল বিশ্ববিদ্যালয় (RMU)",
+    "nameEn": "Rajshahi Medical University (RMU)",
+    "summaryBn": "2017 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি মেডিকেল বিশ্ববিদ্যালয়, অবস্থান: রাজশাহী (Rajpara, Rajshahi)।",
+    "summaryEn": "Public Medical University of Bangladesh established in 2017, located in Rajpara, Rajshahi (Rajshahi).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2017 সাল; ধরন: সরকারি মেডিকেল বিশ্ববিদ্যালয়",
+      "অবস্থান: Rajpara, Rajshahi (রাজশাহী জেলা); সংক্ষিপ্ত নাম: RMU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2017; Type: Public Medical University",
+      "Location: Rajpara, Rajshahi (Rajshahi District); Acronym: RMU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-smu",
+    "category": "university",
+    "districtKey": "sylhet",
+    "coords": [
+      92.0312,
+      24.9272
+    ],
+    "established": "2018",
+    "nameBn": "সিলেট মেডিকেল বিশ্ববিদ্যালয় (SMU)",
+    "nameEn": "Sylhet Medical University (SMU)",
+    "summaryBn": "2018 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি মেডিকেল বিশ্ববিদ্যালয়, অবস্থান: সিলেট (Ambarkhana, Sylhet)।",
+    "summaryEn": "Public Medical University of Bangladesh established in 2018, located in Ambarkhana, Sylhet (Sylhet).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2018 সাল; ধরন: সরকারি মেডিকেল বিশ্ববিদ্যালয়",
+      "অবস্থান: Ambarkhana, Sylhet (সিলেট জেলা); সংক্ষিপ্ত নাম: SMU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2018; Type: Public Medical University",
+      "Location: Ambarkhana, Sylhet (Sylhet District); Acronym: SMU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-kmu",
+    "category": "university",
+    "districtKey": "khulna",
+    "coords": [
+      89.4854,
+      22.2837
+    ],
+    "established": "2020",
+    "nameBn": "খুলনা মেডিকেল বিশ্ববিদ্যালয় (KMU)",
+    "nameEn": "Khulna Medical University (KMU)",
+    "summaryBn": "2020 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি মেডিকেল বিশ্ববিদ্যালয়, অবস্থান: খুলনা (Labanchara, Khulna)।",
+    "summaryEn": "Public Medical University of Bangladesh established in 2020, located in Labanchara, Khulna (Khulna).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2020 সাল; ধরন: সরকারি মেডিকেল বিশ্ববিদ্যালয়",
+      "অবস্থান: Labanchara, Khulna (খুলনা জেলা); সংক্ষিপ্ত নাম: KMU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2020; Type: Public Medical University",
+      "Location: Labanchara, Khulna (Khulna District); Acronym: KMU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-cvasu",
+    "category": "university",
+    "districtKey": "chattogram",
+    "coords": [
+      91.8335,
+      22.473
+    ],
+    "established": "2006",
+    "nameBn": "চট্টগ্রাম ভেটেরিনারি ও অ্যানিম্যাল সাইন্সেস বিশ্ববিদ্যালয় (CVASU)",
+    "nameEn": "Chittagong Veterinary and Animal Sciences University (CVASU)",
+    "summaryBn": "2006 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিশেষায়িত পাবলিক বিশ্ববিদ্যালয়, অবস্থান: চট্টগ্রাম (Jhautala, Chittagong)।",
+    "summaryEn": "Public Specialized Public University of Bangladesh established in 2006, located in Jhautala, Chittagong (Chattogram).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2006 সাল; ধরন: সরকারি বিশেষায়িত পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Jhautala, Chittagong (চট্টগ্রাম জেলা); সংক্ষিপ্ত নাম: CVASU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2006; Type: Public Specialized Public University",
+      "Location: Jhautala, Chittagong (Chattogram District); Acronym: CVASU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-butex",
+    "category": "university",
+    "districtKey": "dhaka",
+    "coords": [
+      90.3123,
+      23.6863
+    ],
+    "established": "2010",
+    "nameBn": "বাংলাদেশ টেক্সটাইল বিশ্ববিদ্যালয় (BUTEX)",
+    "nameEn": "Bangladesh University of Textiles (BUTEX)",
+    "summaryBn": "2010 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিশেষায়িত পাবলিক বিশ্ববিদ্যালয়, অবস্থান: ঢাকা (Tejgaon Industrial area, Dhaka)।",
+    "summaryEn": "Public Specialized Public University of Bangladesh established in 2010, located in Tejgaon Industrial area, Dhaka (Dhaka).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2010 সাল; ধরন: সরকারি বিশেষায়িত পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Tejgaon Industrial area, Dhaka (ঢাকা জেলা); সংক্ষিপ্ত নাম: BUTEX",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2010; Type: Public Specialized Public University",
+      "Location: Tejgaon Industrial area, Dhaka (Dhaka District); Acronym: BUTEX",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-bmu-maritime",
+    "category": "university",
+    "districtKey": "chattogram",
+    "coords": [
+      91.7456,
+      22.5142
+    ],
+    "established": "2013",
+    "nameBn": "বাংলাদেশ মেরিটাইম বিশ্ববিদ্যালয় (BMU)",
+    "nameEn": "Bangladesh Maritime University (BMU)",
+    "summaryBn": "2013 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিশেষায়িত পাবলিক বিশ্ববিদ্যালয়, অবস্থান: চট্টগ্রাম (Sitakunda, Chittagong)।",
+    "summaryEn": "Public Specialized Public University of Bangladesh established in 2013, located in Sitakunda, Chittagong (Chattogram).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2013 সাল; ধরন: সরকারি বিশেষায়িত পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Sitakunda, Chittagong (চট্টগ্রাম জেলা); সংক্ষিপ্ত নাম: BMU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2013; Type: Public Specialized Public University",
+      "Location: Sitakunda, Chittagong (Chattogram District); Acronym: BMU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-uftb",
+    "category": "university",
+    "districtKey": "gazipur",
+    "coords": [
+      90.3921,
+      24.1294
+    ],
+    "established": "2018",
+    "nameBn": "ইউনিভার্সিটি অব ফ্রন্টিয়ার টেকনোলজি, বাংলাদেশ (UFTB)",
+    "nameEn": "University of Frontier Technology, Bangladesh (UFTB)",
+    "summaryBn": "2018 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিশেষায়িত পাবলিক বিশ্ববিদ্যালয়, অবস্থান: গাজীপুর (Kaliakoir, Gazipur)।",
+    "summaryEn": "Public Specialized Public University of Bangladesh established in 2018, located in Kaliakoir, Gazipur (Gazipur).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2018 সাল; ধরন: সরকারি বিশেষায়িত পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Kaliakoir, Gazipur (গাজীপুর জেলা); সংক্ষিপ্ত নাম: UFTB",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2018; Type: Public Specialized Public University",
+      "Location: Kaliakoir, Gazipur (Gazipur District); Acronym: UFTB",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-aaub",
+    "category": "university",
+    "districtKey": "lalmonirhat",
+    "coords": [
+      89.2388,
+      26.1221
+    ],
+    "established": "2019",
+    "nameBn": "এভিয়েশন অ্যান্ড অ্যারোস্পেস বিশ্ববিদ্যালয়, বাংলাদেশ (AAUB)",
+    "nameEn": "Aviation and Aerospace University Bangladesh (AAUB)",
+    "summaryBn": "2019 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি বিশেষায়িত পাবলিক বিশ্ববিদ্যালয়, অবস্থান: লালমনিরহাট (Lalmonirhat Sadar, Lalmonirhat)।",
+    "summaryEn": "Public Specialized Public University of Bangladesh established in 2019, located in Lalmonirhat Sadar, Lalmonirhat (Lalmonirhat).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2019 সাল; ধরন: সরকারি বিশেষায়িত পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Lalmonirhat Sadar, Lalmonirhat (লালমনিরহাট জেলা); সংক্ষিপ্ত নাম: AAUB",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2019; Type: Public Specialized Public University",
+      "Location: Lalmonirhat Sadar, Lalmonirhat (Lalmonirhat District); Acronym: AAUB",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-nu",
+    "category": "university",
+    "districtKey": "gazipur",
+    "coords": [
+      90.3673,
+      24.074
+    ],
+    "established": "1992",
+    "nameBn": "জাতীয় বিশ্ববিদ্যালয়, বাংলাদেশ (NU)",
+    "nameEn": "National University Bangladesh (NU)",
+    "summaryBn": "1992 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি অফ-ক্যাম্পাস / অধিভুক্ত পাবলিক বিশ্ববিদ্যালয়, অবস্থান: গাজীপুর (Joydebpur, Gazipur)।",
+    "summaryEn": "Public Off-Campus / Affiliating Public University of Bangladesh established in 1992, located in Joydebpur, Gazipur (Gazipur).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 1992 সাল; ধরন: সরকারি অফ-ক্যাম্পাস / অধিভুক্ত পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Joydebpur, Gazipur (গাজীপুর জেলা); সংক্ষিপ্ত নাম: NU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 1992; Type: Public Off-Campus / Affiliating Public University",
+      "Location: Joydebpur, Gazipur (Gazipur District); Acronym: NU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-bou",
+    "category": "university",
+    "districtKey": "gazipur",
+    "coords": [
+      90.4172,
+      24.0229
+    ],
+    "established": "1992",
+    "nameBn": "বাংলাদেশ উন্মুক্ত বিশ্ববিদ্যালয় (BOU)",
+    "nameEn": "Bangladesh Open University (BOU)",
+    "summaryBn": "1992 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি অফ-ক্যাম্পাস / অধিভুক্ত পাবলিক বিশ্ববিদ্যালয়, অবস্থান: গাজীপুর (Joydebpur, Gazipur)।",
+    "summaryEn": "Public Off-Campus / Affiliating Public University of Bangladesh established in 1992, located in Joydebpur, Gazipur (Gazipur).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 1992 সাল; ধরন: সরকারি অফ-ক্যাম্পাস / অধিভুক্ত পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Joydebpur, Gazipur (গাজীপুর জেলা); সংক্ষিপ্ত নাম: BOU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 1992; Type: Public Off-Campus / Affiliating Public University",
+      "Location: Joydebpur, Gazipur (Gazipur District); Acronym: BOU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-iau",
+    "category": "university",
+    "districtKey": "dhaka",
+    "coords": [
+      90.3745,
+      23.7929
+    ],
+    "established": "2013",
+    "nameBn": "ইসলামি আরবি বিশ্ববিদ্যালয় (IAU)",
+    "nameEn": "Islamic Arabic University (IAU)",
+    "summaryBn": "2013 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি অফ-ক্যাম্পাস / অধিভুক্ত পাবলিক বিশ্ববিদ্যালয়, অবস্থান: ঢাকা (Mohammadpur, Dhaka)।",
+    "summaryEn": "Public Off-Campus / Affiliating Public University of Bangladesh established in 2013, located in Mohammadpur, Dhaka (Dhaka).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2013 সাল; ধরন: সরকারি অফ-ক্যাম্পাস / অধিভুক্ত পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Mohammadpur, Dhaka (ঢাকা জেলা); সংক্ষিপ্ত নাম: IAU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2013; Type: Public Off-Campus / Affiliating Public University",
+      "Location: Mohammadpur, Dhaka (Dhaka District); Acronym: IAU",
+      "UGC-approved public university of Bangladesh"
+    ]
+  },
+  {
+    "id": "uni-dcu",
+    "category": "university",
+    "districtKey": "dhaka",
+    "coords": [
+      90.299,
+      23.8976
+    ],
+    "established": "2026",
+    "nameBn": "ঢাকা সেন্ট্রাল ইউনিভার্সিটি (DCU)",
+    "nameEn": "Dhaka Central University (DCU)",
+    "summaryBn": "2026 সালে প্রতিষ্ঠিত বাংলাদেশের সরকারি অফ-ক্যাম্পাস / অধিভুক্ত পাবলিক বিশ্ববিদ্যালয়, অবস্থান: ঢাকা (Agargaon, Dhaka)।",
+    "summaryEn": "Public Off-Campus / Affiliating Public University of Bangladesh established in 2026, located in Agargaon, Dhaka (Dhaka).",
+    "examPointsBn": [
+      "প্রতিষ্ঠাকাল: 2026 সাল; ধরন: সরকারি অফ-ক্যাম্পাস / অধিভুক্ত পাবলিক বিশ্ববিদ্যালয়",
+      "অবস্থান: Agargaon, Dhaka (ঢাকা জেলা); সংক্ষিপ্ত নাম: DCU",
+      "বাংলাদেশ বিশ্ববিদ্যালয় মঞ্জুরি কমিশন (UGC) অনুমোদিত পাবলিক বিশ্ববিদ্যালয়"
+    ],
+    "examPointsEn": [
+      "Established: 2026; Type: Public Off-Campus / Affiliating Public University",
+      "Location: Agargaon, Dhaka (Dhaka District); Acronym: DCU",
+      "UGC-approved public university of Bangladesh"
     ]
   }
 ];

@@ -784,8 +784,8 @@ onMounted(() => {
                     <p class="text-xs sm:text-sm text-[var(--text-muted)]">
                         {{
                             en
-                                ? 'Explore 8 divisions, 64 districts, 14 major rivers & 22 key organizations with BBS 2022 data and BCS/Admission exam topics.'
-                                : '৮টি বিভাগ, ৬৪টি জেলা, ১৪টি প্রধান নদ-নদী ও ২২টি গুরুত্বপূর্ণ প্রতিষ্ঠান—বিবিএস ২০২২ তথ্য এবং বিসিএস ও ভর্তি পরীক্ষার টপিকসহ।'
+                                ? `Explore 8 divisions, 64 districts, ${BD_RIVERS.length} major rivers & ${BD_LANDMARKS.length} key organizations (63 public universities) with BBS 2022 data and BCS/Admission exam topics.`
+                                : `৮টি বিভাগ, ৬৪টি জেলা, ${toBnNumber(BD_RIVERS.length)}টি প্রধান নদ-নদী ও ৬৩টি পাবলিক বিশ্ববিদ্যালয়সহ ${toBnNumber(BD_LANDMARKS.length)}টি গুরুত্বপূর্ণ স্থান—বিবিএস ২০২২ তথ্য এবং বিসিএস ও ভর্তি পরীক্ষার টপিকসহ।`
                         }}
                     </p>
                 </div>
@@ -882,7 +882,7 @@ onMounted(() => {
                         "
                         @click="switchLayer('rivers')"
                     >
-                        {{ en ? 'Rivers (14)' : 'নদ-নদী (১৪)' }}
+                        {{ en ? `Rivers (${BD_RIVERS.length})` : `নদ-নদী (${toBnNumber(BD_RIVERS.length)})` }}
                     </button>
                     <button
                         type="button"
@@ -896,7 +896,7 @@ onMounted(() => {
                         "
                         @click="switchLayer('landmarks')"
                     >
-                        {{ en ? 'Places & Orgs (22)' : 'প্রতিষ্ঠান ও স্থান (২২)' }}
+                        {{ en ? `Universities & Places (${BD_LANDMARKS.length})` : `বিশ্ববিদ্যালয় ও স্থান (${toBnNumber(BD_LANDMARKS.length)})` }}
                     </button>
                 </div>
 
@@ -1707,18 +1707,26 @@ onMounted(() => {
                     <!-- SMART STUDY ACTIONS FOOTER -->
                     <div class="pt-3 border-t border-[var(--border)] grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <Link
-                            :href="`/question-bank?search=${encodeURIComponent(activeDetail.searchKeyword)}`"
-                            class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-[var(--surface2)] border border-[var(--border)] text-xs font-bold text-[var(--text)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition"
+                            :href="`/exams/create?title=${encodeURIComponent(
+                                en
+                                    ? `${activeDetail.title} — BCS & Admission GK Quiz`
+                                    : `${activeDetail.title} — বিসিএস ও ভর্তি প্রস্তুতি কুইজ`
+                            )}&topic=${encodeURIComponent(
+                                en
+                                    ? `${activeDetail.title} (${activeDetail.badge}), Bangladesh: geography, history, establishment, key facts, and high-yield BCS & University Admission MCQ questions.`
+                                    : `${activeDetail.title} (${activeDetail.badge}) সম্পর্কিত বাংলাদেশের ভূগোল, ইতিহাস, প্রতিষ্ঠাকাল, পরিচিতি ও বিসিএস/ভর্তি পরীক্ষার গুরুত্বপূর্ণ MCQ প্রশ্ন।`
+                            )}`"
+                            class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-[var(--primary)] text-white text-xs font-extrabold shadow-sm hover:opacity-95 transition"
                         >
-                            <BookOpenIcon class="w-4 h-4" />
-                            <span>{{ en ? 'Practice MCQs' : 'প্রশ্নব্যাংক' }}</span>
+                            <SparklesIcon class="w-4 h-4" />
+                            <span>{{ en ? 'AI Questions' : 'AI প্রশ্ন তৈরি' }}</span>
                         </Link>
 
                         <Link
                             :href="`/flashcards/create?source_type=topic&title=${encodeURIComponent(activeDetail.title)}`"
                             class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-[var(--surface2)] border border-[var(--border)] text-xs font-bold text-[var(--text)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition"
                         >
-                            <SparklesIcon class="w-4 h-4 text-amber-500" />
+                            <BookOpenIcon class="w-4 h-4 text-amber-500" />
                             <span>{{ en ? 'AI Flashcards' : 'AI ফ্ল্যাশকার্ড' }}</span>
                         </Link>
 

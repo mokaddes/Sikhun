@@ -62,7 +62,7 @@ class ExamController extends Controller
         ]);
     }
 
-    public function createForm(BookAccessService $access): Response
+    public function createForm(Request $request, BookAccessService $access): Response
     {
         $student = auth('web')->user();
         $books = \App\Models\Book::query()
@@ -87,6 +87,8 @@ class ExamController extends Controller
         return Inertia::render('Student/Exams/Create', [
             'books' => $books,
             'myBooks' => $myBooks,
+            'initialTitle' => (string) $request->query('title', ''),
+            'initialTopic' => (string) $request->query('topic', ''),
         ]);
     }
 

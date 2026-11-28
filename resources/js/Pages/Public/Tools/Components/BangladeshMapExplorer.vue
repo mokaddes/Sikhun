@@ -28,7 +28,7 @@ import {
     BD_RIVERS,
     BD_LANDMARKS,
 } from '@/Data/bangladeshMapData';
-import { downloadBrandedPdf } from '@/Utils/studentPdfExport';
+import { downloadBrandedPdf } from '@/utils/studentPdfExport';
 
 const props = defineProps({
     en: { type: Boolean, default: false },

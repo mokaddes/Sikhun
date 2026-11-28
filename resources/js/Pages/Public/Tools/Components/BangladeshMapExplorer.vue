@@ -702,8 +702,8 @@ async function loadGeoData() {
     mapError.value = '';
     try {
         const [divRes, distRes] = await Promise.all([
-            fetch('/maps/bd-divisions.geojson'),
-            fetch('/maps/bd-districts.geojson'),
+            fetch('/maps/bd-divisions.geojson?v=2'),
+            fetch('/maps/bd-districts.geojson?v=2'),
         ]);
         if (!divRes.ok || !distRes.ok) {
             throw new Error('Failed to load map boundary files.');
